@@ -1,4 +1,6 @@
-﻿using System;
+﻿using MongoDB.Bson;
+using MongoDB.Driver;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -10,6 +12,10 @@ namespace FChatDicebot
     {
         static void Main(string[] args)
         {
+            //Console.WriteLine(MonDB.modMessage("all"));
+           
+
+
             BotMain m = new BotMain();
 
             if (BotMain._debug)

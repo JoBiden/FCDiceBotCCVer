@@ -23,11 +23,10 @@ namespace FChatDicebot.BotCommands
             int channelsNumber = bot.ChannelsJoined.Count();
             TimeSpan onlineTime = DateTime.UtcNow - bot.LoginTime;
 
-            string resultMessageString = "Dice Bot was developed by [user]Ambitious Syndra[/user] on 10/12/2020"
+            string resultMessageString = "Chateau Contract Bot was developed by [user]Queen Contract[/user] as an adaptation of Dice Bot, developed by [user]Ambitious Syndra[/user]"
                 + "\nCurrent version " + BotMain.Version
-                + "\nCurrently operating in " + channelsNumber + " channels."
                 + "\nOnline for " + Utils.GetTimeSpanPrint(onlineTime)
-                + "\nFor a list of commands, use !help. See the profile [user]Dice Bot[/user] for more detailed information.";
+                + "\nFor a list of commands, use !help. See the profiles [user]Chateau Contract[/user] and [user]Dice Bot[/user] for more detailed information (this bot may not be up to date with Dice Bot)";
                 
             if (!commandController.MessageCameFromChannel(channel))
             {

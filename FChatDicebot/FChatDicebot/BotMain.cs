@@ -20,7 +20,7 @@ namespace FChatDicebot
         public const bool _debug = false;
         public const bool _returnAllRecievedChatMessagesFromChannels = false;
         public const bool _testVersion = false;
-        public const string Version = "1.35";
+        public const string Version = "0.15";
 
         public const string FileFolder = "C:\\BotData\\DiceBot";
         public const string LogsFolder = "C:\\BotData\\DiceBot\\logs";
@@ -40,8 +40,8 @@ namespace FChatDicebot
         public const string ChipsCouponsInactiveFileName = "coupons_inactive.txt";
         public const string PotionGenerationFileName = "potionGeneration_data.txt";
 
-        public const string BotTestingStatus = "Dicebot is currently undergoing [color=yellow]testing[/color]. Performance may be impacted.";
-        public const string BotOnlineStatus = "[color=yellow]Dice Bot v" + Version + " Online![/color] Use '!help' for commands and check out the [user]Dice Bot[/user] profile for instructions. You can add Dicebot to your channel with !joinchannel [[i]channel invite code paste[/i]]";
+        public const string BotTestingStatus = "Chateau Contract is currently undergoing [color=orange]testing[/color]. Please excuse the growing pains!";
+        public const string BotOnlineStatus = "[color=purple]Chateau Contract Bot v" + Version + " Online![/color] Check the [user]Chateau Contract[/user] profile for Chateau Exclusive commands. Use '!help' and check out the [user]Dice Bot[/user] profile for dice commands (Many still work!)";
 
         public const string HandCollectionName = "hand";
         public const string DeckCollectionName = "deck";

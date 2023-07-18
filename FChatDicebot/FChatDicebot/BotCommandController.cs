@@ -249,6 +249,37 @@ namespace FChatDicebot
             return characterDrawName;
         }
 
+        public string GetUserNameFromCommandTerms(string[] terms)
+        {
+            bool isName = false;
+            string userName = "";
+            if (terms != null)
+            {
+                foreach (string term in terms)
+                {
+                    if (isName)
+                    {
+                        userName += " " + term;
+                    }
+
+                    if (term.StartsWith("[user]"))
+                    {
+                        isName = true;
+                        userName = term;
+                    }
+
+                    if (term.EndsWith("[/user]"))
+                    {
+                        isName = false;
+                        userName = userName.Remove(0, 6);
+                        userName = userName.Remove(userName.Length-7);
+                        return userName;
+                    }
+                }
+            }
+            return null;
+        }
+
         public void SaveCharacterDataToDisk()
         {
             Utils.WriteToFileAsData(Bot.DiceBot.CharacterDatas, Utils.GetTotalFileName(BotMain.FileFolder, BotMain.CharacterDataFileName));
