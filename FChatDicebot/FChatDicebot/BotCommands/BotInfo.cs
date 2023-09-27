@@ -26,7 +26,7 @@ namespace FChatDicebot.BotCommands
             string resultMessageString = "Chateau Contract Bot was developed by [user]Queen Contract[/user] as an adaptation of Dice Bot, developed by [user]Ambitious Syndra[/user]"
                 + "\nCurrent version " + BotMain.Version
                 + "\nOnline for " + Utils.GetTimeSpanPrint(onlineTime)
-                + "\nFor a list of commands, use !help. See the profiles [user]Chateau Contract[/user] and [user]Dice Bot[/user] for more detailed information (this bot may not be up to date with Dice Bot)";
+                + "\nFor a list of dice commands, use !dicehelp. See the profiles [user]Chateau Contract[/user] and [user]Dice Bot[/user] for more detailed information (this bot may not be up to date with Dice Bot)";
                 
             if (!commandController.MessageCameFromChannel(channel))
             {

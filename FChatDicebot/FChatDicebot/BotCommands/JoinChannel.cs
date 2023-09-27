@@ -12,7 +12,7 @@ namespace FChatDicebot.BotCommands
         public JoinChannel()
         {
             Name = "joinchannel";
-            RequireBotAdmin = false;
+            RequireBotAdmin = true;
             RequireChannelAdmin = false;
             RequireChannel = false;
             LockCategory = CommandLockCategory.NONE;

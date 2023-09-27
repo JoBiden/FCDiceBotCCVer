@@ -158,13 +158,26 @@
   <ItemGroup>
     <Compile Include="BotCommandController.cs" />
     <Compile Include="BotCommands\C.cs" />
+    <Compile Include="BotCommands\ChateauGolden.cs" />
+    <Compile Include="BotCommands\ChateauFeed.cs" />
+    <Compile Include="BotCommands\ChateauDressup.cs" />
+    <Compile Include="BotCommands\ChateauConsume.cs" />
+    <Compile Include="BotCommands\ChateauObjectify.cs" />
+    <Compile Include="BotCommands\ChateauPlant.cs" />
+    <Compile Include="BotCommands\ChateauStatues.cs" />
     <Compile Include="BotCommands\ChateauIdentifiers.cs" />
     <Compile Include="BotCommands\ChateauIdentifier.cs" />
     <Compile Include="BotCommands\ChateauHandhold.cs" />
     <Compile Include="BotCommands\ChateauCuddle.cs" />
     <Compile Include="BotCommands\ChateauKiss.cs" />
+    <Compile Include="BotCommands\ChateauBully.cs" />
+    <Compile Include="BotCommands\ChateauPetrify.cs" />
+    <Compile Include="BotCommands\ChateauMonsterize.cs" />
+    <Compile Include="BotCommands\ChateauRename.cs" />
+    <Compile Include="BotCommands\ChateauSpank.cs" />
     <Compile Include="BotCommands\ChateauDossier.cs" />
     <Compile Include="BotCommands\Accept.cs" />
+    <Compile Include="BotCommands\ChateauHelp.cs" />
     <Compile Include="BotCommands\JoinChateau.cs" />
     <Compile Include="BotCommands\CombinedCommands\GetRandomPotion.cs" />
     <Compile Include="BotCommands\GeneratePotionInfo.cs" />
@@ -249,7 +262,7 @@
     <Compile Include="BotCommands\RemoveAllPiles.cs" />
     <Compile Include="BotCommands\RemovePile.cs" />
     <Compile Include="BotCommands\TableInfo.cs" />
-    <Compile Include="BotCommands\Help.cs" />
+    <Compile Include="BotCommands\DiceHelp.cs" />
     <Compile Include="BotCommands\DeleteTable.cs" />
     <Compile Include="BotCommands\SaveTable.cs" />
     <Compile Include="BotCommands\RollTable.cs" />

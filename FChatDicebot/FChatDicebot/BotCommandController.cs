@@ -1,6 +1,7 @@
 ﻿using FChatDicebot.BotCommands;
 using FChatDicebot.BotCommands.Base;
 using FChatDicebot.DiceFunctions;
+using FChatDicebot.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -64,7 +65,11 @@ namespace FChatDicebot
             bool characterIsAdmin = Utils.IsCharacterAdmin(Bot.AccountSettings.AdminCharacters, command.characterName);
 
             bool fromChannel = MessageCameFromChannel(command.channel);
-            if (fromChannel || !c.RequireChannel)
+            if (MonDB.getProfile(command.characterName) == null && command.commandName != "joinchateau")
+            {
+                Bot.SendPrivateMessage(ChateauInteractionHandler.notRegisteredText(), command.characterName);
+            }
+            else if (fromChannel || !c.RequireChannel)
             {
                 if (characterIsAdmin || !c.RequireBotAdmin)
                 {
@@ -273,7 +278,60 @@ namespace FChatDicebot
                         isName = false;
                         userName = userName.Remove(0, 6);
                         userName = userName.Remove(userName.Length-7);
+                        Utils.SanitizeInput(userName);
                         return userName;
+                    }
+                }
+            }
+            return null;
+        }
+
+        public string GetQuotedTextFromCommandTerms(string[] terms)
+        {
+            bool isInQuotes = false;
+            string quotedText = "";
+            if (terms != null)
+            {
+                foreach (string term in terms)
+                {
+                    if (isInQuotes)
+                    {
+                        quotedText += " " + term;
+                    }
+
+                    if (term.StartsWith("\""))
+                    {
+                        isInQuotes = true;
+                        quotedText = term;
+                    }
+
+                    if (term.EndsWith("\""))
+                    {
+                        isInQuotes = false;
+                        quotedText = quotedText.Trim('\"');
+                        Utils.SanitizeInput(quotedText);
+                        return quotedText;
+                    }
+                }
+            }
+            return null;
+        }
+
+        public string GetIdentifierFromCommandTerms(string[] terms, string identifierTypeToFind)
+        {
+            List<Identifier> typeList = MonDB.getIdentifiers(identifierTypeToFind);
+
+            if (terms != null)
+            {
+                Utils.LowercaseStrings(terms);
+                foreach (string term in terms)
+                {
+                    foreach (Identifier identifierType in typeList)
+                    {
+                        if (identifierType.type == term )
+                        {
+                            return term;
+                        }
                     }
                 }
             }

@@ -16,14 +16,15 @@ namespace FChatDicebot.Model
         public string userName { get; set; }
         public string displayName { get; set; }
         public Dictionary<string, int> counts { get; set; } = new Dictionary<string, int>();
+        public Dictionary<string, string> characteristics { get; set; } = new Dictionary<string, string>();
         public Dictionary<string, List<string>> lists { get; set; } = new Dictionary<string, List<string>>();
         public Dictionary<string, Timer> timers { get; set; } = new Dictionary<string, Timer>();
     }
 
     public class Timer
     {
-        public DateTime timerStart { get; set; }
-        public int minuteDuration { get; set; }
+        public DateTime timerStart { get; set; } = DateTime.UtcNow;
+        public DateTime timerEnd { get; set; }
 
     }
 
@@ -66,7 +67,7 @@ namespace FChatDicebot.Model
         public string initiator { get; set; }
         public string recipient { get; set; }
         public string type { get; set; }
-        public Identifier identifier { get; set; }
+        public string identifier { get; set; }
         public string investmentLevel { get; set; }
         public BsonArray extraParameters { get; set; }
         public DateTime interactionTime { get; set; }

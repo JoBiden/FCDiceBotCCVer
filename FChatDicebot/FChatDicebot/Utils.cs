@@ -633,5 +633,176 @@ namespace FChatDicebot
               .Select(s => s[rnd.Next(s.Length)]).ToArray());
         }
 
+        public static string AnOrA(string needsAnOrA)
+        {
+            List<string> vowels = new List<string>() { "a", "e", "i", "o", "u", "A", "E", "I", "O", "U"};
+            if (vowels.Contains(needsAnOrA.Substring(0, 1))) //string starts with a vowel
+            {
+                return "an";
+            }
+            //string does not start with vowel
+            return "a";
+        }
+
+        public static string sortedListDisplayText(List<string> listToDisplay)
+        {
+            List<string> displayList = new List<string>();
+            foreach (string displayText in listToDisplay)
+            {
+                displayList.Add(displayText);
+            }
+            displayList.Sort();
+            return String.Join(", ", displayList);
+        }
+
+        public static string LocationToText(string location, string initiatorDisplayName, string recipientDisplayName)
+        {
+            Dictionary<string, string> locationText = new Dictionary<string, string>
+                    {
+                        { "theirroom", "in " + recipientDisplayName + "'s room" },
+                        { "myroom", "in " + initiatorDisplayName + "'s room" },
+                        { "theiroffice", "in " + recipientDisplayName + "'s office" },
+                        { "myoffice", "in " + initiatorDisplayName + "'s office" },
+                        { "theircave", "in " + recipientDisplayName + "'s cavernous abode" },
+                        { "mycave", "in " + initiatorDisplayName + "'s cavernous abode" },
+                        { "theirworkshop", "in " + recipientDisplayName + "'s workshop" },
+                        { "myworkshop", "in " + initiatorDisplayName + "'s workshop" },
+                        { "magiclibrary", "in the magic library" },
+                        { "guestroom", "in a guest room" },
+                        { "queenstudy", "in the Queen's study" },
+                        { "cuddlepuddle", "in the cuddlepuddle" },
+                        { "rootgarden", "in the root garden" },
+                        { "storage", "in the storage room" },
+                        { "treasury", "in the treasury" },
+                        { "loom", "by the grand loom" },
+                        { "topfloor", "somewhere on the top floor" },
+                        { "basement", "somewhere in the basement" },
+                        { "outside", "somewhere outside" },
+                        { "groundfloor", "somewhere on the ground floor" },
+                        { "secondfloor", "somewhere on the second floor" },
+                        { "milkingstall", "in the milking stalls" },
+                        { "cellar", "in the cellar" },
+                        { "gloryhole", "in the gloryholes" },
+                        { "throne", "in the throneroom" },
+                        { "chapel", "in the chapel" },
+                        { "aquarium", "in the aquarium" },
+                        { "lounge", "in the lounge" },
+                        { "giftshop", "in the giftshop" },
+                        { "labs", "in the labs" },
+                        { "kitchen", "in the kitchen" },
+                        { "entrance", "in the entrancehall" },
+                        { "library", "in the library" },
+                        { "reception", "in reception" },
+                        { "stables", "in the stables" },
+                        { "forest", "out in the forest" },
+                        { "beastpens", "out in the beastpens" },
+                        { "garden", "out in the garden" },
+                        { "fields", "out in the fields" },
+                        { "hotsprings", "in the hotsprings" },
+                        { "restroom", "in one of the restrooms" },
+                        { "arena", "out in the arena" }
+                    };
+            if (locationText.ContainsKey(location)){
+                return locationText[location];
+            } 
+            else
+            {
+                return "somewhere ineffable [spoiler]that means [user]Queen Contract[/user] needs to update Utils.LocationToText to include " + location + ", go tell her to fix it!";
+            }
+        }
+
+        public static string AttireToText(string attire)
+        {
+            Dictionary<string, string> attireText = new Dictionary<string, string>
+                    {
+                        { "bottomless", "a bottomless outfit" },
+                        { "oriental", "oriental garb"},
+                        { "regal", "regal attire"},
+                        { "nude", "their birthday suit"},
+                        { "wedding", "wedding attire"},
+                        { "stripper", "stripper clothes"},
+                        { "piercings", "piercings and only piercings"},
+                        { "gyaru", "gyaru garb"},
+                        { "bondage", "some form of bondage"},
+                        { "idol", "an idol costume"},
+                        { "bunnygirl", "a bunnygirl leotard"},
+                        { "shibari", "complicated shibari ropes"},
+                        { "maidoutfit", "a maid outfit"},
+                        { "swimsuit", "a swimsuit"},
+                        { "slutty", "something super slutty"},
+                        { "punk", "something punk"},
+                        { "office", "office attire"},
+                        { "casual", "casual clothes"},
+                        { "bimbo", "bimbo stuff"},
+                        { "armored", "protective armor"},
+                        { "practical", "something practical"},
+                        { "traditional", "something traditional"},
+                        { "bitchsuit", "piddlefours"},
+                        { "socks", "just their socks"},
+                        { "lingerie", "sexy lingerie"},
+                        { "cosplay", "a custom cosplay"},
+                        { "formal", "formalwear"},
+                        { "topless", "a topless outfit"},
+                        { "workout", "workout clothes"},
+                        { "ruined", "some ruined fabric"},
+                        { "western", "western attire"},
+                        { "latex", "a latex outfit"},
+
+                    };
+            if (attireText.ContainsKey(attire))
+            {
+                return attireText[attire];
+            }
+            else
+            {
+                return "something ineffable [spoiler]that means [user]Queen Contract[/user] needs to update Utils.AttireToText to include " + attire + ", go tell her to fix it!";
+            }
+        }
+
+        public static string SubstanceToText(string substance)
+        {
+            Dictionary<string, string> substanceText = new Dictionary<string, string>
+                    {
+                        { "fire", "literal fire"},
+                        { "water", "water"},
+                        { "earth", "elemental earth"},
+                        { "air", "air"},
+                        { "golden", "golden fluid"},
+                        { "cum", "cum"},
+                        { "goo", "slimy goo"},
+                        { "lustessence", "[color=purple]Lust Essence[/color]"},
+                        { "pollen", "pollen"},
+                        { "sap", "sap"},
+                        { "pre", "precum"},
+                        { "saliva", "saliva"},
+                        { "sweat", "sweat"},
+                        { "drug", "sort of drug"},
+                        { "drink", "drink"},
+                        { "food", "food"},
+                        { "energy", "pure energy"}
+                    };
+            if (substanceText.ContainsKey(substance))
+            {
+                return substanceText[substance];
+            }
+            else
+            {
+                return "something ineffable [spoiler]that means [user]Queen Contract[/user] needs to update Utils.SubstanceToText to include " + substance + ", go tell her to fix it!";
+            }
+        }
+        public static string BodypartToText(string bodypart)
+        {
+
+            if (bodypart == "lowerback")
+            {
+                return "lower back";
+            }
+            else
+            {
+                return bodypart;
+            }
+        }
+       
+
     }
 }

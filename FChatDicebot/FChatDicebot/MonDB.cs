@@ -22,20 +22,22 @@ namespace FChatDicebot
         static MongoClient monClient = new MongoClient(connectionString);
         static string dbString = "ChateauDb";
 
-        public static string modMessage(string messageLabel) {
+        internal static string modMessage(string messageLabel) {
 
             messageLabel = messageLabel.ToLower();
             var collection = monClient.GetDatabase(dbString).GetCollection<BsonDocument>("ModMessages");
 
             if (messageLabel == "all") //list all modMessage labels instead of retrieving one specifically 
             {
-                string messageList = "The available Mod Messages are:";
+                string messageText = "The available Mod Messages are: \n";
+                List<string> modMessages = new List<string>();
                 var cursor = collection.AsQueryable();
                 foreach (var document in cursor)
                 {
-                    messageList += " " + (string)document.GetElement("name").Value;
+                    modMessages.Add((string)document.GetElement("name").Value);
                 }
-                return messageList;
+                messageText += Utils.sortedListDisplayText(modMessages);
+                return messageText;
             }
             
             var filter = Builders<BsonDocument>.Filter.Eq("name", messageLabel);
@@ -49,7 +51,7 @@ namespace FChatDicebot
             return (string)message.GetElement("text").Value;
         }
 
-        public static string registerUserChateau(string userName) 
+        internal static string registerUserChateau(string userName) 
         {
             var collection = monClient.GetDatabase(dbString).GetCollection<BsonDocument>("RegisteredProfiles");
             var filter = Builders<BsonDocument>.Filter.Eq("userName", userName);
@@ -70,19 +72,19 @@ namespace FChatDicebot
             }
         }
 
-        public static void addPendingCommand(PendingCommand toAdd)
+        internal static void addPendingCommand(PendingCommand toAdd)
         {
             var collection = monClient.GetDatabase(dbString).GetCollection<BsonDocument>("PendingCommands");
             collection.InsertOne(toAdd.ToBsonDocument());
         }
 
-        public static void addInteraction(Interaction toAdd)
+        internal static void addInteraction(Interaction toAdd)
         {
-            var collection = monClient.GetDatabase(dbString).GetCollection<BsonDocument>("PendingCommands");
+            var collection = monClient.GetDatabase(dbString).GetCollection<BsonDocument>("Interactions");
             collection.InsertOne(toAdd.ToBsonDocument());
         }
 
-        public static void incrementCount(string userName, string countLabel)
+        internal static void incrementCount(string userName, string countLabel)
         {
             var collection = monClient.GetDatabase(dbString).GetCollection<Profile>("RegisteredProfiles");
             var filter = Builders<Profile>.Filter.Eq("userName", userName);
@@ -99,7 +101,7 @@ namespace FChatDicebot
 
         }
 
-        public static Profile getProfile(string userName)
+        internal static Profile getProfile(string userName)
         {
             var collection = monClient.GetDatabase(dbString).GetCollection<BsonDocument>("RegisteredProfiles");
             var filter = Builders<BsonDocument>.Filter.Eq("userName", userName);
@@ -113,7 +115,15 @@ namespace FChatDicebot
             
         }
 
-        public static List<PendingCommand> getPending(string userName)
+        internal static void setProfile(string userName, Profile newProfile)
+        {
+            var collection = monClient.GetDatabase(dbString).GetCollection<BsonDocument>("RegisteredProfiles");
+            var filter = Builders<BsonDocument>.Filter.Eq("userName", userName);
+            collection.ReplaceOne(filter, newProfile.ToBsonDocument());
+
+        }
+
+        internal static List<PendingCommand> getPending(string userName)
         {
             var collection = monClient.GetDatabase(dbString).GetCollection<BsonDocument>("PendingCommands");
             var filter = Builders<BsonDocument>.Filter.Eq("awaitingConsentFrom", userName);
@@ -126,7 +136,7 @@ namespace FChatDicebot
             return pendingInteractions;
         }
 
-        public static List<Identifier> getIdentifiers(string category)
+        internal static List<Identifier> getIdentifiers(string category)
         {
             category = category.ToLower();
             var collection = monClient.GetDatabase(dbString).GetCollection<BsonDocument>("Identifiers");
@@ -140,7 +150,7 @@ namespace FChatDicebot
             return identifiers;
         }
 
-        public static Identifier getIdentifier(string identifier)
+        internal static Identifier getIdentifier(string identifier)
         {
             identifier = identifier.ToLower();
             var collection = monClient.GetDatabase(dbString).GetCollection<BsonDocument>("Identifiers");
@@ -154,12 +164,38 @@ namespace FChatDicebot
 
         }
 
-        public static void removePending(ObjectId toDelete)
+        internal static long getTypeCount(string profileName, string identifierType, string initiatorRecipientOrBoth)
+        {
+            identifierType = identifierType.ToLower();
+            initiatorRecipientOrBoth = initiatorRecipientOrBoth.ToLower();
+            var collection = monClient.GetDatabase(dbString).GetCollection<BsonDocument>("Interactions");
+            var builder = Builders<BsonDocument>.Filter;
+            FilterDefinition<BsonDocument> filter;
+            switch (initiatorRecipientOrBoth) 
+            {
+                case "initiator": 
+                    filter = builder.Eq("type", identifierType) & builder.Eq("initiator", profileName);
+                    break;
+                case "recipient":
+                    filter = builder.Eq("type", identifierType) & builder.Eq("recipient", profileName);
+                    break;
+                default:
+                    filter = builder.Eq("type", identifierType) & (builder.Eq("initiator", profileName) | builder.Eq("recipient", profileName)) ;
+                    break;
+            }
+            return collection.CountDocuments(filter);
+        }
+
+        internal static void removePending(ObjectId toDelete)
         {
             var collection = monClient.GetDatabase(dbString).GetCollection<BsonDocument>("PendingCommands");
             var filter = Builders<BsonDocument>.Filter.Eq("_id", toDelete);
             collection.DeleteOne(filter);
         }
 
+        internal static void getInteractions(string location)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

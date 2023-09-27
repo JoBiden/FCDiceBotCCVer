@@ -25,11 +25,11 @@ namespace FChatDicebot.BotCommands
 
             if (!commandController.MessageCameFromChannel(channel))
             {
-                bot.SendPrivateMessage("Dicebot has been online for " + Utils.GetTimeSpanPrint(onlineTime), characterName);
+                bot.SendPrivateMessage("Chateau Contract has been online for " + Utils.GetTimeSpanPrint(onlineTime), characterName);
             }
             else
             {
-                bot.SendMessageInChannel("Dicebot has been online for " + Utils.GetTimeSpanPrint(onlineTime), channel);
+                bot.SendMessageInChannel("Chateau Contract has been online for " + Utils.GetTimeSpanPrint(onlineTime), channel);
             }
         }
     }
