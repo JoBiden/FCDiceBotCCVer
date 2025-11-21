@@ -17,9 +17,14 @@ namespace FChatDicebot
     {
         public string CurrentApiKey = "";
         public const string FListChatUri = "wss://chat.f-list.net/chat2";
-        public const bool _debug = false;
+#if DEBUG
+        public const bool _debug = true;
+        public const bool _testVersion = true;
+#else
+    public const bool _debug = false;
+    public const bool _testVersion = false;
+#endif
         public const bool _returnAllRecievedChatMessagesFromChannels = false;
-        public const bool _testVersion = false;
         public const string Version = "0.5";
 
         public const string FileFolder = "C:\\BotData\\DiceBot";
@@ -715,6 +720,11 @@ namespace FChatDicebot
                     case "ICH": //initial channel users
                     case "LIS": //all online characters, gender, status
                         break;
+                    case "FRL": //friend list
+                        break;
+                    case "IGN": //ignore list
+                        break;
+                    case "ADL": //global admin list
                     case "COL": //sent in response to join channel
                         COLserver colinfo = JsonConvert.DeserializeObject<COLserver>(trimmedChatCommand);
 
