@@ -1,3 +1,4 @@
+using FChatDicebot.Database;
 using FChatDicebot.Model;
 using System;
 using System.Collections.Generic;
@@ -13,6 +14,21 @@ namespace FChatDicebot.InteractionProcessors
         public override string InvestmentLevel => "casual";
         //consideration: Make this a variable that mods can set per interaction type?
         private static readonly TimeSpan RateLimit = TimeSpan.FromHours(1);
+
+        /// <summary>
+        /// Constructor for dependency injection (for testing)
+        /// </summary>
+        public CuddleProcessor(IChateauDatabase database) : base(database)
+        {
+        }
+
+        /// <summary>
+        /// Legacy constructor for backward compatibility
+        /// </summary>
+        public CuddleProcessor() : base()
+        {
+        }
+
 
         public override string ProcessInteraction(PendingCommand command)
         {

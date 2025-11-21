@@ -301,6 +301,8 @@
     <Compile Include="BotCommands\FitD.cs" />
     <Compile Include="BotCommands\Roll.cs" />
     <Compile Include="ChateauInteractionHandler.cs" />
+    <Compile Include="Database\Chateaudatabase.cs" />
+    <Compile Include="Database\Ichateaudatabase.cs" />
     <Compile Include="InteractionCountMigration.cs" />
     <Compile Include="InteractionProcessors\Casual\BullyProcessor.cs" />
     <Compile Include="InteractionProcessors\Casual\CuddleProcessor.cs" />

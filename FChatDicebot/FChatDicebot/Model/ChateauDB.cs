@@ -19,7 +19,7 @@ namespace FChatDicebot.Model
         public Dictionary<string, int> counts { get; set; } = new Dictionary<string, int>();
         public Dictionary<string, string> characteristics { get; set; } = new Dictionary<string, string>();
         public Dictionary<string, List<string>> lists { get; set; } = new Dictionary<string, List<string>>();
-        public Dictionary<string, Timer> timers { get; set; } = new Dictionary<string, Timer>();
+        public Dictionary<string, CoolDown> timers { get; set; } = new Dictionary<string, CoolDown>();
         public Dictionary<string, int> currencies { get; set; } = new Dictionary<string, int>();
         public Dictionary<string, int> jobExperience { get; set; } = new Dictionary<string, int>();
         public List<Title> titles { get; set; } = new List<Title>();
@@ -49,7 +49,7 @@ namespace FChatDicebot.Model
         }
     }
 
-    public class Timer
+    public class CoolDown
     {
         public DateTime timerStart { get; set; } = DateTime.UtcNow;
         public DateTime timerEnd { get; set; }

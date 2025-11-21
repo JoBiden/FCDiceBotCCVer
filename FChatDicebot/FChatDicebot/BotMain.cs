@@ -120,6 +120,8 @@ namespace FChatDicebot
         {
             BotCommandController = new BotCommandController(this);
 
+            MonDB.Initialize("mongodb://localhost:27017", "ChateauDb");
+
             BackupAllData();
 
             LoadAccountSettings();

@@ -1,3 +1,4 @@
+using FChatDicebot.Database;
 using FChatDicebot.Model;
 using System;
 using System.Collections.Generic;
@@ -6,13 +7,34 @@ namespace FChatDicebot.InteractionProcessors
 {
     /// <summary>
     /// Base class for interaction processors that provides common functionality.
+    /// Refactored to support dependency injection for testability.
     /// Inherit from this to reduce boilerplate code.
     /// </summary>
     public abstract class InteractionProcessorBase : IInteractionProcessor
     {
+        protected readonly IChateauDatabase Database;
+        protected string _lastRateLimitMessage = string.Empty;
+
+        /// <summary>
+        /// Constructor for dependency injection.
+        /// </summary>
+        protected InteractionProcessorBase(IChateauDatabase database)
+        {
+            Database = database ?? throw new ArgumentNullException(nameof(database));
+        }
+
+        /// <summary>
+        /// Legacy constructor for backward compatibility.
+        /// Uses MonDB static methods via adapter.
+        /// </summary>
+        protected InteractionProcessorBase()
+        {
+            // Use the static database adapter for backward compatibility
+            Database = MonDB.GetDatabase();
+        }
+
         public abstract string InteractionType { get; }
         public abstract string InvestmentLevel { get; }
-        protected string _lastRateLimitMessage = string.Empty;
 
         public string GetAndClearRateLimitMessage()
         {
@@ -37,8 +59,8 @@ namespace FChatDicebot.InteractionProcessors
         /// </summary>
         public virtual ValidationResult ValidateInteraction(string initiator, string recipient, string identifier)
         {
-            Profile initiatorProfile = MonDB.getProfile(initiator);
-            Profile recipientProfile = MonDB.getProfile(recipient);
+            Profile initiatorProfile = Database.GetProfile(initiator);
+            Profile recipientProfile = Database.GetProfile(recipient);
 
             if (initiatorProfile == null)
             {
@@ -75,8 +97,8 @@ namespace FChatDicebot.InteractionProcessors
         /// </summary>
         protected void IncrementBothCounts(string initiator, string recipient, string countLabel)
         {
-            MonDB.incrementCount(initiator, countLabel);
-            MonDB.incrementCount(recipient, countLabel);
+            Database.IncrementCount(initiator, countLabel);
+            Database.IncrementCount(recipient, countLabel);
         }
 
         /// <summary>
@@ -85,8 +107,8 @@ namespace FChatDicebot.InteractionProcessors
         /// </summary>
         protected string IncrementBothCountsWithRateLimit(string initiator, string recipient, string countLabel, TimeSpan rateLimit)
         {
-            bool initiatorCounted = MonDB.IncrementCountWithRateLimit(initiator, countLabel, rateLimit);
-            bool recipientCounted = MonDB.IncrementCountWithRateLimit(recipient, countLabel, rateLimit);
+            bool initiatorCounted = Database.IncrementCountWithRateLimit(initiator, countLabel, rateLimit);
+            bool recipientCounted = Database.IncrementCountWithRateLimit(recipient, countLabel, rateLimit);
 
             return GetRateLimitMessage(initiator, recipient, initiatorCounted, recipientCounted);
         }
@@ -98,8 +120,8 @@ namespace FChatDicebot.InteractionProcessors
         protected string IncrementDifferentCountsWithRateLimit(string initiator, string recipient,
             string initiatorLabel, string recipientLabel, TimeSpan rateLimit)
         {
-            bool initiatorCounted = MonDB.IncrementCountWithRateLimit(initiator, initiatorLabel, rateLimit);
-            bool recipientCounted = MonDB.IncrementCountWithRateLimit(recipient, recipientLabel, rateLimit);
+            bool initiatorCounted = Database.IncrementCountWithRateLimit(initiator, initiatorLabel, rateLimit);
+            bool recipientCounted = Database.IncrementCountWithRateLimit(recipient, recipientLabel, rateLimit);
 
             return GetRateLimitMessage(initiator, recipient, initiatorCounted, recipientCounted);
         }
@@ -109,8 +131,8 @@ namespace FChatDicebot.InteractionProcessors
         /// </summary>
         private string GetRateLimitMessage(string initiator, string recipient, bool initiatorCounted, bool recipientCounted)
         {
-            Profile initiatorProfile = MonDB.getProfile(initiator);
-            Profile recipientProfile = MonDB.getProfile(recipient);
+            Profile initiatorProfile = Database.GetProfile(initiator);
+            Profile recipientProfile = Database.GetProfile(recipient);
 
             if (!initiatorCounted && !recipientCounted)
             {
@@ -137,8 +159,8 @@ namespace FChatDicebot.InteractionProcessors
         /// </summary>
         protected void IncrementDifferentCounts(string initiator, string recipient, string initiatorLabel, string recipientLabel)
         {
-            MonDB.incrementCount(initiator, initiatorLabel);
-            MonDB.incrementCount(recipient, recipientLabel);
+            Database.IncrementCount(initiator, initiatorLabel);
+            Database.IncrementCount(recipient, recipientLabel);
         }
     }
 }

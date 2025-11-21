@@ -82,7 +82,7 @@ namespace FChatDicebot.BotCommands
                             }
                         }
                         
-                        Timer workTimer = new Timer();
+                        CoolDown workTimer = new CoolDown();
                         workTimer.timerEnd = DateTime.UtcNow.Date.AddDays(1);
                         if (userProfile.timers.ContainsKey("work"))
                         {

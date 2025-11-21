@@ -29,35 +29,35 @@ namespace FChatDicebot
                 // NOTE: kiss, cuddle, handhold, and mark have been migrated to the new system
                 // They're commented out below but left for reference
                 
-                /*case "kiss":
-                    MonDB.incrementCount(initiator, "kiss");
-                    MonDB.incrementCount(recipient, "kiss");
-                    returnString = "kiss";
-                    break;
-                case "cuddle":
-                    MonDB.incrementCount(initiator, "cuddle");
-                    MonDB.incrementCount(recipient, "cuddle");
-                    returnString = "cuddle";
-                    break;
-                case "handhold":
-                    MonDB.incrementCount(initiator, "handhold");
-                    MonDB.incrementCount(recipient, "handhold");
-                    returnString = "handhold";
-                    break;*/
-                case "spank":
-                    MonDB.incrementCount(initiator, "spankgive");
-                    MonDB.incrementCount(recipient, "spanktake");
-                    returnString = "spank";
-                    break;
-                case "bully":
-                    MonDB.incrementCount(initiator, "bullygive");
-                    MonDB.incrementCount(recipient, "bullytake");
-                    returnString = "spank";
-                    break;
+                //case "kiss":
+                //    MonDB.incrementCount(initiator, "kiss");
+                //    MonDB.incrementCount(recipient, "kiss");
+                //    returnString = "kiss";
+                //    break;
+                //case "cuddle":
+                //    MonDB.incrementCount(initiator, "cuddle");
+                //    MonDB.incrementCount(recipient, "cuddle");
+                //    returnString = "cuddle";
+                //    break;
+                //case "handhold":
+                //    MonDB.incrementCount(initiator, "handhold");
+                //    MonDB.incrementCount(recipient, "handhold");
+                //    returnString = "handhold";
+                //    break;
+                //case "spank":
+                //    MonDB.incrementCount(initiator, "spankgive");
+                //    MonDB.incrementCount(recipient, "spanktake");
+                //    returnString = "spank";
+                //    break;
+                //case "bully":
+                //    MonDB.incrementCount(initiator, "bullygive");
+                //    MonDB.incrementCount(recipient, "bullytake");
+                //    returnString = "spank";
+                //    break;
                 case "rename":
                     MonDB.addInteraction(toPlay.pendingInteraction);
                     Profile renameProfile = MonDB.getProfile(recipient);
-                    Timer renameTimer = new Timer();
+                    CoolDown renameTimer = new CoolDown();
                     renameTimer.timerEnd = DateTime.UtcNow.Date.AddDays(7); 
                     renameProfile.displayName = "[s]" + recipient + "[/s] " + toPlay.pendingInteraction.extraParameters.FirstOrDefault().AsString;
                     renameProfile.timers["rename"] = renameTimer;
@@ -67,7 +67,7 @@ namespace FChatDicebot
                 case "monsterize":
                     MonDB.addInteraction(toPlay.pendingInteraction);
                     Profile monsterizeProfile = MonDB.getProfile(recipient);
-                    Timer monsterizeTimer = new Timer();
+                    CoolDown monsterizeTimer = new CoolDown();
                     monsterizeTimer.timerEnd = DateTime.UtcNow.Date.AddDays(7);
                     monsterizeProfile.characteristics["monster"] = toPlay.pendingInteraction.identifier;
                     monsterizeProfile.timers["monsterize"] = monsterizeTimer;
@@ -77,7 +77,7 @@ namespace FChatDicebot
                 case "petrify":
                     MonDB.addInteraction(toPlay.pendingInteraction);
                     Profile petrifyProfile = MonDB.getProfile(recipient);
-                    Timer petrifyTimer = new Timer();
+                    CoolDown petrifyTimer = new CoolDown();
                     petrifyTimer.timerEnd = DateTime.UtcNow.Date.AddDays(1);
                     petrifyProfile.characteristics["petrifylocation"] = toPlay.pendingInteraction.identifier;
                     petrifyProfile.timers["petrify"] = petrifyTimer;
@@ -87,7 +87,7 @@ namespace FChatDicebot
                 case "plant":
                     MonDB.addInteraction(toPlay.pendingInteraction);
                     Profile plantProfile = MonDB.getProfile(recipient);
-                    Timer plantTimer = new Timer();
+                    CoolDown plantTimer = new CoolDown();
                     plantTimer.timerEnd = DateTime.UtcNow.Date.AddDays(1);
                     plantProfile.characteristics["plantType"] = toPlay.pendingInteraction.identifier;
                     plantProfile.timers["plant"] = plantTimer;
@@ -97,7 +97,7 @@ namespace FChatDicebot
                 case "objectify":
                     MonDB.addInteraction(toPlay.pendingInteraction);
                     Profile objectifyProfile = MonDB.getProfile(recipient);
-                    Timer objectifyTimer = new Timer();
+                    CoolDown objectifyTimer = new CoolDown();
                     objectifyTimer.timerEnd = DateTime.UtcNow.Date.AddDays(1);
                     objectifyProfile.characteristics["objectType"] = toPlay.pendingInteraction.identifier;
                     objectifyProfile.timers["objectify"] = objectifyTimer;
@@ -107,7 +107,7 @@ namespace FChatDicebot
                 case "employ":
                     MonDB.addInteraction(toPlay.pendingInteraction);
                     Profile employProfile = MonDB.getProfile(recipient);
-                    Timer employTimer = new Timer();
+                    CoolDown employTimer = new CoolDown();
                     employTimer.timerEnd = DateTime.UtcNow.Date.AddDays(1);
                     employProfile.characteristics["job"] = toPlay.pendingInteraction.identifier;
                     employProfile.characteristics["employer"] = toPlay.pendingInteraction.initiator;
@@ -123,7 +123,7 @@ namespace FChatDicebot
                     string bondRecipientListName = "bond" + toPlay.pendingInteraction.identifier + "received";
                     List<string> bondInitiatedList = new List<string>();
                     List<string> bondReceivedList = new List<string>();
-                    Timer bondTimer = new Timer();
+                    CoolDown bondTimer = new CoolDown();
                     bondTimer.timerEnd = DateTime.UtcNow.Date.AddDays(1);
                     if (bondInitiatorProfile.lists.ContainsKey(bondInitiatorListName))
                     {
@@ -146,7 +146,7 @@ namespace FChatDicebot
                 case "consume":
                     MonDB.addInteraction(toPlay.pendingInteraction);
                     Profile consumeProfile = MonDB.getProfile(recipient);
-                    Timer consumeTimer = new Timer();
+                    CoolDown consumeTimer = new CoolDown();
                     consumeTimer.timerEnd = DateTime.UtcNow.Date.AddDays(1);
                     consumeProfile.timers["consume"] = consumeTimer;
                     MonDB.setProfile(recipient, consumeProfile);

@@ -67,7 +67,7 @@ namespace FChatDicebot.InteractionProcessors
             }
 
             // Set cooldown timer (1 day)
-            Timer markTimer = new Timer();
+            CoolDown markTimer = new CoolDown();
             markTimer.timerEnd = DateTime.UtcNow.Date.AddDays(1);
             recipientProfile.timers["mark"] = markTimer;
 

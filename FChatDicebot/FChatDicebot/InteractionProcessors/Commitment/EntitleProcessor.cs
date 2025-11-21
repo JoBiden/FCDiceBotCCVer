@@ -53,7 +53,7 @@ namespace FChatDicebot.InteractionProcessors
             // Check cooldown on receiving titles
             if (recipientProfile.timers != null && recipientProfile.timers.ContainsKey("entitle"))
             {
-                Timer entitleTimer = recipientProfile.timers["entitle"];
+                CoolDown entitleTimer = recipientProfile.timers["entitle"];
                 if (DateTime.UtcNow < entitleTimer.timerEnd)
                 {
                     TimeSpan remaining = entitleTimer.timerEnd - DateTime.UtcNow;
@@ -92,7 +92,7 @@ namespace FChatDicebot.InteractionProcessors
             recipientProfile.titles.Add(newTitle);
 
             // Set cooldown timer (1 day) on receiving titles
-            Timer entitleTimer = new Timer();
+            CoolDown entitleTimer = new CoolDown();
             entitleTimer.timerEnd = DateTime.UtcNow.Date.AddDays(1);
             recipientProfile.timers["entitle"] = entitleTimer;
 

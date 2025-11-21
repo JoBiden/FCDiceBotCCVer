@@ -80,7 +80,7 @@ namespace FChatDicebot.BotCommands
                             }
                         }
 
-                        Timer volunteerTimer = new Timer();
+                        CoolDown volunteerTimer = new CoolDown();
                         volunteerTimer.timerEnd = DateTime.UtcNow.Date.AddDays(1);
                         if (userProfile.timers.ContainsKey("volunteer"))
                         {
