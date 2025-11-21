@@ -21,20 +21,24 @@ namespace FChatDicebot.BotCommands
         public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
         {
             List<string> generalCommands = new List<string>() 
-            { 
-                "!dossier",
+            {
+                "!dossier [sub]!profile[/sub] ",
+                "!work [sub]!w[/sub]",
+                "!volunteer [sub]!v[/sub]",
+                "!bank",
                 "!botinfo",
                 "!uptime",
                 "!help",
-                "!category",
-                "!identifier",
+                "!category [sub]!list[/sub] ",
+                "!identifier [sub]!whatis[/sub]",
                 "!joinchateau",
-                "!modmessage"
+                "!modmessage",
+                "!setmark"
             };
 
             List<string> roomCommands = new List<string>()
             {
-                "!consent"
+                "!consent [sub]!c[/sub] "
             };
 
             List<string> casualCommands = new List<string>()
@@ -50,7 +54,8 @@ namespace FChatDicebot.BotCommands
             {
                 "!dressup",
                 "!feed",
-                "!golden"
+                "!golden",
+                "!pay"
             };
 
             List<string> commitmentCommands = new List<string>()
@@ -59,14 +64,17 @@ namespace FChatDicebot.BotCommands
                 "!petrify",
                 "!plant",
                 "!objectify",
-                "!consume"
+                "!consume",
+                "!mark",
+                "!employ",
+                "!bond"
             };
 
             List<string> consequenceCommands = new List<string>()
             {
                 "!rename"
             };
-            string messageText = "These are all of the commands native to the [user]Chateau Contract[/user] bot, as of [b]September 24th 2023.[/b] For detailed description of their use, please see the [user]Chateau Contract[/user] profile.\n\n" +
+            string messageText = "These are all of the commands native to the [user]Chateau Contract[/user] bot, as of [b]November 4th 2025.[/b] For detailed description of their use, please see the [user]Chateau Contract[/user] profile. Commands in subtext are alternate names of the same command - all documentation will be for the first listed names.\n\n" +
                     "[u]Does not require channel[/u]\n" +
                     Utils.sortedListDisplayText(generalCommands) + "\n\n" +         
                     "[u]Requires channel[/u]\n" +
@@ -84,17 +92,15 @@ namespace FChatDicebot.BotCommands
             if(Utils.IsCharacterAdmin(bot.AccountSettings.AdminCharacters, command.characterName))
             {
                 messageText += "\n[b]Admin only Commands [/b](no channel req)\n" +
-                    "None yet :)\n";
+                    "!namechange [old profile in user tag] \"new profile in quotes\" - updates the database to reflect a user who has changed their Flist username. CaSe SeNsItIvE \n";
             }
 
-            if (!commandController.MessageCameFromChannel(channel))
+            if (commandController.MessageCameFromChannel(channel))
             {
-                bot.SendPrivateMessage(messageText + "\nMost of [user]Chateau Contract[/user]'s functions are designed for use in the [session=Château Contract]adh-ac1885cd73f31adfaefb[/session] channel. Be sure to !joinchateau if you plan to stick around ♥", characterName);
+                bot.SendMessageInChannel("We've messaged the requested help directly to you, " + command.characterName + ". In the future you can message this profile directly to avoid cluttering the public channel. Thank you~", channel);
+                
             }
-            else
-            {
-                bot.SendMessageInChannel(messageText, channel);
-            }
+            bot.SendPrivateMessage(messageText + "\nMost of [user]Chateau Contract[/user]'s functions are designed for use in the [session=Château Contract]adh-ac1885cd73f31adfaefb[/session] channel. Be sure to !joinchateau if you plan to stick around ♥", characterName);
         }
     }
 }

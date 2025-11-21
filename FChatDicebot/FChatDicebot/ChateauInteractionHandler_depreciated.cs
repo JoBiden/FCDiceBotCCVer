@@ -1,4 +1,4 @@
-using FChatDicebot.Model;
+﻿using FChatDicebot.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,22 +14,9 @@ namespace FChatDicebot
             string initiator = toPlay.pendingInteraction.initiator;
             string recipient = toPlay.pendingInteraction.recipient;
             string returnString = "NoInteraction";
-            
-            // NEW: Try to use the new processor system first
-            var processor = InteractionProcessors.InteractionProcessorRegistry.GetProcessor(toPlay.pendingInteraction.type);
-            if (processor != null)
-            {
-                return processor.ProcessInteraction(toPlay);
-            }
-            
-            // FALLBACK: Use old switch statement for interactions not yet migrated
-            // As we migrate interactions, we can remove them from this switch
             switch (toPlay.pendingInteraction.type)
             {
-                // NOTE: kiss, cuddle, handhold, and mark have been migrated to the new system
-                // They're commented out below but left for reference
-                
-                /*case "kiss":
+                case "kiss":
                     MonDB.incrementCount(initiator, "kiss");
                     MonDB.incrementCount(recipient, "kiss");
                     returnString = "kiss";
@@ -43,7 +30,7 @@ namespace FChatDicebot
                     MonDB.incrementCount(initiator, "handhold");
                     MonDB.incrementCount(recipient, "handhold");
                     returnString = "handhold";
-                    break;*/
+                    break;
                 case "spank":
                     MonDB.incrementCount(initiator, "spankgive");
                     MonDB.incrementCount(recipient, "spanktake");
@@ -159,25 +146,25 @@ namespace FChatDicebot
                     MonDB.setProfile(recipient, dressupProfile);
                     returnString = "dressup";
                     break;
-                //case "mark":
-                //    string listname = toPlay.pendingInteraction.identifier + "marks"; //which mark list is added to is defined by the identifier
-                //    List<string> markList = new List<string>();
-                //    MonDB.addInteraction(toPlay.pendingInteraction);
-                //    Profile markProfile = MonDB.getProfile(recipient);
-                //    if (markProfile.lists.ContainsKey(listname)){
-                //        markList = markProfile.lists[listname];
-                //    }
-                //    markList.Add(initiator);
-                //    if (!markProfile.characteristics.ContainsKey("queenMark") && initiator == "Queen Contract") {
-                //        markProfile.characteristics["queenMark"] = "[eicon]qcmark[/eicon]";
-                //    }
-                //    markProfile.lists[listname] = markList;
-                //    Timer markTimer = new Timer();
-                //    markTimer.timerEnd = DateTime.UtcNow.Date.AddDays(1);
-                //    markProfile.timers["mark"] = markTimer;
-                //    MonDB.setProfile(recipient, markProfile);
-                //    returnString = "mark";
-                //    break;
+                case "mark":
+                    string listname = toPlay.pendingInteraction.identifier + "marks"; //which mark list is added to is defined by the identifier
+                    List<string> markList = new List<string>();
+                    MonDB.addInteraction(toPlay.pendingInteraction);
+                    Profile markProfile = MonDB.getProfile(recipient);
+                    if (markProfile.lists.ContainsKey(listname)){
+                        markList = markProfile.lists[listname];
+                    }
+                    markList.Add(initiator);
+                    if (!markProfile.characteristics.ContainsKey("queenMark") && initiator == "Queen Contract") {
+                        markProfile.characteristics["queenMark"] = "[eicon]qcmark[/eicon]";
+                    }
+                    markProfile.lists[listname] = markList;
+                    Timer markTimer = new Timer();
+                    markTimer.timerEnd = DateTime.UtcNow.Date.AddDays(1);
+                    markProfile.timers["mark"] = markTimer;
+                    MonDB.setProfile(recipient, markProfile);
+                    returnString = "mark";
+                    break;
                 case "feed":
                     MonDB.addInteraction(toPlay.pendingInteraction);
                     Profile feedProfile = MonDB.getProfile(recipient);

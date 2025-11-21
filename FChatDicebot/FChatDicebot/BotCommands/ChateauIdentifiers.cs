@@ -39,6 +39,7 @@ namespace FChatDicebot.BotCommands
                 { "location", "Locations" },
                 { "monster", "Monsters" },
                 { "bodypart", "Bodyparts" },
+                { "bond", "Bonds" },
             };
             Dictionary<string, string> subCategoryDisplay = new Dictionary<string, string>
             {
@@ -68,6 +69,21 @@ namespace FChatDicebot.BotCommands
                 { "worm", "Worm-Like Monsters" },
                 { "undead", "Undead Monsters" },
                 { "construct", "Construct Monsters" },
+                { "perfume", "Naturally Aromatic Monsters" },
+                { "horned", "Horned Monsters" },
+                { "flight", "Flying Monsters" },
+                { "feathered", "Feathered Monsters" },
+                { "corrupt", "Corrupt Monsters" },
+                { "holy", "Holy Monsters" },
+                { "carapace", "Naturally Armored Monsters" },
+                { "poison", "Toxic Monsters" },
+                { "mount", "Mountable Monsters" },
+                { "nocturnal", "Monsters of the Night" },
+                { "cutting", "Monsters with Natural Blades" },
+                { "intangible", "Intangible Monsters" },
+                { "electric", "Electric Monsters" },
+                { "fiery", "Fiery Monsters" },
+
             };
             string lowerTerm = string.Empty;
             if (terms.FirstOrDefault() != null)

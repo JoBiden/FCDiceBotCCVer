@@ -52,7 +52,7 @@ namespace FChatDicebot.BotCommands
             }
             if (valid)
             {
-                string message = initiatorProfile.displayName + " is going to transform " + recipientProfile.displayName + " into a " + monsterType + "! [b]This should not be taken lightly, and can not be done frequently.[/b] Do you !consent to your new form?";
+                string message = initiatorProfile.displayName + " is going to transform " + recipientProfile.displayName + " into " + Utils.AnOrA(monsterType) + " " + monsterType + "! [b]This should not be taken lightly, and can not be done frequently.[/b] Do you !consent to your new form?";
 
                 Interaction monsterize = new Interaction();
                 monsterize.initiator = characterName;

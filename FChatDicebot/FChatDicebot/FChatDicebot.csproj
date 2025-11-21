@@ -157,7 +157,24 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BotCommandController.cs" />
-    <Compile Include="BotCommands\C.cs" />
+    <Compile Include="BotCommands\ChateauBond.cs" />
+    <Compile Include="BotCommands\ChateauAdminRename.cs" />
+    <Compile Include="BotCommands\ChateauBank.cs" />
+    <Compile Include="BotCommands\ChateauPay.cs" />
+    <Compile Include="BotCommands\ChateauSetTitle.cs" />
+    <Compile Include="BotCommands\ChateauSystemTitles.cs" />
+    <Compile Include="BotCommands\ChateauTitles.cs" />
+    <Compile Include="BotCommands\ChateauVolunteer.cs" />
+    <Compile Include="BotCommands\ChateauV.cs" />
+    <Compile Include="BotCommands\ChateauWork.cs" />
+    <Compile Include="BotCommands\ChateauW.cs" />
+    <Compile Include="BotCommands\ChateauEmploy.cs" />
+    <Compile Include="BotCommands\ChateauMark.cs" />
+    <Compile Include="BotCommands\ChateauList.cs" />
+    <Compile Include="BotCommands\ChateauSetmark.cs" />
+    <Compile Include="BotCommands\ChateauWhatis.cs" />
+    <Compile Include="BotCommands\ChateauProfile.cs" />
+    <Compile Include="BotCommands\ChateauC.cs" />
     <Compile Include="BotCommands\ChateauGolden.cs" />
     <Compile Include="BotCommands\ChateauFeed.cs" />
     <Compile Include="BotCommands\ChateauDressup.cs" />
@@ -178,6 +195,7 @@
     <Compile Include="BotCommands\ChateauDossier.cs" />
     <Compile Include="BotCommands\Accept.cs" />
     <Compile Include="BotCommands\ChateauHelp.cs" />
+    <Compile Include="BotCommands\ChateauEntitle.cs" />
     <Compile Include="BotCommands\JoinChateau.cs" />
     <Compile Include="BotCommands\CombinedCommands\GetRandomPotion.cs" />
     <Compile Include="BotCommands\GeneratePotionInfo.cs" />
@@ -283,6 +301,20 @@
     <Compile Include="BotCommands\FitD.cs" />
     <Compile Include="BotCommands\Roll.cs" />
     <Compile Include="ChateauInteractionHandler.cs" />
+    <Compile Include="InteractionCountMigration.cs" />
+    <Compile Include="InteractionProcessors\Casual\BullyProcessor.cs" />
+    <Compile Include="InteractionProcessors\Casual\CuddleProcessor.cs" />
+    <Compile Include="InteractionProcessors\Casual\HandholdProcessor.cs" />
+    <Compile Include="InteractionProcessors\Casual\KissProcessor.cs" />
+    <Compile Include="InteractionProcessors\Casual\SpankProcessor.cs" />
+    <Compile Include="InteractionProcessors\Commitment\EntitleProcessor.cs" />
+    <Compile Include="InteractionProcessors\Commitment\MarkProcessor.cs" />
+    <Compile Include="InteractionProcessors\IInteractionProcessor.cs" />
+    <Compile Include="InteractionProcessors\InteractionProcessorBase.cs" />
+    <Compile Include="InteractionProcessors\InteractionProcessorRegistry.cs" />
+    <Compile Include="InteractionProcessors\Involved\DressupProcessor.cs" />
+    <Compile Include="InteractionProcessors\Involved\FeedProcessor.cs" />
+    <Compile Include="InteractionProcessors\Involved\ProcessorGolden.cs" />
     <Compile Include="Model\ChateauDB.cs" />
     <Compile Include="MonDB.cs" />
     <Compile Include="DiceFunctions\VcChipOrder.cs" />

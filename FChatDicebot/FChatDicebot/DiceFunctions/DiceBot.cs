@@ -75,12 +75,12 @@ namespace FChatDicebot.DiceFunctions
 
             PossibleGames = new List<IGame>() { new HighRoll(), new Poker(), new BottleSpin(), new Roulette(), new KingsGame(), new LiarsDice(), new Pokergame(), new SlamRoll(), new Blackjack(), new RockPaperScissors() };
 
-            LoadChipPilesFromDisk(BotMain.FileFolder, BotMain.SavedChipsFileName);
-            LoadCharacterDataFromDisk(BotMain.FileFolder, BotMain.CharacterDataFileName);
-            LoadVcChipOrderDataFromDisk(BotMain.FileFolder, BotMain.VcChipOrdersFileName);
+            //LoadChipPilesFromDisk(BotMain.FileFolder, BotMain.SavedChipsFileName);
+            //LoadCharacterDataFromDisk(BotMain.FileFolder, BotMain.CharacterDataFileName);
+            //LoadVcChipOrderDataFromDisk(BotMain.FileFolder, BotMain.VcChipOrdersFileName);
 
-            Utils.AddToLog(" ", "FINISHED DICE BOT LOAD :: Chip Piles found " + ChipPiles.Count() + "... Character Datas found " + CharacterDatas.Count());
-            Console.WriteLine("FINISHED DICE BOT LOAD :: Chip Piles found " + ChipPiles.Count() + "... Character Datas found " + CharacterDatas.Count() );
+            //Utils.AddToLog(" ", "FINISHED DICE BOT LOAD :: Chip Piles found " + ChipPiles.Count() + "... Character Datas found " + CharacterDatas.Count());
+            //Console.WriteLine("FINISHED DICE BOT LOAD :: Chip Piles found " + ChipPiles.Count() + "... Character Datas found " + CharacterDatas.Count() );
         }
 
         private void LoadChipPilesFromDisk(string fileFolder, string fileName)

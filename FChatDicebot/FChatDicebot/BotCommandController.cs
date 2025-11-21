@@ -286,6 +286,36 @@ namespace FChatDicebot
             return null;
         }
 
+        public string GetEIconFromCommandTerms(string[] terms)
+        {
+            bool isEIcon = false;
+            string EIcon = "";
+            if (terms != null)
+            {
+                foreach (string term in terms)
+                {
+                    if (isEIcon)
+                    {
+                        EIcon += " " + term;
+                    }
+
+                    if (term.StartsWith("[eicon]"))
+                    {
+                        isEIcon = true;
+                        EIcon = term;
+                    }
+
+                    if (term.EndsWith("[/eicon]"))
+                    {
+                        isEIcon = false;
+                        Utils.SanitizeInput(EIcon);
+                        return EIcon;
+                    }
+                }
+            }
+            return null;
+        }
+
         public string GetQuotedTextFromCommandTerms(string[] terms)
         {
             bool isInQuotes = false;
@@ -323,7 +353,7 @@ namespace FChatDicebot
 
             if (terms != null)
             {
-                Utils.LowercaseStrings(terms);
+                terms = Utils.LowercaseStrings(terms);
                 foreach (string term in terms)
                 {
                     foreach (Identifier identifierType in typeList)
@@ -336,6 +366,27 @@ namespace FChatDicebot
                 }
             }
             return null;
+        }
+
+        public string[] GetIntsFromCommandTermsAsStrings(string[] terms)
+        {
+            List<string> intTerms = new List<string>();
+            foreach (string term in terms)
+            {
+                int outNumber = 0;
+                if (Int32.TryParse(term, out outNumber))
+                {
+                    intTerms.Add(term);
+                }
+            }
+            if (intTerms.Count > 0)
+            {
+                return intTerms.ToArray();
+            }
+            else
+            {
+                return null;
+            }
         }
 
         public void SaveCharacterDataToDisk()

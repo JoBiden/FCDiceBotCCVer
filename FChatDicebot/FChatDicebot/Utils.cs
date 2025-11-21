@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.NetworkInformation;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web;
@@ -303,6 +304,252 @@ namespace FChatDicebot
             returnString = CombineStringArray(inputs);
 
             return returnString;
+        }
+
+        public static string GetInteractionDescription(Interaction interaction)
+        {
+            string returnText = null;
+            Profile initiator = MonDB.getProfile(interaction.initiator);
+            Profile recipient = MonDB.getProfile(interaction.recipient);
+            switch (interaction.type)
+            {
+                //involved
+                
+                case "climaxfor":
+                    returnText = initiator.displayName + " pleasured " + recipient.displayName + " until they reached the peaks of pleasure and climaxed beautifully.";
+                    break;
+                case "dressup":
+                    returnText = initiator.displayName + " dressed up " + recipient.displayName + " in " + Utils.AttireToText(interaction.identifier) + ".";
+                    break;
+                case "feed":
+                    returnText = initiator.displayName + " fed " + recipient.displayName + " some " + Utils.SubstanceToText(interaction.identifier) + ".";
+                    break;
+                case "golden":
+                    returnText = initiator.displayName + " relieved themselves on " + recipient.displayName + "'s " + Utils.BodypartToText(interaction.identifier) + ".";
+                    break;
+                case "milk":
+                    returnText = initiator.displayName + " milked " + recipient.displayName + ", presumably until they were empty.";
+                    break;
+                case "pay":
+                    returnText = initiator.displayName + " payed " + recipient.displayName + " an undisclosed amount [spoiler]If this has finally been implemented, tell [user]Queen Contract[/user] to update Utils.GetInteractionDescription so this displays the actual amount[/spoiler] of " + interaction.identifier + ".";
+                    break;
+                //case "pledge":
+                //returnText = initiator.displayName + " pledged to one day " + interaction.identifier + " with " + recipient.displayName;
+                //break;
+                //Commitment
+                case "bond":
+                    string initiatorBond = Utils.BondToText(interaction.identifier, true);
+                    string recipientBond = Utils.BondToText(interaction.identifier, false);
+                    returnText = initiator.displayName + " and " + recipient.displayName + " declared themselves as ";
+                    if (initiatorBond == recipientBond)
+                    {
+                        returnText += Utils.BondToPlural(interaction.identifier, true);
+                    }
+                    else
+                    {
+                        returnText += recipientBond + " and " + initiatorBond;
+                    }
+                    returnText += ".";
+                    break;
+                case "breed":
+                    returnText = initiator.displayName + " bred " + recipient.displayName + " full of " + interaction.identifier + ".";
+                    break;
+                case "consume":
+                    returnText = initiator.displayName + " in some way devoured " + recipient.displayName + ".";
+                    break;
+                case "corrupt":
+                    returnText = initiator.displayName + " corrupted " + recipient.displayName + ".";
+                    break;
+                case "employ":
+                    if (initiator.displayName == recipient.displayName)
+                    {
+                        returnText = initiator.displayName + " pronounced themselves self employed with the title of " + Utils.JobToText(interaction.identifier) + ".";
+                    }
+                    else
+                    {
+                        returnText = initiator.displayName + " employed " + recipient.displayName + " as their " + Utils.JobToText(interaction.identifier) + ".";
+                    }
+                    break;
+                case "entitle":
+                    returnText = initiator.displayName + " gave " + recipient.displayName + " the publically recognized title of " + interaction.identifier + ".";
+                    break;
+                case "mark":
+                    returnText = initiator.displayName + " marked " + recipient.displayName + " on their " + interaction.identifier + " for all to see.";
+                    break;
+                case "monsterize":
+                    returnText = initiator.displayName + " transformed " + recipient.displayName + ", marking the beginning of their new life as " + Utils.AnOrA(interaction.identifier) + " " + interaction.identifier + ".";
+                    break;
+                case "objectify":
+                    returnText = initiator.displayName + " turned " + recipient.displayName + " into an inanimate " + Utils.ObjectToText(interaction.identifier) + ".";
+                    break;
+                case "petrify":
+                    returnText = initiator.displayName + " petrified " + recipient.displayName + " to be displayed " + Utils.LocationToText(interaction.identifier, initiator.displayName, recipient.displayName) + ".";
+                    break;
+                case "plant":
+                    returnText = initiator.displayName + " planted " + recipient.displayName + " as " + Utils.AnOrA(interaction.identifier) + " " + interaction.identifier + ".";
+                    break;
+                case "train":
+                    returnText = initiator.displayName + " taught " + recipient.displayName + " how to " + Utils.TrainingToText(interaction.identifier) + ".";
+                    break;
+                //consequence
+                case "break":
+                    returnText = initiator.displayName + " utterly broke " + ".";
+                    break;
+                case "curse":
+                    returnText = initiator.displayName + " cursed " + recipient.displayName + ".";
+                    break;
+                case "dose":
+                    returnText = initiator.displayName + " dosed " + recipient.displayName + " with addictive " + interaction.identifier + ".";
+                    break;
+                case "infest":
+                    returnText = initiator.displayName + " infested " + recipient.displayName + " with contagious " + interaction.identifier + ".";
+                    break;
+                case "odorize":
+                    returnText = initiator.displayName + " odorized " + recipient.displayName + " so they utterly reek of " + interaction.identifier + ".";
+                    break;
+                case "rename":
+                    returnText = initiator.displayName + " gave " + recipient.displayName + " their new name.";
+                    break;
+            }
+            return returnText;
+        }
+
+        public static string TrainingToText(string training)
+        {
+            Dictionary<string, string> objectText = new Dictionary<string, string>
+                    {
+                        { "anal", "comfortably take it up the ass" },
+                        { "corset", "wear a corset as tight as possible" },
+                        { "dance", "dance" },
+                        { "deepthroat", "deepthroat" },
+                        { "flight", "fly" },
+                        { "heel", "wear high heels" },
+                        { "instrument", "play an instrument" },
+                        { "magic", "use magic" },
+                        { "mathematics", "do mathematics" },
+                        { "obedience", "happily do as they're told" },
+                        { "ponygirl", "behave and dress as a pony" }
+                    };
+            if (objectText.ContainsKey(training))
+            {
+                return objectText[training];
+            }
+            else
+            {
+                return "curiosity [spoiler]that means [user]Queen Contract[/user] needs to update Utils.ObjectToText to include " + training + ", go tell her to fix it!";
+            };
+        }
+
+        public static string ObjectToText(string objectType)
+        {
+            Dictionary<string, string> objectText = new Dictionary<string, string>
+                    {
+                        { "book", "book" },
+                        { "building", "building" },
+                        { "clothing", "piece of clothing" },
+                        { "dildo", "dildo" },
+                        { "furniture", "piece of furniture" },
+                        { "onahole", "onahole" },
+                        { "orb", "orb" },
+                        { "painting", "painting" },
+                        { "statue", "statue" },
+                        { "tableware", "piece of tableware" },
+                        { "tool", "tool" },
+                        { "toy", "toy" },
+                        { "trash", "trash" },
+                        { "trinket", "trinket" },
+                        { "vehicle", "vehicle" }
+                    };
+            if (objectText.ContainsKey(objectType))
+            {
+                return objectText[objectType];
+            }
+            else
+            {
+                return "curiosity [spoiler]that means [user]Queen Contract[/user] needs to update Utils.ObjectToText to include " + objectType + ", go tell her to fix it!";
+            };
+        }
+
+        public static string Capitalize(string toCapitalize) 
+            {
+            return toCapitalize.Substring(0, 1).ToUpper() + toCapitalize.Substring(1);
+            }
+
+        public static string JobToText(string job)
+        {
+            Dictionary<string, string> jobText = new Dictionary<string, string>
+                    {
+                        { "adventurer", "Adventurer" },
+                        { "alchemist", "Alchemist" },
+                        { "armcandy", "Piece of Arm Candy" },
+                        { "artist", "Artist" },
+                        { "athlete", "Athlete" },
+                        { "bartender", "Bartender" },
+                        { "bathassistant", "Bath Assistant" },
+                        { "beasthandler", "Beast Handler" },
+                        { "bitch", "Bitch" },
+                        { "bodyguard", "Bodyguard" },
+                        { "breeder", "Breeder" },
+                        { "broodmother", "Broodmother" },
+                        { "brute", "Brute" },
+                        { "boss", "Boss" },
+                        { "builder", "Builder" },
+                        { "caretaker", "Caretaker" },
+                        { "corrupter", "Corrupter" },
+                        { "cocksucker", "Cock Sucker" },
+                        { "cook", "Cook" },
+                        { "cumfactory", "Cum Factory" },
+                        { "cuntlicker", "Cunt Licker" },
+                        { "dealer", "Dealer" },
+                        { "footstool", "Footstool" },
+                        { "fucktoy", "Fuck Toy" },
+                        { "gambler", "Gambler" },
+                        { "gardener", "Gardener" },
+                        { "guest", "Guest" },
+                        { "healer", "Healer" },
+                        { "intern", "Intern" },
+                        { "jester", "Jester" },
+                        { "lapwarmer", "Lap Warmer" },
+                        { "librarian", "Librarian" },
+                        { "livestock", "Livestock" },
+                        { "mage", "Mage" },
+                        { "maid", "Maid" },
+                        { "manabattery", "Mana Battery" },
+                        { "manager", "Manager" },
+                        { "merchant", "Merchant" },
+                        { "milktank", "Milktank" },
+                        { "mount", "Mount" },
+                        { "musician", "Musician" },
+                        { "pet", "Pet" },
+                        { "physicaltrainer", "Physical Trainer" },
+                        { "purifier", "Purifier" },
+                        { "researcher", "Researcher" },
+                        { "royal", "Royal" },
+                        { "scribe", "Scribe" },
+                        { "seat", "Seat" },
+                        { "secretary", "Secretary" },
+                        { "seedbed", "Seedbed" },
+                        { "slave", "Slave" },
+                        { "smith", "Smith" },
+                        { "soothsayer", "Soothsayer" },
+                        { "sponsor", "Sponsor" },
+                        { "storyteller", "Storyteller" },
+                        { "stylist", "Stylist" },
+                        { "tailor", "Tailor" },
+                        { "tinkerer", "Tinkerer" },
+                        { "urinal", "Urinal" },
+                        { "walkingdildo", "Walking Dildo" },
+                        { "whore", "Whore" },
+                        { "worshipper", "Worshipper" },
+                    };
+            if (jobText.ContainsKey(job))
+            {
+                return jobText[job];
+            }
+            else
+            {
+                return "Purveyor of New Professions [spoiler]that means [user]Queen Contract[/user] needs to update Utils.JobToText to include " + job + ", go tell her to fix it!";
+            }
         }
 
         public static string LimitStringToNCharacters(string inputString, int maxCharacters)
@@ -779,7 +1026,8 @@ namespace FChatDicebot
                         { "drug", "sort of drug"},
                         { "drink", "drink"},
                         { "food", "food"},
-                        { "energy", "pure energy"}
+                        { "energy", "pure energy"},
+                        { "milk", "milk"}
                     };
             if (substanceText.ContainsKey(substance))
             {
@@ -802,7 +1050,206 @@ namespace FChatDicebot
                 return bodypart;
             }
         }
-       
 
+        internal static string BondToPlural(string bond, bool initiatorPerspective)
+        {
+            Dictionary<string, string> bondText = new Dictionary<string, string> { };
+            if (initiatorPerspective)
+            {
+                bondText = new Dictionary<string, string>
+                {
+                    { "marriage", "spouses"},
+                    { "offspring", "offspring"},
+                    { "disciple", "disciples"},
+                    { "sibling", "siblings"},
+                    { "piety", "deities"},
+                    { "protection", "wards"},
+                    { "fealty", "lords"},
+                    { "family", "kin"},
+                    { "roommate", "roommates"},
+                    { "coworker", "coworkers"},
+                    { "submission", "submissives"},
+                    { "ally", "allies"},
+                    { "thrall", "thralls"},
+                    { "partner", "partners"},
+                    { "fuckbuddy", "fuckbuddies"},
+                    { "property", "property"},
+                    { "rival", "rivals"},
+                    { "inspiration", "inspirations"},
+                    { "client", "clients"},
+                    { "pet", "pets"}
+                };
+            }
+            else //from recipient perspective
+            {
+                bondText = new Dictionary<string, string>
+                {
+                    { "marriage", "spouses"},
+                    { "offspring", "parents"},
+                    { "disciple", "mentors"},
+                    { "sibling", "siblings"},
+                    { "piety", "devotees"},
+                    { "protection", "protectors"},
+                    { "fealty", "followers"},
+                    { "family", "kin"},
+                    { "roommate", "roommates"},
+                    { "coworker", "coworkers"},
+                    { "submission", "dominants"},
+                    { "ally", "allies"},
+                    { "thrall", "enthrallers"},
+                    { "partner", "partners"},
+                    { "fuckbuddy", "fuckbuddies"},
+                    { "property", "owners"},
+                    { "rival", "rivals"},
+                    { "inspiration", "fans"},
+                    { "client", "vendors"},
+                    { "pet", "leash holders"}
+                };
+            }
+
+            if (bondText.ContainsKey(bond))
+            {
+                return bondText[bond];
+            }
+            else
+            {
+                return "mysterious bonds [spoiler]that means [user]Queen Contract[/user] needs to update Utils.BondToText to include " + bond + ", go tell her to fix it!";
+            }
+        }
+
+        /// <summary>
+        /// Get a comma-separated string of a user's displayed titles for the dossier
+        /// </summary>
+        /// <param name="profile">The profile to get displayed titles from</param>
+        /// <returns>Comma-separated string of formatted titles, or empty string if none</returns>
+        public static string GetDisplayedTitlesText(Profile profile)
+        {
+            if (profile == null || profile.titles == null || profile.titles.Count == 0)
+            {
+                return string.Empty;
+            }
+
+            if (profile.displayedTitleSlots == null || profile.displayedTitleSlots.Length != 9)
+            {
+                return string.Empty;
+            }
+
+            List<string> displayedTitles = new List<string>();
+
+            // Iterate through all 9 slots in order
+            for (int i = 0; i < 9; i++)
+            {
+                int titleIndex = profile.displayedTitleSlots[i];
+
+                // Skip empty slots (-1)
+                if (titleIndex == -1) continue;
+
+                // Validate the index is within bounds
+                if (titleIndex >= 0 && titleIndex < profile.titles.Count)
+                {
+                    displayedTitles.Add(profile.titles[titleIndex].GetFormattedTitle());
+                }
+            }
+
+            if (displayedTitles.Count == 0)
+            {
+                return string.Empty;
+            }
+
+            return string.Join(", ", displayedTitles);
+        }
+
+
+
+
+
+
+
+        internal static string GetDaySuffix(int day)
+        {
+            switch (day)
+            {
+                case 1:
+                case 21:
+                case 31:
+                    return "st";
+                case 2:
+                case 22:
+                    return "nd";
+                case 3:
+                case 23:
+                    return "rd";
+                default:
+                    return "th";
+            }
+        }
+
+        internal static string BondToText(string bond, bool initiatorPerspective)
+        {
+            Dictionary<string, string> bondText = new Dictionary<string, string> { };
+            if (initiatorPerspective)
+            {
+                bondText = new Dictionary<string, string>
+                {
+                    { "marriage", "spouse"},
+                    { "offspring", "offspring"},
+                    { "disciple", "disciple"},
+                    { "sibling", "sibling"},
+                    { "piety", "deity"},
+                    { "protection", "ward"},
+                    { "fealty", "lord"},
+                    { "family", "kin"},
+                    { "roommate", "roommate"},
+                    { "coworker", "coworker"},
+                    { "submission", "submissive"},
+                    { "ally", "ally"},
+                    { "thrall", "thrall"},
+                    { "partner", "partner"},
+                    { "fuckbuddy", "fuckbuddy"},
+                    { "property", "property"},
+                    { "rival", "rival"},
+                    { "inspiration", "inspiration"},
+                    { "client", "client"},
+                    { "subordinate", "boss"},
+                    { "pet", "pet"}
+                };
+            } 
+            else //from recipient perspective
+            {
+                bondText = new Dictionary<string, string>
+                {
+                    { "marriage", "spouse"},
+                    { "offspring", "parent"},
+                    { "disciple", "mentor"},
+                    { "sibling", "sibling"},
+                    { "piety", "devotee"},
+                    { "protection", "protector"},
+                    { "fealty", "follower"},
+                    { "family", "kin"},
+                    { "roommate", "roommate"},
+                    { "coworker", "coworker"},
+                    { "submission", "dominant"},
+                    { "ally", "ally"},
+                    { "thrall", "enthraller"},
+                    { "partner", "partner"},
+                    { "fuckbuddy", "fuckbuddy"},
+                    { "property", "owner"},
+                    { "rival", "rival"},
+                    { "inspiration", "fan"},
+                    { "client", "vendor"},
+                    { "subordinate", "subordinate"},
+                    { "pet", "leash holder"}
+                };
+            }
+                    
+            if (bondText.ContainsKey(bond))
+            {
+                return bondText[bond];
+            }
+            else
+            {
+                return "a mysterious bond [spoiler]that means [user]Queen Contract[/user] needs to update Utils.BondToText to include " + bond + ", go tell her to fix it!";
+            }
+        }
     }
 }

@@ -4,14 +4,18 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using FChatDicebot.BotCommands.Base;
+using FChatDicebot.SavedData;
+using Newtonsoft.Json;
+using FChatDicebot.DiceFunctions;
+using FChatDicebot.Model;
 
 namespace FChatDicebot.BotCommands
 {
-    public class ModMessage : ChatBotCommand
+    public class ChateauV : ChatBotCommand
     {
-        public ModMessage()
+        public ChateauV()
         {
-            Name = "modmessage";
+            Name = "v";
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
             RequireChannel = false;
@@ -20,21 +24,9 @@ namespace FChatDicebot.BotCommands
 
         public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
         {
-            if (terms.Length < 1)
-            {
-                terms =  new string[1];
-                terms[0] = "all";
-            }
-            string messageText = MonDB.modMessage(terms[0]);
-
-            if (!commandController.MessageCameFromChannel(channel))
-            {
-                bot.SendPrivateMessage(messageText, characterName);
-            }
-            else
-            {
-                bot.SendMessageInChannel(messageText, channel);
-            }
+            ChateauVolunteer volunteer = new ChateauVolunteer();
+            volunteer.Run(bot, commandController, rawTerms, terms, characterName, channel, command);
+           
         }
     }
 }

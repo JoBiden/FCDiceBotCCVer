@@ -20,7 +20,7 @@ namespace FChatDicebot
         public const bool _debug = false;
         public const bool _returnAllRecievedChatMessagesFromChannels = false;
         public const bool _testVersion = false;
-        public const string Version = "0.4";
+        public const string Version = "0.5";
 
         public const string FileFolder = "C:\\BotData\\DiceBot";
         public const string LogsFolder = "C:\\BotData\\DiceBot\\logs";

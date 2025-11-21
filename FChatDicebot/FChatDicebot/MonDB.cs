@@ -15,7 +15,7 @@ using MongoDB.Driver.Linq;
 namespace FChatDicebot
 {
 
-    public class MonDB
+    internal class MonDB
     {
 
         static string connectionString = "mongodb://localhost:27017";
@@ -86,16 +86,21 @@ namespace FChatDicebot
 
         internal static void incrementCount(string userName, string countLabel)
         {
+            changeCount(userName, countLabel, 1);
+        }
+
+        internal static void changeCount(string userName, string countLabel, int changeAmount)
+        {
             var collection = monClient.GetDatabase(dbString).GetCollection<Profile>("RegisteredProfiles");
             var filter = Builders<Profile>.Filter.Eq("userName", userName);
             var document = collection.Find(filter).FirstOrDefault();
             if (document.counts.ContainsKey(countLabel))
             {
-                document.counts[countLabel]++;
+                document.counts[countLabel]+= changeAmount;
             }
             else
             {
-                document.counts.Add(countLabel, 1);
+                document.counts.Add(countLabel, changeAmount);
             }
             collection.ReplaceOne(filter, document);
 
@@ -115,11 +120,40 @@ namespace FChatDicebot
             
         }
 
+        internal static void setInteraction(Interaction editedInteraction)
+        {
+            var collection = monClient.GetDatabase(dbString).GetCollection<BsonDocument>("Interactions");
+            var filter = Builders<BsonDocument>.Filter.Eq("_id", editedInteraction.Id);
+            collection.ReplaceOne(filter, editedInteraction.ToBsonDocument());
+        }
+
+        internal static Duty getDuty(string dutyLabel)
+        {
+            var collection = monClient.GetDatabase(dbString).GetCollection<BsonDocument>("Duties");
+            var filter = Builders<BsonDocument>.Filter.Eq("label", dutyLabel);
+            var document = collection.Find(filter).FirstOrDefault();
+            if (document != null)
+            {
+                Duty duty = BsonSerializer.Deserialize<Duty>(document);
+                return duty;
+            } //no document found
+            return null;
+
+        }
+
         internal static void setProfile(string userName, Profile newProfile)
         {
             var collection = monClient.GetDatabase(dbString).GetCollection<BsonDocument>("RegisteredProfiles");
             var filter = Builders<BsonDocument>.Filter.Eq("userName", userName);
             collection.ReplaceOne(filter, newProfile.ToBsonDocument());
+
+        }
+
+        internal static void setDuty(string label, Duty newDuty)
+        {
+            var collection = monClient.GetDatabase(dbString).GetCollection<BsonDocument>("Duties");
+            var filter = Builders<BsonDocument>.Filter.Eq("label", label);
+            collection.InsertOne(newDuty.ToBsonDocument());
 
         }
 
@@ -134,6 +168,34 @@ namespace FChatDicebot
             }
 
             return pendingInteractions;
+        }
+
+        internal static List<Duty> getDutiesByJob(string job)
+        {
+            job = job.ToLower();
+            var collection = monClient.GetDatabase(dbString).GetCollection<BsonDocument>("Duties");
+            var filter = Builders<BsonDocument>.Filter.Eq("job", job); ;
+            var documents = collection.Find(filter).ToList();
+            List<Duty> duties = new List<Duty>();
+            foreach (var document in documents)
+            {
+                duties.Add(BsonSerializer.Deserialize<Duty>(document));
+            }
+            return duties;
+        }
+
+        internal static List<Duty> getDutiesByCategory(string category)
+        {
+            category = category.ToLower();
+            var collection = monClient.GetDatabase(dbString).GetCollection<BsonDocument>("Duties");
+            var filter = Builders<BsonDocument>.Filter.AnyEq("categories", category);
+            var documents = collection.Find(filter).ToList();
+            List<Duty> duties = new List<Duty>();
+            foreach (var document in documents)
+            {
+                duties.Add(BsonSerializer.Deserialize<Duty>(document));
+            }
+            return duties;
         }
 
         internal static List<Identifier> getIdentifiers(string category)
@@ -186,16 +248,194 @@ namespace FChatDicebot
             return collection.CountDocuments(filter);
         }
 
-        internal static void removePending(ObjectId toDelete)
+        internal static void removePendingInteraction(ObjectId idToRemove)
         {
             var collection = monClient.GetDatabase(dbString).GetCollection<BsonDocument>("PendingCommands");
-            var filter = Builders<BsonDocument>.Filter.Eq("_id", toDelete);
+            var filter = Builders<BsonDocument>.Filter.Eq("_id", idToRemove);
             collection.DeleteOne(filter);
         }
 
         internal static void getInteractions(string location)
         {
             throw new NotImplementedException();
+        }
+
+        internal static List<Interaction> getInteractionsByInitiator(string initiator)
+        {
+            var collection = monClient.GetDatabase(dbString).GetCollection<BsonDocument>("Interactions");
+            var filter = Builders<BsonDocument>.Filter.Eq("initiator", initiator);
+            var documents = collection.Find(filter).ToList();
+            List<Interaction> interactions = new List<Interaction>();
+            foreach (BsonDocument document in documents)
+            {
+                interactions.Add(BsonSerializer.Deserialize<Interaction>(document));
+            }
+            return interactions;
+        }
+
+        internal static List<Interaction> getInteractionsByRecipient(string recipient)
+        {
+            var collection = monClient.GetDatabase(dbString).GetCollection<BsonDocument>("Interactions");
+            var filter = Builders<BsonDocument>.Filter.Eq("recipient", recipient);
+            var documents = collection.Find(filter).ToList();
+            List<Interaction> interactions = new List<Interaction>();
+            foreach (BsonDocument document in documents)
+            {
+                interactions.Add(BsonSerializer.Deserialize<Interaction>(document));
+            }
+            return interactions;
+        }
+
+        internal static List<Interaction> getInteractionsByType(string type)
+        {
+            var collection = monClient.GetDatabase(dbString).GetCollection<BsonDocument>("Interactions");
+            var filter = Builders<BsonDocument>.Filter.Eq("type", type);
+            var documents = collection.Find(filter).ToList();
+            List<Interaction> interactions = new List<Interaction>();
+            foreach (BsonDocument document in documents)
+            {
+                interactions.Add(BsonSerializer.Deserialize<Interaction>(document));
+            }
+            return interactions;
+        }
+
+        internal static void addPendingDuty(PendingDuty dutyToAdd)
+        {
+            var collection = monClient.GetDatabase(dbString).GetCollection<BsonDocument>("PendingDuties");
+            collection.InsertOne(dutyToAdd.ToBsonDocument());
+        }
+
+        internal static void removePendingDuty(ObjectId idToRemove)
+        {
+            var collection = monClient.GetDatabase(dbString).GetCollection<BsonDocument>("PendingDuties");
+            var filter = Builders<BsonDocument>.Filter.Eq("_id", idToRemove);
+            collection.DeleteOne(filter);
+        }
+
+        internal static PendingDuty getPendingDuty(string profileName)
+        {
+            var collection = monClient.GetDatabase(dbString).GetCollection<BsonDocument>("PendingDuties");
+            var filter = Builders<BsonDocument>.Filter.Eq("awaitingInputFrom", profileName);
+            var document = collection.Find(filter).FirstOrDefault();
+            if (document != null)
+            {
+                PendingDuty pending = BsonSerializer.Deserialize<PendingDuty>(document);
+                return pending;
+            } //no document found
+            return null;
+
+        }
+
+        internal static string getDisplayName(string userName)
+        {
+            var collection = monClient.GetDatabase(dbString).GetCollection<BsonDocument>("RegisteredProfiles");
+            var filter = Builders<BsonDocument>.Filter.Eq("userName", userName);
+            var projection = Builders<BsonDocument>.Projection.Include("displayName").Include("userName");
+
+            var document = collection.Find(filter).Project(projection).FirstOrDefault();
+
+            if (document != null)
+            {
+                return document.GetValue("displayName").AsString;
+            }
+            return null;
+        }
+
+        internal static Dictionary<string, int> getCurrencies(string userName)
+        {
+            var collection = monClient.GetDatabase(dbString).GetCollection<BsonDocument>("RegisteredProfiles");
+            var filter = Builders<BsonDocument>.Filter.Eq("userName", userName);
+            var projection = Builders<BsonDocument>.Projection.Include("currencies");
+
+            var document = collection.Find(filter).Project(projection).FirstOrDefault();
+
+            if (document != null && document.Contains("currencies"))
+            {
+                return BsonSerializer.Deserialize<Dictionary<string, int>>(document.GetValue("currencies").AsBsonDocument);
+            }
+            return new Dictionary<string, int>();
+        }
+
+        /// <summary>
+        /// Increment a count with rate limiting. Returns true if count was incremented, false if rate limited.
+        /// </summary>
+        /// <param name="userName">User whose count to increment</param>
+        /// <param name="countLabel">The count key to increment</param>
+        /// <param name="rateLimitDuration">How long to wait between increments</param>
+        /// <returns>True if incremented, false if rate limited</returns>
+        internal static bool IncrementCountWithRateLimit(string userName, string countLabel, TimeSpan rateLimitDuration)
+        {
+            var collection = monClient.GetDatabase(dbString).GetCollection<Profile>("RegisteredProfiles");
+            var filter = Builders<Profile>.Filter.Eq("userName", userName);
+            var profile = collection.Find(filter).FirstOrDefault();
+
+            if (profile == null) return false;
+
+            // Check if there's a rate limit timer for this specific count
+            string timerKey = $"ratelimit_{countLabel}";
+
+            if (profile.timers != null && profile.timers.ContainsKey(timerKey))
+            {
+                if (DateTime.UtcNow < profile.timers[timerKey].timerEnd)
+                {
+                    // Still on cooldown, don't increment
+                    return false;
+                }
+            }
+
+            // Not on cooldown - increment count
+            if (profile.counts.ContainsKey(countLabel))
+            {
+                profile.counts[countLabel] += 1;
+            }
+            else
+            {
+                profile.counts.Add(countLabel, 1);
+            }
+
+            // Set new rate limit timer
+            Timer rateLimitTimer = new Timer();
+            rateLimitTimer.timerEnd = DateTime.UtcNow.Add(rateLimitDuration);
+            profile.timers[timerKey] = rateLimitTimer;
+
+            // Save profile
+            collection.ReplaceOne(filter, profile);
+
+            return true;
+        }
+
+        /// <summary>
+        /// Check if a count increment would be rate limited without actually incrementing
+        /// </summary>
+        internal static bool IsCountRateLimited(string userName, string countLabel)
+        {
+            Profile profile = getProfile(userName);
+            if (profile == null) return false;
+
+            string timerKey = $"ratelimit_{countLabel}";
+
+            if (profile.timers != null && profile.timers.ContainsKey(timerKey))
+            {
+                return DateTime.UtcNow < profile.timers[timerKey].timerEnd;
+            }
+
+            return false; // No timer exists, so not rate limited
+        }
+
+        internal static string getCharacteristic(string userName, string characteristic)
+        {
+            var collection = monClient.GetDatabase(dbString).GetCollection<BsonDocument>("RegisteredProfiles");
+            var filter = Builders<BsonDocument>.Filter.Eq("userName", userName);
+            var projection = Builders<BsonDocument>.Projection.Include("characteristics");
+
+            var document = collection.Find(filter).Project(projection).FirstOrDefault();
+
+            if (document != null && document.Contains("characteristics"))
+            {
+                var characteristics = BsonSerializer.Deserialize<Dictionary<string, string>>(document.GetValue("characteristics").AsBsonDocument);
+                return characteristics.ContainsKey(characteristic) ? characteristics[characteristic] : null;
+            }
+            return null;
         }
     }
 }

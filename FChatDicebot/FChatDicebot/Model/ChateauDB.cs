@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using MongoDB.Driver.Linq;
 
 namespace FChatDicebot.Model
 {
@@ -19,6 +20,33 @@ namespace FChatDicebot.Model
         public Dictionary<string, string> characteristics { get; set; } = new Dictionary<string, string>();
         public Dictionary<string, List<string>> lists { get; set; } = new Dictionary<string, List<string>>();
         public Dictionary<string, Timer> timers { get; set; } = new Dictionary<string, Timer>();
+        public Dictionary<string, int> currencies { get; set; } = new Dictionary<string, int>();
+        public Dictionary<string, int> jobExperience { get; set; } = new Dictionary<string, int>();
+        public List<Title> titles { get; set; } = new List<Title>();
+        public int[] displayedTitleSlots { get; set; } = new int[9] { -1, -1, -1, -1, -1, -1, -1, -1, -1 };
+
+
+
+    }
+
+    public class Title
+    {
+        public string titleText { get; set; }
+        public string givenBy { get; set; } // "system" for system-granted titles, otherwise character name
+        public DateTime grantedTime { get; set; } = DateTime.UtcNow;
+
+        // Helper property to check if this is a system title
+        public bool IsSystemTitle => givenBy == "Chateau";
+
+        // Get the formatted title text (with or without markers)
+        public string GetFormattedTitle()
+        {
+            if (IsSystemTitle)
+            {
+                return $"·{titleText}·";
+            }
+            return titleText;
+        }
     }
 
     public class Timer
@@ -71,5 +99,54 @@ namespace FChatDicebot.Model
         public string investmentLevel { get; set; }
         public BsonArray extraParameters { get; set; }
         public DateTime interactionTime { get; set; }
+    }
+
+    public class PendingDuty
+    {
+        [BsonId]
+        [BsonRepresentation(BsonType.ObjectId)]
+        public ObjectId Id { get; set; }
+        public List<DutyResult> dutyResults { get; set; } = new List<DutyResult>();
+        public string dutyLabel { get; set; }
+        public string job { get; set; }
+        public string awaitingInputFrom { get; set; }
+        public DateTime startTime { get; set; } = DateTime.UtcNow.Date;
+
+    }
+
+    public class Duty
+    {
+        [BsonId]
+        [BsonRepresentation(BsonType.ObjectId)]
+        public ObjectId Id { get; set; }
+        public string label { get; set; }
+        public string[] categories { get; set; }
+        public string job { get; set; }
+        public string startText { get; set; }
+        public Dictionary<string, DutyResult> dutyResults { get; set; } = new Dictionary<string, DutyResult>(); //must have one result with no condition
+    }
+
+    public class DutyResult
+    {
+        public string choiceName { get; set; }
+        public string resultText { get; set; }
+        public Conditional conditional { get; set; }
+        public Dictionary<string, Reward> rewardList { get; set; } = new Dictionary<string, Reward>();
+
+    }
+
+    public class Reward
+    {
+        public string currency { get; set; }
+
+        public int weight { get; set; }
+        public int min { get; set; }
+        public int max { get; set; }
+    }
+
+    public class Conditional
+    {
+        public string type { get; set; }
+        public int value { get; set; }
     }
 }
