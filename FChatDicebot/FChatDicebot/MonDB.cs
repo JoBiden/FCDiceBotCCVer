@@ -203,5 +203,40 @@ namespace FChatDicebot
         {
             return GetDatabase().GetCharacteristic(userName, characteristic);
         }
+
+        internal static void addPledge(Pledge pledge)
+        {
+            GetDatabase().AddPledge(pledge);
+        }
+
+        internal static Pledge getPledge(ObjectId pledgeId)
+        {
+            return GetDatabase().GetPledge(pledgeId);
+        }
+
+        internal static List<Pledge> getPledgesByPledger(string pledger)
+        {
+            return GetDatabase().GetPledgesByPledger(pledger);
+        }
+
+        internal static List<Pledge> getPledgesByPledgee(string pledgee)
+        {
+            return GetDatabase().GetPledgesByPledgee(pledgee);
+        }
+
+        internal static List<Pledge> getActivePledges(string pledger, string pledgee, string interactionType)
+        {
+            return GetDatabase().GetActivePledges(pledger, pledgee, interactionType);
+        }
+
+        internal static void updatePledge(Pledge pledge)
+        {
+            GetDatabase().UpdatePledge(pledge);
+        }
+
+        internal static void deletePledge(ObjectId pledgeId)
+        {
+            GetDatabase().DeletePledge(pledgeId);
+        }
     }
 }

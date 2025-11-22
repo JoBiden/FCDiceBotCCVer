@@ -1,27 +1,66 @@
 using FChatDicebot.Model;
+using MongoDB.Bson;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace FChatDicebot
 {
-    public class ChateauInteractionHandler 
+    public class ChateauInteractionHandler
     {
-        
+
 
         public static string addInteraction(PendingCommand toPlay)
         {
             string initiator = toPlay.pendingInteraction.initiator;
             string recipient = toPlay.pendingInteraction.recipient;
             string returnString = "NoInteraction";
-            
+
             // NEW: Try to use the new processor system first
             var processor = InteractionProcessors.InteractionProcessorRegistry.GetProcessor(toPlay.pendingInteraction.type);
             if (processor != null)
             {
-                return processor.ProcessInteraction(toPlay);
+                returnString = processor.ProcessInteraction(toPlay);
+
+                // Check if this interaction fulfilled a pledge
+                if (returnString != "NoInteraction" && toPlay.pendingInteraction.extraParameters != null && toPlay.pendingInteraction.extraParameters.Count > 0)
+                {
+                    try
+                    {
+                        var firstParam = toPlay.pendingInteraction.extraParameters[0].AsBsonDocument;
+                        if (firstParam.Contains("pledgeId"))
+                        {
+                            string pledgeIdStr = firstParam["pledgeId"].AsString;
+                            ObjectId pledgeId = ObjectId.Parse(pledgeIdStr);
+
+                            var pledge = MonDB.getPledge(pledgeId);
+                            if (pledge != null && pledge.IsActive)
+                            {
+                                // Mark pledge as fulfilled
+                                pledge.status = "fulfilled";
+                                pledge.fulfilledTime = DateTime.UtcNow;
+
+                                // Check if pledge was honored (fulfilled 1+ days after creation)
+                                TimeSpan timeSincePledge = pledge.fulfilledTime.Value - pledge.pledgeTime;
+                                if (timeSincePledge.TotalDays >= 1)
+                                {
+                                    pledge.pledgeHonored = true;
+                                }
+
+                                MonDB.updatePledge(pledge);
+                            }
+                        }
+                    }
+                    catch
+                    {
+                        // If there's any error processing pledge fulfillment, don't fail the interaction
+                        // Just continue without marking the pledge as fulfilled
+                    }
+                }
+
+                return returnString;
             }
-            
+
             // FALLBACK: Use old switch statement for interactions not yet migrated
             // All current interactions have been migrated to the new processor system!
             // This switch is kept as a fallback for any future legacy interactions

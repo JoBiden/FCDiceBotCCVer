@@ -72,6 +72,15 @@ namespace FChatDicebot.Database
         // Mod Message Operations
         string GetModMessage(string messageLabel);
 
+        // Pledge Operations
+        void AddPledge(Pledge pledge);
+        Pledge GetPledge(ObjectId pledgeId);
+        List<Pledge> GetPledgesByPledger(string pledger);
+        List<Pledge> GetPledgesByPledgee(string pledgee);
+        List<Pledge> GetActivePledges(string pledger, string pledgee, string interactionType);
+        void UpdatePledge(Pledge pledge);
+        void DeletePledge(ObjectId pledgeId);
+
         // Database Management
         void ClearDatabase();
         void ClearCollection(string collectionName);

@@ -631,6 +631,72 @@ namespace FChatDicebot.Database
             return (string)message.GetElement("text").Value;
         }
 
+        // Pledge Operations
+        public void AddPledge(Pledge pledge)
+        {
+            var collection = Database.GetCollection<BsonDocument>("Pledges");
+            collection.InsertOne(pledge.ToBsonDocument());
+        }
+
+        public Pledge GetPledge(ObjectId pledgeId)
+        {
+            var collection = Database.GetCollection<BsonDocument>("Pledges");
+            var filter = Builders<BsonDocument>.Filter.Eq("_id", pledgeId);
+            var document = collection.Find(filter).FirstOrDefault();
+
+            if (document != null)
+            {
+                return BsonSerializer.Deserialize<Pledge>(document);
+            }
+            return null;
+        }
+
+        public List<Pledge> GetPledgesByPledger(string pledger)
+        {
+            var collection = Database.GetCollection<BsonDocument>("Pledges");
+            var filter = Builders<BsonDocument>.Filter.Eq("pledger", pledger);
+            var documents = collection.Find(filter).ToList();
+
+            return documents.Select(doc => BsonSerializer.Deserialize<Pledge>(doc)).ToList();
+        }
+
+        public List<Pledge> GetPledgesByPledgee(string pledgee)
+        {
+            var collection = Database.GetCollection<BsonDocument>("Pledges");
+            var filter = Builders<BsonDocument>.Filter.Eq("pledgee", pledgee);
+            var documents = collection.Find(filter).ToList();
+
+            return documents.Select(doc => BsonSerializer.Deserialize<Pledge>(doc)).ToList();
+        }
+
+        public List<Pledge> GetActivePledges(string pledger, string pledgee, string interactionType)
+        {
+            var collection = Database.GetCollection<BsonDocument>("Pledges");
+            var filter = Builders<BsonDocument>.Filter.And(
+                Builders<BsonDocument>.Filter.Eq("pledger", pledger),
+                Builders<BsonDocument>.Filter.Eq("pledgee", pledgee),
+                Builders<BsonDocument>.Filter.Eq("interactionType", interactionType),
+                Builders<BsonDocument>.Filter.Eq("status", "active")
+            );
+            var documents = collection.Find(filter).ToList();
+
+            return documents.Select(doc => BsonSerializer.Deserialize<Pledge>(doc)).ToList();
+        }
+
+        public void UpdatePledge(Pledge pledge)
+        {
+            var collection = Database.GetCollection<Pledge>("Pledges");
+            var filter = Builders<Pledge>.Filter.Eq("_id", pledge.Id);
+            collection.ReplaceOne(filter, pledge);
+        }
+
+        public void DeletePledge(ObjectId pledgeId)
+        {
+            var collection = Database.GetCollection<Pledge>("Pledges");
+            var filter = Builders<Pledge>.Filter.Eq("_id", pledgeId);
+            collection.DeleteOne(filter);
+        }
+
         // Database Management
         public void ClearDatabase()
         {

@@ -149,4 +149,23 @@ namespace FChatDicebot.Model
         public string type { get; set; }
         public int value { get; set; }
     }
+
+    public class Pledge
+    {
+        [BsonId]
+        [BsonRepresentation(BsonType.ObjectId)]
+        public ObjectId Id { get; set; }
+        public string pledger { get; set; }
+        public string pledgee { get; set; }
+        public string interactionType { get; set; }
+        public string identifier { get; set; }
+        public string investmentLevel { get; set; }
+        public DateTime pledgeTime { get; set; } = DateTime.UtcNow;
+        public string status { get; set; } = "active"; // active, fulfilled, cancelled
+        public DateTime? fulfilledTime { get; set; }
+        public bool pledgeHonored { get; set; } = false; // true if fulfilled 1+ days after creation
+
+        // Helper to check if this pledge is active
+        public bool IsActive => status == "active";
+    }
 }
