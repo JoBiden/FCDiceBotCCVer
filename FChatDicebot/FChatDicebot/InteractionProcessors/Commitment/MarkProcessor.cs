@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace FChatDicebot.InteractionProcessors
+namespace FChatDicebot.InteractionProcessors.Commitment
 {
     /// <summary>
     /// Processor for the mark interaction - a commitment interaction with cooldown

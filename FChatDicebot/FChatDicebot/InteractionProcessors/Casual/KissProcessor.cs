@@ -3,7 +3,7 @@ using FChatDicebot.Model;
 using System;
 using System.Collections.Generic;
 
-namespace FChatDicebot.InteractionProcessors
+namespace FChatDicebot.InteractionProcessors.Casual
 {
     /// <summary>
     /// Processor for the kiss interaction - a casual, unlimited interaction

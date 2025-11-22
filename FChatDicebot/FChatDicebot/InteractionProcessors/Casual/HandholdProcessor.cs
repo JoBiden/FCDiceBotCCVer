@@ -2,7 +2,7 @@ using FChatDicebot.Model;
 using System;
 using System.Collections.Generic;
 
-namespace FChatDicebot.InteractionProcessors
+namespace FChatDicebot.InteractionProcessors.Casual
 {
     public class HandholdProcessor : InteractionProcessorBase
     {
