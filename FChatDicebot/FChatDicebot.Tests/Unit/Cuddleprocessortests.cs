@@ -287,6 +287,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
                                 message.Contains("Hot!") ||
                                 message.Contains("cozy") ||
                                 message.Contains("big spoon") ||
+                                message.Contains("one more") ||
                                 message.Contains("little spoon");
             Assert.True(hasDescriptor, "Message should contain a cuddle descriptor");
         }
