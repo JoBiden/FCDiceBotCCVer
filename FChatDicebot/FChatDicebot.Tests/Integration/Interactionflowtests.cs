@@ -1,5 +1,5 @@
 ﻿using FChatDicebot.Database;
-using FChatDicebot.InteractionProcessors;
+using FChatDicebot.InteractionProcessors.Casual;
 using FChatDicebot.Model;
 using FChatDicebot.Tests.Builders;
 using FChatDicebot.Tests.Fixtures;
