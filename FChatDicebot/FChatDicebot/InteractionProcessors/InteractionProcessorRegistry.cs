@@ -1,5 +1,8 @@
 using FChatDicebot.InteractionProcessors.Casual;
 using FChatDicebot.InteractionProcessors.Involved;
+using FChatDicebot.InteractionProcessors.Commitment;
+using FChatDicebot.InteractionProcessors.Consequence;
+using FChatDicebot.InteractionProcessors.Transaction;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -40,7 +43,19 @@ namespace FChatDicebot.InteractionProcessors
             RegisterProcessor(new MarkProcessor());
             RegisterProcessor(new EntitleProcessor());
 
-            // More processors will be registered as we create them
+            // Consequence interactions (transformative effects with daily cooldowns)
+            RegisterProcessor(new RenameProcessor());
+            RegisterProcessor(new MonsterizeProcessor());
+            RegisterProcessor(new PetrifyProcessor());
+            RegisterProcessor(new PlantProcessor());
+            RegisterProcessor(new ObjectifyProcessor());
+            RegisterProcessor(new ConsumeProcessor());
+            RegisterProcessor(new EmployProcessor());
+            RegisterProcessor(new BondProcessor());
+
+            // Transaction interactions (currency exchanges)
+            RegisterProcessor(new PaymentGiveProcessor());
+            RegisterProcessor(new PaymentReceiveProcessor());
 
             _initialized = true;
         }
