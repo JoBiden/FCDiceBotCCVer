@@ -34,11 +34,11 @@ namespace FChatDicebot.InteractionProcessors.Casual
         {
             string initiator = command.pendingInteraction.initiator;
             string recipient = command.pendingInteraction.recipient;
-            
+
             TimeSpan rateLimit = TimeSpan.FromMinutes(60);
 
             string rateLimitMessage = IncrementBothCountsWithRateLimit(initiator, recipient, "cuddle", RateLimit);
-            MonDB.removePendingInteraction(command.Id);
+            Database.DeletePendingCommand(command.Id);
 
             return "cuddle";
         }

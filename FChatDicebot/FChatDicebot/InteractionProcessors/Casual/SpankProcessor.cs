@@ -1,4 +1,5 @@
-﻿using FChatDicebot.Model;
+﻿using FChatDicebot.Database;
+using FChatDicebot.Model;
 using System;
 using System.Collections.Generic;
 
@@ -14,20 +15,34 @@ namespace FChatDicebot.InteractionProcessors.Casual
 
         private static readonly TimeSpan RateLimit = TimeSpan.FromHours(1);
 
+        /// <summary>
+        /// Constructor for dependency injection (for testing)
+        /// </summary>
+        public SpankProcessor(IChateauDatabase database) : base(database)
+        {
+        }
+
+        /// <summary>
+        /// Legacy constructor for backward compatibility
+        /// </summary>
+        public SpankProcessor() : base()
+        {
+        }
+
         public override string ProcessInteraction(PendingCommand command)
         {
             string initiator = command.pendingInteraction.initiator;
             string recipient = command.pendingInteraction.recipient;
 
             // Save the interaction to history
-            MonDB.addInteraction(command.pendingInteraction);
+            Database.AddInteraction(command.pendingInteraction);
 
             // Increment counts with rate limiting (give/take variants)
             _lastRateLimitMessage = IncrementDifferentCountsWithRateLimit(
                 initiator, recipient, "spankgive", "spanktake", RateLimit);
 
             // Remove pending interaction
-            MonDB.removePendingInteraction(command.Id);
+            Database.DeletePendingCommand(command.Id);
 
             return "spank";
         }

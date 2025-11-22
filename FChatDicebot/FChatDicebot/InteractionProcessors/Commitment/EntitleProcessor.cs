@@ -1,4 +1,5 @@
-﻿using FChatDicebot.Model;
+﻿using FChatDicebot.Database;
+using FChatDicebot.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,6 +16,20 @@ namespace FChatDicebot.InteractionProcessors.Commitment
 
         private const int MAX_TITLE_LENGTH = 100;
         private const char SYSTEM_MARKER = '·';
+
+        /// <summary>
+        /// Constructor for dependency injection (for testing)
+        /// </summary>
+        public EntitleProcessor(IChateauDatabase database) : base(database)
+        {
+        }
+
+        /// <summary>
+        /// Legacy constructor for backward compatibility
+        /// </summary>
+        public EntitleProcessor() : base()
+        {
+        }
 
         public override ValidationResult ValidateInteraction(string initiator, string recipient, string identifier)
         {
@@ -44,7 +59,7 @@ namespace FChatDicebot.InteractionProcessors.Commitment
             }
 
             // Check if recipient already has this exact title
-            Profile recipientProfile = MonDB.getProfile(recipient);
+            Profile recipientProfile = Database.GetProfile(recipient);
             if (recipientProfile.titles != null && recipientProfile.titles.Any(t => t.titleText.Equals(identifier, StringComparison.OrdinalIgnoreCase)))
             {
                 return ValidationResult.Failure($"{recipientProfile.displayName} already has the title \"{identifier}\".");
@@ -71,10 +86,10 @@ namespace FChatDicebot.InteractionProcessors.Commitment
             string titleText = command.pendingInteraction.identifier;
 
             // Save the interaction to history
-            MonDB.addInteraction(command.pendingInteraction);
+            Database.AddInteraction(command.pendingInteraction);
 
             // Get the recipient's profile
-            Profile recipientProfile = MonDB.getProfile(recipient);
+            Profile recipientProfile = Database.GetProfile(recipient);
 
             // Initialize titles list if null
             if (recipientProfile.titles == null)
@@ -97,10 +112,10 @@ namespace FChatDicebot.InteractionProcessors.Commitment
             recipientProfile.timers["entitle"] = entitleTimer;
 
             // Save the updated profile
-            MonDB.setProfile(recipient, recipientProfile);
+            Database.SetProfile(recipient, recipientProfile);
 
             // Remove pending interaction
-            MonDB.removePendingInteraction(command.Id);
+            Database.DeletePendingCommand(command.Id);
 
             return "entitle";
         }

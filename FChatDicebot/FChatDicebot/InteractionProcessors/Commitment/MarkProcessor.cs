@@ -1,3 +1,4 @@
+using FChatDicebot.Database;
 using FChatDicebot.Model;
 using System;
 using System.Collections.Generic;
@@ -13,6 +14,20 @@ namespace FChatDicebot.InteractionProcessors.Commitment
         public override string InteractionType => "mark";
         public override string InvestmentLevel => "commitment";
 
+        /// <summary>
+        /// Constructor for dependency injection (for testing)
+        /// </summary>
+        public MarkProcessor(IChateauDatabase database) : base(database)
+        {
+        }
+
+        /// <summary>
+        /// Legacy constructor for backward compatibility
+        /// </summary>
+        public MarkProcessor() : base()
+        {
+        }
+
         public override ValidationResult ValidateInteraction(string initiator, string recipient, string identifier)
         {
             // First do base validation (profiles exist)
@@ -23,7 +38,7 @@ namespace FChatDicebot.InteractionProcessors.Commitment
             }
 
             // Check that initiator has set their mark
-            Profile initiatorProfile = MonDB.getProfile(initiator);
+            Profile initiatorProfile = Database.GetProfile(initiator);
             if (!initiatorProfile.characteristics.ContainsKey("mark"))
             {
                 return ValidationResult.Failure(ChateauInteractionHandler.markNotSetText());
@@ -45,11 +60,11 @@ namespace FChatDicebot.InteractionProcessors.Commitment
             string bodypart = command.pendingInteraction.identifier;
 
             // Save the interaction to history
-            MonDB.addInteraction(command.pendingInteraction);
+            Database.AddInteraction(command.pendingInteraction);
 
             // Get the recipient's profile
-            Profile recipientProfile = MonDB.getProfile(recipient);
-            
+            Profile recipientProfile = Database.GetProfile(recipient);
+
             // Add initiator to the mark list for this body part
             string listname = bodypart + "marks";
             List<string> markList = new List<string>();
@@ -72,10 +87,10 @@ namespace FChatDicebot.InteractionProcessors.Commitment
             recipientProfile.timers["mark"] = markTimer;
 
             // Save the updated profile
-            MonDB.setProfile(recipient, recipientProfile);
+            Database.SetProfile(recipient, recipientProfile);
 
             // Remove pending interaction
-            MonDB.removePendingInteraction(command.Id);
+            Database.DeletePendingCommand(command.Id);
 
             return "mark";
         }
