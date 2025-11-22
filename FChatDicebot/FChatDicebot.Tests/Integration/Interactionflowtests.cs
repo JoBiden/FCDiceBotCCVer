@@ -184,7 +184,7 @@ namespace FChatDicebot.Tests.Integration
 
             _database.AddPendingCommand(expiredCommand);
 
-            // Act - Check if command is expired (typically timeout is 5 minutes)
+            // Act - Check if command is expired (typically timeout is 10 minutes)
             var retrievedCommand = _database.GetPendingCommandAwaitingConsent("Bob");
             bool isExpired = (DateTime.UtcNow - retrievedCommand.startTime).TotalMinutes > 5;
 

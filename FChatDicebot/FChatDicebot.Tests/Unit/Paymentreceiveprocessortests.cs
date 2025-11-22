@@ -31,9 +31,9 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
         }
 
         [Fact]
-        public void InvestmentLevel_ReturnsTransaction()
+        public void InvestmentLevel_ReturnsInvolved()
         {
-            Assert.Equal("transaction", _processor.InvestmentLevel);
+            Assert.Equal("involved", _processor.InvestmentLevel);
         }
 
         [Fact]

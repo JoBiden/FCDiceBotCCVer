@@ -316,7 +316,7 @@
     <Compile Include="InteractionProcessors\InteractionProcessorRegistry.cs" />
     <Compile Include="InteractionProcessors\Involved\DressupProcessor.cs" />
     <Compile Include="InteractionProcessors\Involved\FeedProcessor.cs" />
-    <Compile Include="InteractionProcessors\Involved\ProcessorGolden.cs" />
+    <Compile Include="InteractionProcessors\Involved\GoldenProcessor.cs" />
     <Compile Include="InteractionProcessors\Consequence\RenameProcessor.cs" />
     <Compile Include="InteractionProcessors\Consequence\MonsterizeProcessor.cs" />
     <Compile Include="InteractionProcessors\Consequence\PetrifyProcessor.cs" />

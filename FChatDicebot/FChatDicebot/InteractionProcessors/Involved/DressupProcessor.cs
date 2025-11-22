@@ -1,4 +1,5 @@
-﻿using FChatDicebot.Model;
+﻿using FChatDicebot.Database;
+using FChatDicebot.Model;
 using System;
 
 namespace FChatDicebot.InteractionProcessors.Involved
@@ -12,6 +13,20 @@ namespace FChatDicebot.InteractionProcessors.Involved
         public override string InvestmentLevel => "involved";
 
         private static readonly TimeSpan RateLimit = TimeSpan.FromMinutes(30);
+
+        /// <summary>
+        /// Constructor for dependency injection (for testing)
+        /// </summary>
+        public DressupProcessor(IChateauDatabase database) : base(database)
+        {
+        }
+
+        /// <summary>
+        /// Legacy constructor for backward compatibility
+        /// </summary>
+        public DressupProcessor() : base()
+        {
+        }
 
         public override ValidationResult ValidateInteraction(string initiator, string recipient, string identifier)
         {
@@ -38,19 +53,19 @@ namespace FChatDicebot.InteractionProcessors.Involved
             string attire = command.pendingInteraction.identifier;
 
             // Save the interaction to history
-            MonDB.addInteraction(command.pendingInteraction);
+            Database.AddInteraction(command.pendingInteraction);
 
             // Get the recipient's profile and set their attire characteristic
-            Profile recipientProfile = MonDB.getProfile(recipient);
+            Profile recipientProfile = Database.GetProfile(recipient);
             recipientProfile.characteristics["attire"] = attire;
-            MonDB.setProfile(recipient, recipientProfile);
+            Database.SetProfile(recipient, recipientProfile);
 
             // Increment counts with rate limiting (give/take variants)
             _lastRateLimitMessage = IncrementDifferentCountsWithRateLimit(
                 initiator, recipient, "dressupgive", "dressuptake", RateLimit);
 
             // Remove pending interaction
-            MonDB.removePendingInteraction(command.Id);
+            Database.DeletePendingCommand(command.Id);
 
             return "dressup";
         }

@@ -347,7 +347,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
             string message = _processor.GetCompletionMessage(initiator, queenContract, "");
 
             // Assert
-            Assert.Contains("[eicon]qcass[eicon]", message);
+            Assert.Contains("[eicon]qcass[/eicon]", message);
         }
 
         public void Dispose()

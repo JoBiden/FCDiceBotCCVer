@@ -309,7 +309,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
             string message = _processor.GetCompletionMessage(queenContract, recipient, "");
 
             // Assert
-            Assert.Contains("[eicon]qchug[eicon]", message);
+            Assert.Contains("[eicon]qchug[/eicon]", message);
         }
 
         [Fact]
@@ -330,7 +330,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
             string message = _processor.GetCompletionMessage(queenContract, rin, "");
 
             // Assert
-            Assert.Contains("[eicon]rin_lap[eicon]", message);
+            Assert.Contains("[eicon]rin_lap[/eicon]", message);
         }
 
         [Fact]
