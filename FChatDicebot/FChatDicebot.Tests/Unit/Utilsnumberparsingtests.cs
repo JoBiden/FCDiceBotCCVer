@@ -34,43 +34,43 @@ namespace FChatDicebot.Tests.Unit
         }
 
         [Fact]
-        public void GetNumberFromInputs_NoNumbers_ReturnsNegativeOne()
+        public void GetNumberFromInputs_NoNumbers_ReturnsZero()
         {
             string[] input = { "no", "numbers", "here" };
 
             int result = Utils.GetNumberFromInputs(input);
 
-            Assert.Equal(-1, result);
+            Assert.Equal(0, result);
         }
 
         [Fact]
-        public void GetNumberFromInputs_EmptyArray_ReturnsNegativeOne()
+        public void GetNumberFromInputs_EmptyArray_ReturnsZero()
         {
             string[] input = new string[0];
 
             int result = Utils.GetNumberFromInputs(input);
 
-            Assert.Equal(-1, result);
+            Assert.Equal(0, result);
         }
 
         [Fact]
-        public void GetNumberFromInputs_Null_ReturnsNegativeOne()
+        public void GetNumberFromInputs_Null_ReturnsZero()
         {
             string[] input = null;
 
             int result = Utils.GetNumberFromInputs(input);
 
-            Assert.Equal(-1, result);
+            Assert.Equal(0, result);
         }
 
         [Fact]
-        public void GetNumberFromInputs_ZeroAndNegative_IgnoresThemReturnsNegativeOne()
+        public void GetNumberFromInputs_ZeroAndNegative_IgnoresZeroReturnsNegative()
         {
             string[] input = { "0", "-5", "text" };
 
             int result = Utils.GetNumberFromInputs(input);
 
-            Assert.Equal(-1, result);
+            Assert.Equal(-5, result);
         }
 
         [Fact]

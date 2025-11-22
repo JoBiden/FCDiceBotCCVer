@@ -216,14 +216,14 @@ namespace FChatDicebot
 
         public static int GetNumberFromInputs(string[] inputs)
         {
-            int returnInt = -1;
+            int returnInt = 0;
             if (inputs == null || inputs.Length == 0)
                 return returnInt;
 
             foreach (string s in inputs)
             {
                 int.TryParse(s, out returnInt);
-                if (returnInt > 0)
+                if (returnInt != 0)
                 {
                     break;
                 }
