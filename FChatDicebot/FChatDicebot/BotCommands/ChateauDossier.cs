@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using FChatDicebot.BotCommands.Base;
+using FChatDicebot.Database;
 using FChatDicebot.SavedData;
 using Newtonsoft.Json;
 using FChatDicebot.DiceFunctions;
@@ -15,6 +16,8 @@ namespace FChatDicebot.BotCommands
 {
     public class ChateauDossier : ChatBotCommand
     {
+        private readonly IChateauDatabase _database;
+
         // Static readonly dictionaries for count display names and specialist text
         private static readonly Dictionary<string, string> CountDisplayNames = new Dictionary<string, string>
         {
@@ -101,13 +104,24 @@ namespace FChatDicebot.BotCommands
             { "dosetake", "Addicted" }
         };
 
-        public ChateauDossier()
+        /// <summary>
+        /// Constructor for dependency injection (for testing)
+        /// </summary>
+        public ChateauDossier(IChateauDatabase database)
         {
+            _database = database;
             Name = "dossier";
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
             RequireChannel = false;
             LockCategory = CommandLockCategory.NONE;
+        }
+
+        /// <summary>
+        /// Legacy constructor for backward compatibility (uses MonDB)
+        /// </summary>
+        public ChateauDossier() : this(new MonDBWrapper())
+        {
         }
 
         public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
@@ -116,7 +130,7 @@ namespace FChatDicebot.BotCommands
                 ? characterName
                 : commandController.GetUserNameFromCommandTerms(rawTerms);
 
-            Profile profile = MonDB.getProfile(targetUser);
+            Profile profile = _database.GetProfile(targetUser);
 
             string dossierText;
             if (profile == null)
@@ -269,7 +283,7 @@ namespace FChatDicebot.BotCommands
 
             if (profile.characteristics.ContainsKey("employer"))
             {
-                Profile employerProfile = MonDB.getProfile(profile.characteristics["employer"]);
+                Profile employerProfile = _database.GetProfile(profile.characteristics["employer"]);
                 if (employerProfile != null)
                 {
                     sb.Append("Currently working under ");
@@ -361,7 +375,7 @@ namespace FChatDicebot.BotCommands
 
                     foreach (string marker in list.Value)
                     {
-                        Profile markerProfile = MonDB.getProfile(marker);
+                        Profile markerProfile = _database.GetProfile(marker);
                         if (markerProfile != null && markerProfile.characteristics.ContainsKey("mark"))
                         {
                             sb.Append(" ");
@@ -425,7 +439,7 @@ namespace FChatDicebot.BotCommands
                         List<string> displayNames = new List<string>();
                         foreach (string bonder in list.Value)
                         {
-                            Profile bonderProfile = MonDB.getProfile(bonder);
+                            Profile bonderProfile = _database.GetProfile(bonder);
                             if (bonderProfile != null)
                             {
                                 displayNames.Add(bonderProfile.displayName);
@@ -476,7 +490,7 @@ namespace FChatDicebot.BotCommands
         /// </summary>
         private string BuildLastReportedSection(string targetUser)
         {
-            List<Interaction> initiatedInteractions = MonDB.getInteractionsByInitiator(targetUser);
+            List<Interaction> initiatedInteractions = _database.GetInteractionsByInitiator(targetUser);
             if (initiatedInteractions == null || initiatedInteractions.Count == 0)
             {
                 return string.Empty;
@@ -504,7 +518,7 @@ namespace FChatDicebot.BotCommands
         /// </summary>
         private string BuildLastSeenSection(string targetUser)
         {
-            List<Interaction> receivedInteractions = MonDB.getInteractionsByRecipient(targetUser);
+            List<Interaction> receivedInteractions = _database.GetInteractionsByRecipient(targetUser);
             if (receivedInteractions == null || receivedInteractions.Count == 0)
             {
                 return string.Empty;
@@ -570,16 +584,16 @@ namespace FChatDicebot.BotCommands
                 if (key.EndsWith("give"))
                 {
                     string interactionType = key.Substring(0, key.Length - 4);
-                    currentCount = MonDB.getTypeCount(targetUser, interactionType, "initiator");
+                    currentCount = _database.GetTypeCount(targetUser, interactionType, "initiator");
                 }
                 else if (key.EndsWith("take"))
                 {
                     string interactionType = key.Substring(0, key.Length - 4);
-                    currentCount = MonDB.getTypeCount(targetUser, interactionType, "recipient");
+                    currentCount = _database.GetTypeCount(targetUser, interactionType, "recipient");
                 }
                 else
                 {
-                    currentCount = MonDB.getTypeCount(targetUser, key, "both");
+                    currentCount = _database.GetTypeCount(targetUser, key, "both");
                 }
 
                 if (currentCount > largestCount)

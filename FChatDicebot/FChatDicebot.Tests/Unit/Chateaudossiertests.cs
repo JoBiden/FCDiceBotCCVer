@@ -23,7 +23,7 @@ namespace FChatDicebot.Tests.Unit
         {
             _fixture = fixture;
             _fixture.Reset();
-            _dossier = new ChateauDossier();
+            _dossier = new ChateauDossier(_fixture.Database);
         }
 
         #region BuildJobSection Tests
@@ -75,7 +75,7 @@ namespace FChatDicebot.Tests.Unit
             var profile = new ProfileBuilder()
                 .WithUserName("TestUser")
                 .WithDisplayName("Test User")
-                .WithCharacteristic("job", "maid")
+                .WithCharacteristic("job", "butler")
                 .WithCharacteristic("employer", "Boss")
                 .BuildAndSave(_fixture.Database);
 
@@ -84,7 +84,7 @@ namespace FChatDicebot.Tests.Unit
 
             // Assert
             Assert.NotEmpty(result);
-            Assert.Contains("maid", result.ToLower());
+            Assert.Contains("butler", result.ToLower());
             Assert.Contains("The Boss", result);
             Assert.Contains("working under", result);
         }
@@ -280,7 +280,7 @@ namespace FChatDicebot.Tests.Unit
 
             profile.lists = new Dictionary<string, List<string>>
             {
-                { "bondfealtyreceived", new List<string> { "Bonder" } }
+                { "bondloyaltyreceived", new List<string> { "Bonder" } }
             };
             _fixture.Database.SetProfile("TestUser", profile);
 
