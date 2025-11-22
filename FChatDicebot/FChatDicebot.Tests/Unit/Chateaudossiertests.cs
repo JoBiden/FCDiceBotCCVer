@@ -23,7 +23,7 @@ namespace FChatDicebot.Tests.Unit
         {
             _fixture = fixture;
             _fixture.Reset();
-            _dossier = new ChateauDossier();
+            _dossier = new ChateauDossier(_fixture.Database);
         }
 
         #region BuildJobSection Tests
