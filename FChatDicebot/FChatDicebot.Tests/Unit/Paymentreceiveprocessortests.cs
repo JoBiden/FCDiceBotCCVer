@@ -1,5 +1,5 @@
 using FChatDicebot.Database;
-using FChatDicebot.InteractionProcessors.Transaction;
+using FChatDicebot.InteractionProcessors.Involved;
 using FChatDicebot.Model;
 using FChatDicebot.Tests.Builders;
 using FChatDicebot.Tests.Fixtures;
@@ -82,7 +82,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
                     recipient = "Bob",
                     type = "paymentReceive",
                     identifier = "gold",
-                    investmentLevel = "transaction",
+                    investmentLevel = "involved",
                     extraParameters = new BsonArray { 30 }
                 }
             };
@@ -125,7 +125,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
                     recipient = "Bob",
                     type = "paymentReceive",
                     identifier = "gold",
-                    investmentLevel = "transaction",
+                    investmentLevel = "involved",
                     extraParameters = new BsonArray { 30 }
                 }
             };
@@ -136,7 +136,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
             _processor.ProcessInteraction(pendingCommand);
 
             // Assert
-            var interactions = _database.GetInteractions("Alice", "Bob");
+            var interactions = _database.GetInteractionsByInitiator("Alice");
             Assert.Contains(interactions, i => i.type == "paymentReceive");
         }
 

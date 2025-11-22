@@ -313,7 +313,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
             _processor.ProcessInteraction(pendingCommand);
 
             // Assert
-            var interactions = _database.GetInteractions("Alice", "Bob");
+            var interactions = _database.GetInteractionsByInitiator("Alice");
             Assert.NotEmpty(interactions);
             Assert.Contains(interactions, i => i.type == "entitle" && i.identifier == "The Brave");
         }

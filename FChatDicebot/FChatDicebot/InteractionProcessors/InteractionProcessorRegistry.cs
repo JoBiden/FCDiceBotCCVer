@@ -2,7 +2,6 @@ using FChatDicebot.InteractionProcessors.Casual;
 using FChatDicebot.InteractionProcessors.Involved;
 using FChatDicebot.InteractionProcessors.Commitment;
 using FChatDicebot.InteractionProcessors.Consequence;
-using FChatDicebot.InteractionProcessors.Transaction;
 using System;
 using System.Collections.Generic;
 using System.Linq;

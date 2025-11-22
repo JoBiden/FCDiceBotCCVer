@@ -325,8 +325,8 @@
     <Compile Include="InteractionProcessors\Consequence\ConsumeProcessor.cs" />
     <Compile Include="InteractionProcessors\Consequence\EmployProcessor.cs" />
     <Compile Include="InteractionProcessors\Consequence\BondProcessor.cs" />
-    <Compile Include="InteractionProcessors\Transaction\PaymentGiveProcessor.cs" />
-    <Compile Include="InteractionProcessors\Transaction\PaymentReceiveProcessor.cs" />
+    <Compile Include="InteractionProcessors\Involved\PaymentGiveProcessor.cs" />
+    <Compile Include="InteractionProcessors\Involved\PaymentReceiveProcessor.cs" />
     <Compile Include="Model\ChateauDB.cs" />
     <Compile Include="MonDB.cs" />
     <Compile Include="DiceFunctions\VcChipOrder.cs" />

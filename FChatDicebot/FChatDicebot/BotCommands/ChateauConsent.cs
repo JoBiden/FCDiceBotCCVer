@@ -172,7 +172,7 @@ namespace FChatDicebot.BotCommands
 
             if (initLimited && recLimited)
             {
-                return $"\n\n[sub]Looks like that didn't make it into either dossier though... The clerks were probably still busy processing their last {type}s.[/sub]";
+                return $"\n\n[sub]Looks like that didn't make it into either dossier though... The clerks were probably still busy processing their last {type}(s).[/sub]";
             }
             else if (initLimited)
             {

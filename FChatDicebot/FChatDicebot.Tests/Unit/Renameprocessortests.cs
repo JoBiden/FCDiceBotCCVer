@@ -149,7 +149,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
             _processor.ProcessInteraction(pendingCommand);
 
             // Assert
-            var interactions = _database.GetInteractions("Alice", "Bob");
+            var interactions = _database.GetInteractionsByInitiator("Alice");
             Assert.Contains(interactions, i => i.type == "rename");
         }
 

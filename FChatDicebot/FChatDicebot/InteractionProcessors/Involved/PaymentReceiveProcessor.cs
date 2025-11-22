@@ -3,7 +3,7 @@ using FChatDicebot.Model;
 using System;
 using System.Linq;
 
-namespace FChatDicebot.InteractionProcessors.Transaction
+namespace FChatDicebot.InteractionProcessors.Involved
 {
     /// <summary>
     /// Processor for paymentReceive - transfers currency from recipient to initiator
@@ -11,7 +11,7 @@ namespace FChatDicebot.InteractionProcessors.Transaction
     public class PaymentReceiveProcessor : InteractionProcessorBase
     {
         public override string InteractionType => "paymentReceive";
-        public override string InvestmentLevel => "transaction";
+        public override string InvestmentLevel => "involved";
 
         public PaymentReceiveProcessor(IChateauDatabase database) : base(database)
         {
