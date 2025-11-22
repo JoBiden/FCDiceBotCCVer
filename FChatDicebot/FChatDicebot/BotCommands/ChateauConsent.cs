@@ -200,6 +200,8 @@ namespace FChatDicebot.BotCommands
             }
         }
 
+
+        //theoretically now defunct, but keeping around for fallback safety
         public string getInteractionMessage(string interactionType, string identifier, string initiator, string recipient)
         {
             Profile initiatorProfile = MonDB.getProfile(initiator);
