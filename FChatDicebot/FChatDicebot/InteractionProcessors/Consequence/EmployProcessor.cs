@@ -69,7 +69,7 @@ namespace FChatDicebot.InteractionProcessors.Consequence
         public override string GetCompletionMessage(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
             Identifier jobIdentifier = MonDB.getIdentifier(identifier);
-            string jobText = jobIdentifier != null ? jobIdentifier.text : identifier;
+            string jobText = jobIdentifier != null ? jobIdentifier.description : identifier;
 
             return $"{initiatorProfile.displayName} has employed {recipientProfile.displayName} as {jobText} for the day! Time to get to work~";
         }
@@ -77,7 +77,7 @@ namespace FChatDicebot.InteractionProcessors.Consequence
         public override string GetConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
             Identifier jobIdentifier = MonDB.getIdentifier(identifier);
-            string jobText = jobIdentifier != null ? jobIdentifier.text : identifier;
+            string jobText = jobIdentifier != null ? jobIdentifier.description : identifier;
 
             return $"{initiatorProfile.displayName} wants to employ {recipientProfile.displayName} as {jobText} for 1 day. Do you !consent to this employment?";
         }

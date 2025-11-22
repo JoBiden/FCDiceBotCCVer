@@ -67,7 +67,7 @@ namespace FChatDicebot.InteractionProcessors.Consequence
         public override string GetCompletionMessage(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
             Identifier plantIdentifier = MonDB.getIdentifier(identifier);
-            string plantText = plantIdentifier != null ? plantIdentifier.text : identifier;
+            string plantText = plantIdentifier != null ? plantIdentifier.description : identifier;
 
             return $"{initiatorProfile.displayName} uses botanical magic to transform {recipientProfile.displayName} into {plantText}! They'll be rooted in place until tomorrow.";
         }
@@ -75,7 +75,7 @@ namespace FChatDicebot.InteractionProcessors.Consequence
         public override string GetConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
             Identifier plantIdentifier = MonDB.getIdentifier(identifier);
-            string plantText = plantIdentifier != null ? plantIdentifier.text : identifier;
+            string plantText = plantIdentifier != null ? plantIdentifier.description : identifier;
 
             return $"{initiatorProfile.displayName} wants to transform {recipientProfile.displayName} into {plantText} for 1 day. [b]You'll become a plant![/b] Do you !consent?";
         }

@@ -8,8 +8,9 @@ using FChatDicebot.BotCommands.Base;
 using FChatDicebot.SavedData;
 using Newtonsoft.Json;
 using FChatDicebot.DiceFunctions;
-using FChatDicebot.Model;
 using FChatDicebot.InteractionProcessors;
+using FChatDicebot.InteractionProcessors.Commitment;
+using FChatDicebot.Model;
 
 namespace FChatDicebot.BotCommands
 {

@@ -67,7 +67,7 @@ namespace FChatDicebot.InteractionProcessors.Consequence
         public override string GetCompletionMessage(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
             Identifier monsterIdentifier = MonDB.getIdentifier(identifier);
-            string monsterText = monsterIdentifier != null ? monsterIdentifier.text : identifier;
+            string monsterText = monsterIdentifier != null ? monsterIdentifier.description : identifier;
 
             return $"With a flash of eldritch energy, {initiatorProfile.displayName} transforms {recipientProfile.displayName} into {monsterText}! They'll remain in this monstrous form for the next week...";
         }
@@ -75,7 +75,7 @@ namespace FChatDicebot.InteractionProcessors.Consequence
         public override string GetConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
             Identifier monsterIdentifier = MonDB.getIdentifier(identifier);
-            string monsterText = monsterIdentifier != null ? monsterIdentifier.text : identifier;
+            string monsterText = monsterIdentifier != null ? monsterIdentifier.description : identifier;
 
             return $"{initiatorProfile.displayName} wants to monsterize {recipientProfile.displayName} into {monsterText} for 7 days. [b]This is a major transformation![/b] Do you !consent?";
         }

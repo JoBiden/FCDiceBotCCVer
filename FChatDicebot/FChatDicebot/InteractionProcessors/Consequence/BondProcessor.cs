@@ -93,7 +93,7 @@ namespace FChatDicebot.InteractionProcessors.Consequence
         public override string GetCompletionMessage(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
             Identifier bondIdentifier = MonDB.getIdentifier(identifier);
-            string bondText = bondIdentifier != null ? bondIdentifier.text : identifier;
+            string bondText = bondIdentifier != null ? bondIdentifier.description : identifier;
 
             return $"{initiatorProfile.displayName} and {recipientProfile.displayName} form a {bondText} bond! This connection will last for the next day.";
         }
@@ -101,7 +101,7 @@ namespace FChatDicebot.InteractionProcessors.Consequence
         public override string GetConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
             Identifier bondIdentifier = MonDB.getIdentifier(identifier);
-            string bondText = bondIdentifier != null ? bondIdentifier.text : identifier;
+            string bondText = bondIdentifier != null ? bondIdentifier.description : identifier;
 
             return $"{initiatorProfile.displayName} wants to form a {bondText} bond with {recipientProfile.displayName} for 1 day. [b]This creates a connection between you![/b] Do you !consent?";
         }
