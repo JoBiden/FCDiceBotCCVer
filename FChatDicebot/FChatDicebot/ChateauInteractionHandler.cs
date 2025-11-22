@@ -152,13 +152,13 @@ namespace FChatDicebot
                     MonDB.setProfile(recipient, consumeProfile);
                     returnString = "consume";
                     break;
-                case "dressup":
-                    MonDB.addInteraction(toPlay.pendingInteraction);
-                    Profile dressupProfile = MonDB.getProfile(recipient);
-                    dressupProfile.characteristics["attire"] = toPlay.pendingInteraction.identifier;
-                    MonDB.setProfile(recipient, dressupProfile);
-                    returnString = "dressup";
-                    break;
+                //case "dressup":
+                //    MonDB.addInteraction(toPlay.pendingInteraction);
+                //    Profile dressupProfile = MonDB.getProfile(recipient);
+                //    dressupProfile.characteristics["attire"] = toPlay.pendingInteraction.identifier;
+                //    MonDB.setProfile(recipient, dressupProfile);
+                //    returnString = "dressup";
+                //    break;
                 //case "mark":
                 //    string listname = toPlay.pendingInteraction.identifier + "marks"; //which mark list is added to is defined by the identifier
                 //    List<string> markList = new List<string>();
@@ -178,18 +178,18 @@ namespace FChatDicebot
                 //    MonDB.setProfile(recipient, markProfile);
                 //    returnString = "mark";
                 //    break;
-                case "feed":
-                    MonDB.addInteraction(toPlay.pendingInteraction);
-                    Profile feedProfile = MonDB.getProfile(recipient);
-                    MonDB.setProfile(recipient, feedProfile);
-                    returnString = "feed";
-                    break;
-                case "golden":
-                    MonDB.addInteraction(toPlay.pendingInteraction);
-                    Profile goldenProfile = MonDB.getProfile(recipient);
-                    MonDB.setProfile(recipient, goldenProfile);
-                    returnString = "golden";
-                    break;
+                //case "feed":
+                //    MonDB.addInteraction(toPlay.pendingInteraction);
+                //    Profile feedProfile = MonDB.getProfile(recipient);
+                //    MonDB.setProfile(recipient, feedProfile);
+                //    returnString = "feed";
+                //    break;
+                //case "golden":
+                //    MonDB.addInteraction(toPlay.pendingInteraction);
+                //    Profile goldenProfile = MonDB.getProfile(recipient);
+                //    MonDB.setProfile(recipient, goldenProfile);
+                //    returnString = "golden";
+                //    break;
                 case "paymentGive":
                     MonDB.addInteraction(toPlay.pendingInteraction);
                     string giveCurrency = toPlay.pendingInteraction.identifier;
