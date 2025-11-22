@@ -186,7 +186,7 @@ namespace FChatDicebot.Tests.Integration
 
             // Act - Check if command is expired (typically timeout is 10 minutes)
             var retrievedCommand = _database.GetPendingCommandAwaitingConsent("Bob");
-            bool isExpired = (DateTime.UtcNow - retrievedCommand.startTime).TotalMinutes > 5;
+            bool isExpired = (DateTime.UtcNow - retrievedCommand.startTime).TotalMinutes > 10;
 
             // Assert
             Assert.True(isExpired);
