@@ -120,7 +120,7 @@ namespace FChatDicebot.BotCommands
         /// <summary>
         /// Legacy constructor for backward compatibility (uses MonDB)
         /// </summary>
-        public ChateauDossier() : this(new MonDBWrapper())
+        public ChateauDossier() : this(MonDB.GetDatabase())
         {
         }
 

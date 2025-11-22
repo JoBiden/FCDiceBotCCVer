@@ -359,6 +359,25 @@ namespace FChatDicebot.Database
             return (int)collection.CountDocuments(filter);
         }
 
+        public long GetTypeCount(string profileName, string identifierType, string initiatorRecipientOrBoth)
+        {
+            identifierType = identifierType.ToLower();
+            initiatorRecipientOrBoth = initiatorRecipientOrBoth.ToLower();
+
+            switch (initiatorRecipientOrBoth)
+            {
+                case "initiator":
+                    return CountInteractionsByInitiatorAndType(profileName, identifierType);
+                case "recipient":
+                    return CountInteractionsByRecipientAndType(profileName, identifierType);
+                default:
+                    // For "both", we need to sum initiator and recipient counts
+                    int asInitiator = CountInteractionsByInitiatorAndType(profileName, identifierType);
+                    int asRecipient = CountInteractionsByRecipientAndType(profileName, identifierType);
+                    return asInitiator + asRecipient;
+            }
+        }
+
         // Pending Command Operations
         public void AddPendingCommand(PendingCommand toAdd)
         {

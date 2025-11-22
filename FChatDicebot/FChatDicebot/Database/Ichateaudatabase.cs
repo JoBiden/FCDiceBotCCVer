@@ -41,6 +41,7 @@ namespace FChatDicebot.Database
         int CountInteractionsByInitiatorAndType(string initiator, string type);
         int CountInteractionsByRecipientAndType(string recipient, string type);
         int CountInteractionsBetweenUsersAndType(string user1, string user2, string type);
+        long GetTypeCount(string profileName, string identifierType, string initiatorRecipientOrBoth);
 
         // Pending Command Operations
         void AddPendingCommand(PendingCommand toAdd);
