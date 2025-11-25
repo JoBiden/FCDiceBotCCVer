@@ -65,6 +65,11 @@ namespace FChatDicebot
             GetDatabase().IncrementCount(userName, countLabel);
         }
 
+        internal static void decrementCount(string userName, string countLabel)
+        {
+            GetDatabase().DecrementCount(userName, countLabel);
+        }
+
         internal static void changeCount(string userName, string countLabel, int changeAmount)
         {
             GetDatabase().ChangeCount(userName, countLabel, changeAmount);

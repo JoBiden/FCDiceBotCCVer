@@ -123,7 +123,6 @@ namespace FChatDicebot
                 ("milktake", 10, "Giga Milk"),
                 ("milktake", 25, "Cow"),
 
-                //Note: Make sure existing payment function makes 'paymentGive' and 'paymentReceive'
                 // Payment Give - giving
                 ("paymentGivegive", 1, "Not Broke"),
                 ("paymentGivegive", 5, "Frequent Buyer"),
@@ -166,13 +165,24 @@ namespace FChatDicebot
                 ("goldentake", 5, "Yellow"),
                 ("goldentake", 10, "Golden"),
                 ("goldentake", 25, "Urinal"),
+                
+                // Pledges - active
+                ("pledgesactive", 1, "Made A Promise"),
+                ("pledgesactive", 5, "Will Do It Later"),
+                ("pledgesactive", 10, "Will Do It Eventually"),
+                ("pledgesactive", 25, "Lazy"),
 
-                //refactor to made pledges and completed pledges
-                // Pledging
-                //("pledge", 1, "Made A Promise"),
-                //("pledge", 5, "Will Do It Later"),
-                //("pledge", 10, "Will Do It Eventually"),
-                //("pledge", 25, "Lazy"),
+                // Pledges - fulfilled
+                ("pledgesfulfilled", 1, "Kept A Promise"),
+                ("pledgesfulfilled", 5, "Did It"),
+                ("pledgesfulfilled", 10, "Trustworthy"),
+                ("pledgesfulfilled", 25, "Whose Word Is Law"),
+
+                // Pledges - abandoned
+                ("pledgesabandoned", 1, "Broke Their Promise"),
+                ("pledgesabandoned", 5, "Didn't Do It"),
+                ("pledgesabandoned", 10, "Gave Up"),
+                ("pledgesabandoned", 25, "Chopped A Cherry Tree In A Past Life"),
 
                 // Dressup - giving
                 ("dressupgive", 5, "Good Eye"),

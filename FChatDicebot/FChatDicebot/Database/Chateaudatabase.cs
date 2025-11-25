@@ -74,6 +74,11 @@ namespace FChatDicebot.Database
             ChangeCount(userName, countLabel, 1);
         }
 
+        public void DecrementCount(string userName, string countLabel)
+        {
+            ChangeCount(userName, countLabel, -1);
+        }
+
         public void ChangeCount(string userName, string countLabel, int changeAmount)
         {
             var collection = Database.GetCollection<Profile>("RegisteredProfiles");

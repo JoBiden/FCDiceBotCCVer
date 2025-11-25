@@ -26,6 +26,21 @@ namespace FChatDicebot.InteractionProcessors.Casual
         {
         }
 
+        public override string GetInteractionVerb(VerbTense tense)
+        {
+            switch (tense)
+            {
+                case VerbTense.Past:
+                    return "held hands";
+                case VerbTense.Present:
+                    return "holds hands";
+                case VerbTense.Future:
+                    return "will hold hands";
+                default:
+                    return "hold hands";
+            }
+        }
+
         public override string ProcessInteraction(PendingCommand command)
         {
             string initiator = command.pendingInteraction.initiator;

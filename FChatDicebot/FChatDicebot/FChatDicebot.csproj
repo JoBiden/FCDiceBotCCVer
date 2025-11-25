@@ -188,10 +188,10 @@
     <Compile Include="BotCommands\ChateauCuddle.cs" />
     <Compile Include="BotCommands\ChateauKiss.cs" />
     <Compile Include="BotCommands\ChateauBully.cs" />
-    <Compile Include="BotCommands\ChateauCancelPledge.cs" />
+    <Compile Include="BotCommands\ChateauAbandonPledge.cs" />
     <Compile Include="BotCommands\ChateauFulfill.cs" />
     <Compile Include="BotCommands\ChateauPledge.cs" />
-    <Compile Include="BotCommands\ChateauViewPledges.cs" />
+    <Compile Include="BotCommands\ChateauPledges.cs" />
     <Compile Include="BotCommands\ChateauPetrify.cs" />
     <Compile Include="BotCommands\ChateauMonsterize.cs" />
     <Compile Include="BotCommands\ChateauRename.cs" />

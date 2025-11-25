@@ -5,16 +5,16 @@ using FChatDicebot.Model;
 
 namespace FChatDicebot.BotCommands
 {
-    public class ChateauCancelPledge : ChatBotCommand
+    public class ChateauAbandonPledge : ChatBotCommand
     {
         private const int CANCELLATION_COST = 10; // Cost in "favor" currency to cancel a pledge
 
-        public ChateauCancelPledge()
+        public ChateauAbandonPledge()
         {
-            Name = "cancelpledge";
+            Name = "abandon";
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
-            RequireChannel = true;
+            RequireChannel = false;
             LockCategory = CommandLockCategory.NONE;
         }
 
@@ -24,11 +24,7 @@ namespace FChatDicebot.BotCommands
             string pledgee = commandController.GetUserNameFromCommandTerms(rawTerms);
 
             // Get the interaction type from command terms
-            string interactionType = null;
-            if (terms.Length >= 3)
-            {
-                interactionType = terms[2].ToLower();
-            }
+            string interactionType = commandController.getInteractionTypeFromCommandTerms(rawTerms);
 
             Profile pledgerProfile = MonDB.getProfile(characterName);
             Profile pledgeeProfile = MonDB.getProfile(pledgee);
@@ -52,7 +48,7 @@ namespace FChatDicebot.BotCommands
             // Validate interaction type was provided
             if (string.IsNullOrEmpty(interactionType))
             {
-                errorMessage = "Please specify which pledged interaction you want to cancel. Usage: !cancelpledge [user]Name[/user] interactiontype";
+                errorMessage = "Please specify which pledged interaction you intend to abandon. Usage: !abandon [noparse][user]NameInUserTag[/user][/noparse] interactiontype";
                 valid = false;
             }
 
@@ -65,7 +61,7 @@ namespace FChatDicebot.BotCommands
 
                 if (matchingPledges.Count == 0)
                 {
-                    errorMessage = $"You don't have an active pledge to {interactionType} {pledgeeProfile.displayName}. Use !viewpledges to see your active pledges.";
+                    errorMessage = $"You don't have an active pledge to {Utils.interactionToVerb(pledgeToCancel.interactionType, false)} {pledgeeProfile.displayName}. Use !viewpledges to see your active pledges.";
                     valid = false;
                 }
                 else
@@ -75,34 +71,33 @@ namespace FChatDicebot.BotCommands
                 }
             }
 
-            // Check if user has enough currency to pay the cancellation cost
             if (valid && pledgeToCancel != null)
             {
-                var currencies = MonDB.getCurrencies(characterName);
-                int currentFavor = currencies.ContainsKey("favor") ? currencies["favor"] : 0;
-
-                if (currentFavor < CANCELLATION_COST)
-                {
-                    errorMessage = $"Breaking a pledge requires {CANCELLATION_COST} favor, but you only have {currentFavor}. Pledges should not be made lightly!";
-                    valid = false;
-                }
-            }
-
-            if (valid && pledgeToCancel != null)
-            {
-                // Charge the cancellation cost
-                pledgerProfile.currencies["favor"] = pledgerProfile.currencies.ContainsKey("favor") ? pledgerProfile.currencies["favor"] - CANCELLATION_COST : -CANCELLATION_COST;
                 MonDB.setProfile(characterName, pledgerProfile);
 
-                // Mark pledge as cancelled
-                pledgeToCancel.status = "cancelled";
-                MonDB.updatePledge(pledgeToCancel);
+                if (pledgeToCancel.status == "active")
+                {
+                    pledgeToCancel.status = "warned";
+                    MonDB.updatePledge(pledgeToCancel);
+                    bot.SendPrivateMessage($"Abandoning an active pledge is not to be taken lightly. [b]Your dossier will carry a permanent record of how many pledges you have abandoned, and those you make pledges to will be informed of your likelihood to carry through a pledge.[/b] If you would still like to proceed with abandoning your pledge, try to do so once more. You will only be warned once per pledge.", characterName);
+                }
 
-                // Send confirmation message
-                string message = $"{pledgerProfile.displayName} has broken their pledge to {pledgeToCancel.interactionType} {pledgeeProfile.displayName}. The act of turning one's back on a promise has cost them {CANCELLATION_COST} favor. The Chateau remembers such moments...";
-                bot.SendMessageInChannel(message, channel);
-            }
-            else if (!valid)
+                else if (pledgeToCancel.status == "warned")
+                {
+                    // Mark pledge as abandoned
+                    pledgeToCancel.status = "abandoned";
+                    MonDB.updatePledge(pledgeToCancel);
+
+                    // incremenet abandoned pledge count, decrement outstanding pledge count
+                    MonDB.incrementCount(characterName, "pledgesabandoned");
+                    MonDB.decrementCount(characterName, "pledgesactive");
+
+                    // Send confirmation message
+                    string message = $"{pledgerProfile.displayName} has abandoned their pledge to {Utils.interactionToVerb(pledgeToCancel.interactionType, false)} {pledgeeProfile.displayName}. The act of turning one's back on this promise has been permanently recorded on their dossier. Future pledges will carry with them an indication of this trend of oathbreaking...";
+                    bot.SendPrivateMessage(message, characterName);
+                }
+                }
+                else if (!valid)
             {
                 bot.SendPrivateMessage(errorMessage, characterName);
             }

@@ -17,6 +17,20 @@ namespace FChatDicebot.InteractionProcessors.Involved
         {
         }
 
+        public override string GetInteractionVerb(VerbTense tense)
+        {
+            switch (tense)
+            {
+                case VerbTense.Past:
+                    return "paid";
+                case VerbTense.Present:
+                    return "pays";
+                case VerbTense.Future:
+                    return "will pay";
+                default:
+                    return "pay";
+            }
+        }
         public PaymentGiveProcessor() : base()
         {
         }

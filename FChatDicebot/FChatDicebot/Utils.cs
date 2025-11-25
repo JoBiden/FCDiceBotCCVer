@@ -333,9 +333,9 @@ namespace FChatDicebot
                 case "pay":
                     returnText = initiator.displayName + " payed " + recipient.displayName + " an undisclosed amount [spoiler]If this has finally been implemented, tell [user]Queen Contract[/user] to update Utils.GetInteractionDescription so this displays the actual amount[/spoiler] of " + interaction.identifier + ".";
                     break;
-                //case "pledge":
-                //returnText = initiator.displayName + " pledged to one day " + interaction.identifier + " with " + recipient.displayName;
-                //break;
+                case "pledge":
+                    returnText = initiator.displayName + " pledged to one day " + interaction.identifier + " with " + recipient.displayName;
+                    break;
                 //Commitment
                 case "bond":
                     string initiatorBond = Utils.BondToText(interaction.identifier, true);
@@ -1160,7 +1160,50 @@ namespace FChatDicebot
         }
 
 
-
+        internal static string interactionToVerb(string interactionType, bool pastTense)
+        {
+            Dictionary<string, string> interactionVerbs = new Dictionary<string, string>
+            {
+                // Casual/Simple interactions
+                { "climaxfor", pastTense ? "climaxed" : "climax" },
+                { "dressup", pastTense ? "dressed up" : "dress up" },
+                { "feed", pastTense ? "fed" : "feed" },
+                { "golden", pastTense ? "relieved themselves on" : "relieve themselves on" },
+                { "milk", pastTense ? "milked" : "milk" },
+                { "pay", pastTense ? "paid" : "pay" },
+                { "pledge", pastTense ? "pledged" : "pledge" },
+    
+                // Commitment interactions
+                { "bond", pastTense ? "bonded with" : "bond with" },
+                { "breed", pastTense ? "bred" : "breed" },
+                { "consume", pastTense ? "consumed" : "consume" },
+                { "corrupt", pastTense ? "corrupted" : "corrupt" },
+                { "employ", pastTense ? "employed" : "employ" },
+                { "entitle", pastTense ? "entitled" : "entitle" },
+                { "mark", pastTense ? "marked" : "mark" },
+                { "monsterize", pastTense ? "monsterized" : "monsterize" },
+                { "objectify", pastTense ? "objectified" : "objectify" },
+                { "petrify", pastTense ? "petrified" : "petrify" },
+                { "plant", pastTense ? "planted" : "plant" },
+                { "train", pastTense ? "trained" : "train" },
+    
+                // Consequence interactions
+                { "break", pastTense ? "broke" : "break" },
+                { "curse", pastTense ? "cursed" : "curse" },
+                { "dose", pastTense ? "dosed" : "dosed" },
+                { "infest", pastTense ? "infested" : "infest" },
+                { "odorize", pastTense ? "odorized" : "odorize" },
+                { "rename", pastTense ? "renamed" : "rename" }
+            };
+            if (interactionVerbs.ContainsKey(interactionType))
+            {
+                return interactionVerbs[interactionType];
+            }
+            else
+            {
+                return pastTense ? "interacted with" : "interact with";
+            }
+        }
 
 
 

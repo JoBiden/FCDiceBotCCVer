@@ -16,6 +16,7 @@ namespace FChatDicebot.Database
         Profile GetProfile(string userName);
         void SetProfile(string userName, Profile newProfile);
         void IncrementCount(string userName, string countLabel);
+        void DecrementCount(string userName, string countLabel);
         void ChangeCount(string userName, string countLabel, int changeAmount);
         bool IncrementCountWithRateLimit(string userName, string countLabel, TimeSpan rateLimitDuration);
         bool IsCountRateLimited(string userName, string countLabel);

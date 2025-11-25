@@ -1,5 +1,6 @@
 using FChatDicebot.Model;
 using System;
+using static FChatDicebot.InteractionProcessors.InteractionProcessorBase;
 
 namespace FChatDicebot.InteractionProcessors
 {
@@ -18,6 +19,9 @@ namespace FChatDicebot.InteractionProcessors
         /// The investment level of this interaction: "casual", "involved", "commitment", or "consequence"
         /// </summary>
         string InvestmentLevel { get; }
+
+        string GetInteractionVerb(VerbTense tense);
+        string GetInteractionVerb(VerbTense tense, bool isPlural);
 
         /// <summary>
         /// Process the interaction after consent has been given.

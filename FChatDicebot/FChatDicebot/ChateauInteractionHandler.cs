@@ -45,6 +45,7 @@ namespace FChatDicebot
                                 if (timeSincePledge.TotalDays >= 1)
                                 {
                                     pledge.pledgeHonored = true;
+                                    MonDB.incrementCount(pledge.pledger, "pledgesfulfilled");
                                 }
 
                                 MonDB.updatePledge(pledge);

@@ -23,11 +23,7 @@ namespace FChatDicebot.BotCommands
             string pledgee = commandController.GetUserNameFromCommandTerms(rawTerms);
 
             // Get the interaction type from command terms
-            string interactionType = null;
-            if (terms.Length >= 3)
-            {
-                interactionType = terms[2].ToLower();
-            }
+            string interactionType = commandController.getInteractionTypeFromCommandTerms(rawTerms);
 
             Profile pledgerProfile = MonDB.getProfile(characterName);
             Profile pledgeeProfile = MonDB.getProfile(pledgee);
@@ -51,7 +47,7 @@ namespace FChatDicebot.BotCommands
             // Validate interaction type was provided
             if (string.IsNullOrEmpty(interactionType))
             {
-                errorMessage = "Please specify which pledged interaction you want to fulfill. Usage: !fulfill [user]Name[/user] interactiontype";
+                errorMessage = "Please specify which pledged interaction you want to fulfill. Usage: !fulfill [noparse][user]UsernameInUserTag[/user][/noparse] interactiontype";
                 valid = false;
             }
 
@@ -64,7 +60,8 @@ namespace FChatDicebot.BotCommands
 
                 if (matchingPledges.Count == 0)
                 {
-                    errorMessage = $"You don't have an active pledge to {interactionType} {pledgeeProfile.displayName}. Use !viewpledges to see your active pledges.";
+                    IInteractionProcessor processor = InteractionProcessorRegistry.GetProcessor(interactionType);
+                    errorMessage = $"You don't have an active pledge to {processor.GetInteractionVerb(InteractionProcessorBase.VerbTense.Infinitive)} {pledgeeProfile.displayName}. Use !viewpledges to see your active pledges.";
                     valid = false;
                 }
                 else
@@ -80,7 +77,7 @@ namespace FChatDicebot.BotCommands
                 var processor = InteractionProcessorRegistry.GetProcessor(interactionType);
                 if (processor == null)
                 {
-                    errorMessage = $"The interaction type '{interactionType}' no longer exists. This shouldn't happen!";
+                    errorMessage = $"The interaction type '{interactionType}' no longer exists. This shouldn't happen! Tell [user]Queen Contract[/user] immediately! Tell her to look at the processors!";
                     valid = false;
                 }
             }

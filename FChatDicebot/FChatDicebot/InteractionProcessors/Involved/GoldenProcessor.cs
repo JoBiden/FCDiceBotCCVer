@@ -28,6 +28,21 @@ namespace FChatDicebot.InteractionProcessors.Involved
         {
         }
 
+        public override string GetInteractionVerb(VerbTense tense)
+        {
+            switch (tense)
+            {
+                case VerbTense.Past:
+                    return "relieved themselves";
+                case VerbTense.Present:
+                    return "relieves themself";
+                case VerbTense.Future:
+                    return "will relieve themself";
+                default:
+                    return "relieve themself";
+            }
+        }
+
         public override ValidationResult ValidateInteraction(string initiator, string recipient, string identifier)
         {
             // First do base validation (profiles exist)
