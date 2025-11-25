@@ -161,7 +161,7 @@ namespace FChatDicebot.Model
         public string identifier { get; set; }
         public string investmentLevel { get; set; }
         public DateTime pledgeTime { get; set; } = DateTime.UtcNow;
-        public string status { get; set; } = "active"; // active, fulfilled, cancelled
+        public string status { get; set; } = "active"; // active, fulfilled, abandoned
         public DateTime? fulfilledTime { get; set; }
         public bool pledgeHonored { get; set; } = false; // true if fulfilled 1+ days after creation
 
