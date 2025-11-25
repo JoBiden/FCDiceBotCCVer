@@ -23,7 +23,7 @@ namespace FChatDicebot.BotCommands
             string pledgee = commandController.GetUserNameFromCommandTerms(rawTerms);
 
             // Get the interaction type from command terms
-            string interactionType = commandController.getInteractionTypeFromCommandTerms(rawTerms);
+            string interactionType = commandController.GetInteractionTypeFromCommandTerms(rawTerms);
 
             Profile pledgerProfile = MonDB.getProfile(characterName);
             Profile pledgeeProfile = MonDB.getProfile(pledgee);
@@ -110,7 +110,7 @@ namespace FChatDicebot.BotCommands
                 // history of abandoning pledges
                 if (abandonmentToFulfilledRatio >= 1.0f)
                 {
-                    message += $" Be warned that {pledgerProfile.displayName} has abandoned at least as many pledges as they have fulfilled... Their word isn't worth much, is it? Maybe you can help restore their honor by holding them to their word this time, if you're willing to help them redeem themselves.";
+                    message += $" Be warned that {pledgerProfile.displayName} has abandoned at least as many pledges as they have fulfilled... they don't value their word, it would seem. Maybe you can help restore their honor by holding them to their word this time, if you're willing to help them redeem themselves.";
                 }
                 else if (abandonmentToFulfilledRatio >= 0.5f)
                 {
@@ -128,7 +128,7 @@ namespace FChatDicebot.BotCommands
                 // large ratio of active pledges, but no abandoned pledges
                 else if (activePledges >= 5 && fulfilledPledges == 0)
                 {
-                    message += $" According to our records, {pledgerProfile.displayName} has a large number of active pledges, but hasn't fulfilled a single one to date... maybe they're too chicken to formally abandon them?";
+                    message += $" According to our records, {pledgerProfile.displayName} has made a large number of pledges, but hasn't fulfilled a single one to date... maybe they're too chicken to formally abandon them?";
                 }
                 else if (activeToFulfilledRatio >= 3.0f)
                 {

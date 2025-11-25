@@ -23,7 +23,7 @@ namespace FChatDicebot.BotCommands
             string pledgee = commandController.GetUserNameFromCommandTerms(rawTerms);
 
             // Get the interaction type from command terms
-            string interactionType = commandController.getInteractionTypeFromCommandTerms(rawTerms);
+            string interactionType = commandController.GetInteractionTypeFromCommandTerms(rawTerms);
 
             Profile pledgerProfile = MonDB.getProfile(characterName);
             Profile pledgeeProfile = MonDB.getProfile(pledgee);

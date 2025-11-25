@@ -1294,5 +1294,59 @@ namespace FChatDicebot
                 return "a mysterious bond [spoiler]that means [user]Queen Contract[/user] needs to update Utils.BondToText to include " + bond + ", go tell her to fix it!";
             }
         }
+
+        /// <summary>
+        /// Returns a human-readable time difference in the largest unit.
+        /// Examples: "2 weeks", "1 month", "4 years", "3 days"
+        /// </summary>
+        public static string TimeDifferenceText(DateTime start, DateTime end)
+        {
+            TimeSpan difference = end - start;
+
+            // Calculate years
+            int years = (int)(difference.TotalDays / 365.25);
+            if (years > 0)
+            {
+                return years == 1 ? "1 year" : $"{years} years";
+            }
+
+            // Calculate months (approximate)
+            int months = (int)(difference.TotalDays / 30.44);
+            if (months > 0)
+            {
+                return months == 1 ? "1 month" : $"{months} months";
+            }
+
+            // Calculate weeks
+            int weeks = (int)(difference.TotalDays / 7);
+            if (weeks > 0)
+            {
+                return weeks == 1 ? "1 week" : $"{weeks} weeks";
+            }
+
+            // Calculate days
+            int days = (int)difference.TotalDays;
+            if (days > 0)
+            {
+                return days == 1 ? "1 day" : $"{days} days";
+            }
+
+            // Calculate hours
+            int hours = (int)difference.TotalHours;
+            if (hours > 0)
+            {
+                return hours == 1 ? "1 hour" : $"{hours} hours";
+            }
+
+            // Calculate minutes
+            int minutes = (int)difference.TotalMinutes;
+            if (minutes > 0)
+            {
+                return minutes == 1 ? "1 minute" : $"{minutes} minutes";
+            }
+
+            // Less than a minute
+            return "less than a minute";
+        }
     }
 }
