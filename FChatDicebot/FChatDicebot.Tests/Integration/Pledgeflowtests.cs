@@ -396,10 +396,14 @@ namespace FChatDicebot.Tests.Integration
             };
             _database.AddPledge(pledge);
 
+            // Retrieve the pledge with its generated Id
+            var savedPledge = _database.GetPledgesByPledger("Alice").FirstOrDefault();
+            Assert.NotNull(savedPledge); // Verify it was saved
+
             // Act
-            pledge.status = "fulfilled";
-            pledge.fulfilledTime = DateTime.UtcNow;
-            _database.UpdatePledge(pledge);
+            savedPledge.status = "fulfilled";
+            savedPledge.fulfilledTime = DateTime.UtcNow;
+            _database.UpdatePledge(savedPledge);
 
             // Assert
             var updated = _database.GetPledgesByPledger("Alice").FirstOrDefault();
@@ -421,9 +425,13 @@ namespace FChatDicebot.Tests.Integration
             };
             _database.AddPledge(pledge);
 
+            // Retrieve the pledge with its generated Id
+            var savedPledge = _database.GetPledgesByPledger("Alice").FirstOrDefault();
+            Assert.NotNull(savedPledge); // Verify it was saved
+
             // Act
-            pledge.status = "abandoned";
-            _database.UpdatePledge(pledge);
+            savedPledge.status = "abandoned";
+            _database.UpdatePledge(savedPledge);
 
             // Assert
             var updated = _database.GetPledgesByPledger("Alice").FirstOrDefault();
