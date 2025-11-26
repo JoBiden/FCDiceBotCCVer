@@ -255,18 +255,24 @@ namespace FChatDicebot.Tests.Unit
                 pledgee = "Bob",
                 interactionType = "feed",
                 investmentLevel = "involved",
+                pledgeTime = DateTime.UtcNow,
                 status = "active"
             };
             _database.AddPledge(pledge);
 
+            // Retrieve the pledge with its generated Id
+            var savedPledge = _database.GetPledgesByPledger("Alice").FirstOrDefault();
+            Assert.NotNull(savedPledge); // Verify it was saved
+
             // Act
-            pledge.status = "fulfilled";
-            pledge.fulfilledTime = DateTime.UtcNow;
-            pledge.pledgeHonored = true;
-            _database.UpdatePledge(pledge);
+            savedPledge.status = "fulfilled";
+            savedPledge.fulfilledTime = DateTime.UtcNow;
+            savedPledge.pledgeHonored = true;
+            _database.UpdatePledge(savedPledge);
 
             // Assert
             var updated = _database.GetPledgesByPledger("Alice").FirstOrDefault();
+            Assert.NotNull(updated);
             Assert.Equal("fulfilled", updated.status);
             Assert.NotNull(updated.fulfilledTime);
             Assert.True(updated.pledgeHonored);
