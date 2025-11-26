@@ -17,9 +17,18 @@ namespace FChatDicebot.BotCommands
         public ChateauMonsterize()
         {
             Name = "monsterize";
+            Aliases = new string[] { };
+            Category = "Commitment Interaction";
+            ShortDescription = "Transform another character into a monster species";
+            LongDescription = "Transform another character into a specific monster species. The recipient must !consent for it to be recorded in both dossiers. This significantly changes their appearance and identity in the Chateau.";
+            Usage = "!monsterize [user]CharacterName[/user] [species]";
+            RelatedCommands = new string[] { "petrify", "plant", "objectify", "consent", "dossier" };
+            CooldownDuration = null;
+            CooldownAppliesTo = null;
+            IdentifierCategory = "species";
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
-            RequireChannel = true;
+            RequireChannel = false;
             LockCategory = CommandLockCategory.NONE;
         }
 

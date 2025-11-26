@@ -16,9 +16,18 @@ namespace FChatDicebot.BotCommands
         public ChateauConsent()
         {
             Name = "consent";
+            Aliases = new string[] { "c" };
+            Category = "Interaction Support";
+            ShortDescription = "Give consent to a pending interaction";
+            LongDescription = "Give your consent to a pending interaction request from another character. When someone requests an interaction with you, you must !consent for it to be completed and recorded in both dossiers.\n\nPending requests expire after 10 minutes.";
+            Usage = "!consent\nor\n!c";
+            RelatedCommands = new string[] { "kiss", "mark", "feed", "dossier" };
+            CooldownDuration = null;
+            CooldownAppliesTo = null;
+            IdentifierCategory = null;
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
-            RequireChannel = true;
+            RequireChannel = false;
             LockCategory = CommandLockCategory.NONE;
         }
 

@@ -17,9 +17,18 @@ namespace FChatDicebot.BotCommands
         public ChateauRename()
         {
             Name = "rename";
+            Aliases = new string[] { };
+            Category = "Consequence Interaction";
+            ShortDescription = "Rename another character's display name";
+            LongDescription = "Rename another character, changing their display name in all Chateau records. The recipient must !consent for this significant change. This affects how they appear in all dossiers and interactions.";
+            Usage = "!rename [user]CharacterName[/user] \"New Display Name\"";
+            RelatedCommands = new string[] { "monsterize", "consent", "dossier" };
+            CooldownDuration = null;
+            CooldownAppliesTo = null;
+            IdentifierCategory = null;
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
-            RequireChannel = true;
+            RequireChannel = false;
             LockCategory = CommandLockCategory.NONE;
         }
 

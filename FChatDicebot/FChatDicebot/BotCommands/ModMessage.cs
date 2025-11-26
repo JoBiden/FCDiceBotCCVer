@@ -12,6 +12,15 @@ namespace FChatDicebot.BotCommands
         public ModMessage()
         {
             Name = "modmessage";
+            Aliases = new string[] { };
+            Category = "General";
+            ShortDescription = "View moderator announcements and messages";
+            LongDescription = "Display moderator messages and announcements for the Chateau. Can view all messages or filter by category. Useful for staying informed about Chateau news, rule changes, or important updates.";
+            Usage = "!modmessage\nor\n!modmessage [category]";
+            RelatedCommands = new string[] { "help", "botinfo" };
+            CooldownDuration = null;
+            CooldownAppliesTo = null;
+            IdentifierCategory = null;
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
             RequireChannel = false;

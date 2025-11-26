@@ -16,6 +16,15 @@ namespace FChatDicebot.BotCommands
         public ChateauIdentifier()
         {
             Name = "identifier";
+            Aliases = new string[] { "whatis" };
+            Category = "General";
+            ShortDescription = "Get information about a specific identifier";
+            LongDescription = "Look up detailed information about a specific identifier (bodypart, substance, species, etc.). Shows the description and categories for that identifier.";
+            Usage = "!identifier [name]\nor\n!whatis [name]";
+            RelatedCommands = new string[] { "identifiers", "list" };
+            CooldownDuration = null;
+            CooldownAppliesTo = null;
+            IdentifierCategory = null;
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
             RequireChannel = false;

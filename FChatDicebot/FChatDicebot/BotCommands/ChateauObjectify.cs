@@ -17,9 +17,18 @@ namespace FChatDicebot.BotCommands
         public ChateauObjectify()
         {
             Name = "objectify";
+            Aliases = new string[] { };
+            Category = "Commitment Interaction";
+            ShortDescription = "Turn another character into an object";
+            LongDescription = "Turn another character into a specific object. The recipient must !consent for it to be recorded in both dossiers. This is a significant transformation interaction.";
+            Usage = "!objectify [user]CharacterName[/user] [object]";
+            RelatedCommands = new string[] { "monsterize", "petrify", "plant", "consent", "dossier" };
+            CooldownDuration = null;
+            CooldownAppliesTo = null;
+            IdentifierCategory = "object";
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
-            RequireChannel = true;
+            RequireChannel = false;
             LockCategory = CommandLockCategory.NONE;
         }
 

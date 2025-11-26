@@ -18,6 +18,15 @@ namespace FChatDicebot.BotCommands
         public ChateauBank()
         {
             Name = "bank";
+            Aliases = new string[] { };
+            Category = "General";
+            ShortDescription = "Check your or another character's currency balance";
+            LongDescription = "View the currency balance stored in the Chateau's vault for yourself or another character. Shows employment status and encourages earning through !work or !volunteer if no currencies are present.";
+            Usage = "!bank\nor\n!bank [user]CharacterName[/user]";
+            RelatedCommands = new string[] { "work", "volunteer", "employ", "dossier" };
+            CooldownDuration = null;
+            CooldownAppliesTo = null;
+            IdentifierCategory = null;
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
             RequireChannel = false;

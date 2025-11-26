@@ -17,9 +17,18 @@ namespace FChatDicebot.BotCommands
         public ChateauDressup()
         {
             Name = "dressup";
+            Aliases = new string[] { };
+            Category = "Involved Interaction";
+            ShortDescription = "Dress another character in specific attire";
+            LongDescription = "Dress another character in specific attire. The recipient must !consent for it to be recorded in both dossiers. The attire choice affects how they appear in their dossier.";
+            Usage = "!dressup [user]CharacterName[/user] [attire]";
+            RelatedCommands = new string[] { "feed", "golden", "consent", "dossier" };
+            CooldownDuration = null;
+            CooldownAppliesTo = null;
+            IdentifierCategory = "attire";
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
-            RequireChannel = true;
+            RequireChannel = false;
             LockCategory = CommandLockCategory.NONE;
         }
 

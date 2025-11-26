@@ -19,9 +19,18 @@ namespace FChatDicebot.BotCommands
         public ChateauEntitle()
         {
             Name = "entitle";
+            Aliases = new string[] { };
+            Category = "Commitment Interaction";
+            ShortDescription = "Grant a custom title to another character";
+            LongDescription = "Grant a custom title to another character. The recipient must !consent for the title to be added to their dossier. Titles show special relationships or achievements and appear in their profile.";
+            Usage = "!entitle [user]CharacterName[/user] \"Title Text\"";
+            RelatedCommands = new string[] { "bond", "titles", "settitle", "dossier" };
+            CooldownDuration = null;
+            CooldownAppliesTo = null;
+            IdentifierCategory = null;
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
-            RequireChannel = true;
+            RequireChannel = false;
             LockCategory = CommandLockCategory.NONE;
         }
 

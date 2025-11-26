@@ -16,9 +16,18 @@ namespace FChatDicebot.BotCommands
         public ChateauSpank()
         {
             Name = "spank";
+            Aliases = new string[] { };
+            Category = "Casual Interaction";
+            ShortDescription = "Request to spank another character";
+            LongDescription = "Request to spank another character. The recipient must !consent for it to be recorded in both dossiers. A playful, slightly naughty interaction.";
+            Usage = "!spank [user]CharacterName[/user]";
+            RelatedCommands = new string[] { "bully", "consent", "dossier" };
+            CooldownDuration = "30 minutes";
+            CooldownAppliesTo = "initiator";
+            IdentifierCategory = null;
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
-            RequireChannel = true;
+            RequireChannel = false;
             LockCategory = CommandLockCategory.NONE;
         }
 

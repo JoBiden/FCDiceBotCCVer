@@ -17,9 +17,18 @@ namespace FChatDicebot.BotCommands
         public ChateauPetrify()
         {
             Name = "petrify";
+            Aliases = new string[] { };
+            Category = "Commitment Interaction";
+            ShortDescription = "Turn another character into a statue";
+            LongDescription = "Turn another character into a statue. The recipient must !consent for it to be recorded in both dossiers. This is a significant transformation that affects their dossier.";
+            Usage = "!petrify [user]CharacterName[/user]";
+            RelatedCommands = new string[] { "monsterize", "plant", "objectify", "consent", "dossier", "statues" };
+            CooldownDuration = null;
+            CooldownAppliesTo = null;
+            IdentifierCategory = null;
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
-            RequireChannel = true;
+            RequireChannel = false;
             LockCategory = CommandLockCategory.NONE;
         }
 

@@ -15,6 +15,15 @@ namespace FChatDicebot.BotCommands
         public ChateauList()
         {
             Name = "list";
+            Aliases = new string[] { };
+            Category = "General";
+            ShortDescription = "Alias for !identifiers";
+            LongDescription = "Shorthand for the !identifiers command. Lists all available identifiers for a given category. See !help identifiers for full details.";
+            Usage = "!list [category]";
+            RelatedCommands = new string[] { "identifiers", "identifier", "whatis" };
+            CooldownDuration = null;
+            CooldownAppliesTo = null;
+            IdentifierCategory = null;
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
             RequireChannel = false;

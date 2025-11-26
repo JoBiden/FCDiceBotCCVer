@@ -12,6 +12,15 @@ namespace FChatDicebot.BotCommands
         public BotInfo()
         {
             Name = "botinfo";
+            Aliases = new string[] { };
+            Category = "General";
+            ShortDescription = "Display bot version and developer information";
+            LongDescription = "Shows information about the Chateau Contract Bot including current version, developer credits, and how long the bot has been online. Also references the Dice Bot that this was adapted from.";
+            Usage = "!botinfo";
+            RelatedCommands = new string[] { "uptime", "help" };
+            CooldownDuration = null;
+            CooldownAppliesTo = null;
+            IdentifierCategory = null;
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
             RequireChannel = false;

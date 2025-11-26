@@ -17,9 +17,18 @@ namespace FChatDicebot.BotCommands
         public ChateauPlant()
         {
             Name = "plant";
+            Aliases = new string[] { };
+            Category = "Commitment Interaction";
+            ShortDescription = "Transform another character into a plant";
+            LongDescription = "Transform another character into a specific type of plant. The recipient must !consent for it to be recorded in both dossiers. This significantly changes their form in the Chateau.";
+            Usage = "!plant [user]CharacterName[/user] [plant]";
+            RelatedCommands = new string[] { "monsterize", "petrify", "objectify", "consent", "dossier" };
+            CooldownDuration = null;
+            CooldownAppliesTo = null;
+            IdentifierCategory = "plant";
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
-            RequireChannel = true;
+            RequireChannel = false;
             LockCategory = CommandLockCategory.NONE;
         }
 

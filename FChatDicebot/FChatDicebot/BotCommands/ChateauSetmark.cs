@@ -17,6 +17,15 @@ namespace FChatDicebot.BotCommands
         public ChateauSetmark()
         {
             Name = "setmark";
+            Aliases = new string[] { };
+            Category = "General";
+            ShortDescription = "Set your personal mark icon";
+            LongDescription = "Set or change your personal mark that will appear when you use !mark on others. Your mark is displayed as an eicon and must be a valid F-List eicon name. Once set, anyone you mark will display this icon in their dossier.";
+            Usage = "!setmark [eicon]YourMarkName[/eicon]";
+            RelatedCommands = new string[] { "mark", "dossier" };
+            CooldownDuration = null;
+            CooldownAppliesTo = null;
+            IdentifierCategory = null;
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
             RequireChannel = false;

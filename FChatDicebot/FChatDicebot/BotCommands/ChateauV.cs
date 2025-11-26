@@ -16,6 +16,15 @@ namespace FChatDicebot.BotCommands
         public ChateauV()
         {
             Name = "v";
+            Aliases = new string[] { };
+            Category = "General";
+            ShortDescription = "Alias for !volunteer";
+            LongDescription = "Shorthand for the !volunteer command. See !help volunteer for full details.";
+            Usage = "!v\n!v [choice number]";
+            RelatedCommands = new string[] { "volunteer", "work", "bank" };
+            CooldownDuration = "1 day";
+            CooldownAppliesTo = "initiator";
+            IdentifierCategory = null;
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
             RequireChannel = false;

@@ -17,9 +17,18 @@ namespace FChatDicebot.BotCommands
         public ChateauEmploy()
         {
             Name = "employ";
+            Aliases = new string[] { };
+            Category = "Commitment Interaction";
+            ShortDescription = "Employ another character or yourself in a job";
+            LongDescription = "Employ another character in a specific job role, or employ yourself. Once employed, characters can use !work to earn currency. Employment creates a relationship between employer and employee tracked in dossiers.";
+            Usage = "!employ [user]CharacterName[/user] [job]\nor\n!employ [job] (to self-employ)";
+            RelatedCommands = new string[] { "work", "bank", "bond", "dossier" };
+            CooldownDuration = null;
+            CooldownAppliesTo = null;
+            IdentifierCategory = null;
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
-            RequireChannel = true;
+            RequireChannel = false;
             LockCategory = CommandLockCategory.NONE;
         }
 

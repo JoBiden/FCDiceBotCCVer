@@ -17,9 +17,18 @@ namespace FChatDicebot.BotCommands
         public ChateauGolden()
         {
             Name = "golden";
+            Aliases = new string[] { };
+            Category = "Involved Interaction";
+            ShortDescription = "Give another character a golden shower";
+            LongDescription = "Give another character a golden shower. The recipient must !consent for it to be recorded in both dossiers. An intimate, kinky interaction.";
+            Usage = "!golden [user]CharacterName[/user]";
+            RelatedCommands = new string[] { "feed", "dressup", "consent", "dossier" };
+            CooldownDuration = null;
+            CooldownAppliesTo = null;
+            IdentifierCategory = null;
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
-            RequireChannel = true;
+            RequireChannel = false;
             LockCategory = CommandLockCategory.NONE;
         }
 

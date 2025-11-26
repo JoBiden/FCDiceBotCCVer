@@ -13,6 +13,15 @@ namespace FChatDicebot.BotCommands
         public ChateauVolunteer()
         {
             Name = "volunteer";
+            Aliases = new string[] { "v" };
+            Category = "General";
+            ShortDescription = "Volunteer to earn currency without a job";
+            LongDescription = "Volunteer at the Chateau to earn currency even if you don't have a job. Similar to !work but doesn't require employment. Each session presents choices that lead to different rewards. Use !v followed by a number to select your choice.\n\nYou can only volunteer once per Chateau day.";
+            Usage = "!volunteer\n!v [choice number]";
+            RelatedCommands = new string[] { "work", "bank", "dossier" };
+            CooldownDuration = "1 day";
+            CooldownAppliesTo = "initiator";
+            IdentifierCategory = null;
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
             RequireChannel = false;

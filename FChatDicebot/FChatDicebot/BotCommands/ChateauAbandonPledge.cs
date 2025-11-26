@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 using FChatDicebot.BotCommands.Base;
 using FChatDicebot.Model;
@@ -11,7 +11,16 @@ namespace FChatDicebot.BotCommands
 
         public ChateauAbandonPledge()
         {
-            Name = "abandon";
+            Name = "abandonpledge";
+            Aliases = new string[] { };
+            Category = "Interaction Support";
+            ShortDescription = "Abandon an active pledge";
+            LongDescription = "Abandon one of your active pledges if you cannot or will not fulfill it. This is tracked in your record and may affect your reputation.";
+            Usage = "!abandonpledge [pledge_id]";
+            RelatedCommands = new string[] { "pledge", "pledges", "fulfill" };
+            CooldownDuration = null;
+            CooldownAppliesTo = null;
+            IdentifierCategory = null;
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
             RequireChannel = false;

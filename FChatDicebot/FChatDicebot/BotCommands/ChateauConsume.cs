@@ -17,9 +17,18 @@ namespace FChatDicebot.BotCommands
         public ChateauConsume()
         {
             Name = "consume";
+            Aliases = new string[] { };
+            Category = "Commitment Interaction";
+            ShortDescription = "Consume/devour another character";
+            LongDescription = "Consume or devour another character. The recipient must !consent for it to be recorded in both dossiers. This is a very intimate vore interaction showing complete dominance.";
+            Usage = "!consume [user]CharacterName[/user]";
+            RelatedCommands = new string[] { "mark", "employ", "bond", "consent", "dossier" };
+            CooldownDuration = null;
+            CooldownAppliesTo = null;
+            IdentifierCategory = null;
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
-            RequireChannel = true;
+            RequireChannel = false;
             LockCategory = CommandLockCategory.NONE;
         }
 

@@ -16,6 +16,15 @@ namespace FChatDicebot.BotCommands
         public ChateauW()
         {
             Name = "w";
+            Aliases = new string[] { };
+            Category = "General";
+            ShortDescription = "Alias for !work";
+            LongDescription = "Shorthand for the !work command. See !help work for full details.";
+            Usage = "!w\n!w [choice number]";
+            RelatedCommands = new string[] { "work", "volunteer", "bank" };
+            CooldownDuration = "1 day";
+            CooldownAppliesTo = "initiator";
+            IdentifierCategory = null;
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
             RequireChannel = false;

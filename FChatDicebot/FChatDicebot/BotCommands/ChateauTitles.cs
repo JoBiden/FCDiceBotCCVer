@@ -16,6 +16,15 @@ namespace FChatDicebot.BotCommands
         public ChateauTitles()
         {
             Name = "titles";
+            Aliases = new string[] { };
+            Category = "Personalization";
+            ShortDescription = "View all your earned and granted titles";
+            LongDescription = "View all titles you've earned or been granted, including system titles (earned through achievements) and custom titles (granted by other characters). Use !settitle to choose which titles appear in your dossier.";
+            Usage = "!titles";
+            RelatedCommands = new string[] { "settitle", "systemtitles", "entitle", "dossier" };
+            CooldownDuration = null;
+            CooldownAppliesTo = null;
+            IdentifierCategory = null;
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
             RequireChannel = false;

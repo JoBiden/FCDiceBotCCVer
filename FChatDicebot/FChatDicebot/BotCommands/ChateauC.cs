@@ -15,9 +15,18 @@ namespace FChatDicebot.BotCommands
         public ChateauC()
         {
             Name = "c";
+            Aliases = new string[] { };
+            Category = "Interaction Support";
+            ShortDescription = "Alias for !consent";
+            LongDescription = "Shorthand for the !consent command. See !help consent for full details.";
+            Usage = "!c";
+            RelatedCommands = new string[] { "consent" };
+            CooldownDuration = null;
+            CooldownAppliesTo = null;
+            IdentifierCategory = null;
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
-            RequireChannel = true;
+            RequireChannel = false;
             LockCategory = CommandLockCategory.NONE;
         }
 

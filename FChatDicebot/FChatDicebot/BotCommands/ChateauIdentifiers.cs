@@ -15,7 +15,16 @@ namespace FChatDicebot.BotCommands
     {
         public ChateauIdentifiers()
         {
-            Name = "category";
+            Name = "identifiers";
+            Aliases = new string[] { "list" };
+            Category = "General";
+            ShortDescription = "List all identifiers in a category";
+            LongDescription = "Display all available identifiers for a specific category (bodypart, substance, attire, species, object, plant, etc.). Useful for seeing what options are available for commands like !mark, !feed, !dressup, etc.";
+            Usage = "!identifiers [category]\nor\n!list [category]";
+            RelatedCommands = new string[] { "identifier", "whatis", "mark", "feed" };
+            CooldownDuration = null;
+            CooldownAppliesTo = null;
+            IdentifierCategory = null;
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
             RequireChannel = false;

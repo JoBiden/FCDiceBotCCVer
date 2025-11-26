@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using FChatDicebot.BotCommands.Base;
 using FChatDicebot.Model;
 using FChatDicebot.InteractionProcessors;
@@ -11,9 +11,18 @@ namespace FChatDicebot.BotCommands
         public ChateauPledge()
         {
             Name = "pledge";
+            Aliases = new string[] { };
+            Category = "Interaction Support";
+            ShortDescription = "Pledge to perform an interaction in the future";
+            LongDescription = "Pledge to perform a specific interaction with another character within a set timeframe. If you fulfill the pledge (complete the interaction) more than 1 day after creating it, you gain honor. Abandoning pledges is tracked.";
+            Usage = "!pledge [user]CharacterName[/user] [interactiontype]";
+            RelatedCommands = new string[] { "pledges", "fulfill", "abandonpledge", "dossier" };
+            CooldownDuration = null;
+            CooldownAppliesTo = null;
+            IdentifierCategory = null;
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
-            RequireChannel = true;
+            RequireChannel = false;
             LockCategory = CommandLockCategory.NONE;
         }
 

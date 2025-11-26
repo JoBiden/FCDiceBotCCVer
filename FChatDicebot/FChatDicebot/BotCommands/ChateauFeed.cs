@@ -17,9 +17,18 @@ namespace FChatDicebot.BotCommands
         public ChateauFeed()
         {
             Name = "feed";
+            Aliases = new string[] { };
+            Category = "Involved Interaction";
+            ShortDescription = "Feed another character a substance";
+            LongDescription = "Feed another character a specific substance. The recipient must !consent for it to be recorded in both dossiers. This is a caring, nurturing interaction.";
+            Usage = "!feed [user]CharacterName[/user] [substance]";
+            RelatedCommands = new string[] { "dressup", "golden", "consent", "dossier" };
+            CooldownDuration = null;
+            CooldownAppliesTo = null;
+            IdentifierCategory = "substance";
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
-            RequireChannel = true;
+            RequireChannel = false;
             LockCategory = CommandLockCategory.NONE;
         }
 

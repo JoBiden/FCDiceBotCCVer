@@ -12,6 +12,15 @@ namespace FChatDicebot.BotCommands
         public Uptime()
         {
             Name = "uptime";
+            Aliases = new string[] { };
+            Category = "General";
+            ShortDescription = "Check how long the bot has been online";
+            LongDescription = "Displays how long the Chateau Contract Bot has been running since its last restart, formatted in days, hours, minutes, and seconds.";
+            Usage = "!uptime";
+            RelatedCommands = new string[] { "botinfo" };
+            CooldownDuration = null;
+            CooldownAppliesTo = null;
+            IdentifierCategory = null;
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
             RequireChannel = false;

@@ -16,9 +16,18 @@ namespace FChatDicebot.BotCommands
         public ChateauHandhold()
         {
             Name = "handhold";
+            Aliases = new string[] { };
+            Category = "Casual Interaction";
+            ShortDescription = "Request to hold hands with another character";
+            LongDescription = "Request to hold hands with another character. The recipient must !consent for it to be recorded in both dossiers. A sweet, innocent gesture of affection.";
+            Usage = "!handhold [user]CharacterName[/user]";
+            RelatedCommands = new string[] { "kiss", "cuddle", "consent", "dossier" };
+            CooldownDuration = "30 minutes";
+            CooldownAppliesTo = "initiator";
+            IdentifierCategory = null;
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
-            RequireChannel = true;
+            RequireChannel = false;
             LockCategory = CommandLockCategory.NONE;
         }
 

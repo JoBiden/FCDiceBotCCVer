@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 using FChatDicebot.BotCommands.Base;
 using FChatDicebot.Model;
@@ -11,9 +11,18 @@ namespace FChatDicebot.BotCommands
         public ChateauFulfill()
         {
             Name = "fulfill";
+            Aliases = new string[] { };
+            Category = "Interaction Support";
+            ShortDescription = "Mark a pledge as fulfilled";
+            LongDescription = "Mark one of your pledges as fulfilled after you've completed the pledged interaction. If fulfilled more than 1 day after the pledge was made, you gain honor for keeping your word.";
+            Usage = "!fulfill [pledge_id]";
+            RelatedCommands = new string[] { "pledge", "pledges", "abandonpledge" };
+            CooldownDuration = null;
+            CooldownAppliesTo = null;
+            IdentifierCategory = null;
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
-            RequireChannel = true;
+            RequireChannel = false;
             LockCategory = CommandLockCategory.NONE;
         }
 

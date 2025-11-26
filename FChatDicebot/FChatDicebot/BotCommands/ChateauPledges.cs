@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -12,9 +12,18 @@ namespace FChatDicebot.BotCommands
         public ChateauPledges()
         {
             Name = "pledges";
+            Aliases = new string[] { };
+            Category = "Interaction Support";
+            ShortDescription = "View your active pledges";
+            LongDescription = "View all your currently active pledges, showing who you pledged to interact with and what interaction type you promised. Use !fulfill when you complete a pledged interaction.";
+            Usage = "!pledges";
+            RelatedCommands = new string[] { "pledge", "fulfill", "abandonpledge" };
+            CooldownDuration = null;
+            CooldownAppliesTo = null;
+            IdentifierCategory = null;
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
-            RequireChannel = true;
+            RequireChannel = false;
             LockCategory = CommandLockCategory.NONE;
         }
 

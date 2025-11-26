@@ -17,7 +17,16 @@ namespace FChatDicebot.BotCommands
         public ChateauAdminRename()
         {
             Name = "namechange";
-            RequireBotAdmin = true;
+            Aliases = new string[] { };
+            Category = "Admin";
+            ShortDescription = "Admin: Update database when a user changes their F-List username";
+            LongDescription = "ADMIN ONLY: Update the database to reflect a user who has changed their F-List username. This updates all records to use the new username while preserving their data. Case sensitive.";
+            Usage = "!namechange [user]OldUsername[/user] \"NewUsername\"";
+            RelatedCommands = new string[] { "dossier" };
+            CooldownDuration = null;
+            CooldownAppliesTo = null;
+            IdentifierCategory = null;
+            RequireBotAdmin = false;
             RequireChannelAdmin = false;
             RequireChannel = false;
             LockCategory = CommandLockCategory.NONE;

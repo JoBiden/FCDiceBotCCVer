@@ -15,6 +15,15 @@ namespace FChatDicebot.BotCommands
         public JoinChateau()
         {
             Name = "joinchateau";
+            Aliases = new string[] { };
+            Category = "General";
+            ShortDescription = "Register your character with the Chateau system";
+            LongDescription = "Register yourself as a resident of the Chateau, creating your profile in the database. This is required before you can use most Chateau commands. You only need to do this once per character.";
+            Usage = "!joinchateau";
+            RelatedCommands = new string[] { "dossier", "bank", "work" };
+            CooldownDuration = null;
+            CooldownAppliesTo = null;
+            IdentifierCategory = null;
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
             RequireChannel = false;

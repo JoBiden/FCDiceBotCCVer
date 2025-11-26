@@ -15,6 +15,15 @@ namespace FChatDicebot.BotCommands
         public ChateauProfile()
         {
             Name = "profile";
+            Aliases = new string[] { };
+            Category = "General";
+            ShortDescription = "Alias for !dossier";
+            LongDescription = "Shorthand for the !dossier command. See !help dossier for full details.";
+            Usage = "!profile\nor\n!profile [user]CharacterName[/user]";
+            RelatedCommands = new string[] { "dossier", "bank", "list" };
+            CooldownDuration = null;
+            CooldownAppliesTo = null;
+            IdentifierCategory = null;
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
             RequireChannel = false;

@@ -16,6 +16,15 @@ namespace FChatDicebot.BotCommands
         public ChateauStatues()
         {
             Name = "statues";
+            Aliases = new string[] { };
+            Category = "Information";
+            ShortDescription = "View all currently petrified characters";
+            LongDescription = "Display a list of all characters currently transformed into statues via !petrify. Shows who petrified them and when.";
+            Usage = "!statues";
+            RelatedCommands = new string[] { "petrify", "dossier" };
+            CooldownDuration = null;
+            CooldownAppliesTo = null;
+            IdentifierCategory = null;
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
             RequireChannel = false;
