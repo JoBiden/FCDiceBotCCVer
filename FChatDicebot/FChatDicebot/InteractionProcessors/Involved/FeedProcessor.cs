@@ -21,6 +21,21 @@ namespace FChatDicebot.InteractionProcessors.Involved
         {
         }
 
+        public override string GetInteractionVerb(VerbTense tense)
+        {
+            switch (tense)
+            {
+                case VerbTense.Past:
+                    return "fed";
+                case VerbTense.Present:
+                    return "feeds";
+                case VerbTense.Future:
+                    return "will feed";
+                default:
+                    return "feed";
+            }
+        }
+
         /// <summary>
         /// Legacy constructor for backward compatibility
         /// </summary>

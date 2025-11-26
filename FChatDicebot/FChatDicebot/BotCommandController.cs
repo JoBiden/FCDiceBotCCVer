@@ -368,6 +368,64 @@ namespace FChatDicebot
             return null;
         }
 
+        public string GetInteractionTypeFromCommandTerms(string[] terms)
+        {
+            // Get the first plain text term that's not part of special tags
+            // This is typically the term after the command and username
+            if (terms != null && terms.Length >= 3)
+            {
+                bool skipNext = false;
+                bool inUserTag = false;
+                bool inQuotes = false;
+                bool inEIcon = false;
+                int termsSeen = 0;
+
+                foreach (string term in terms)
+                {
+                    // Track if we're inside [user] tags
+                    if (term.StartsWith("[user]"))
+                        inUserTag = true;
+                    if (term.EndsWith("[/user]"))
+                    {
+                        inUserTag = false;
+                        continue;
+                    }
+
+                    // Track if we're inside [eicon] tags
+                    if (term.StartsWith("[eicon]"))
+                        inEIcon = true;
+                    if (term.EndsWith("[/eicon]"))
+                    {
+                        inEIcon = false;
+                        continue;
+                    }
+
+                    // Track if we're inside quotes
+                    if (term.StartsWith("\""))
+                        inQuotes = true;
+                    if (term.EndsWith("\""))
+                    {
+                        inQuotes = false;
+                        continue;
+                    }
+
+                    // Skip command name (first term) and any terms inside special tags
+                    if (termsSeen == 0)
+                    {
+                        termsSeen++;
+                        continue;
+                    }
+
+                    // If we're not in any special tags, this is our interaction type
+                    if (!inUserTag && !inQuotes && !inEIcon)
+                    {
+                        return term.ToLower();
+                    }
+                }
+            }
+            return null;
+        }
+
         public string[] GetIntsFromCommandTermsAsStrings(string[] terms)
         {
             List<string> intTerms = new List<string>();

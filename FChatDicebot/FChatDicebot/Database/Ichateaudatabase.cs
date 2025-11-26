@@ -16,6 +16,7 @@ namespace FChatDicebot.Database
         Profile GetProfile(string userName);
         void SetProfile(string userName, Profile newProfile);
         void IncrementCount(string userName, string countLabel);
+        void DecrementCount(string userName, string countLabel);
         void ChangeCount(string userName, string countLabel, int changeAmount);
         bool IncrementCountWithRateLimit(string userName, string countLabel, TimeSpan rateLimitDuration);
         bool IsCountRateLimited(string userName, string countLabel);
@@ -71,6 +72,15 @@ namespace FChatDicebot.Database
 
         // Mod Message Operations
         string GetModMessage(string messageLabel);
+
+        // Pledge Operations
+        void AddPledge(Pledge pledge);
+        Pledge GetPledge(ObjectId pledgeId);
+        List<Pledge> GetPledgesByPledger(string pledger);
+        List<Pledge> GetPledgesByPledgee(string pledgee);
+        List<Pledge> GetActivePledges(string pledger, string pledgee, string interactionType);
+        void UpdatePledge(Pledge pledge);
+        void DeletePledge(ObjectId pledgeId);
 
         // Database Management
         void ClearDatabase();

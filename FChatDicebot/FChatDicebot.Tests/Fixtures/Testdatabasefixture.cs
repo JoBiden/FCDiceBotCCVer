@@ -39,6 +39,7 @@ namespace FChatDicebot.Tests.Fixtures
             Database.ClearCollection("Commands");
             Database.ClearCollection("Identifiers");
             Database.ClearCollection("ModMessages");
+            Database.ClearCollection("Pledges");
         }
 
         /// <summary>

@@ -333,9 +333,9 @@ namespace FChatDicebot
                 case "pay":
                     returnText = initiator.displayName + " payed " + recipient.displayName + " an undisclosed amount [spoiler]If this has finally been implemented, tell [user]Queen Contract[/user] to update Utils.GetInteractionDescription so this displays the actual amount[/spoiler] of " + interaction.identifier + ".";
                     break;
-                //case "pledge":
-                //returnText = initiator.displayName + " pledged to one day " + interaction.identifier + " with " + recipient.displayName;
-                //break;
+                case "pledge":
+                    returnText = initiator.displayName + " pledged to one day " + interaction.identifier + " with " + recipient.displayName;
+                    break;
                 //Commitment
                 case "bond":
                     string initiatorBond = Utils.BondToText(interaction.identifier, true);
@@ -1160,7 +1160,50 @@ namespace FChatDicebot
         }
 
 
-
+        internal static string interactionToVerb(string interactionType, bool pastTense)
+        {
+            Dictionary<string, string> interactionVerbs = new Dictionary<string, string>
+            {
+                // Casual/Simple interactions
+                { "climaxfor", pastTense ? "climaxed" : "climax" },
+                { "dressup", pastTense ? "dressed up" : "dress up" },
+                { "feed", pastTense ? "fed" : "feed" },
+                { "golden", pastTense ? "relieved themselves on" : "relieve themselves on" },
+                { "milk", pastTense ? "milked" : "milk" },
+                { "pay", pastTense ? "paid" : "pay" },
+                { "pledge", pastTense ? "pledged" : "pledge" },
+    
+                // Commitment interactions
+                { "bond", pastTense ? "bonded with" : "bond with" },
+                { "breed", pastTense ? "bred" : "breed" },
+                { "consume", pastTense ? "consumed" : "consume" },
+                { "corrupt", pastTense ? "corrupted" : "corrupt" },
+                { "employ", pastTense ? "employed" : "employ" },
+                { "entitle", pastTense ? "entitled" : "entitle" },
+                { "mark", pastTense ? "marked" : "mark" },
+                { "monsterize", pastTense ? "monsterized" : "monsterize" },
+                { "objectify", pastTense ? "objectified" : "objectify" },
+                { "petrify", pastTense ? "petrified" : "petrify" },
+                { "plant", pastTense ? "planted" : "plant" },
+                { "train", pastTense ? "trained" : "train" },
+    
+                // Consequence interactions
+                { "break", pastTense ? "broke" : "break" },
+                { "curse", pastTense ? "cursed" : "curse" },
+                { "dose", pastTense ? "dosed" : "dosed" },
+                { "infest", pastTense ? "infested" : "infest" },
+                { "odorize", pastTense ? "odorized" : "odorize" },
+                { "rename", pastTense ? "renamed" : "rename" }
+            };
+            if (interactionVerbs.ContainsKey(interactionType))
+            {
+                return interactionVerbs[interactionType];
+            }
+            else
+            {
+                return pastTense ? "interacted with" : "interact with";
+            }
+        }
 
 
 
@@ -1250,6 +1293,60 @@ namespace FChatDicebot
             {
                 return "a mysterious bond [spoiler]that means [user]Queen Contract[/user] needs to update Utils.BondToText to include " + bond + ", go tell her to fix it!";
             }
+        }
+
+        /// <summary>
+        /// Returns a human-readable time difference in the largest unit.
+        /// Examples: "2 weeks", "1 month", "4 years", "3 days"
+        /// </summary>
+        public static string TimeDifferenceText(DateTime start, DateTime end)
+        {
+            TimeSpan difference = end - start;
+
+            // Calculate years
+            int years = (int)(difference.TotalDays / 365.25);
+            if (years > 0)
+            {
+                return years == 1 ? "1 year" : $"{years} years";
+            }
+
+            // Calculate months (approximate)
+            int months = (int)(difference.TotalDays / 30.44);
+            if (months > 0)
+            {
+                return months == 1 ? "1 month" : $"{months} months";
+            }
+
+            // Calculate weeks
+            int weeks = (int)(difference.TotalDays / 7);
+            if (weeks > 0)
+            {
+                return weeks == 1 ? "1 week" : $"{weeks} weeks";
+            }
+
+            // Calculate days
+            int days = (int)difference.TotalDays;
+            if (days > 0)
+            {
+                return days == 1 ? "1 day" : $"{days} days";
+            }
+
+            // Calculate hours
+            int hours = (int)difference.TotalHours;
+            if (hours > 0)
+            {
+                return hours == 1 ? "1 hour" : $"{hours} hours";
+            }
+
+            // Calculate minutes
+            int minutes = (int)difference.TotalMinutes;
+            if (minutes > 0)
+            {
+                return minutes == 1 ? "1 minute" : $"{minutes} minutes";
+            }
+
+            // Less than a minute
+            return "less than a minute";
         }
     }
 }

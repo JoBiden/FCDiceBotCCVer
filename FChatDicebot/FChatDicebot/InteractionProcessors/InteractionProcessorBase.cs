@@ -15,6 +15,62 @@ namespace FChatDicebot.InteractionProcessors
         protected readonly IChateauDatabase Database;
         protected string _lastRateLimitMessage = string.Empty;
 
+        public enum VerbTense
+        {
+            Past,
+            Present,
+            Future,
+            Infinitive
+        }
+
+        /// <summary>
+        /// Returns a verb in the specified tense for the interaction.
+        /// </summary>
+        public virtual string GetInteractionVerb(VerbTense tense)
+        {
+            // Strip "Processor" from class name
+            string className = this.GetType().Name;
+            string verb = className.Replace("Processor", "").ToLower();
+
+            switch (tense)
+            {
+                case VerbTense.Past:
+                    if (!verb.EndsWith("e"))
+                    {
+                        return verb + "ed";
+                    }
+                    return verb + "d";
+                case VerbTense.Present:
+                    return verb + "s";
+                case VerbTense.Future:
+                    return "will " + verb;
+                default:
+                    return verb;
+            }
+        }
+
+        /// <summary>
+        /// Returns a verb in the specified tense for the interaction, handling pluralization.
+        /// </summary>
+        public string GetInteractionVerb(VerbTense tense, bool isPlural)
+        {
+            // Default implementation calls the abstract method for singular
+            // Derived classes can override this if they need custom plural handling
+            string verb = GetInteractionVerb(tense);
+
+            if (isPlural && tense == VerbTense.Present)
+            {
+                // Remove the 's' for plural present tense
+                // "feeds" -> "feed", "dresses" -> "dress"
+                if (verb.EndsWith("s") && !verb.EndsWith("ss"))
+                {
+                    return verb.Substring(0, verb.Length - 1);
+                }
+            }
+
+            return verb;
+        }
+
         /// <summary>
         /// Constructor for dependency injection.
         /// </summary>
