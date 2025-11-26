@@ -16,6 +16,15 @@ namespace FChatDicebot.BotCommands
         public ChateauKiss()
         {
             Name = "kiss";
+            Aliases = new string[] { };
+            Category = "Casual Interaction";
+            ShortDescription = "Request to give another character a kiss";
+            LongDescription = "Request to give another character a kiss. The recipient must !consent to the kiss for it to be recorded in both of your dossiers. This is a sweet, affectionate gesture that builds your casual interaction count.";
+            Usage = "!kiss [user]CharacterName[/user]";
+            RelatedCommands = new string[] { "cuddle", "handhold", "consent", "dossier" };
+            CooldownDuration = "30 minutes";
+            CooldownAppliesTo = "initiator";
+            IdentifierCategory = null;
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
             RequireChannel = true;

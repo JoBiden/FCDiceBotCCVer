@@ -17,6 +17,15 @@ namespace FChatDicebot.BotCommands
         public ChateauMark()
         {
             Name = "mark";
+            Aliases = new string[] { };
+            Category = "Commitment Interaction";
+            ShortDescription = "Place your mark on another character's body part";
+            LongDescription = "Place your mark on another character's body part. This is a significant commitment interaction that shows ownership or deep connection. You must first set your own mark using !setmark before you can mark others. The recipient must !consent to receiving your mark. This action is recorded in both dossiers and cannot be done frequently.";
+            Usage = "!mark [user]CharacterName[/user] [bodypart]\n\nExample: !mark [user]Alice[/user] collar";
+            RelatedCommands = new string[] { "setmark", "consume", "consent", "dossier" };
+            CooldownDuration = null;
+            CooldownAppliesTo = null;
+            IdentifierCategory = "bodypart";
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
             RequireChannel = true;

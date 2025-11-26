@@ -12,6 +12,15 @@ namespace FChatDicebot.BotCommands
         public ChateauHelp()
         {
             Name = "help";
+            Aliases = new string[] { };
+            Category = "General";
+            ShortDescription = "Get help about bot commands";
+            LongDescription = "View general help for all commands, or get detailed help for a specific command.\n\nWithout arguments: Shows a categorized list of all available commands.\nWith a command name: Shows detailed help for that specific command including usage, cooldown, and related commands.";
+            Usage = "!help\nor\n!help [commandname]";
+            RelatedCommands = new string[] { "botinfo", "dossier" };
+            CooldownDuration = null;
+            CooldownAppliesTo = null;
+            IdentifierCategory = null;
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
             RequireChannel = false;
@@ -20,6 +29,28 @@ namespace FChatDicebot.BotCommands
 
         public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
         {
+            // Check if user is requesting help for a specific command
+            if (terms.Length > 0)
+            {
+                string requestedCommand = terms[0].ToLower();
+                ChatBotCommand cmd = commandController.BotCommands.FirstOrDefault(c =>
+                    c.Name.ToLower() == requestedCommand ||
+                    (c.Aliases != null && c.Aliases.Any(a => a.ToLower() == requestedCommand)));
+
+                if (cmd != null)
+                {
+                    string detailedHelp = BuildDetailedCommandHelp(cmd);
+                    bot.SendPrivateMessage(detailedHelp, characterName);
+                    return;
+                }
+                else
+                {
+                    bot.SendPrivateMessage($"Command '{requestedCommand}' not found. Use !help to see all available commands.", characterName);
+                    return;
+                }
+            }
+
+            // Original general help display
             List<string> generalCommands = new List<string>() 
             {
                 "!dossier [sub]!profile[/sub] ",
@@ -101,6 +132,108 @@ namespace FChatDicebot.BotCommands
                 
             }
             bot.SendPrivateMessage(messageText + "\nMost of [user]Chateau Contract[/user]'s functions are designed for use in the [session=Château Contract]adh-ac1885cd73f31adfaefb[/session] channel. Be sure to !joinchateau if you plan to stick around ♥", characterName);
+        }
+
+        private string BuildDetailedCommandHelp(ChatBotCommand cmd)
+        {
+            StringBuilder sb = new StringBuilder();
+
+            // Command name and aliases
+            sb.Append("[b]!");
+            sb.Append(cmd.Name);
+            sb.Append("[/b]");
+
+            if (cmd.Aliases != null && cmd.Aliases.Length > 0)
+            {
+                sb.Append(" (aliases: ");
+                sb.Append(string.Join(", ", cmd.Aliases.Select(a => "!" + a)));
+                sb.Append(")");
+            }
+            else
+            {
+                sb.Append(" (aliases: none)");
+            }
+            sb.Append("\n");
+
+            // Category
+            if (!string.IsNullOrEmpty(cmd.Category))
+            {
+                sb.Append("Category: ");
+                sb.Append(cmd.Category);
+                sb.Append("\n\n");
+            }
+
+            // Long description
+            if (!string.IsNullOrEmpty(cmd.LongDescription))
+            {
+                sb.Append(cmd.LongDescription);
+                sb.Append("\n\n");
+            }
+            else if (!string.IsNullOrEmpty(cmd.ShortDescription))
+            {
+                sb.Append(cmd.ShortDescription);
+                sb.Append("\n\n");
+            }
+
+            // Usage
+            if (!string.IsNullOrEmpty(cmd.Usage))
+            {
+                sb.Append("[u]Usage:[/u]\n");
+                sb.Append(cmd.Usage);
+                sb.Append("\n\n");
+            }
+
+            // Identifier list (if applicable)
+            if (!string.IsNullOrEmpty(cmd.IdentifierCategory))
+            {
+                List<Identifier> identifiers = MonDB.getIdentifiers(cmd.IdentifierCategory);
+                if (identifiers != null && identifiers.Count > 0)
+                {
+                    sb.Append("[u]Available ");
+                    sb.Append(cmd.IdentifierCategory);
+                    sb.Append("s:[/u]\n");
+                    sb.Append(Utils.sortedListDisplayText(identifiers.Select(i => i.type).ToList()));
+                    sb.Append("\n\n");
+                }
+            }
+
+            // Cooldown information
+            if (!string.IsNullOrEmpty(cmd.CooldownDuration))
+            {
+                sb.Append("[u]Cooldown:[/u] ");
+                sb.Append(cmd.CooldownDuration);
+                if (!string.IsNullOrEmpty(cmd.CooldownAppliesTo))
+                {
+                    sb.Append(" (applies to ");
+                    sb.Append(cmd.CooldownAppliesTo);
+                    sb.Append(")");
+                }
+                sb.Append("\n\n");
+            }
+            else
+            {
+                sb.Append("[u]Cooldown:[/u] None\n\n");
+            }
+
+            // Channel requirement
+            if (cmd.RequireChannel)
+            {
+                sb.Append("[u]Channel Required:[/u] Yes\n\n");
+            }
+            else
+            {
+                sb.Append("[u]Channel Required:[/u] No\n\n");
+            }
+
+            // Related commands
+            if (cmd.RelatedCommands != null && cmd.RelatedCommands.Length > 0)
+            {
+                sb.Append("[u]Related Commands:[/u] ");
+                sb.Append(string.Join(", ", cmd.RelatedCommands.Select(c => "!" + c)));
+                sb.Append("\n");
+            }
+
+            return sb.ToString();
         }
     }
 }

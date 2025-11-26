@@ -111,6 +111,15 @@ namespace FChatDicebot.BotCommands
         {
             _database = database;
             Name = "dossier";
+            Aliases = new string[] { "profile" };
+            Category = "General";
+            ShortDescription = "View a character's dossier with all their stats and history";
+            LongDescription = "View a detailed dossier for yourself or another character. The dossier shows:\n- Display name and specialist titles\n- Current job and employer\n- Casual interaction counts (kisses, cuddles, etc.)\n- Marks received on body parts\n- Bond relationships\n- Job experience\n- Recent interactions\n\nIf no character name is provided, shows your own dossier.";
+            Usage = "!dossier [user]CharacterName[/user]\nor\n!dossier (to view your own)";
+            RelatedCommands = new string[] { "bank", "identifier", "list" };
+            CooldownDuration = null;
+            CooldownAppliesTo = null;
+            IdentifierCategory = null;
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
             RequireChannel = false;
