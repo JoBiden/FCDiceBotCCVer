@@ -68,7 +68,7 @@ namespace FChatDicebot.InteractionProcessors.Casual
 
         public override string GetConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
-            return $"{initiatorProfile.displayName} wants to hold hands with {recipientProfile.displayName}! Do you !consent?";
+            return initiatorProfile.displayName + " wants to hold your hand (or equivalent appendage) " + recipientProfile.displayName + ". Do you !consent to some handholding?";
         }
     }
 }

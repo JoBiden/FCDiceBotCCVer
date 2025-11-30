@@ -81,18 +81,13 @@ namespace FChatDicebot.InteractionProcessors.Consequence
 
         public override string GetCompletionMessage(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
-            Identifier objectIdentifier = MonDB.getIdentifier(identifier);
-            string objectText = objectIdentifier != null ? objectIdentifier.description : identifier;
-
-            return $"{initiatorProfile.displayName} waves their hand and {recipientProfile.displayName} shimmers, transforming into {objectText}! They'll be an object until tomorrow.";
+            identifier = Utils.AnOrA(identifier) + " " + identifier;
+            return initiatorProfile.displayName + " has made " + recipientProfile.displayName + " into some sort of " + identifier + "! Who knows what's in store for them, but they'll be stuck with their fate for quite awhile...";
         }
 
         public override string GetConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
-            Identifier objectIdentifier = MonDB.getIdentifier(identifier);
-            string objectText = objectIdentifier != null ? objectIdentifier.description : identifier;
-
-            return $"{initiatorProfile.displayName} wants to objectify {recipientProfile.displayName} into {objectText} for 1 day. [b]You'll become an inanimate object![/b] Do you !consent?";
+            return initiatorProfile.displayName + " is going to turn " + recipientProfile.displayName + " into some sort of " + identifier + "! [b]This should not be taken lightly, and can not be done frequently.[/b] Do you !consent to becoming an object?";
         }
     }
 }

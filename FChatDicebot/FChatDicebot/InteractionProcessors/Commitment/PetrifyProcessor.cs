@@ -81,18 +81,12 @@ namespace FChatDicebot.InteractionProcessors.Consequence
 
         public override string GetCompletionMessage(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
-            Identifier locationIdentifier = MonDB.getIdentifier(identifier);
-            string locationText = locationIdentifier != null ? locationIdentifier.description : identifier;
-
-            return initiatorProfile.displayName + " is going to petrify " + recipientProfile.displayName + " " + Utils.LocationToText(identifier, initiatorProfile.displayName, recipientProfile.displayName) + "! [b]This should not be taken lightly, and can not be done frequently.[/b] Do you !consent to becoming still as a statue?";
+            return initiatorProfile.displayName + " has petrified " + recipientProfile.displayName + " " + Utils.LocationToText(identifier, initiatorProfile.userName, recipientProfile.userName) + "! They might be stuck there for quite awhile... hopefully visitors enjoy the pose they're stuck in.";
         }
 
         public override string GetConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
-            Identifier locationIdentifier = MonDB.getIdentifier(identifier);
-            string locationText = locationIdentifier != null ? locationIdentifier.description : identifier;
-
-            return initiatorProfile.displayName + " has petrified " + recipientProfile.displayName + " " + Utils.LocationToText(identifier, initiatorProfile.displayName, recipientProfile.displayName) + "! They might be stuck there for quite awhile... hopefully visitors enjoy the pose they're stuck in.";
+            return initiatorProfile.displayName + " is going to petrify " + recipientProfile.displayName + " " + Utils.LocationToText(identifier, initiatorProfile.displayName, recipientProfile.displayName) + "! [b]This should not be taken lightly, and can not be done frequently.[/b] Do you !consent to becoming still as a statue?";
         }
     }
 }

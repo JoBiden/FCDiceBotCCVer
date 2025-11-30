@@ -69,5 +69,10 @@ namespace FChatDicebot.InteractionProcessors.Casual
 
             return message;
         }
+
+        public override string GetConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
+        {
+            return initiatorProfile.displayName + " is about to give " + recipientProfile.displayName + " a spank. Do you !consent to that sting?";
+        }
     }
 }

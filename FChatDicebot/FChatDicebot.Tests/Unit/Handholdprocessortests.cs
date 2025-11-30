@@ -310,7 +310,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
             // Assert
             Assert.Contains("Alice", warning);
             Assert.Contains("Bob", warning);
-            Assert.Contains("hold hands", warning);
+            Assert.Contains("hold your hand", warning);
             Assert.Contains("!consent", warning);
         }
 

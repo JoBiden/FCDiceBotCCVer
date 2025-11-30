@@ -86,7 +86,7 @@ namespace FChatDicebot.InteractionProcessors.Involved
 
         public override string GetConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
-            return $"{initiatorProfile.displayName} wants to feed {recipientProfile.displayName} some {Utils.SubstanceToText(identifier)}. Do you !consent to being fed?";
+            return initiatorProfile.displayName + " is going to feed " + recipientProfile.displayName + " some " + Utils.SubstanceToText(identifier) + "! Do you !consent to consuming that?";
         }
     }
 }
