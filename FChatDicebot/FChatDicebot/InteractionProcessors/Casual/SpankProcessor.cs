@@ -6,14 +6,14 @@ using System.Collections.Generic;
 namespace FChatDicebot.InteractionProcessors.Casual
 {
     /// <summary>
-    /// Processor for the spank interaction - a casual interaction with 1 hour rate limit
+    /// Processor for the spank interaction
     /// </summary>
     public class SpankProcessor : InteractionProcessorBase
     {
         public override string InteractionType => "spank";
         public override string InvestmentLevel => "casual";
 
-        private static readonly TimeSpan RateLimit = TimeSpan.FromHours(1);
+        private static readonly TimeSpan RateLimit = TimeSpan.FromMinutes(30);
 
         /// <summary>
         /// Constructor for dependency injection (for testing)

@@ -12,17 +12,17 @@ namespace FChatDicebot.BotCommands
         {
             Name = "fulfill";
             Aliases = new string[] { };
-            Category = "Interaction Support";
-            ShortDescription = "Mark a pledge as fulfilled";
-            LongDescription = "Mark one of your pledges as fulfilled after you've completed the pledged interaction. If fulfilled more than 1 day after the pledge was made, you gain honor for keeping your word.";
-            Usage = "!fulfill [pledge_id]";
+            Category = "General";
+            ShortDescription = "Perform a promised interaction";
+            LongDescription = "Initiate the interaction that was promised days, weeks, years prior. This will also be automatically detected if a performed interaction was one that was pledged.";
+            Usage = "!fulfill [noparse][user]NameInUserTag[/user][/noparse] {interactiontype}";
             RelatedCommands = new string[] { "pledge", "pledges", "abandonpledge" };
             CooldownDuration = null;
             CooldownAppliesTo = null;
-            IdentifierCategory = null;
+            IdentifierCategory = "interaction";
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
-            RequireChannel = false;
+            RequireChannel = true;
             LockCategory = CommandLockCategory.NONE;
         }
 
@@ -56,7 +56,7 @@ namespace FChatDicebot.BotCommands
             // Validate interaction type was provided
             if (string.IsNullOrEmpty(interactionType))
             {
-                errorMessage = "Please specify which pledged interaction you want to fulfill. Usage: !fulfill [noparse][user]UsernameInUserTag[/user][/noparse] interactiontype";
+                errorMessage = "Please specify which pledged interaction you want to fulfill. Usage: !fulfill [noparse][user]NameInUserTag[/user][/noparse] interactiontype";
                 valid = false;
             }
 

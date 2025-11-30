@@ -19,16 +19,16 @@ namespace FChatDicebot.BotCommands
             Name = "employ";
             Aliases = new string[] { };
             Category = "Commitment Interaction";
-            ShortDescription = "Employ another character or yourself in a job";
-            LongDescription = "Employ another character in a specific job role, or employ yourself. Once employed, characters can use !work to earn currency. Employment creates a relationship between employer and employee tracked in dossiers.";
-            Usage = "!employ [user]CharacterName[/user] [job]\nor\n!employ [job] (to self-employ)";
-            RelatedCommands = new string[] { "work", "bank", "bond", "dossier" };
-            CooldownDuration = null;
-            CooldownAppliesTo = null;
-            IdentifierCategory = null;
+            ShortDescription = "Employ yourself or another resident to do jobs for the Chateau";
+            LongDescription = "Employ yourself or another resident to do jobs for the Chateau. Once employed, residents can use !work once a day to earn currency and job experience. On top of working their primary job, residents can also !volunteer once a day to explore other careers.";
+            Usage = "!employ [noparse][user]NameInUserTag[/user][/noparse] [job]\n(use your own username to self-employ)";
+            RelatedCommands = new string[] { "work", "bank", "volunteer"};
+            CooldownDuration = "1 Day";
+            CooldownAppliesTo = "recipient";
+            IdentifierCategory = "job";
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
-            RequireChannel = false;
+            RequireChannel = true;
             LockCategory = CommandLockCategory.NONE;
         }
 

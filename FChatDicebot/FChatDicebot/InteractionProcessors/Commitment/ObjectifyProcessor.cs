@@ -5,7 +5,7 @@ using System;
 namespace FChatDicebot.InteractionProcessors.Consequence
 {
     /// <summary>
-    /// Processor for the objectify interaction - transforms someone into an object for 1 day
+    /// Processor for the objectify interaction - transforms someone into an object. 7 day cool down for recipient.
     /// </summary>
     public class ObjectifyProcessor : InteractionProcessorBase
     {

@@ -1,22 +1,23 @@
 using FChatDicebot.Database;
 using FChatDicebot.Model;
 using System;
+using System.Numerics;
 
 namespace FChatDicebot.InteractionProcessors.Consequence
 {
     /// <summary>
-    /// Processor for the employ interaction - assigns someone a job for 1 day
+    /// Processor for the plant interaction - transforms someone into a plant for 1 day
     /// </summary>
-    public class EmployProcessor : InteractionProcessorBase
+    public class PlantProcessor : InteractionProcessorBase
     {
-        public override string InteractionType => "employ";
+        public override string InteractionType => "plant";
         public override string InvestmentLevel => "consequence";
 
-        public EmployProcessor(IChateauDatabase database) : base(database)
+        public PlantProcessor(IChateauDatabase database) : base(database)
         {
         }
 
-        public EmployProcessor() : base()
+        public PlantProcessor() : base()
         {
         }
 
@@ -30,7 +31,7 @@ namespace FChatDicebot.InteractionProcessors.Consequence
 
             if (string.IsNullOrEmpty(identifier))
             {
-                return ValidationResult.Failure(ChateauInteractionHandler.typeNotFoundText("job"));
+                return ValidationResult.Failure(ChateauInteractionHandler.typeNotFoundText("plant"));
             }
 
             return ValidationResult.Success();
@@ -38,9 +39,8 @@ namespace FChatDicebot.InteractionProcessors.Consequence
 
         public override string ProcessInteraction(PendingCommand command)
         {
-            string initiator = command.pendingInteraction.initiator;
             string recipient = command.pendingInteraction.recipient;
-            string job = command.pendingInteraction.identifier;
+            string plantType = command.pendingInteraction.identifier;
 
             // Save the interaction to history
             Database.AddInteraction(command.pendingInteraction);
@@ -48,14 +48,13 @@ namespace FChatDicebot.InteractionProcessors.Consequence
             // Get the recipient's profile
             Profile recipientProfile = Database.GetProfile(recipient);
 
-            // Set the job and employer
-            recipientProfile.characteristics["job"] = job;
-            recipientProfile.characteristics["employer"] = initiator;
+            // Set the plant type
+            recipientProfile.characteristics["plantType"] = plantType;
 
             // Set cooldown timer (1 day)
-            CoolDown employTimer = new CoolDown();
-            employTimer.timerEnd = DateTime.UtcNow.Date.AddDays(1);
-            recipientProfile.timers["employ"] = employTimer;
+            CoolDown plantTimer = new CoolDown();
+            plantTimer.timerEnd = DateTime.UtcNow.Date.AddDays(1);
+            recipientProfile.timers["plant"] = plantTimer;
 
             // Save the updated profile
             Database.SetProfile(recipient, recipientProfile);
@@ -63,23 +62,23 @@ namespace FChatDicebot.InteractionProcessors.Consequence
             // Remove pending interaction
             Database.DeletePendingCommand(command.Id);
 
-            return "employ";
+            return "plant";
         }
 
         public override string GetCompletionMessage(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
-            Identifier jobIdentifier = MonDB.getIdentifier(identifier);
-            string jobText = jobIdentifier != null ? jobIdentifier.description : identifier;
+            Identifier plantIdentifier = MonDB.getIdentifier(identifier);
+            string plantText = plantIdentifier != null ? plantIdentifier.description : identifier;
 
-            return $"{initiatorProfile.displayName} has employed {recipientProfile.displayName} as {jobText} for the day! Time to get to work~";
+            return initiatorProfile.displayName + " has grown the garden by turning " + recipientProfile.displayName + " into " + identifier + "! They might stay planted for quite awhile... surely the gardeners will take good care of them.";
         }
 
         public override string GetConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
-            Identifier jobIdentifier = MonDB.getIdentifier(identifier);
-            string jobText = jobIdentifier != null ? jobIdentifier.description : identifier;
+            Identifier plantIdentifier = MonDB.getIdentifier(identifier);
+            string plantText = plantIdentifier != null ? plantIdentifier.description : identifier;
 
-            return $"{initiatorProfile.displayName} wants to employ {recipientProfile.displayName} as {jobText} for 1 day. Do you !consent to this employment?";
+            return initiatorProfile.displayName + " is going to turn " + recipientProfile.displayName + " into a " + identifier + "! [b]This should not be taken lightly, and can not be done frequently.[/b] Do you !consent to becoming plantlife?";
         }
     }
 }

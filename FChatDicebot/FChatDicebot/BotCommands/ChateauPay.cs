@@ -19,16 +19,16 @@ namespace FChatDicebot.BotCommands
             Name = "pay";
             Aliases = new string[] { };
             Category = "Involved Interaction";
-            ShortDescription = "Pay currency to another character";
-            LongDescription = "Pay a specified amount of currency to another character. This transfers currency from your bank account to theirs. Both parties must have sufficient currency and consent.";
-            Usage = "!pay [user]CharacterName[/user] [amount] [currency]";
-            RelatedCommands = new string[] { "bank", "work", "dossier" };
+            ShortDescription = "Transfer currency to/from another resident.";
+            LongDescription = "Pay an amount of currency to another character (defaulting to 1 if no amount is specified). Pay a negative amount to instead 'bill' someone else and ask them to pay you. Currency isn't inherently valuable in the Chateau where everyone is cared for one way or another, but people still like to exchange it for goods and services.";
+            Usage = "!pay [noparse][user]NameInUserTag[/user][/noparse] {amount} {currency}\nor\n!pay ";
+            RelatedCommands = new string[] { "bank", "work", "volunteer" };
             CooldownDuration = null;
             CooldownAppliesTo = null;
-            IdentifierCategory = null;
+            IdentifierCategory = "currency";
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
-            RequireChannel = false;
+            RequireChannel = true;
             LockCategory = CommandLockCategory.NONE;
         }
 

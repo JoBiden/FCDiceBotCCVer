@@ -400,7 +400,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
             // Assert
             Assert.Contains("Alice", warning);
             Assert.Contains("The Brave", warning);
-            Assert.Contains("commitment", warning);
+            Assert.Contains("frequently", warning);
             Assert.Contains("!consent", warning);
         }
 

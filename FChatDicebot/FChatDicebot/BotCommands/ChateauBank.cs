@@ -20,10 +20,10 @@ namespace FChatDicebot.BotCommands
             Name = "bank";
             Aliases = new string[] { };
             Category = "General";
-            ShortDescription = "Check your or another character's currency balance";
-            LongDescription = "View the currency balance stored in the Chateau's vault for yourself or another character. Shows employment status and encourages earning through !work or !volunteer if no currencies are present.";
-            Usage = "!bank\nor\n!bank [user]CharacterName[/user]";
-            RelatedCommands = new string[] { "work", "volunteer", "employ", "dossier" };
+            ShortDescription = "See what currencies you or another resident have accumulated";
+            LongDescription = "View the currencies stored in the Chateau's vault for yourself or another resident. Currencies don't have any inherent value beyond the worth other residents place in it.";
+            Usage = "!bank\nor\n!bank [noparse][user]NameInUserTag[/user][/noparse]";
+            RelatedCommands = new string[] { "work", "volunteer", "employ"};
             CooldownDuration = null;
             CooldownAppliesTo = null;
             IdentifierCategory = null;

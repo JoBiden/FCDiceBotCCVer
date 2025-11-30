@@ -229,6 +229,7 @@ namespace FChatDicebot.Tests.Integration
                         type = "kiss",
                         identifier = "",
                         investmentLevel = "casual"
+
                     }
                 };
                 _database.AddPendingCommand(cmd);

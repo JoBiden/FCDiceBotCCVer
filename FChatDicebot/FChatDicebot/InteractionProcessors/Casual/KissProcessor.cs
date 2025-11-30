@@ -13,6 +13,8 @@ namespace FChatDicebot.InteractionProcessors.Casual
     {
         public override string InteractionType => "kiss";
         public override string InvestmentLevel => "casual";
+        //consideration: Make this a variable that mods can set per interaction type?
+        private static readonly TimeSpan RateLimit = TimeSpan.FromMinutes(30);
 
         /// <summary>
         /// Constructor for dependency injection (for testing)
@@ -34,7 +36,7 @@ namespace FChatDicebot.InteractionProcessors.Casual
             string recipient = command.pendingInteraction.recipient;
 
             // Increment counts for both participants
-            IncrementBothCounts(initiator, recipient, "kiss");
+            IncrementBothCountsWithRateLimit(initiator, recipient, "kiss", RateLimit);
 
             // Remove the pending interaction
             Database.DeletePendingCommand(command.Id);
@@ -63,7 +65,7 @@ namespace FChatDicebot.InteractionProcessors.Casual
             // Special handling for Queen Contract (keeping your existing special case)
             if (initiatorProfile.userName == "Queen Contract")
             {
-                message += "[eicon]qckiss[eicon]";
+                message += "[eicon]qckiss[/eicon]";
             }
 
             return message;

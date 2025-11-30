@@ -7,20 +7,19 @@ namespace FChatDicebot.BotCommands
 {
     public class ChateauAbandonPledge : ChatBotCommand
     {
-        private const int CANCELLATION_COST = 10; // Cost in "favor" currency to cancel a pledge
 
         public ChateauAbandonPledge()
         {
             Name = "abandonpledge";
             Aliases = new string[] { };
-            Category = "Interaction Support";
+            Category = "General";
             ShortDescription = "Abandon an active pledge";
-            LongDescription = "Abandon one of your active pledges if you cannot or will not fulfill it. This is tracked in your record and may affect your reputation.";
-            Usage = "!abandonpledge [pledge_id]";
+            LongDescription = "Abandon an active pledges if it cannot or will not be fulfilled. Abandoning even one pledge will forever change how honor is described to others when making future pledges, but can sometimes be preferred to having too many outstanding pledges.";
+            Usage = "!abandonpledge [noparse][user]NameInUserTag[/user][/noparse] {interactiontype}";
             RelatedCommands = new string[] { "pledge", "pledges", "fulfill" };
             CooldownDuration = null;
             CooldownAppliesTo = null;
-            IdentifierCategory = null;
+            IdentifierCategory = "interaction";
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
             RequireChannel = false;

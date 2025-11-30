@@ -17,13 +17,13 @@ namespace FChatDicebot.BotCommands
         {
             Name = "kiss";
             Aliases = new string[] { };
-            Category = "Casual Interaction";
-            ShortDescription = "Request to give another character a kiss";
-            LongDescription = "Request to give another character a kiss. The recipient must !consent to the kiss for it to be recorded in both of your dossiers. This is a sweet, affectionate gesture that builds your casual interaction count.";
-            Usage = "!kiss [user]CharacterName[/user]";
+            Category = "[color=green]Casual[/color] Interaction";
+            ShortDescription = "Give another resident a kiss";
+            LongDescription = "Request to give another resident a kiss. The recipient must !consent to the kiss for it to count. This is a sweet, affectionate gesture often used as a greeting.";
+            Usage = "!kiss [noparse][user]NameInUserTag[/user][/noparse]";
             RelatedCommands = new string[] { "cuddle", "handhold", "consent", "dossier" };
-            CooldownDuration = "30 minutes";
-            CooldownAppliesTo = "initiator";
+            CooldownDuration = "30 Minutes";
+            CooldownAppliesTo = "both initiator and recipient";
             IdentifierCategory = null;
             RequireBotAdmin = false;
             RequireChannelAdmin = false;

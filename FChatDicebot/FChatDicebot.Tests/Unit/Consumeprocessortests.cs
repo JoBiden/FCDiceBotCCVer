@@ -112,7 +112,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
         }
 
         [Fact]
-        public void GetCompletionMessage_IncludesSwallowMessage()
+        public void GetCompletionMessage_IncludesConsumeMessage()
         {
             // Arrange
             var initiator = new ProfileBuilder()
@@ -131,7 +131,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
             // Assert
             Assert.Contains("Alice", message);
             Assert.Contains("Bob", message);
-            Assert.Contains("swallow", message);
+            Assert.Contains("consumes", message);
         }
 
         public void Dispose()

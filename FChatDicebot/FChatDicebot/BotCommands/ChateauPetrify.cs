@@ -19,16 +19,16 @@ namespace FChatDicebot.BotCommands
             Name = "petrify";
             Aliases = new string[] { };
             Category = "Commitment Interaction";
-            ShortDescription = "Turn another character into a statue";
-            LongDescription = "Turn another character into a statue. The recipient must !consent for it to be recorded in both dossiers. This is a significant transformation that affects their dossier.";
-            Usage = "!petrify [user]CharacterName[/user]";
-            RelatedCommands = new string[] { "monsterize", "plant", "objectify", "consent", "dossier", "statues" };
-            CooldownDuration = null;
-            CooldownAppliesTo = null;
-            IdentifierCategory = null;
+            ShortDescription = "Turn another resident into a statue";
+            LongDescription = "Turn another character into a statue, specifying where they will spend their stony fate. The recipient must !consent to such a rocky outcome. Don't worry - our maids are very attentive to the decor, whether it was once animate or not.";
+            Usage = "!petrify [noparse][user]NameInUserTag[/user][/noparse] {location}";
+            RelatedCommands = new string[] { "statues", "plant", "objectify", "consent", "dossier" };
+            CooldownDuration = "7 days";
+            CooldownAppliesTo = "recipient";
+            IdentifierCategory = "location";
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
-            RequireChannel = false;
+            RequireChannel = true;
             LockCategory = CommandLockCategory.NONE;
         }
 
@@ -56,7 +56,7 @@ namespace FChatDicebot.BotCommands
                 if (recipientProfile.timers[timerString].timerEnd.CompareTo(DateTime.UtcNow) > 0) //recipient was petrified too recently
                 {
                     string tooSoonText = "You're trying to petrify " + recipientProfile.displayName + " but they were already petrified! Please respect that 'Commitment' interactions are meant to be just that - a commitment. Wait a little longer for them to reanimate before you petrify them again. \n\n"
-                      + recipientProfile.displayName + " will be available to petrify no sooner than " + recipientProfile.timers[timerString].timerEnd + " (the current time is " + DateTime.UtcNow + ")";
+                      + recipientProfile.displayName + " will be available to petrify in " + Utils.GetTimeSpanPrint(recipientProfile.timers["petrify"].timerEnd - DateTime.UtcNow);
                     bot.SendPrivateMessage(tooSoonText, characterName);
                     valid = false;
                 } 

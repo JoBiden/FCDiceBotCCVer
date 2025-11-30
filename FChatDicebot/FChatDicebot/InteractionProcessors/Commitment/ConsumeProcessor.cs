@@ -5,7 +5,7 @@ using System;
 namespace FChatDicebot.InteractionProcessors.Consequence
 {
     /// <summary>
-    /// Processor for the consume interaction - someone is consumed for 1 day
+    /// Processor for the consume interaction
     /// </summary>
     public class ConsumeProcessor : InteractionProcessorBase
     {
@@ -46,12 +46,12 @@ namespace FChatDicebot.InteractionProcessors.Consequence
 
         public override string GetCompletionMessage(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
-            return $"{initiatorProfile.displayName} opens wide and swallows {recipientProfile.displayName} whole! They'll be digesting until tomorrow... how embarrassing~";
+            return initiatorProfile.displayName + " consumes " + recipientProfile.displayName + ", and they were never heard from again... or at least, it will be quite some time before they manage to escape, reform, or otherwise recover their strength.";
         }
 
         public override string GetConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
-            return $"{initiatorProfile.displayName} wants to consume {recipientProfile.displayName} for 1 day. [b]You'll be eaten whole![/b] Do you !consent?";
+            return initiatorProfile.displayName + " is going to consume " + recipientProfile.displayName + "! [b]This should not be taken lightly, and can not be done frequently.[/b] Do you !consent to being consumed, devoured, or otherwise feasted upon?";
         }
     }
 }

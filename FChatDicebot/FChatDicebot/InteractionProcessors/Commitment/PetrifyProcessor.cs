@@ -5,7 +5,7 @@ using System;
 namespace FChatDicebot.InteractionProcessors.Consequence
 {
     /// <summary>
-    /// Processor for the petrify interaction - turns someone to stone for 1 day
+    /// Processor for the petrify interaction - turns someone into a statue at a specified location
     /// </summary>
     public class PetrifyProcessor : InteractionProcessorBase
     {
@@ -67,7 +67,7 @@ namespace FChatDicebot.InteractionProcessors.Consequence
 
             // Set cooldown timer (1 day)
             CoolDown petrifyTimer = new CoolDown();
-            petrifyTimer.timerEnd = DateTime.UtcNow.Date.AddDays(1);
+            petrifyTimer.timerEnd = DateTime.UtcNow.Date.AddDays(7);
             recipientProfile.timers["petrify"] = petrifyTimer;
 
             // Save the updated profile
@@ -84,7 +84,7 @@ namespace FChatDicebot.InteractionProcessors.Consequence
             Identifier locationIdentifier = MonDB.getIdentifier(identifier);
             string locationText = locationIdentifier != null ? locationIdentifier.description : identifier;
 
-            return $"{initiatorProfile.displayName} casts a petrifying spell! {recipientProfile.displayName} slowly turns to stone, becoming a statue {locationText}. They'll remain frozen until tomorrow...";
+            return initiatorProfile.displayName + " is going to petrify " + recipientProfile.displayName + " " + Utils.LocationToText(identifier, initiatorProfile.displayName, recipientProfile.displayName) + "! [b]This should not be taken lightly, and can not be done frequently.[/b] Do you !consent to becoming still as a statue?";
         }
 
         public override string GetConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
@@ -92,7 +92,7 @@ namespace FChatDicebot.InteractionProcessors.Consequence
             Identifier locationIdentifier = MonDB.getIdentifier(identifier);
             string locationText = locationIdentifier != null ? locationIdentifier.description : identifier;
 
-            return $"{initiatorProfile.displayName} wants to petrify {recipientProfile.displayName} {locationText} for 1 day. [b]You'll be turned to stone![/b] Do you !consent?";
+            return initiatorProfile.displayName + " has petrified " + recipientProfile.displayName + " " + Utils.LocationToText(identifier, initiatorProfile.displayName, recipientProfile.displayName) + "! They might be stuck there for quite awhile... hopefully visitors enjoy the pose they're stuck in.";
         }
     }
 }

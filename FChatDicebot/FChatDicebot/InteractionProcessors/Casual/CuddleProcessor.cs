@@ -6,14 +6,14 @@ using System.Collections.Generic;
 namespace FChatDicebot.InteractionProcessors.Casual
 {
     /// <summary>
-    /// Processor for the cuddle interaction - a casual, unlimited interaction
+    /// Processor for the cuddle interaction
     /// </summary>
     public class CuddleProcessor : InteractionProcessorBase
     {
         public override string InteractionType => "cuddle";
         public override string InvestmentLevel => "casual";
         //consideration: Make this a variable that mods can set per interaction type?
-        private static readonly TimeSpan RateLimit = TimeSpan.FromHours(1);
+        private static readonly TimeSpan RateLimit = TimeSpan.FromMinutes(30);
 
         /// <summary>
         /// Constructor for dependency injection (for testing)

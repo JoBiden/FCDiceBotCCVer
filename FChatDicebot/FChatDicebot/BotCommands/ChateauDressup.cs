@@ -19,16 +19,16 @@ namespace FChatDicebot.BotCommands
             Name = "dressup";
             Aliases = new string[] { };
             Category = "Involved Interaction";
-            ShortDescription = "Dress another character in specific attire";
-            LongDescription = "Dress another character in specific attire. The recipient must !consent for it to be recorded in both dossiers. The attire choice affects how they appear in their dossier.";
-            Usage = "!dressup [user]CharacterName[/user] [attire]";
-            RelatedCommands = new string[] { "feed", "golden", "consent", "dossier" };
-            CooldownDuration = null;
-            CooldownAppliesTo = null;
+            ShortDescription = "Dress another resident, or yourself, in specific attire";
+            LongDescription = "Dress someone up in specific attire. The recipient must !consent for their outfit to actually change. Some jobs might have unique outcomes only available based on your attire!";
+            Usage = "!dressup [noparse][user]NameInUserTag[/user][/noparse] {attire}\n(use your own username to dress yourself)";
+            RelatedCommands = new string[] { "volunteer", "work", "dossier" };
+            CooldownDuration = "30 Minutes";
+            CooldownAppliesTo = "both initiator and recipient";
             IdentifierCategory = "attire";
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
-            RequireChannel = false;
+            RequireChannel = true;
             LockCategory = CommandLockCategory.NONE;
         }
 

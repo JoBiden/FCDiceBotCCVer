@@ -19,9 +19,9 @@ namespace FChatDicebot.BotCommands
             Aliases = new string[] { "list" };
             Category = "General";
             ShortDescription = "List all identifiers in a category";
-            LongDescription = "Display all available identifiers for a specific category (bodypart, substance, attire, species, object, plant, etc.). Useful for seeing what options are available for commands like !mark, !feed, !dressup, etc.";
-            Usage = "!identifiers [category]\nor\n!list [category]";
-            RelatedCommands = new string[] { "identifier", "whatis", "mark", "feed" };
+            LongDescription = "Display all available identifiers for a specific category (location, monster, object, plant etc.) an interaction might require, or subcategory (aquatic, bird, groundfloor, etc) that helps narrow your options. If used without a provided category, will list all available categories and subcategories. Knowledge is power!";
+            Usage = "!identifiers [category]\nor\n!identifiers\nor\n!list [category]\nor\n!list";
+            RelatedCommands = new string[] { "identifier", "whatis", "volunteer" };
             CooldownDuration = null;
             CooldownAppliesTo = null;
             IdentifierCategory = null;
@@ -49,6 +49,7 @@ namespace FChatDicebot.BotCommands
                 { "monster", "Monsters" },
                 { "bodypart", "Bodyparts" },
                 { "bond", "Bonds" },
+                { "break", "Breakable Bodyparts"}
             };
             Dictionary<string, string> subCategoryDisplay = new Dictionary<string, string>
             {

@@ -19,16 +19,16 @@ namespace FChatDicebot.BotCommands
             Name = "consume";
             Aliases = new string[] { };
             Category = "Commitment Interaction";
-            ShortDescription = "Consume/devour another character";
-            LongDescription = "Consume or devour another character. The recipient must !consent for it to be recorded in both dossiers. This is a very intimate vore interaction showing complete dominance.";
-            Usage = "!consume [user]CharacterName[/user]";
-            RelatedCommands = new string[] { "mark", "employ", "bond", "consent", "dossier" };
-            CooldownDuration = null;
-            CooldownAppliesTo = null;
+            ShortDescription = "Consume/devour another resident";
+            LongDescription = "Consume or devour someone in whole or in part, whether that's their soul, their body, or their mind. The recipient must !consent before surrendering to their fate. It's up to you whether this is a permanent fate or something that can be recovered from.";
+            Usage = "!consume [noparse][user]NameInUserTag[/user][/noparse]";
+            RelatedCommands = new string[] { "mark", "bond"};
+            CooldownDuration = "1 Day";
+            CooldownAppliesTo = "recipient";
             IdentifierCategory = null;
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
-            RequireChannel = false;
+            RequireChannel = true;
             LockCategory = CommandLockCategory.NONE;
         }
 
@@ -49,7 +49,7 @@ namespace FChatDicebot.BotCommands
                 if (recipientProfile.timers[timerString].timerEnd.CompareTo(DateTime.UtcNow) > 0) //recipient was plantified too recently
                 {
                     string tooSoonText = "You're trying to consume " + recipientProfile.displayName + " but they were recently consumed! Please respect that 'Commitment' interactions are meant to be just that - a commitment. Wait a little longer for them to recover before you consume them again. \n\n"
-                      + recipientProfile.displayName + " will be available to consume no sooner than " + recipientProfile.timers[timerString].timerEnd + " (the current time is " + DateTime.UtcNow + ")";
+                      + recipientProfile.displayName + " will be available to consume in " + Utils.GetTimeSpanPrint(recipientProfile.timers["consume"].timerEnd - DateTime.UtcNow);
                     bot.SendPrivateMessage(tooSoonText, characterName);
                     valid = false;
                 } 

@@ -17,11 +17,11 @@ namespace FChatDicebot.BotCommands
         {
             Name = "consent";
             Aliases = new string[] { "c" };
-            Category = "Interaction Support";
-            ShortDescription = "Give consent to a pending interaction";
-            LongDescription = "Give your consent to a pending interaction request from another character. When someone requests an interaction with you, you must !consent for it to be completed and recorded in both dossiers.\n\nPending requests expire after 10 minutes.";
-            Usage = "!consent\nor\n!c";
-            RelatedCommands = new string[] { "kiss", "mark", "feed", "dossier" };
+            Category = "General";
+            ShortDescription = "Consent to a pending interaction";
+            LongDescription = "Give your consent to a pending interaction request from another character. When someone requests an interaction with you, you must !consent for it to be completed and recorded in both dossiers.\n\nPending requests expire after 10 minutes. If more than one interaction is awaiting your consent, you will be messaged a numbered list of the interactions, and can choose which interaction to consent to, or '!consent all' to consent to every interaction awaiting your consent.";
+            Usage = "!consent\nor\n!consent all\nor\n!consent {number}\nor\n!c\nor\n!c all\nor\n!c {number}";
+            RelatedCommands = new string[] { "kiss", "cuddle", "bully" };
             CooldownDuration = null;
             CooldownAppliesTo = null;
             IdentifierCategory = null;

@@ -19,16 +19,16 @@ namespace FChatDicebot.BotCommands
             Name = "rename";
             Aliases = new string[] { };
             Category = "Consequence Interaction";
-            ShortDescription = "Rename another character's display name";
-            LongDescription = "Rename another character, changing their display name in all Chateau records. The recipient must !consent for this significant change. This affects how they appear in all dossiers and interactions.";
-            Usage = "!rename [user]CharacterName[/user] \"New Display Name\"";
-            RelatedCommands = new string[] { "monsterize", "consent", "dossier" };
-            CooldownDuration = null;
-            CooldownAppliesTo = null;
+            ShortDescription = "Change another resident's official name on the records";
+            LongDescription = "Officially rename someone, changing what is written in all Chateau records. The recipient must !consent, so if it's an embarassing name, even they think it's apt... This affects how they appear in all dossiers and interactions, and can include bbcode as long as the total length is less than 100 characters.";
+            Usage = "!rename [noparse][user]NameInUserTag[/user][/noparse] \"NewNameInQuotes\"";
+            RelatedCommands = new string[] { "monsterize", "dossier" };
+            CooldownDuration = "7 days";
+            CooldownAppliesTo = "recipient";
             IdentifierCategory = null;
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
-            RequireChannel = false;
+            RequireChannel = true;
             LockCategory = CommandLockCategory.NONE;
         }
 
@@ -54,7 +54,7 @@ namespace FChatDicebot.BotCommands
                 if (recipientProfile.timers["rename"].timerEnd.CompareTo(DateTime.UtcNow) > 0) //recipient was renamed too recently
                 {
                     string tooSoonText = "You're trying to rename " + recipientProfile.displayName + " but they only recently received the name they have! Please respect that 'Consequence' interactions are also a Commitment. Wait a little longer before you change their name again. \n\n"
-                      + recipientProfile.displayName + " will be available for a name change no sooner than " + recipientProfile.timers["rename"].timerEnd + " (the current time is " + DateTime.UtcNow + ")";
+                      + recipientProfile.displayName + " will be available for a name change in " + Utils.GetTimeSpanPrint(recipientProfile.timers["rename"].timerEnd - DateTime.UtcNow);
                     bot.SendPrivateMessage(tooSoonText, characterName);
                     valid = false;
                 }

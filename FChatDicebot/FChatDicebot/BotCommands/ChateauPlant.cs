@@ -19,16 +19,16 @@ namespace FChatDicebot.BotCommands
             Name = "plant";
             Aliases = new string[] { };
             Category = "Commitment Interaction";
-            ShortDescription = "Transform another character into a plant";
-            LongDescription = "Transform another character into a specific type of plant. The recipient must !consent for it to be recorded in both dossiers. This significantly changes their form in the Chateau.";
-            Usage = "!plant [user]CharacterName[/user] [plant]";
+            ShortDescription = "Transform another resident into a plant";
+            LongDescription = "Transform someone into a specific type of plant. The recipient must !consent to their botanical fate. It's not easy being green...";
+            Usage = "!plant [noparse][user]NameInUserTag[/user][/noparse] {plant}";
             RelatedCommands = new string[] { "monsterize", "petrify", "objectify", "consent", "dossier" };
-            CooldownDuration = null;
-            CooldownAppliesTo = null;
+            CooldownDuration = "1 Day";
+            CooldownAppliesTo = "recipient";
             IdentifierCategory = "plant";
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
-            RequireChannel = false;
+            RequireChannel = true;
             LockCategory = CommandLockCategory.NONE;
         }
 
@@ -56,7 +56,7 @@ namespace FChatDicebot.BotCommands
                 if (recipientProfile.timers[timerString].timerEnd.CompareTo(DateTime.UtcNow) > 0) //recipient was plantified too recently
                 {
                     string tooSoonText = "You're trying to plant " + recipientProfile.displayName + " but they were already planted! Please respect that 'Commitment' interactions are meant to be just that - a commitment. Wait a little longer for them to recover before you plant them again. \n\n"
-                      + recipientProfile.displayName + " will be available to plant no sooner than " + recipientProfile.timers[timerString].timerEnd + " (the current time is " + DateTime.UtcNow + ")";
+                      + recipientProfile.displayName + " will be available to plant in " + Utils.GetTimeSpanPrint(recipientProfile.timers["plant"].timerEnd - DateTime.UtcNow);
                     bot.SendPrivateMessage(tooSoonText, characterName);
                     valid = false;
                 } 

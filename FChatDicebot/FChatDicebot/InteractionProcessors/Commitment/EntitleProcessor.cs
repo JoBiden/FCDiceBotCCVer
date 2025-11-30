@@ -127,7 +127,7 @@ namespace FChatDicebot.InteractionProcessors.Commitment
 
         public override string GetConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
-            return $"{initiatorProfile.displayName} wants to grant you the title \"{identifier}\". [b]This is a meaningful commitment and cannot be done frequently.[/b] Do you !consent to receiving this title?";
+            return $"{initiatorProfile.displayName} wants to grant you the title \"{identifier}\". [b]Custom titles cannot be received frequently, so be sure this is an important title for you.[/b] Do you !consent to receiving this title?";
         }
     }
 }

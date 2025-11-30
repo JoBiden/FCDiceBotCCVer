@@ -18,17 +18,17 @@ namespace FChatDicebot.BotCommands
         {
             Name = "monsterize";
             Aliases = new string[] { };
-            Category = "Commitment Interaction";
-            ShortDescription = "Transform another character into a monster species";
-            LongDescription = "Transform another character into a specific monster species. The recipient must !consent for it to be recorded in both dossiers. This significantly changes their appearance and identity in the Chateau.";
-            Usage = "!monsterize [user]CharacterName[/user] [species]";
-            RelatedCommands = new string[] { "petrify", "plant", "objectify", "consent", "dossier" };
-            CooldownDuration = null;
-            CooldownAppliesTo = null;
+            Category = "Consequence Interaction";
+            ShortDescription = "Transform someone into a monster";
+            LongDescription = "Transform another resident into a monstrous species. They must consent to their new body, which they are likely to sustain for the rest of their lives. The Chateau is home to monsters, so this rite of passage is a very common occurence.";
+            Usage = "!monsterize [noparse][user]NameInUserTag[/user][/noparse] {species}";
+            RelatedCommands = new string[] { "petrify", "plant", "dossier" };
+            CooldownDuration = "7 days";
+            CooldownAppliesTo = "recipient";
             IdentifierCategory = "species";
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
-            RequireChannel = false;
+            RequireChannel = true;
             LockCategory = CommandLockCategory.NONE;
         }
 
@@ -54,7 +54,7 @@ namespace FChatDicebot.BotCommands
                 if (recipientProfile.timers["monsterize"].timerEnd.CompareTo(DateTime.UtcNow) > 0) //recipient was monsterized too recently
                 {
                     string tooSoonText = "You're trying to monsterize " + recipientProfile.displayName + " but they only recently changed to the monster they currently are! Please respect that 'Commitment' interactions are meant to be just that - a commitment. Wait a little longer before you change their form again. \n\n"
-                      + recipientProfile.displayName + " will be available to monsterize no sooner than " + recipientProfile.timers["monsterize"].timerEnd + " (the current time is " + DateTime.UtcNow + ")";
+                      + recipientProfile.displayName + " will be available to monsterize in " + Utils.GetTimeSpanPrint(recipientProfile.timers["monsterize"].timerEnd - DateTime.UtcNow);
                     bot.SendPrivateMessage(tooSoonText, characterName);
                     valid = false;
                 } 

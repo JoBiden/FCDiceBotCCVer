@@ -18,16 +18,16 @@ namespace FChatDicebot.BotCommands
             Name = "bully";
             Aliases = new string[] { };
             Category = "Casual Interaction";
-            ShortDescription = "Request to bully another character";
-            LongDescription = "Request to bully another character in a playful way. The recipient must !consent for it to be recorded in both dossiers. A teasing, dominant interaction.";
-            Usage = "!bully [user]CharacterName[/user]";
+            ShortDescription = "Bully another resident";
+            LongDescription = "Bully someone in a playful way. They must !consent and thus admit that they deserve a bit of bullying. Note that the Chateau does not condone actual bullying in any way shape or form.";
+            Usage = "!bully [noparse][user]NameInUserTag[/user][/noparse]";
             RelatedCommands = new string[] { "spank", "consent", "dossier" };
-            CooldownDuration = "30 minutes";
-            CooldownAppliesTo = "initiator";
+            CooldownDuration = "30 Minutes";
+            CooldownAppliesTo = "both initiator and recipient";
             IdentifierCategory = null;
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
-            RequireChannel = false;
+            RequireChannel = true;
             LockCategory = CommandLockCategory.NONE;
         }
 

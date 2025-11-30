@@ -58,8 +58,7 @@ namespace FChatDicebot.BotCommands
             { "dressupgive", "Beautifying" },
             { "dressuptake", "Dressup" },
             { "climaxgive", "Climax Claiming" },
-            { "climaxtake", "Climaxing" },
-            { "bond", "Bondbuilding" }
+            { "climaxtake", "Climaxing" }
         };
 
         private static readonly Dictionary<string, string> CommitmentSpecialistText = new Dictionary<string, string>
@@ -83,7 +82,8 @@ namespace FChatDicebot.BotCommands
             { "traingive", "Teaching" },
             { "traintake", "Learning" },
             { "corruptgive", "Corruptive" },
-            { "corrupttake", "Corrupted" }
+            { "corrupttake", "Corrupted" },
+            { "bond", "Bondbuilding" }
         };
 
         private static readonly Dictionary<string, string> ConsequenceSpecialistText = new Dictionary<string, string>
@@ -113,10 +113,10 @@ namespace FChatDicebot.BotCommands
             Name = "dossier";
             Aliases = new string[] { "profile" };
             Category = "General";
-            ShortDescription = "View a character's dossier with all their stats and history";
-            LongDescription = "View a detailed dossier for yourself or another character. The dossier shows:\n- Display name and specialist titles\n- Current job and employer\n- Casual interaction counts (kisses, cuddles, etc.)\n- Marks received on body parts\n- Bond relationships\n- Job experience\n- Recent interactions\n\nIf no character name is provided, shows your own dossier.";
-            Usage = "!dossier [user]CharacterName[/user]\nor\n!dossier (to view your own)";
-            RelatedCommands = new string[] { "bank", "identifier", "list" };
+            ShortDescription = "View a character's dossier, a public facing document summarizing their interactions in the Chateau";
+            LongDescription = "View a detailed dossier for yourself or another character. If no character name is provided, shows your own dossier. The dossier shows:\n- Display name, titles, specializations (most performed interaction of each category)\n- Current job and employer\n- Casual interaction counts (kisses, cuddles, etc.)\n- Marks on their body\n- Bonds\n- Full job experience\n- Recent interactions\n";
+            Usage = "!dossier [noparse][user]CharacterName[/user][/noparse]\nor simply\n!dossier";
+            RelatedCommands = new string[] { "bank", "pledges", "statues" };
             CooldownDuration = null;
             CooldownAppliesTo = null;
             IdentifierCategory = null;
@@ -268,7 +268,7 @@ namespace FChatDicebot.BotCommands
             {
                 if (specialistTitles.Count > 0)
                 {
-                    sb.Append("; ");
+                    sb.AppendLine("");
                 }
                 sb.Append(displayedTitles);
             }
