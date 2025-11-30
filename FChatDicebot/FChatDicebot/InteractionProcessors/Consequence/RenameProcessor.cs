@@ -72,7 +72,7 @@ namespace FChatDicebot.InteractionProcessors.Consequence
         public override string GetConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
             string newName = identifier;
-            return $"{initiatorProfile.displayName} wants to rename {recipientProfile.displayName} to '{newName}' for 7 days. [b]This is a significant change that will affect how you're displayed everywhere.[/b] Do you !consent?";
+            return initiatorProfile.displayName + " intends for " + recipientProfile.displayName + " to be known as " + newName + " from now on. [b]This should not be taken lightly, and can not be done frequently. The new name will show almost every time the Chateau mentions you.[/b] Do you !consent to this life-changing occasion?";
         }
     }
 }

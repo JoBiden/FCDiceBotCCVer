@@ -96,7 +96,7 @@ namespace FChatDicebot.InteractionProcessors.Involved
 
         public override string GetConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
-            return $"{initiatorProfile.displayName} wants to give you some {identifier}. Do you !consent to receive this payment?";
+            return $"{initiatorProfile.displayName} wants to give you some {identifier}. Do you !consent to receiving this payment?";
         }
     }
 }

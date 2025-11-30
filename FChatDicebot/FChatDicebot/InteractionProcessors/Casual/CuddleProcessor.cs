@@ -91,7 +91,7 @@ namespace FChatDicebot.InteractionProcessors.Casual
 
         public override string GetConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
-            return $"{initiatorProfile.displayName} wants to cuddle with {recipientProfile.displayName}! Do you !consent?";
+            return initiatorProfile.displayName + " wants to cuddle you, " + recipientProfile.displayName + ". Do you !consent to some cuddles?";
         }
     }
 }

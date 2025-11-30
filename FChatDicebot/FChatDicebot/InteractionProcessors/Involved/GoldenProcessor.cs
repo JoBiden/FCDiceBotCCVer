@@ -86,7 +86,7 @@ namespace FChatDicebot.InteractionProcessors.Involved
 
         public override string GetConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
-            return $"{initiatorProfile.displayName} wants to give {recipientProfile.displayName} a golden shower on their {Utils.BodypartToText(identifier)}. Do you !consent to this?";
+            return initiatorProfile.displayName + " is going to relieve themselves using " + recipientProfile.displayName + "'s " + Utils.BodypartToText(identifier) + "! Do you !consent to being used like that?";
         }
     }
 }

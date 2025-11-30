@@ -67,9 +67,7 @@ namespace FChatDicebot.InteractionProcessors.Consequence
 
         public override string GetCompletionMessage(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
-            Identifier plantIdentifier = MonDB.getIdentifier(identifier);
-            string plantText = plantIdentifier != null ? plantIdentifier.description : identifier;
-
+            identifier = Utils.AnOrA(identifier) + " " + identifier;
             return initiatorProfile.displayName + " has grown the garden by turning " + recipientProfile.displayName + " into " + identifier + "! They might stay planted for quite awhile... surely the gardeners will take good care of them.";
         }
 
