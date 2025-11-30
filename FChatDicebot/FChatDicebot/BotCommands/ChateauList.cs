@@ -19,7 +19,7 @@ namespace FChatDicebot.BotCommands
             Category = "General";
             ShortDescription = "Alias for !identifiers";
             LongDescription = "Shorthand for the !identifiers command. Lists all available identifiers for a given category. See !help identifiers for full details.";
-            Usage = "!list [category]";
+            Usage = "!list {category}";
             RelatedCommands = new string[] { "identifiers", "identifier", "whatis" };
             CooldownDuration = null;
             CooldownAppliesTo = null;

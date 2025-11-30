@@ -21,7 +21,7 @@ namespace FChatDicebot.BotCommands
             Category = "Involved Interaction";
             ShortDescription = "Feed another resident";
             LongDescription = "Feed someone a specific substance, which could be something normal like food or something wild like energy. Recipient must !consent, so be sure you've picked something they enjoy!";
-            Usage = "!feed [noparse][user]NameInUserTag[/user][/noparse] [substance]";
+            Usage = "!feed [noparse][user]NameInUserTag[/user][/noparse] {substance}";
             RelatedCommands = new string[] { "dressup", "golden", "consent", "dossier" };
             CooldownDuration = "30 minutes";
             CooldownAppliesTo = "both initiator and recipient";

@@ -19,12 +19,12 @@ namespace FChatDicebot.BotCommands
             Aliases = new string[] { };
             Category = "Information";
             ShortDescription = "View all currently petrified characters";
-            LongDescription = "Display a list of all characters currently transformed into statues via !petrify. Shows who petrified them and when.";
-            Usage = "!statues";
+            LongDescription = "Display a list of all characters currently transformed into statues via !petrify, specifying a specific location if desired. Shows who petrified them and when.";
+            Usage = "!statues\nor\n !statues {location}";
             RelatedCommands = new string[] { "petrify", "dossier" };
             CooldownDuration = null;
             CooldownAppliesTo = null;
-            IdentifierCategory = null;
+            IdentifierCategory = "location";
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
             RequireChannel = false;

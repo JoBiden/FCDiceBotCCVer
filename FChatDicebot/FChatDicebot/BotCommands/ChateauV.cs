@@ -24,7 +24,7 @@ namespace FChatDicebot.BotCommands
             RelatedCommands = new string[] { "volunteer", "work", "bank" };
             CooldownDuration = "1 day";
             CooldownAppliesTo = "initiator";
-            IdentifierCategory = null;
+            IdentifierCategory = "job";
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
             RequireChannel = false;

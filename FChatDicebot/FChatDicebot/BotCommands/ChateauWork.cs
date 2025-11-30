@@ -16,7 +16,7 @@ namespace FChatDicebot.BotCommands
             Aliases = new string[] { "w" };
             Category = "General";
             ShortDescription = "Perform your job duties to earn currency";
-            LongDescription = "Work at your current job to earn currency. You must be employed (via !employ) before you can work. Each work session presents you with choices that may lead to different rewards. Work builds job experience which unlocks additional options. Use !w followed by a number to select your choice.\n\nYou can only work once per Chateau day.";
+            LongDescription = "Work at your current job to earn currency. You must be employed (via !employ) before you can work. Each work session presents you with choices that may lead to different rewards. Work builds job experience which unlocks additional options. Use !w followed by a number to select your choice. You can only work once per Chateau day.";
             Usage = "!work\n!w [choice number]";
             RelatedCommands = new string[] { "volunteer", "employ", "bank", "dossier" };
             CooldownDuration = "1 day";

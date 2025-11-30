@@ -19,9 +19,9 @@ namespace FChatDicebot.BotCommands
             Name = "setmark";
             Aliases = new string[] { };
             Category = "General";
-            ShortDescription = "Set your personal mark icon";
-            LongDescription = "Set or change your personal mark that will appear when you use !mark on others. Your mark is displayed as an eicon and must be a valid F-List eicon name. Once set, anyone you mark will display this icon in their dossier.";
-            Usage = "!setmark [eicon]YourMarkName[/eicon]";
+            ShortDescription = "Set your personal mark eicon";
+            LongDescription = "Set or change your personal mark that will appear on those you have !mark'd. Marks must be a valid F-List eicon name. Once set, anyone you mark will display this icon in their dossier.";
+            Usage = "!setmark [noparse][eicon]YourMarkName[/eicon][/noparse]";
             RelatedCommands = new string[] { "mark", "dossier" };
             CooldownDuration = null;
             CooldownAppliesTo = null;

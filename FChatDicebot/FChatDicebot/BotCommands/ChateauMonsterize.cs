@@ -21,11 +21,11 @@ namespace FChatDicebot.BotCommands
             Category = "Consequence Interaction";
             ShortDescription = "Transform someone into a monster";
             LongDescription = "Transform another resident into a monstrous species. They must consent to their new body, which they are likely to sustain for the rest of their lives. The Chateau is home to monsters, so this rite of passage is a very common occurence.";
-            Usage = "!monsterize [noparse][user]NameInUserTag[/user][/noparse] {species}";
+            Usage = "!monsterize [noparse][user]NameInUserTag[/user][/noparse] {monster}";
             RelatedCommands = new string[] { "petrify", "plant", "dossier" };
             CooldownDuration = "7 days";
             CooldownAppliesTo = "recipient";
-            IdentifierCategory = "species";
+            IdentifierCategory = "monster";
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
             RequireChannel = true;

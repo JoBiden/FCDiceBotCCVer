@@ -14,9 +14,9 @@ namespace FChatDicebot.BotCommands
             Name = "pledges";
             Aliases = new string[] { };
             Category = "Interaction Support";
-            ShortDescription = "View your active pledges";
-            LongDescription = "View all your currently active pledges, showing who you pledged to interact with and what interaction type you promised. Use !fulfill when you complete a pledged interaction.";
-            Usage = "!pledges";
+            ShortDescription = "View active pledges";
+            LongDescription = "View all your currently active pledges, or the active pledges of a specified user, including who the interaction was pledged to and what interaction type was promised. You can later !fulfill a pledged interaction.";
+            Usage = "!pledges\nor\n!pledges [noparse][user]NameInUserTag[/user][/noparse]";
             RelatedCommands = new string[] { "pledge", "fulfill", "abandonpledge" };
             CooldownDuration = null;
             CooldownAppliesTo = null;
