@@ -26,7 +26,7 @@ namespace FChatDicebot.BotCommands
             CooldownDuration = null;
             CooldownAppliesTo = null;
             IdentifierCategory = null;
-            RequireBotAdmin = false;
+            RequireBotAdmin = true;
             RequireChannelAdmin = false;
             RequireChannel = false;
             LockCategory = CommandLockCategory.NONE;

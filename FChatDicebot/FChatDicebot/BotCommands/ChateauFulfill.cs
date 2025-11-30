@@ -12,14 +12,14 @@ namespace FChatDicebot.BotCommands
         {
             Name = "fulfill";
             Aliases = new string[] { };
-            Category = "General";
+            Category = "Interaction";
             ShortDescription = "Perform a promised interaction";
             LongDescription = "Initiate the interaction that was promised days, weeks, years prior. This will also be automatically detected if a performed interaction was one that was pledged.";
             Usage = "!fulfill [noparse][user]NameInUserTag[/user][/noparse] {interactiontype}";
             RelatedCommands = new string[] { "pledge", "pledges", "abandonpledge" };
             CooldownDuration = null;
             CooldownAppliesTo = null;
-            IdentifierCategory = "interaction";
+            IdentifierCategory = null; //replace with 'interaction' once we figure out how to easily list them
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
             RequireChannel = true;

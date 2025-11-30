@@ -17,6 +17,15 @@ namespace FChatDicebot.BotCommands
         public ChateauSettitle()
         {
             Name = "settitle";
+            Aliases = new string[] { };
+            Category = "General";
+            ShortDescription = "Set a title to display on your dossier";
+            LongDescription = "Decide which title should display in which title slot on your dossier. ";
+            Usage = "!settitle {slot} \"Full Title Text In Quotes\"";
+            RelatedCommands = new string[] { "mark", "dossier" };
+            CooldownDuration = null;
+            CooldownAppliesTo = null;
+            IdentifierCategory = null;
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
             RequireChannel = false;

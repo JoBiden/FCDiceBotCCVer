@@ -12,14 +12,14 @@ namespace FChatDicebot.BotCommands
         {
             Name = "pledge";
             Aliases = new string[] { };
-            Category = "General";
+            Category = "Interaction";
             ShortDescription = "Pledge to perform an interaction in the future";
             LongDescription = "Make a pledge that some day soon you will do something with another resident. These pledges do not require consent from the other party to make, but do require consent to fulfill. The ratio of pledges still outstanding, pledges fulfilled, and pledges abandoned will affect how honorably you are presented when making a new pledge. Pledges are meant to be made days in advance of their fulfillment, and do not impact honor if fulfilled rapidly after creation.";
             Usage = "!pledge [noparse][user]NameInUserTag[/user][/noparse] {interactiontype}";
             RelatedCommands = new string[] { "pledges", "fulfill", "abandonpledge" };
             CooldownDuration = null;
             CooldownAppliesTo = null;
-            IdentifierCategory = "interaction";
+            IdentifierCategory = null; //replace with list of interactions once we have a way to output that
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
             RequireChannel = true;

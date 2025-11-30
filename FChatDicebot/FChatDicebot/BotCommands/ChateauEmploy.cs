@@ -21,7 +21,7 @@ namespace FChatDicebot.BotCommands
             Category = "Commitment Interaction";
             ShortDescription = "Employ yourself or another resident to do jobs for the Chateau";
             LongDescription = "Employ yourself or another resident to do jobs for the Chateau. Once employed, residents can use !work once a day to earn currency and job experience. On top of working their primary job, residents can also !volunteer once a day to explore other careers.";
-            Usage = "!employ [noparse][user]NameInUserTag[/user][/noparse] [job]\n(use your own username to self-employ)";
+            Usage = "!employ [noparse][user]NameInUserTag[/user][/noparse] {job}\n(use your own username to self-employ)";
             RelatedCommands = new string[] { "work", "bank", "volunteer"};
             CooldownDuration = "1 Day";
             CooldownAppliesTo = "recipient";

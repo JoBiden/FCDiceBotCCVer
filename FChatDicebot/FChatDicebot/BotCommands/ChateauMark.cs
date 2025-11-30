@@ -21,7 +21,7 @@ namespace FChatDicebot.BotCommands
             Category = "Commitment Interaction";
             ShortDescription = "Place your mark upon another residents's body";
             LongDescription = "Place your mark on the specified bodypart, defaulting to the midriff if no bodypart is provided. You must first put your mark on record using !setmark before you can mark others. The recipient must !consent to receiving your mark, which usually represents ownership or deep connection in some fashion.";
-            Usage = "!mark [noparse][user]NameInUserTag[/user][/noparse] [bodypart]";
+            Usage = "!mark [noparse][user]NameInUserTag[/user][/noparse] {bodypart}";
             RelatedCommands = new string[] { "setmark", "dossier" };
             CooldownDuration = "1 Day";
             CooldownAppliesTo = "recipient";

@@ -8,6 +8,7 @@ using FChatDicebot.SavedData;
 using Newtonsoft.Json;
 using FChatDicebot.DiceFunctions;
 using FChatDicebot.Model;
+using SharpCompress;
 
 namespace FChatDicebot.BotCommands
 {
@@ -20,7 +21,7 @@ namespace FChatDicebot.BotCommands
             Category = "General";
             ShortDescription = "Get information about a specific identifier";
             LongDescription = "Look up detailed information about a specific identifier (bodypart, substance, species, etc.). Shows the description and categories for that identifier.";
-            Usage = "!identifier [name]\nor\n!whatis [name]";
+            Usage = "!identifier {identifier}\nor\n!whatis {identifier}";
             RelatedCommands = new string[] { "identifiers", "list" };
             CooldownDuration = null;
             CooldownAppliesTo = null;
@@ -40,7 +41,15 @@ namespace FChatDicebot.BotCommands
             } else
             {
                 Identifier identifier = MonDB.getIdentifier(terms.FirstOrDefault());
-                returnText = "[b]" + identifier.type + "[/b]\n" + identifier.description;
+                if (identifier != null)
+                {
+                    returnText = "[b]" + identifier.type + "[/b]\n" + identifier.description;
+                }
+                else
+                {
+                    returnText = "That identifier was not found in our records. Are you sure you spelled it right?";
+                }
+                
                 
             }
                 

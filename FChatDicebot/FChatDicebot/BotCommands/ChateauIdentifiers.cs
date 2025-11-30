@@ -20,7 +20,7 @@ namespace FChatDicebot.BotCommands
             Category = "General";
             ShortDescription = "List all identifiers in a category";
             LongDescription = "Display all available identifiers for a specific category (location, monster, object, plant etc.) an interaction might require, or subcategory (aquatic, bird, groundfloor, etc) that helps narrow your options. If used without a provided category, will list all available categories and subcategories. Knowledge is power!";
-            Usage = "!identifiers [category]\nor\n!identifiers\nor\n!list [category]\nor\n!list";
+            Usage = "!identifiers {category}\nor\n!identifiers";
             RelatedCommands = new string[] { "identifier", "whatis", "volunteer" };
             CooldownDuration = null;
             CooldownAppliesTo = null;

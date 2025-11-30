@@ -16,7 +16,7 @@ namespace FChatDicebot.BotCommands
             Category = "General";
             ShortDescription = "Get help about bot commands";
             LongDescription = "View general help for all commands, or get detailed help for a specific command.\n\nWithout arguments: Shows a categorized list of all available commands.\nWith a command name: Shows detailed help for that specific command including usage, cooldown, and related commands.";
-            Usage = "!help\nor\n!help [commandname]";
+            Usage = "!help\nor\n!help {commandname}";
             RelatedCommands = new string[] { "botinfo", "dossier" };
             CooldownDuration = null;
             CooldownAppliesTo = null;
@@ -175,9 +175,9 @@ namespace FChatDicebot.BotCommands
                         sb.AppendLine("General");
                         break;
                     default:
+                        sb.AppendLine(cmd.Category);
                         break;
                 }
-                sb.AppendLine(cmd.Category);
                 sb.AppendLine("");
             }
 
@@ -228,11 +228,11 @@ namespace FChatDicebot.BotCommands
                 }
                 if (cmd.Category == "Casual Interaction")
                 {
-                    sb.Append("[sub]Casual command cooldowns are only for incrementing dossier counts, and can still be performed at any time[/sub]");
+                    sb.Append(" [sub](Casual command cooldowns are only for incrementing dossier counts, and can still be performed at any time)[/sub]");
                 }
                 else if (cmd.Category == "Involved Interaction")
                 {
-                    sb.Append("[sub]Involved command cooldowns are only for incrementing dossier counts, and can still be performed at any time[/sub]");
+                    sb.Append(" [sub](Involved command cooldowns are only for incrementing dossier counts, and can still be performed at any time[/sub])");
                 }
                 sb.AppendLine("\n");
             }

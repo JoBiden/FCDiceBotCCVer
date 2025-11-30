@@ -18,9 +18,9 @@ namespace FChatDicebot.BotCommands
             Name = "titles";
             Aliases = new string[] { };
             Category = "Personalization";
-            ShortDescription = "View all your earned and granted titles";
-            LongDescription = "View all titles you've earned or been granted, including system titles (earned through achievements) and custom titles (granted by other characters). Use !settitle to choose which titles appear in your dossier.";
-            Usage = "!titles";
+            ShortDescription = "View all earned and granted titles";
+            LongDescription = "View all titles someone has earned or been granted, including system titles (earned through achievements) and custom titles (granted by other characters). Use !settitle to choose which titles appear in your dossier.";
+            Usage = "!titles\nor\n!titles [noparse][user]NameInUserTag[/user][/noparse]";
             RelatedCommands = new string[] { "settitle", "systemtitles", "entitle", "dossier" };
             CooldownDuration = null;
             CooldownAppliesTo = null;

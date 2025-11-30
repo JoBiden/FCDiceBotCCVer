@@ -19,7 +19,7 @@ namespace FChatDicebot.BotCommands
             RelatedCommands = new string[] { "pledge", "pledges", "fulfill" };
             CooldownDuration = null;
             CooldownAppliesTo = null;
-            IdentifierCategory = "interaction";
+            IdentifierCategory = null; //replace with list of interaction types once implemented
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
             RequireChannel = false;

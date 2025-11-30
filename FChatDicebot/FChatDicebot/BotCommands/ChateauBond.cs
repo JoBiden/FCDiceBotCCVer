@@ -21,7 +21,7 @@ namespace FChatDicebot.BotCommands
             Category = "Commitment Interaction";
             ShortDescription = "Declare your bond with another resident";
             LongDescription = "Create a specific type of bond with another character (owner/pet, master/slave, etc.). The recipient must !consent to acknowledge the mutual connection. ";
-            Usage = "!bond [noparse][user]NameInUserTag[/user][/noparse] [bondtype]";
+            Usage = "!bond [noparse][user]NameInUserTag[/user][/noparse] {bondtype}";
             RelatedCommands = new string[] { "mark", "employ"};
             CooldownDuration = "1 Day";
             CooldownAppliesTo = "both initiator and recipient";
