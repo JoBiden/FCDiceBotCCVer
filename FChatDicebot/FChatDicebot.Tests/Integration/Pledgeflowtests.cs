@@ -167,6 +167,8 @@ namespace FChatDicebot.Tests.Integration
                 status = "active"
             };
             _database.AddPledge(pledge);
+            // Retrieve the pledge with its generated Id
+            pledge = _database.GetPledgesByPledger("Alice").FirstOrDefault();
 
             // Create profiles
             new ProfileBuilder()
