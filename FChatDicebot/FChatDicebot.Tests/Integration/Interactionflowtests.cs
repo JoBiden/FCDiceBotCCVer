@@ -116,6 +116,10 @@ namespace FChatDicebot.Tests.Integration
                 };
                 _database.AddPendingCommand(kissCommand);
                 kissProcessor.ProcessInteraction(kissCommand);
+
+                // Clear rate limit timers to allow next kiss
+                ClearRateLimitTimer("Alice", "kiss");
+                ClearRateLimitTimer("Bob", "kiss");
             }
 
             // Act - Bob kisses Alice back twice
@@ -135,6 +139,10 @@ namespace FChatDicebot.Tests.Integration
                 };
                 _database.AddPendingCommand(kissCommand);
                 kissProcessor.ProcessInteraction(kissCommand);
+
+                // Clear rate limit timers to allow next kiss
+                ClearRateLimitTimer("Bob", "kiss");
+                ClearRateLimitTimer("Alice", "kiss");
             }
 
             // Assert
@@ -234,6 +242,10 @@ namespace FChatDicebot.Tests.Integration
                 };
                 _database.AddPendingCommand(cmd);
                 processor.ProcessInteraction(cmd);
+
+                // Clear rate limit timers to allow next kiss
+                ClearRateLimitTimer("Alice", "kiss");
+                ClearRateLimitTimer("Bob", "kiss");
             }
 
             // Bob kisses Alice 2 times
@@ -253,6 +265,10 @@ namespace FChatDicebot.Tests.Integration
                 };
                 _database.AddPendingCommand(cmd);
                 processor.ProcessInteraction(cmd);
+
+                // Clear rate limit timers to allow next kiss
+                ClearRateLimitTimer("Bob", "kiss");
+                ClearRateLimitTimer("Alice", "kiss");
             }
 
             // Charlie kisses Alice 1 time
@@ -346,6 +362,24 @@ namespace FChatDicebot.Tests.Integration
             // Assert - Bob should have multiple pending commands
             var bobsPendingCommands = _database.GetPendingCommands("Bob");
             Assert.Equal(2, bobsPendingCommands.Count);
+        }
+
+        /// <summary>
+        /// Helper method to clear rate limit timer for a specific user and interaction type.
+        /// This allows tests to bypass rate limiting and test multiple interactions in quick succession.
+        /// </summary>
+        private void ClearRateLimitTimer(string userName, string countLabel)
+        {
+            var profile = _database.GetProfile(userName);
+            if (profile != null)
+            {
+                string timerKey = $"ratelimit_{countLabel}";
+                if (profile.timers != null && profile.timers.ContainsKey(timerKey))
+                {
+                    profile.timers.Remove(timerKey);
+                    _database.UpdateProfile(profile);
+                }
+            }
         }
 
         public void Dispose()
