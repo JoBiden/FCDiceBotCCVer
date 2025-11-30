@@ -19,16 +19,16 @@ namespace FChatDicebot.BotCommands
             Name = "golden";
             Aliases = new string[] { };
             Category = "Involved Interaction";
-            ShortDescription = "Give another character a golden shower";
-            LongDescription = "Give another character a golden shower. The recipient must !consent for it to be recorded in both dossiers. An intimate, kinky interaction.";
-            Usage = "!golden [user]CharacterName[/user]";
+            ShortDescription = "Give another resident a golden shower";
+            LongDescription = "Give another resident a golden shower, specifying where on their body you're aiming. The recipient must !consent before the stream will flow. Such interactions usually occur in the restroom or otherwise in private, so the public facing language will try to be discreet.";
+            Usage = "!golden [noparse][user]NameInUserTag[/user][/noparse] {bodypart}";
             RelatedCommands = new string[] { "feed", "dressup", "consent", "dossier" };
-            CooldownDuration = null;
-            CooldownAppliesTo = null;
-            IdentifierCategory = null;
+            CooldownDuration = "30 Minutes";
+            CooldownAppliesTo = "both initiator and recipient";
+            IdentifierCategory = "bodypart";
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
-            RequireChannel = false;
+            RequireChannel = true;
             LockCategory = CommandLockCategory.NONE;
         }
 

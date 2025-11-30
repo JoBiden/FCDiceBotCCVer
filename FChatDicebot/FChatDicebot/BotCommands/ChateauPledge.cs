@@ -12,17 +12,17 @@ namespace FChatDicebot.BotCommands
         {
             Name = "pledge";
             Aliases = new string[] { };
-            Category = "Interaction Support";
+            Category = "General";
             ShortDescription = "Pledge to perform an interaction in the future";
-            LongDescription = "Pledge to perform a specific interaction with another character within a set timeframe. If you fulfill the pledge (complete the interaction) more than 1 day after creating it, you gain honor. Abandoning pledges is tracked.";
-            Usage = "!pledge [user]CharacterName[/user] [interactiontype]";
-            RelatedCommands = new string[] { "pledges", "fulfill", "abandonpledge", "dossier" };
+            LongDescription = "Make a pledge that some day soon you will do something with another resident. These pledges do not require consent from the other party to make, but do require consent to fulfill. The ratio of pledges still outstanding, pledges fulfilled, and pledges abandoned will affect how honorably you are presented when making a new pledge. Pledges are meant to be made days in advance of their fulfillment, and do not impact honor if fulfilled rapidly after creation.";
+            Usage = "!pledge [noparse][user]NameInUserTag[/user][/noparse] {interactiontype}";
+            RelatedCommands = new string[] { "pledges", "fulfill", "abandonpledge" };
             CooldownDuration = null;
             CooldownAppliesTo = null;
-            IdentifierCategory = null;
+            IdentifierCategory = "interaction";
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
-            RequireChannel = false;
+            RequireChannel = true;
             LockCategory = CommandLockCategory.NONE;
         }
 

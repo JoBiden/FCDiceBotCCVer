@@ -66,7 +66,7 @@ namespace FChatDicebot.InteractionProcessors.Consequence
         public override string GetCompletionMessage(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
             string newName = identifier; // The new name should be passed as identifier in this context
-            return $"{initiatorProfile.displayName} has bestowed a new name upon {recipientProfile.displayName}! For the next week, they shall be known as {newName}. Wear it well~";
+            return initiatorProfile.displayName + " has made it known that " + recipientProfile.displayName + " is to be known as " + newName + " henceforth! All occurences of their name in our records will be changed to reflect their new identity.";
         }
 
         public override string GetConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)

@@ -6,12 +6,12 @@ using System.Collections.Generic;
 namespace FChatDicebot.InteractionProcessors.Consequence
 {
     /// <summary>
-    /// Processor for the bond interaction - creates a bond between two characters for 1 day
+    /// Processor for the bond interaction - creates a permanent bond between two characters
     /// </summary>
     public class BondProcessor : InteractionProcessorBase
     {
         public override string InteractionType => "bond";
-        public override string InvestmentLevel => "consequence";
+        public override string InvestmentLevel => "commitment";
 
         public BondProcessor(IChateauDatabase database) : base(database)
         {
@@ -95,7 +95,7 @@ namespace FChatDicebot.InteractionProcessors.Consequence
             Identifier bondIdentifier = MonDB.getIdentifier(identifier);
             string bondText = bondIdentifier != null ? bondIdentifier.description : identifier;
 
-            return $"{initiatorProfile.displayName} and {recipientProfile.displayName} form a {bondText} bond! This connection will last for the next day.";
+            return initiatorProfile.displayName + " is now " + recipientProfile.displayName + "'s " + Utils.BondToText(identifier, false) + ", and " + recipientProfile.displayName + " is now their " + Utils.BondToText(identifier, true) + "! May you enjoy a bright future together."; ;
         }
 
         public override string GetConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
@@ -103,7 +103,7 @@ namespace FChatDicebot.InteractionProcessors.Consequence
             Identifier bondIdentifier = MonDB.getIdentifier(identifier);
             string bondText = bondIdentifier != null ? bondIdentifier.description : identifier;
 
-            return $"{initiatorProfile.displayName} wants to form a {bondText} bond with {recipientProfile.displayName} for 1 day. [b]This creates a connection between you![/b] Do you !consent?";
+            return initiatorProfile.displayName + " would like to declare that " + recipientProfile.displayName + " is their " + Utils.BondToText(identifier, true) + "! [b]This should not be taken lightly, and can not be done frequently.[/b] Do you !consent to this new bond?";
         }
     }
 }

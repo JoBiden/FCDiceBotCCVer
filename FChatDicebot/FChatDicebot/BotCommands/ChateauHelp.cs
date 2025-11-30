@@ -57,19 +57,21 @@ namespace FChatDicebot.BotCommands
                 "!work [sub]!w[/sub]",
                 "!volunteer [sub]!v[/sub]",
                 "!bank",
-                "!botinfo",
-                "!uptime",
-                "!help",
+                "!titles",
                 "!category [sub]!list[/sub] ",
                 "!identifier [sub]!whatis[/sub]",
                 "!joinchateau",
                 "!modmessage",
-                "!setmark"
+                "!setmark",
+                "!help",
+                "!botinfo",
+                "!uptime"
             };
 
             List<string> roomCommands = new List<string>()
             {
-                "!consent [sub]!c[/sub] "
+                "!consent [sub]!c[/sub] ",
+                "!pledge"
             };
 
             List<string> casualCommands = new List<string>()
@@ -91,21 +93,22 @@ namespace FChatDicebot.BotCommands
 
             List<string> commitmentCommands = new List<string>()
             {
-                "!monsterize",
                 "!petrify",
                 "!plant",
                 "!objectify",
                 "!consume",
                 "!mark",
                 "!employ",
-                "!bond"
+                "!bond",
+                "!entitle"
             };
 
             List<string> consequenceCommands = new List<string>()
             {
-                "!rename"
+                "!rename",
+                "!monsterize"
             };
-            string messageText = "These are all of the commands native to the [user]Chateau Contract[/user] bot, as of [b]November 4th 2025.[/b] For detailed description of their use, please see the [user]Chateau Contract[/user] profile. Commands in subtext are alternate names of the same command - all documentation will be for the first listed names.\n\n" +
+            string messageText = "These are all of the commands native to the [user]Chateau Contract[/user] bot, as of [b]November 30th 2025.[/b] For detailed description of their use, please see the [user]Chateau Contract[/user] profile or use !help [command] Commands in subtext are alternate names of the same command - all documentation will be for the first listed names.\n\n" +
                     "[u]Does not require channel[/u]\n" +
                     Utils.sortedListDisplayText(generalCommands) + "\n\n" +         
                     "[u]Requires channel[/u]\n" +
@@ -123,7 +126,7 @@ namespace FChatDicebot.BotCommands
             if(Utils.IsCharacterAdmin(bot.AccountSettings.AdminCharacters, command.characterName))
             {
                 messageText += "\n[b]Admin only Commands [/b](no channel req)\n" +
-                    "!namechange [old profile in user tag] \"new profile in quotes\" - updates the database to reflect a user who has changed their Flist username. CaSe SeNsItIvE \n";
+                    "!namechange [noparse][user]old profile in user tag[/user][/noparse] \"new profile in quotes\" - updates the database to reflect a user who has changed their Flist username. CaSe SeNsItIvE \n";
             }
 
             if (commandController.MessageCameFromChannel(channel))
@@ -145,55 +148,70 @@ namespace FChatDicebot.BotCommands
 
             if (cmd.Aliases != null && cmd.Aliases.Length > 0)
             {
-                sb.Append(" (aliases: ");
+                sb.Append("[sub]");
                 sb.Append(string.Join(", ", cmd.Aliases.Select(a => "!" + a)));
-                sb.Append(")");
+                sb.Append("[/sub]");
             }
-            else
-            {
-                sb.Append(" (aliases: none)");
-            }
-            sb.Append("\n");
+            sb.AppendLine("");
 
             // Category
             if (!string.IsNullOrEmpty(cmd.Category))
             {
-                sb.Append("Category: ");
-                sb.Append(cmd.Category);
-                sb.Append("\n\n");
+                switch (cmd.Category)
+                {
+                    case "Casual Interaction":
+                        sb.AppendLine("[color=green]Casual Interaction[/color]");
+                        break;
+                    case "Involved Interaction":
+                        sb.AppendLine("[color=yellow]Involved Interaction[/color]");
+                        break;
+                    case "Commitment Interaction":
+                        sb.AppendLine("[color=orange]Commitment Interaction[/color]");
+                        break;
+                    case "Consequence Interaction":
+                        sb.AppendLine("[color=red]Consequence Interaction[/color]");
+                        break;
+                    case "General":
+                        sb.AppendLine("General");
+                        break;
+                    default:
+                        break;
+                }
+                sb.AppendLine(cmd.Category);
+                sb.AppendLine("");
             }
 
             // Long description
             if (!string.IsNullOrEmpty(cmd.LongDescription))
             {
-                sb.Append(cmd.LongDescription);
-                sb.Append("\n\n");
+                sb.AppendLine(cmd.LongDescription);
+                sb.AppendLine("");
             }
             else if (!string.IsNullOrEmpty(cmd.ShortDescription))
             {
-                sb.Append(cmd.ShortDescription);
-                sb.Append("\n\n");
+                sb.AppendLine(cmd.ShortDescription);
+                sb.AppendLine("");
             }
 
             // Usage
             if (!string.IsNullOrEmpty(cmd.Usage))
             {
-                sb.Append("[u]Usage:[/u]\n");
-                sb.Append(cmd.Usage);
-                sb.Append("\n\n");
+                sb.AppendLine("[u]Usage:[/u]");
+                sb.AppendLine(cmd.Usage);
+                sb.AppendLine("");
             }
 
             // Identifier list (if applicable)
             if (!string.IsNullOrEmpty(cmd.IdentifierCategory))
             {
-                List<Identifier> identifiers = MonDB.getIdentifiers(cmd.IdentifierCategory);
+                List<Model.Identifier> identifiers = MonDB.getIdentifiers(cmd.IdentifierCategory);
                 if (identifiers != null && identifiers.Count > 0)
                 {
                     sb.Append("[u]Available ");
-                    sb.Append(cmd.IdentifierCategory);
-                    sb.Append("s:[/u]\n");
-                    sb.Append(Utils.sortedListDisplayText(identifiers.Select(i => i.type).ToList()));
-                    sb.Append("\n\n");
+                    sb.Append(cmd.IdentifierCategory.EndsWith("y") ? (cmd.IdentifierCategory.TrimEnd('y') + "ie") : cmd.IdentifierCategory);
+                    sb.AppendLine("s:[/u]");
+                    sb.AppendLine(Utils.sortedListDisplayText(identifiers.Select(i => i.type).ToList()));
+                    sb.AppendLine("");
                 }
             }
 
@@ -208,11 +226,15 @@ namespace FChatDicebot.BotCommands
                     sb.Append(cmd.CooldownAppliesTo);
                     sb.Append(")");
                 }
-                sb.Append("\n\n");
-            }
-            else
-            {
-                sb.Append("[u]Cooldown:[/u] None\n\n");
+                if (cmd.Category == "Casual Interaction")
+                {
+                    sb.Append("[sub]Casual command cooldowns are only for incrementing dossier counts, and can still be performed at any time[/sub]");
+                }
+                else if (cmd.Category == "Involved Interaction")
+                {
+                    sb.Append("[sub]Involved command cooldowns are only for incrementing dossier counts, and can still be performed at any time[/sub]");
+                }
+                sb.AppendLine("\n");
             }
 
             // Channel requirement

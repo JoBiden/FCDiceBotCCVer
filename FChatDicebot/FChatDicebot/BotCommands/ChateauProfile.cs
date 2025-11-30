@@ -18,9 +18,9 @@ namespace FChatDicebot.BotCommands
             Aliases = new string[] { };
             Category = "General";
             ShortDescription = "Alias for !dossier";
-            LongDescription = "Shorthand for the !dossier command. See !help dossier for full details.";
-            Usage = "!profile\nor\n!profile [user]CharacterName[/user]";
-            RelatedCommands = new string[] { "dossier", "bank", "list" };
+            LongDescription = "Alternative wording for the !dossier command. See !help dossier for full details.";
+            Usage = "!profile\nor\n!profile [noparse][user]NameInUserTag[/user][/noparse]";
+            RelatedCommands = new string[] { "dossier", "bank", "pledges" };
             CooldownDuration = null;
             CooldownAppliesTo = null;
             IdentifierCategory = null;

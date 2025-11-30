@@ -18,16 +18,16 @@ namespace FChatDicebot.BotCommands
             Name = "spank";
             Aliases = new string[] { };
             Category = "Casual Interaction";
-            ShortDescription = "Request to spank another character";
-            LongDescription = "Request to spank another character. The recipient must !consent for it to be recorded in both dossiers. A playful, slightly naughty interaction.";
-            Usage = "!spank [user]CharacterName[/user]";
+            ShortDescription = "Spank another resident";
+            LongDescription = "Try to punish someone with a playful spank. The recipient must !consent for it to be recorded in both dossiers. Some people use this to cook turkey!";
+            Usage = "!spank [noparse][user]NameInUserTag[/user][/noparse]";
             RelatedCommands = new string[] { "bully", "consent", "dossier" };
-            CooldownDuration = "30 minutes";
-            CooldownAppliesTo = "initiator";
+            CooldownDuration = "30 minutes (but can still interact without incrementing count)";
+            CooldownAppliesTo = "both initiator and recipient";
             IdentifierCategory = null;
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
-            RequireChannel = false;
+            RequireChannel = true;
             LockCategory = CommandLockCategory.NONE;
         }
 

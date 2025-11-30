@@ -19,16 +19,16 @@ namespace FChatDicebot.BotCommands
             Name = "feed";
             Aliases = new string[] { };
             Category = "Involved Interaction";
-            ShortDescription = "Feed another character a substance";
-            LongDescription = "Feed another character a specific substance. The recipient must !consent for it to be recorded in both dossiers. This is a caring, nurturing interaction.";
-            Usage = "!feed [user]CharacterName[/user] [substance]";
+            ShortDescription = "Feed another resident";
+            LongDescription = "Feed someone a specific substance, which could be something normal like food or something wild like energy. Recipient must !consent, so be sure you've picked something they enjoy!";
+            Usage = "!feed [noparse][user]NameInUserTag[/user][/noparse] [substance]";
             RelatedCommands = new string[] { "dressup", "golden", "consent", "dossier" };
-            CooldownDuration = null;
-            CooldownAppliesTo = null;
+            CooldownDuration = "30 minutes";
+            CooldownAppliesTo = "both initiator and recipient";
             IdentifierCategory = "substance";
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
-            RequireChannel = false;
+            RequireChannel = true;
             LockCategory = CommandLockCategory.NONE;
         }
 

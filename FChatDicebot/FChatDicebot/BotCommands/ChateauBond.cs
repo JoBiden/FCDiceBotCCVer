@@ -19,16 +19,16 @@ namespace FChatDicebot.BotCommands
             Name = "bond";
             Aliases = new string[] { };
             Category = "Commitment Interaction";
-            ShortDescription = "Create a bond relationship with another character";
-            LongDescription = "Create a specific type of bond with another character (owner/pet, master/slave, etc.). The recipient must !consent for it to be recorded in both dossiers. Bonds show deep committed relationships.";
-            Usage = "!bond [user]CharacterName[/user] [bondtype]";
-            RelatedCommands = new string[] { "mark", "consume", "employ", "consent", "dossier" };
-            CooldownDuration = null;
-            CooldownAppliesTo = null;
-            IdentifierCategory = null;
+            ShortDescription = "Declare your bond with another resident";
+            LongDescription = "Create a specific type of bond with another character (owner/pet, master/slave, etc.). The recipient must !consent to acknowledge the mutual connection. ";
+            Usage = "!bond [noparse][user]NameInUserTag[/user][/noparse] [bondtype]";
+            RelatedCommands = new string[] { "mark", "employ"};
+            CooldownDuration = "1 Day";
+            CooldownAppliesTo = "both initiator and recipient";
+            IdentifierCategory = "bond";
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
-            RequireChannel = false;
+            RequireChannel = true;
             LockCategory = CommandLockCategory.NONE;
         }
 

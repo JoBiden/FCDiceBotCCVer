@@ -18,16 +18,16 @@ namespace FChatDicebot.BotCommands
             Name = "cuddle";
             Aliases = new string[] { };
             Category = "Casual Interaction";
-            ShortDescription = "Request to cuddle with another character";
-            LongDescription = "Request to cuddle with another character. The recipient must !consent for it to be recorded in both dossiers. A warm, affectionate interaction.";
-            Usage = "!cuddle [user]CharacterName[/user]";
+            ShortDescription = "Cuddle with another resident";
+            LongDescription = "Request to cuddle with another character as soon as they !consent. Whether it's spooning or a warm embrace, this is a favorite past time of Chateau residents.";
+            Usage = "!cuddle [noparse][user]NameInUserTag[/user][/noparse]";
             RelatedCommands = new string[] { "kiss", "handhold", "consent", "dossier" };
-            CooldownDuration = "30 minutes";
-            CooldownAppliesTo = "initiator";
+            CooldownDuration = "30 Minutes";
+            CooldownAppliesTo = "both initiator and recipient";
             IdentifierCategory = null;
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
-            RequireChannel = false;
+            RequireChannel = true;
             LockCategory = CommandLockCategory.NONE;
         }
 

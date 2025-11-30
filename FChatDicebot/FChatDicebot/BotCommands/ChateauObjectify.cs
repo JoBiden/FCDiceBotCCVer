@@ -19,16 +19,16 @@ namespace FChatDicebot.BotCommands
             Name = "objectify";
             Aliases = new string[] { };
             Category = "Commitment Interaction";
-            ShortDescription = "Turn another character into an object";
-            LongDescription = "Turn another character into a specific object. The recipient must !consent for it to be recorded in both dossiers. This is a significant transformation interaction.";
-            Usage = "!objectify [user]CharacterName[/user] [object]";
-            RelatedCommands = new string[] { "monsterize", "petrify", "plant", "consent", "dossier" };
-            CooldownDuration = null;
-            CooldownAppliesTo = null;
+            ShortDescription = "Transform someone into an object";
+            LongDescription = "Turn another resident into an inanimate object. They have to consent to the sudden loss of personhood, even if it's the last thing they do.";
+            Usage = "!objectify [noparse][user]NameInUserTag[/user][/noparse] {object}";
+            RelatedCommands = new string[] { "monsterize", "petrify", "plant" };
+            CooldownDuration = "1 Day";
+            CooldownAppliesTo = "recipient";
             IdentifierCategory = "object";
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
-            RequireChannel = false;
+            RequireChannel = true;
             LockCategory = CommandLockCategory.NONE;
         }
 

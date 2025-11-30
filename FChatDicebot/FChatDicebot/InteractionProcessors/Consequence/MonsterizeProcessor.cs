@@ -10,7 +10,7 @@ namespace FChatDicebot.InteractionProcessors.Consequence
     public class MonsterizeProcessor : InteractionProcessorBase
     {
         public override string InteractionType => "monsterize";
-        public override string InvestmentLevel => "consequence";
+        public override string InvestmentLevel => "commitment";
 
         public MonsterizeProcessor(IChateauDatabase database) : base(database)
         {
@@ -69,7 +69,8 @@ namespace FChatDicebot.InteractionProcessors.Consequence
             Identifier monsterIdentifier = MonDB.getIdentifier(identifier);
             string monsterText = monsterIdentifier != null ? monsterIdentifier.description : identifier;
 
-            return $"With a flash of eldritch energy, {initiatorProfile.displayName} transforms {recipientProfile.displayName} into {monsterText}! They'll remain in this monstrous form for the next week...";
+            identifier = Utils.AnOrA(identifier) + " " + identifier;
+            return initiatorProfile.displayName + " has bolstered monsterkind by turning " + recipientProfile.displayName + " into " + identifier + "! We welcome all monsters to our Chateau, no matter what your origins. Enjoy your new life as " + identifier + "~";
         }
 
         public override string GetConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
@@ -77,7 +78,7 @@ namespace FChatDicebot.InteractionProcessors.Consequence
             Identifier monsterIdentifier = MonDB.getIdentifier(identifier);
             string monsterText = monsterIdentifier != null ? monsterIdentifier.description : identifier;
 
-            return $"{initiatorProfile.displayName} wants to monsterize {recipientProfile.displayName} into {monsterText} for 7 days. [b]This is a major transformation![/b] Do you !consent?";
+            return initiatorProfile.displayName + " is going to transform " + recipientProfile.displayName + " into " + Utils.AnOrA(identifier) + " " + identifier + "! [b]This should not be taken lightly, and can not be done frequently.[/b] Do you !consent to your new form?";
         }
     }
 }

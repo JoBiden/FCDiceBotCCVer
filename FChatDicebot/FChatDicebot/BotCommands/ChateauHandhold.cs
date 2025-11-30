@@ -18,16 +18,16 @@ namespace FChatDicebot.BotCommands
             Name = "handhold";
             Aliases = new string[] { };
             Category = "Casual Interaction";
-            ShortDescription = "Request to hold hands with another character";
-            LongDescription = "Request to hold hands with another character. The recipient must !consent for it to be recorded in both dossiers. A sweet, innocent gesture of affection.";
-            Usage = "!handhold [user]CharacterName[/user]";
+            ShortDescription = "Hold hands with another resident";
+            LongDescription = "Hold hands with someone. The recipient must !consent before the forbidden act takes place. Maybe you should get a room first...";
+            Usage = "!handhold [noparse][user]NameInUserTag[/user][/noparse]";
             RelatedCommands = new string[] { "kiss", "cuddle", "consent", "dossier" };
-            CooldownDuration = "30 minutes";
-            CooldownAppliesTo = "initiator";
+            CooldownDuration = "30 Minutes";
+            CooldownAppliesTo = "both initiator and recipient";
             IdentifierCategory = null;
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
-            RequireChannel = false;
+            RequireChannel = true;
             LockCategory = CommandLockCategory.NONE;
         }
 

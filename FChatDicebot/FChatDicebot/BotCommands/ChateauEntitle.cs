@@ -21,16 +21,16 @@ namespace FChatDicebot.BotCommands
             Name = "entitle";
             Aliases = new string[] { };
             Category = "Commitment Interaction";
-            ShortDescription = "Grant a custom title to another character";
-            LongDescription = "Grant a custom title to another character. The recipient must !consent for the title to be added to their dossier. Titles show special relationships or achievements and appear in their profile.";
-            Usage = "!entitle [user]CharacterName[/user] \"Title Text\"";
+            ShortDescription = "Grant a custom title to another resident";
+            LongDescription = "Grant someone a custom title. The recipient must !consent for the title to be added to their dossier, so you know it describes them aptly if it goes through. Be sure to capitalize appropriately! Can include bbcode as long as the total length is less than 100 characters.";
+            Usage = "!entitle [noparse][user]NameInUserTag[/user][/noparse] \"Title Text\"";
             RelatedCommands = new string[] { "bond", "titles", "settitle", "dossier" };
-            CooldownDuration = null;
-            CooldownAppliesTo = null;
+            CooldownDuration = "1 Day";
+            CooldownAppliesTo = "recipient";
             IdentifierCategory = null;
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
-            RequireChannel = false;
+            RequireChannel = true;
             LockCategory = CommandLockCategory.NONE;
         }
 

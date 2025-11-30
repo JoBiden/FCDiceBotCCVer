@@ -471,7 +471,7 @@ namespace FChatDicebot
                 message += $"{displayName} has earned {titles.Count} new titles:\n";
                 foreach (string title in titles)
                 {
-                    message += $"• [b]·{title}·[/b]\n";
+                    message += $"[b]·{title}·[/b]\n";
                 }
                 message = message.TrimEnd('\n');
             }
