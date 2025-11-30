@@ -377,7 +377,7 @@ namespace FChatDicebot.Tests.Integration
                 if (profile.timers != null && profile.timers.ContainsKey(timerKey))
                 {
                     profile.timers.Remove(timerKey);
-                    _database.UpdateProfile(profile);
+                    _database.SetProfile(userName, profile);
                 }
             }
         }

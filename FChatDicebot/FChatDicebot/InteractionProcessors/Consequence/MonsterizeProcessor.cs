@@ -10,7 +10,7 @@ namespace FChatDicebot.InteractionProcessors.Consequence
     public class MonsterizeProcessor : InteractionProcessorBase
     {
         public override string InteractionType => "monsterize";
-        public override string InvestmentLevel => "commitment";
+        public override string InvestmentLevel => "consequence";
 
         public MonsterizeProcessor(IChateauDatabase database) : base(database)
         {
