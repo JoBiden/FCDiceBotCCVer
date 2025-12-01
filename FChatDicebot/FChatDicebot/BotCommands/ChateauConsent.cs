@@ -224,7 +224,7 @@ namespace FChatDicebot.BotCommands
                     returnString = "Mwah! "+ initiatorProfile.displayName + " and " + recipientProfile.displayName + " share a kiss, " + kissDescriptors[random.Next(kissDescriptors.Count)];
                     if (initiator == "Queen Contract")
                     {
-                        returnString += "[eicon]qckiss[eicon]";
+                        returnString += "[eicon]qckiss[/eicon]";
                     }
                     break;
 

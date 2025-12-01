@@ -25,26 +25,16 @@ namespace FChatDicebot.InteractionProcessors
         {
             if (_initialized) return;
 
-            // Register all interaction processors here
-            // Casual interactions (1 hour rate limit)
+            //casual interactions
             RegisterProcessor(new KissProcessor());
             RegisterProcessor(new CuddleProcessor());
             RegisterProcessor(new HandholdProcessor());
             RegisterProcessor(new SpankProcessor());
             RegisterProcessor(new BullyProcessor());
 
-            // Involved interactions (30 minute rate limit)
-            RegisterProcessor(new FeedProcessor());
-            RegisterProcessor(new GoldenProcessor());
-            RegisterProcessor(new DressupProcessor());
-
-            // Commitment interactions (daily cooldowns, no rate limiting)
+            //commitment interactions
             RegisterProcessor(new MarkProcessor());
             RegisterProcessor(new EntitleProcessor());
-
-            // Consequence interactions (transformative effects with daily cooldowns)
-            RegisterProcessor(new RenameProcessor());
-            RegisterProcessor(new MonsterizeProcessor());
             RegisterProcessor(new PetrifyProcessor());
             RegisterProcessor(new PlantProcessor());
             RegisterProcessor(new ObjectifyProcessor());
@@ -52,9 +42,16 @@ namespace FChatDicebot.InteractionProcessors
             RegisterProcessor(new EmployProcessor());
             RegisterProcessor(new BondProcessor());
 
-            // Transaction interactions (currency exchanges)
+            //involved interactions
+            RegisterProcessor(new FeedProcessor());
+            RegisterProcessor(new GoldenProcessor());
+            RegisterProcessor(new DressupProcessor());
             RegisterProcessor(new PaymentGiveProcessor());
             RegisterProcessor(new PaymentReceiveProcessor());
+
+            //consequence interactions
+            RegisterProcessor(new MonsterizeProcessor());
+            RegisterProcessor(new RenameProcessor());
 
             _initialized = true;
         }
