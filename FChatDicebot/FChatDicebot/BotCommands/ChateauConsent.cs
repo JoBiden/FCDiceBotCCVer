@@ -86,11 +86,11 @@ namespace FChatDicebot.BotCommands
                         {
                             // Fallback for non-migrated interactions
                             ChateauInteractionHandler.addInteraction(toConsent);
-                            channelMessage += getInteractionMessage(toConsent.pendingInteraction.type, toConsent.pendingInteraction.identifier, toConsent.pendingInteraction.initiator, toConsent.pendingInteraction.recipient);
+                            //channelMessage += getInteractionMessage(toConsent.pendingInteraction.type, toConsent.pendingInteraction.identifier, toConsent.pendingInteraction.initiator, toConsent.pendingInteraction.recipient);
                             channelMessage += CheckRateLimitsAndGetMessage(toConsent.pendingInteraction);
                         }
                     }
-                    channelMessage += getInteractionMessage(toConsent.pendingInteraction.type, toConsent.pendingInteraction.identifier, toConsent.pendingInteraction.initiator, toConsent.pendingInteraction.recipient);
+                    //channelMessage += getInteractionMessage(toConsent.pendingInteraction.type, toConsent.pendingInteraction.identifier, toConsent.pendingInteraction.initiator, toConsent.pendingInteraction.recipient);
 
                     channelMessage = CheckAchievementsAndAppendToMessage(channelMessage, toConsent.pendingInteraction.initiator);
                     channelMessage = CheckAchievementsAndAppendToMessage(channelMessage, toConsent.pendingInteraction.recipient);
@@ -120,7 +120,7 @@ namespace FChatDicebot.BotCommands
                 {
                     // Fallback for non-migrated interactions
                     ChateauInteractionHandler.addInteraction(toConsent);
-                    channelMessage += getInteractionMessage(toConsent.pendingInteraction.type, toConsent.pendingInteraction.identifier, toConsent.pendingInteraction.initiator, toConsent.pendingInteraction.recipient);
+                    //channelMessage += getInteractionMessage(toConsent.pendingInteraction.type, toConsent.pendingInteraction.identifier, toConsent.pendingInteraction.initiator, toConsent.pendingInteraction.recipient);
                 }
                 channelMessage = CheckAchievementsAndAppendToMessage(channelMessage, toConsent.pendingInteraction.initiator);
                 channelMessage = CheckAchievementsAndAppendToMessage(channelMessage, toConsent.pendingInteraction.recipient);
@@ -221,7 +221,7 @@ namespace FChatDicebot.BotCommands
             {
                 case "kiss":
                     var kissDescriptors = new List<String> { "cute.", "that's kind of lewd...", "so salatious.", "hot!", "it sounded quite wet.", "short and sweet.", "slow and sensual.", "just a casual peck.", "doki..." };
-                    returnString = "Mwah! "+ initiatorProfile.displayName + " and " + recipientProfile.displayName + " share a kiss, " + kissDescriptors[random.Next(kissDescriptors.Count)];
+                    returnString = "Mwah! " + initiatorProfile.displayName + " and " + recipientProfile.displayName + " share a kiss, " + kissDescriptors[random.Next(kissDescriptors.Count)];
                     if (initiator == "Queen Contract")
                     {
                         returnString += "[eicon]qckiss[/eicon]";
@@ -229,7 +229,7 @@ namespace FChatDicebot.BotCommands
                     break;
 
                 case "handhold":
-                    var handholdDescriptors = new List<String> { "Cute.", "That's kind of lewd...", "So salatious.", "Hot!", "When's the wedding?", "The forbidden act, out in the open..."};
+                    var handholdDescriptors = new List<String> { "Cute.", "That's kind of lewd...", "So salatious.", "Hot!", "When's the wedding?", "The forbidden act, out in the open..." };
                     returnString = "Ooh, " + initiatorProfile.displayName + " and " + recipientProfile.displayName + " hold hands! " + handholdDescriptors[random.Next(handholdDescriptors.Count)];
                     break;
                 case "cuddle":
@@ -248,7 +248,7 @@ namespace FChatDicebot.BotCommands
                     }
                     break;
                 case "spank":
-                    var spankDescriptors = new List<String> { "a sharp spank!", "a love tap to the ass.", "a smack that will leave a mark.", "a red imprint on their derriere.", "a surprisingly loving booty grope.", "an impact with enough force to cook a lesser being."};
+                    var spankDescriptors = new List<String> { "a sharp spank!", "a love tap to the ass.", "a smack that will leave a mark.", "a red imprint on their derriere.", "a surprisingly loving booty grope.", "an impact with enough force to cook a lesser being." };
                     returnString = initiatorProfile.displayName + " winds up and gives " + recipientProfile.displayName + " " + spankDescriptors[random.Next(spankDescriptors.Count)];
                     if (recipient == "Queen Contract")
                     {
@@ -266,7 +266,7 @@ namespace FChatDicebot.BotCommands
                     identifier = Utils.AnOrA(identifier) + " " + identifier;
                     returnString = initiatorProfile.displayName + " has bolstered monsterkind by turning " + recipientProfile.displayName + " into " + identifier + "! We welcome all monsters to our Chateau, no matter what your origins. Enjoy your new life as " + identifier + "~";
                     break;
-                case "petrify":                                      
+                case "petrify":
                     returnString = initiatorProfile.displayName + " has petrified " + recipientProfile.displayName + " " + Utils.LocationToText(identifier, initiator, recipient) + "! They might be stuck there for quite awhile... hopefully visitors enjoy the pose they're stuck in.";
                     break;
                 case "plant":
@@ -309,6 +309,7 @@ namespace FChatDicebot.BotCommands
                     break;
 
             }
+            returnString += "[noparse=usingOldInteractionMessage][/noparse]";
             return returnString;
         }
     }

@@ -314,6 +314,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
 
             // Assert
             Assert.Contains("[eicon]qckiss[/eicon]", message);
+            Assert.DoesNotContain("usingOldInteractionMessage", message);
         }
 
         [Fact]
