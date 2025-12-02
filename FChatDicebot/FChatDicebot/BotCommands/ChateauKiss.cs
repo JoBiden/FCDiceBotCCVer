@@ -19,7 +19,7 @@ namespace FChatDicebot.BotCommands
             Aliases = new string[] { };
             Category = "Casual Interaction";
             ShortDescription = "Give another resident a kiss";
-            LongDescription = "Request to give another resident a kiss. The recipient must !consent to the kiss for it to count. This is a sweet, affectionate gesture often used as a greeting.";
+            LongDescription = "Give another resident a kiss, as soon as they !consent. This is a sweet, affectionate gesture often used as a greeting.";
             Usage = "!kiss [noparse][user]NameInUserTag[/user][/noparse]";
             RelatedCommands = new string[] { "cuddle", "handhold", "consent", "dossier" };
             CooldownDuration = "30 Minutes";

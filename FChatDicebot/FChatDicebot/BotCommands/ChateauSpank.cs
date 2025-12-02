@@ -19,7 +19,7 @@ namespace FChatDicebot.BotCommands
             Aliases = new string[] { };
             Category = "Casual Interaction";
             ShortDescription = "Spank another resident";
-            LongDescription = "Try to punish someone with a playful spank. The recipient must !consent for it to be recorded in both dossiers. Some people use this to cook turkey!";
+            LongDescription = "Punish someone with a playful spank, but you need !consent to raise your hand against another in the Chateau. Some people use this to cook turkey!";
             Usage = "!spank [noparse][user]NameInUserTag[/user][/noparse]";
             RelatedCommands = new string[] { "bully", "consent", "dossier" };
             CooldownDuration = "30 minutes (but can still interact without incrementing count)";
