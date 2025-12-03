@@ -66,35 +66,29 @@ namespace FChatDicebot.BotCommands
             {
                 foreach (PendingCommand toConsent in pendingList)
                 {
-                    ChateauInteractionHandler.addInteraction(toConsent);
-                    if (channelMessage != string.Empty)
+                    // Try new processor system first
+                    var processor = InteractionProcessors.InteractionProcessorRegistry.GetProcessor(toConsent.pendingInteraction.type);
+                    if (processor != null)
                     {
-                        // Try new processor system first
-                        var processor = InteractionProcessors.InteractionProcessorRegistry.GetProcessor(toConsent.pendingInteraction.type);
-                        if (processor != null)
-                        {
-                            // Process the interaction (saves to DB, updates profiles)
-                            processor.ProcessInteraction(toConsent);
+                        // Process the interaction (saves to DB, updates profiles)
+                        processor.ProcessInteraction(toConsent);
 
-                            //get completion message
-                            Profile initProfile = MonDB.getProfile(toConsent.pendingInteraction.initiator);
-                            Profile recipProfile = MonDB.getProfile(toConsent.pendingInteraction.recipient);
-                            channelMessage += processor.GetCompletionMessage(initProfile, recipProfile, toConsent.pendingInteraction.identifier);
-                            channelMessage += CheckRateLimitsAndGetMessage(toConsent.pendingInteraction);
-                        }
-                        else
-                        {
-                            // Fallback for non-migrated interactions
-                            ChateauInteractionHandler.addInteraction(toConsent);
-                            //channelMessage += getInteractionMessage(toConsent.pendingInteraction.type, toConsent.pendingInteraction.identifier, toConsent.pendingInteraction.initiator, toConsent.pendingInteraction.recipient);
-                            channelMessage += CheckRateLimitsAndGetMessage(toConsent.pendingInteraction);
-                        }
+                        //get completion message
+                        Profile initProfile = MonDB.getProfile(toConsent.pendingInteraction.initiator);
+                        Profile recipProfile = MonDB.getProfile(toConsent.pendingInteraction.recipient);
+                        channelMessage += processor.GetCompletionMessage(initProfile, recipProfile, toConsent.pendingInteraction.identifier);
+                        channelMessage += CheckRateLimitsAndGetMessage(toConsent.pendingInteraction);
                     }
-                    //channelMessage += getInteractionMessage(toConsent.pendingInteraction.type, toConsent.pendingInteraction.identifier, toConsent.pendingInteraction.initiator, toConsent.pendingInteraction.recipient);
+                    else
+                    {
+                        // Fallback for non-migrated interactions
+                        ChateauInteractionHandler.addInteraction(toConsent);
+                        //channelMessage += getInteractionMessage(toConsent.pendingInteraction.type, toConsent.pendingInteraction.identifier, toConsent.pendingInteraction.initiator, toConsent.pendingInteraction.recipient);
+                        channelMessage += CheckRateLimitsAndGetMessage(toConsent.pendingInteraction);
+                    }
 
                     channelMessage = CheckAchievementsAndAppendToMessage(channelMessage, toConsent.pendingInteraction.initiator);
                     channelMessage = CheckAchievementsAndAppendToMessage(channelMessage, toConsent.pendingInteraction.recipient);
-                    //channelMessage += getInteractionMessageWithDisplayNames(toConsent);
                 }
                 if (channelMessage.Length > maxNoSpoilerLength)
                 {
@@ -115,12 +109,14 @@ namespace FChatDicebot.BotCommands
                     Profile initProfile = MonDB.getProfile(toConsent.pendingInteraction.initiator);
                     Profile recipProfile = MonDB.getProfile(toConsent.pendingInteraction.recipient);
                     channelMessage += processor.GetCompletionMessage(initProfile, recipProfile, toConsent.pendingInteraction.identifier);
+                    channelMessage += CheckRateLimitsAndGetMessage(toConsent.pendingInteraction);
                 }
                 else
                 {
                     // Fallback for non-migrated interactions
                     ChateauInteractionHandler.addInteraction(toConsent);
                     //channelMessage += getInteractionMessage(toConsent.pendingInteraction.type, toConsent.pendingInteraction.identifier, toConsent.pendingInteraction.initiator, toConsent.pendingInteraction.recipient);
+                    channelMessage += CheckRateLimitsAndGetMessage(toConsent.pendingInteraction);
                 }
                 channelMessage = CheckAchievementsAndAppendToMessage(channelMessage, toConsent.pendingInteraction.initiator);
                 channelMessage = CheckAchievementsAndAppendToMessage(channelMessage, toConsent.pendingInteraction.recipient);
