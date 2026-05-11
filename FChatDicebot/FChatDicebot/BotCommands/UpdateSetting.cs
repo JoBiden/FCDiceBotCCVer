@@ -78,6 +78,22 @@ namespace FChatDicebot.BotCommands
                     changed = SettingType.OnlyOpTableCommands;
                 if (terms.Contains("commandprefix"))
                     changed = SettingType.CommandPrefix;
+                if (terms.Contains("allowwork"))
+                    changed = SettingType.AllowWork;
+                if (terms.Contains("workmultiplier"))
+                    changed = SettingType.WorkMultiplier;
+                if (terms.Contains("worktierrange"))
+                    changed = SettingType.WorkTierRange;
+                if (terms.Contains("workbaseamount"))
+                    changed = SettingType.WorkBaseAmount;
+                if (terms.Contains("usefourcolortradingcards"))
+                    changed = SettingType.UseFourColorTradingCards;
+                if (terms.Contains("usetaroticons"))
+                    changed = SettingType.UseTarotIcons;
+                if (terms.Contains("usedefaultpotions"))
+                    changed = SettingType.UseDefaultPotions;
+                if (terms.Contains("potionchipscost"))
+                    changed = SettingType.PotionChipsCost;
 
                 if (terms.Contains("on") || terms.Contains("true"))
                     setValue = true;
@@ -183,6 +199,61 @@ namespace FChatDicebot.BotCommands
                 case SettingType.CommandPrefix:
                     thisChannel.CommandPrefix = setChar;
                     break;
+                case SettingType.AllowWork:
+                    {
+                        if (thisChannel.ChipsClearance != ChipsClearanceLevel.DicebotAdmin)
+                        {
+                            thisChannel.AllowWork = setValue;
+                        }
+                    }
+                    break;
+                case SettingType.WorkMultiplier:
+                    if (setNumber < 0)
+                        setNumber = 0;
+                    if (setNumber > BotMain.MaximumWorkMultiplier)
+                        setNumber = BotMain.MaximumWorkMultiplier;
+                    thisChannel.WorkMultiplier = setNumber;
+                    break;
+                case SettingType.WorkTierRange:
+                    if (setNumber < 0)
+                        setNumber = 0;
+                    if (setNumber > BotMain.MaximumWorkTierRange)
+                        setNumber = BotMain.MaximumWorkTierRange;
+                    thisChannel.WorkTierRange = setNumber;
+                    break;
+                case SettingType.WorkBaseAmount:
+                    if (setNumber < 0)
+                        setNumber = 0;
+                    if (setNumber > BotMain.MaximumWorkBaseAmount)
+                        setNumber = BotMain.MaximumWorkBaseAmount;
+                    thisChannel.WorkBaseAmount = setNumber;
+                    break;
+                case SettingType.UseFourColorTradingCards:
+                    if(thisChannel.CardPrintSetting == null)
+                    {
+                        thisChannel.CardPrintSetting = new PrintSetting() { FourColorPlayingCards = setValue };
+                    }
+                    else
+                        thisChannel.CardPrintSetting.FourColorPlayingCards = setValue;
+                    break;
+                case SettingType.UseTarotIcons:
+                    if (thisChannel.CardPrintSetting == null)
+                    {
+                        thisChannel.CardPrintSetting = new PrintSetting() { TarotIcons = setValue };
+                    }
+                    else
+                        thisChannel.CardPrintSetting.TarotIcons = setValue;
+                    break;
+                case SettingType.UseDefaultPotions:
+                    thisChannel.UseDefaultPotions = setValue;
+                    break;
+                case SettingType.PotionChipsCost:
+                    if (setNumber < 0)
+                        setNumber = 0;
+                    if (setNumber > BotMain.MaximumPotionCost)
+                        setNumber = BotMain.MaximumPotionCost;
+                    thisChannel.PotionChipsCost = setNumber;
+                    break;
             }
 
             if (changed == SettingType.NONE)
@@ -198,12 +269,14 @@ namespace FChatDicebot.BotCommands
                 string output = "(Channel setting updated) " + Utils.GetCharacterUserTags(characterName) + " set " + changed + " to ";
                 if (changed == SettingType.CommandPrefix)
                     output += setChar.ToString();
-                else if (changed == SettingType.SlotsMultiplierLimit || changed == SettingType.StartingChips)
+                else if (changed == SettingType.SlotsMultiplierLimit || changed == SettingType.StartingChips
+                    || changed == SettingType.WorkMultiplier || changed == SettingType.WorkTierRange || changed == SettingType.WorkBaseAmount 
+                    || changed == SettingType.PotionChipsCost)
                     output += setNumber.ToString();
                 else
                     output += setValue.ToString();
 
-                if (changed == SettingType.OnlyOpAddChips && thisChannel.ChipsClearance == ChipsClearanceLevel.DicebotAdmin)
+                if ((changed == SettingType.OnlyOpAddChips || changed == SettingType.AllowWork) && thisChannel.ChipsClearance == ChipsClearanceLevel.DicebotAdmin)
                 {
                     output = "(" + changed + " Channel setting cannot be updated for this channel) ";
                 }
@@ -238,12 +311,19 @@ namespace FChatDicebot.BotCommands
         AllowChessEicons,
         AllowChess,
         SlotsMultiplierLimit,
-        StartingChips
+        StartingChips,
+        AllowWork,
+        WorkMultiplier,
+        WorkTierRange,
+        WorkBaseAmount,
+        UseFourColorTradingCards,
+        UseTarotIcons,
+        UseDefaultPotions,
+        PotionChipsCost
     }
 }
         ////todo: apply settings to code
         //public bool UseEicons;
-        //public bool GreetNewUsers;
         //public bool UseVcAccountForChips;
         //OnlyOpBotCommands,
         //OnlyOpDeckControls,

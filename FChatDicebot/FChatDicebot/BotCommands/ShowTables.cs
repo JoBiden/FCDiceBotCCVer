@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using FChatDicebot.BotCommands.Base;
 using FChatDicebot.SavedData;
 using Newtonsoft.Json;
+using FChatDicebot.DiceFunctions;
 
 namespace FChatDicebot.BotCommands
 {
@@ -16,7 +17,7 @@ namespace FChatDicebot.BotCommands
             Name = "showtables";
             RequireBotAdmin = false;
             RequireChannelAdmin = true;
-            RequireChannel = true;
+            RequireChannel = false;
             LockCategory = CommandLockCategory.SavedTables;
         }
 
@@ -28,7 +29,7 @@ namespace FChatDicebot.BotCommands
 
             bool fromChannel = commandController.MessageCameFromChannel(channel);
 
-            if (!fromChannel || thisChannel.AllowTableInfo)
+            if (!fromChannel || ( thisChannel != null && thisChannel.AllowTableInfo ))
             {
                 string sendMessage = "_";
                 List<SavedRollTable> relevantTables = bot.SavedTables;
@@ -87,13 +88,11 @@ namespace FChatDicebot.BotCommands
                 {
                     bot.SendMessageInChannel(sendMessage, channel);
                 }
-
-                bot.SendMessageInChannel(sendMessage, channel);
             }
             else
             {
                 if(fromChannel)
-                    bot.SendMessageInChannel(Name + " is currently not allowed in this channel under " + Utils.GetCharacterUserTags("Dice Bot") + "'s settings for this channel.", channel);
+                    bot.SendMessageInChannel(Name + " is currently not allowed in this channel under " + Utils.GetCharacterUserTags(DiceBot.DiceBotCharacter) + "'s settings for this channel.", channel);
             }
             
         }

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using FChatDicebot.BotCommands.Base;
 using FChatDicebot.SavedData;
 using Newtonsoft.Json;
+using FChatDicebot.DiceFunctions;
 
 namespace FChatDicebot.BotCommands
 {
@@ -42,10 +43,10 @@ namespace FChatDicebot.BotCommands
                     if (infoTable.Table != null)
                     {
                         string tabledesc = infoTable.Table.Description + "\n";
-                        sendMessage += "\n\n Name: [b]" + infoTable.Table.Name + "[/b]\n " + tabledesc + " Roll Die: d" + infoTable.Table.DieSides + " Roll Bonus: " + infoTable.Table.RollBonus;
+                        sendMessage += "\n\n Name: [b]" + infoTable.Table.Name + "[/b]\n " + tabledesc + " Roll Die: d" + infoTable.Table.DieSides + " Roll Bonus: " + infoTable.Table.RollBonus + " Only Show Result Description?: " + infoTable.Table.OnlyShowResultDescription;
                         
                         //if variables
-                        List<List<DiceFunctions.TableRollTrigger>> triggersStart = infoTable.Table.TableEntries.Select(a => a.Triggers).ToList();//.Select(q => q.)
+                        List<List<DiceFunctions.TableRollTrigger>> triggersStart = infoTable.Table.TableEntries.Select(a => a.Triggers).ToList();
                         List<string> variablesFound = new List<string>();
                         if(triggersStart != null)
                         {
@@ -56,26 +57,14 @@ namespace FChatDicebot.BotCommands
 
                                 foreach (DiceFunctions.TableRollTrigger trigg in triggeru)
                                 {
-                                    if (!string.IsNullOrEmpty(trigg.VariableRollBonus))
-                                        variablesFound.Add(trigg.VariableRollBonus.ToLower());
-                                    if (!string.IsNullOrEmpty(trigg.TableId))
+                                    if(!string.IsNullOrEmpty(trigg.Command))
                                     {
-                                        int currentIndex = 0;
-                                        int safety = 100;
-                                        while (currentIndex < trigg.TableId.Length - 1 && safety > 0)
-                                        {
-                                            safety--;
-                                            int pound = trigg.TableId.IndexOf('#', currentIndex);
-                                            if (pound >= 0 && pound < trigg.TableId.Length - 2)
-                                            {
-                                                variablesFound.Add(trigg.TableId[pound + 1].ToString().ToLower());
-                                                currentIndex = pound + 1;
-                                            }
-                                            else
-                                            {
-                                                currentIndex = int.MaxValue;
-                                            }
-                                        }
+                                        if (trigg.Command.Contains("#x"))
+                                            variablesFound.Add("x");
+                                        if (trigg.Command.Contains("#y"))
+                                            variablesFound.Add("y");
+                                        if (trigg.Command.Contains("#z"))
+                                            variablesFound.Add("z");
                                     }
                                 }
                             }
@@ -106,7 +95,7 @@ namespace FChatDicebot.BotCommands
             else
             {
                 if(fromChannel)
-                    bot.SendMessageInChannel(Name + " is currently not allowed in this channel under " + Utils.GetCharacterUserTags("Dice Bot") + "'s settings for this channel.", channel);
+                    bot.SendMessageInChannel(Name + " is currently not allowed in this channel under " + Utils.GetCharacterUserTags(DiceBot.DiceBotCharacter) + "'s settings for this channel.", channel);
             }
             
         }

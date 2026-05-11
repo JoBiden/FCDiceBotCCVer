@@ -54,7 +54,13 @@ namespace FChatDicebot
             ChatBotCommand c = BotCommands.FirstOrDefault(a => a.Name == command.commandName);
 
             if (c == null)
+            {
+                if(string.IsNullOrEmpty(command.channel))
+                {
+                    Bot.SendPrivateMessage("Failed: That is not a valid command. Use !help for a list of commands.", command.characterName);
+                }
                 return;
+            }
 
             string[] terms = Utils.LowercaseStrings(command.rawTerms);
             terms = Utils.TrimStringsAndRemoveEmpty(terms);
@@ -95,13 +101,17 @@ namespace FChatDicebot
                     }
                     else
                     {
-                        Bot.SendMessageInChannel(Utils.GetCharacterUserTags(command.characterName) + ", you need to be a channel op to use this command (" + command.commandName + ").", command.channel);
+                        Bot.SendMessageInChannel("Failed: " + Utils.GetCharacterUserTags(command.characterName) + ", you need to be a channel op to use this command (" + command.commandName + ").", command.channel);
                     }
                 }
                 else
                 {
-                    Bot.SendMessageInChannel("You do not have authorization to complete this command.", command.channel);
+                    Bot.SendMessageInChannel("Failed: You do not have authorization to complete this command.", command.channel);
                 }
+            }
+            else if(!fromChannel && c.RequireChannel)
+            {
+                Bot.SendPrivateMessage("Failed: This command requires a channel to use.", command.characterName);
             }
         }
 
@@ -177,21 +187,68 @@ namespace FChatDicebot
             return mod;
         }
 
-        public DeckType GetDeckTypeFromCommandTerms(string[] terms)
+        public DeckType GetDeckTypeFromCommandTerms(string[] terms, out string deckId)
         {
+            deckId = "";
             DeckType deckType = DeckType.Playing;
             if (terms != null && terms.Length >= 1 && terms.Contains("tarot"))
+            {
                 deckType = DeckType.Tarot;
+            }
             if (terms != null && terms.Length >= 1 && terms.Contains("manythings"))
+            {
                 deckType = DeckType.ManyThings;
+            }
             if (terms != null && terms.Length >= 1 && terms.Contains("uno"))
+            {
                 deckType = DeckType.Uno;
+            }
+            if (terms != null && terms.Length >= 1 && terms.Contains("rumble"))
+            {
+                deckType = DeckType.BreakerRumble;
+            }
+            if (terms != null && terms.Length >= 1 && terms.Contains("rumbleclassic"))
+            {
+                deckType = DeckType.BreakerRumbleClassic;
+            }
+            if (terms != null && terms.Length >= 1 && terms.Contains("rumbleextra"))
+            {
+                deckType = DeckType.BreakerRumbleExtra;
+            }
+
+            for(int i = 0; i < terms.Length; i++)
+            {
+                if(terms[i].StartsWith("deck:"))
+                {
+                    string mod = terms[i].Replace("deck:", "");
+                    deckId = mod;
+                    deckType = DeckType.Custom;
+                }
+            }
             //if (terms != null && terms.Length >= 1 && terms.Contains("skipbo")) //TODO: add skipbo deck
             //    deckType = DeckType.Skipbo;
-            if (terms != null && terms.Length >= 1 && terms.Contains("custom"))
-                deckType = DeckType.Custom;
+            //if (terms != null && terms.Length >= 1 && terms.Contains("custom"))
+            //    deckType = DeckType.Custom;
 
             return deckType;
+        }
+
+        public DeckType GetExtraDeckTypeFromCommandTerms(string[] terms, out string deckId)
+        {
+            deckId = "";
+            DeckType rtn = DeckType.NONE;
+            for(int i = 0; i < terms.Length; i++)
+            {
+                if(terms[i].StartsWith("from:"))
+                {
+                    string newTerm = terms[i].Replace("from:", "");
+
+                    string[] newCommands = new string[] { newTerm };
+
+                    rtn = GetDeckTypeFromCommandTerms(newCommands, out deckId);
+                }
+            }
+            return rtn;
         }
 
         public IGame GetGameTypeForCommand(DiceBot diceBot, string channel, string[] terms, out string errorString)
@@ -450,6 +507,11 @@ namespace FChatDicebot
         public void SaveCharacterDataToDisk()
         {
             Utils.WriteToFileAsData(Bot.DiceBot.CharacterDatas, Utils.GetTotalFileName(BotMain.FileFolder, BotMain.CharacterDataFileName));
+        }
+
+        public void SavePotionDataToDisk()
+        {
+            Utils.WriteToFileAsData(Bot.SavedPotions, Utils.GetTotalFileName(BotMain.FileFolder, BotMain.SavedPotionsFileName));
         }
 
         public void SaveChipsToDisk(string source)

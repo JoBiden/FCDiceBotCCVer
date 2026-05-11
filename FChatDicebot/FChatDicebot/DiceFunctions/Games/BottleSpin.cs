@@ -43,6 +43,15 @@ namespace FChatDicebot.DiceFunctions
             return 0;
         }
 
+        public string GetGameHelp()
+        {
+            string thisGameCommands = "lastspin";
+            string thisGameStartupOptions = "(none)" +
+                "\nThe default rules are: Spinning player will not roll themself, spins are in a mostly-random queue";
+
+            return GameSession.GetGameHelp(GetGameName(), thisGameCommands, thisGameStartupOptions, false, false);
+        }
+
         public string GetStartingDisplay()
         {
             return "[eicon]dbbottle1[/eicon][eicon]dbbottle2[/eicon]";
@@ -55,10 +64,7 @@ namespace FChatDicebot.DiceFunctions
 
         public string GameStatus(GameSession session)
         {
-            if (!string.IsNullOrEmpty(session.RandomPlayerQueueData.LastPlayerSpun))
-                return "The last player spun was " + Utils.GetCharacterUserTags(session.RandomPlayerQueueData.LastPlayerSpun) + ".";
-            else
-                return "No players have been spun yet.";
+            return GetLastPlayerSpun(session);
         }
 
         public bool AddGameDataForPlayerJoin(string characterName, GameSession session, BotMain botMain, string[] terms, int ante, out string messageString)
@@ -143,24 +149,30 @@ namespace FChatDicebot.DiceFunctions
             }
 
             string outputString = "[color=yellow]Spinning...[/color]\nThe bottle " + spinText + " and " + faceText + " " + Utils.GetCharacterUserTags(selectedPlayer) + "!";
-            //+ " " + Utils.PrintList(session.BottleSpinData.PlayerQueue) + " #" + session.BottleSpinData.currentQueueIndex;
 
             session.State = DiceFunctions.GameState.Finished;
             
             return outputString;
         }
 
+        public void Update(BotMain botMain, GameSession session, double currentTime)
+        {
+
+        }
+
+        public string GetLastPlayerSpun(GameSession session)
+        {
+            return string.IsNullOrEmpty(session.RandomPlayerQueueData.LastPlayerSpun) ? "No players have been spun yet." : "The last player spun was " + Utils.GetCharacterUserTags(session.RandomPlayerQueueData.LastPlayerSpun) + ".";
+        }
+
         public string IssueGameCommand(DiceBot diceBot, BotMain botMain, string character, string channel, GameSession session, string[] terms, string[] rawTerms)
         {
-            //if(terms.Contains("debuginfo1"))
-            //{
-            //    return "queue exists: " + (session.BottleSpinData.PlayerQueue != null);
-            //}
-            //if (terms.Contains("debuginfo2"))
-            //{
-            //    return "queue size " + (session.BottleSpinData.PlayerQueue.Count) + " queue " + Utils.PrintList(session.BottleSpinData.PlayerQueue) + " index " + session.BottleSpinData.currentQueueIndex;
-            //}
-            return GetGameName() + " has no valid GameCommands";
+            string returnString = "";
+            if (terms.Contains("lastspin") || terms.Contains("lastspun"))
+                returnString = GetLastPlayerSpun(session);
+            else { returnString += "Failed: No such command exists"; }
+
+            return returnString;
         }
     }
 }

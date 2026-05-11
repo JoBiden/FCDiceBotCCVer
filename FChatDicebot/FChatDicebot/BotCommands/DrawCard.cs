@@ -24,7 +24,7 @@ namespace FChatDicebot.BotCommands
             CardCommandOptions options = new CardCommandOptions(commandController, terms, characterName);
             options.characterDrawName = commandController.GetCharacterDrawNameFromCommandTerms(characterName, terms);
 
-            //TODO: when changing secret draw options, this should get removed and merged into CardCommandOptions
+            //TODO: (?done?) when changing secret draw options, this should get removed and merged into CardCommandOptions
             if (terms != null && terms.Length >= 1 && (terms.Contains("reveal")))
                 options.secretDraw = false;
             else
@@ -39,13 +39,11 @@ namespace FChatDicebot.BotCommands
                 return;
             }
 
-            string customDeckName = Utils.GetCustomDeckName(characterName);
-
-            string deckTypeString = Utils.GetDeckTypeStringHidePlaying(options.deckType, customDeckName);
+            string deckTypeString = Utils.GetDeckTypeStringHidePlaying(options.deckType, options.deckTypeId);
             string cardDrawingCharacterString = Utils.GetCharacterStringFromSpecialName(options.characterDrawName);
 
             string trueDraw = "";
-            string drawOutput = bot.DiceBot.DrawCards(numberDrawn, options.jokers, options.deckDraw, channel, options.deckType, options.characterDrawName, options.secretDraw, out trueDraw);
+            string drawOutput = bot.DiceBot.DrawCards(numberDrawn, options.jokers, options.deckDraw, channel, options.deckType, options.deckTypeId, options.characterDrawName, options.secretDraw, options.fromExtraDeckType, options.extraDeckTypeId, out trueDraw);
             string channelMessageOutput = "[i]" + cardDrawingCharacterString + ": " + deckTypeString + "Card" + options.cardsS + " drawn:[/i] " + drawOutput;
             if (options.secretDraw && !(options.characterDrawName == DiceBot.DealerPlayerAlias || options.characterDrawName == DiceBot.BurnCardsPlayerAlias || options.characterDrawName == DiceBot.DiscardPlayerAlias))
             {

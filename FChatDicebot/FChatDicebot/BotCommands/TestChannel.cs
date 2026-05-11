@@ -45,7 +45,7 @@ namespace FChatDicebot.BotCommands
             {
                 responseMessage = "Match seven minutes fate room channel.";
             }
-            /////////
+
             if (!chan.AllowChips)
             {
                 responseMessage += "\nChips are not allowed under the settings for this channel.";

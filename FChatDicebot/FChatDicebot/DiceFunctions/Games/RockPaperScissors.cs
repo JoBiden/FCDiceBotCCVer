@@ -46,6 +46,16 @@ namespace FChatDicebot.DiceFunctions
             return 0;
         }
 
+        public string GetGameHelp()
+        {
+            string thisGameCommands = "setante #, showplayers, newround, setlives # (player name)" +
+                "(as current player only - send to " + DiceBot.DiceBotCharacter + " in private message): !rock !paper !scissors";
+            string thisGameStartupOptions = "# (sets ante amount), lives# (sets lives amount, 2-4)" +
+                "\nThe default rules are: 1 starting life";
+
+            return GameSession.GetGameHelp(GetGameName(), thisGameCommands, thisGameStartupOptions, false, false);
+        }
+
         public string GetStartingDisplay()
         {
             return "[eicon]dbrps1[/eicon][eicon]dbrps2[/eicon]";
@@ -161,6 +171,11 @@ namespace FChatDicebot.DiceFunctions
             session.State = DiceFunctions.GameState.GameInProgress;
 
             return outputString + newRoundString;
+        }
+
+        public void Update(BotMain botMain, GameSession session, double currentTime)
+        {
+
         }
 
         private string StartNewRound(BotMain botMain, GameSession session)
@@ -429,7 +444,7 @@ namespace FChatDicebot.DiceFunctions
             string returnString = "";
             RockPaperScissorsPlayer winner = GetRoundWinner(session);
             if (winner != null)
-                returnString += "\n\n[b]Rock Paper Scissors[/b]: The game has finished. " + Utils.GetCharacterUserTags(winner.PlayerName) + " wins!";
+                returnString += "\n[b]Rock Paper Scissors[/b]: The game has finished. " + Utils.GetCharacterUserTags(winner.PlayerName) + " wins!";
 
             if (session.Ante > 0)
             {
@@ -474,14 +489,7 @@ namespace FChatDicebot.DiceFunctions
 
         public string IssueGameCommand(DiceBot diceBot, BotMain botMain, string character, string channel, GameSession session, string[] terms, string[] rawTerms)
         {
-            if (terms.Contains("help"))
-            {
-                return "GameCommands for Rock Paper Scissors:\nnewround, showplayers, help,"
-                    + "\nsetlives # (player name)" +
-                    "\n[startup parameters: lives2, lives3, lives4, # (ante)]" +
-                    "\nThe default rules are: 1 starting life";
-            }
-            else if(session.State != GameState.GameInProgress)
+            if(session.State != GameState.GameInProgress)
             {
                 return "Game commands for " + GetGameName() + " only work while the game is running.";
             }
@@ -510,7 +518,7 @@ namespace FChatDicebot.DiceFunctions
                 }
                 else
                 {
-                    string allInputs = Utils.GetFullStringOfInputs(rawTerms);
+                    string allInputs = Utils.GetUserNameFromFullInputs(rawTerms);
                     string playerName = allInputs.Substring(allInputs.IndexOf(' ')).Trim();
                     if (terms.Length == 2)
                     {

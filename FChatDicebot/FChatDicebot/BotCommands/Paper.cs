@@ -21,7 +21,7 @@ namespace FChatDicebot.BotCommands
 
         public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
         {
-            SendCommandToGame.Run(bot, commandController, rawTerms, terms, characterName, channel, command, "paper");
+            SendCommandToGame.Run(bot, commandController, rawTerms, terms, characterName, channel, command, "paper", "RockPaperScissors");
         }
     }
 }

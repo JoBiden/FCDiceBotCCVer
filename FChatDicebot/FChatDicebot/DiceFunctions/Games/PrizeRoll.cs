@@ -44,6 +44,15 @@ namespace FChatDicebot.DiceFunctions
             return 1 * 60 * 1000; //1 minute test start
         }
 
+        public string GetGameHelp()
+        {
+            string thisGameCommands = "(none)";
+            string thisGameStartupOptions = "(none)" +
+                "\nThe default rules are: (this game is unfinished and will not function)";
+
+            return GameSession.GetGameHelp(GetGameName(), thisGameCommands, thisGameStartupOptions, true, false);
+        }
+
         public string GetStartingDisplay()
         {
             return "~Prize Roll~";
@@ -72,6 +81,7 @@ namespace FChatDicebot.DiceFunctions
 
         public string RunGame(System.Random r, String executingPlayer, List<String> playerNames, DiceBot diceBot, BotMain botMain, GameSession session)
         {
+            return "(game run cancelled - game unfinished)";
             List<string> currentPlayerNames = new List<string>();
 
             foreach(string s in playerNames)
@@ -92,7 +102,7 @@ namespace FChatDicebot.DiceFunctions
 
                 foreach (string s in currentPlayerNames)
                 {
-                    DiceRoll d = new DiceRoll() { DiceRolled = 1, DiceSides = 100 };
+                    DiceRoll d = new DiceRoll(s, session.ChannelId, diceBot) { DiceRolled = 1, DiceSides = 100 };
 
                     d.Roll(r);
 
@@ -190,6 +200,11 @@ namespace FChatDicebot.DiceFunctions
             session.State = DiceFunctions.GameState.Finished;
 
             return outputString;
+        }
+
+        public void Update(BotMain botMain, GameSession session, double currentTime)
+        {
+
         }
 
         public string IssueGameCommand(DiceBot diceBot, BotMain botMain, string character, string channel, GameSession session, string[] terms, string[] rawTerms)

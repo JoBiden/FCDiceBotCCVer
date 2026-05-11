@@ -15,7 +15,7 @@ namespace FChatDicebot
     {
         public void teststuff()
         {
-            //10/11/2020 I'm not sure what this is 
+            //10/11/2020 I'm not sure what this is : test info
             using (var ws = new WebSocket("ws://dragonsnest.far/Laputa"))
             {
                 ws.OnMessage += (sender, e) =>
@@ -24,7 +24,7 @@ namespace FChatDicebot
                 ws.OnOpen += (sender, e) =>
                 {
                     Console.WriteLine("triggered onopen");
-                    ws.Send("BALUS");// ("Hi, there dragonsnest.far!");
+                    ws.Send("BALUS");
                 };
                 ws.OnError += (sender, e) =>
                     Console.WriteLine("websocket Error: " + e.Message);
@@ -40,13 +40,6 @@ namespace FChatDicebot
         {
             using (var ws = new WebSocket("ws://echo.websocket.org"))
             //using (var ws = new WebSocket ("wss://echo.websocket.org"))
-            //using (var ws = new WebSocket ("ws://localhost:4649/Echo"))
-            //using (var ws = new WebSocket ("wss://localhost:5963/Echo"))
-            //using (var ws = new WebSocket ("ws://localhost:4649/Echo?name=nobita"))
-            //using (var ws = new WebSocket ("wss://localhost:5963/Echo?name=nobita"))
-            //using (var ws = new WebSocket ("ws://localhost:4649/Chat"))
-            //using (var ws = new WebSocket ("wss://localhost:5963/Chat"))
-            //using (var ws = new WebSocket ("ws://localhost:4649/Chat?name=nobita"))
             //using (var ws = new WebSocket ("wss://localhost:5963/Chat?name=nobita"))
             {
                 // Set the WebSocket events.
@@ -330,60 +323,6 @@ namespace FChatDicebot
             }
         }
 
-        //public void testconns6chat2()
-        //{
-        //    using (var ws = new WebSocket("wss://chat.f-list.net/chat2"))
-        //    {
-        //        //IDNSocket identifyRequest = GetNewIDNRequest();
-
-        //        //Thread.Sleep(2000);
-
-        //        //string idString = JsonConvert.SerializeObject(identifyRequest);// identifyRequest string.Format("IDN {\"method\":\"ticket\",\"account\":{0},\"ticket\");
-        //        string idRequestString = GetNewIDNRequest().PrintedCommand(); //"IDN " + idString;
-        //        //ws.Send("IDN " + idString);
-
-        //        ws.OnOpen += (sender, e) =>
-        //        {
-        //            Console.WriteLine("triggered onopen");
-        //            //bad id test
-        //            //ws.Send("IDN {\"method\":\"ticket\", \"account\":\"AccountName\",\"ticket\":\"4\",\"character\":\"Dice Bot\", \"cname\":\"Dice Bot\", \"cversion\":\"0.1\"}");
-        //            ws.Send(idRequestString);
-        //        };
-        //        //ws.Credentials = 
-
-        //        ws.OnMessage += (sender, e) =>
-        //            OnMessage(e.Data);// Console.WriteLine("websocket message: Recieved a ping /" + e.Data);
-        //        ws.OnError += (sender, e) =>
-        //            Console.WriteLine("websocket Error: " + e.Message);
-        //        ws.OnClose += (sender, e) =>
-        //            Console.WriteLine("WebSocket Close ({0}) ({1})", e.Code, e.Reason);
-        //        //ws.Credentials = 
-        //        //ws.IsSecure = false;
-
-        //        // Connect to the server.
-        //        Console.WriteLine("\nattempting connection test6.\n");
-        //        ws.Connect();
-
-        //        Console.WriteLine("\finished connection test6.\n");
-
-        //        Thread.Sleep(2000);
-        //        Thread.Sleep(2000);
-
-        //        JCHSocket jch = new JCHSocket() { channel = "adh-fb744504ecce0909b18b" };
-        //        string joinchanneltest = "JCH " + JsonConvert.SerializeObject(jch);
-        //        ws.Send(joinchanneltest);
-
-        //        Thread.Sleep(2000);
-        //        Thread.Sleep(2000);
-
-        //        MSGSocket msg = new MSGSocket() { channel = "adh-fb744504ecce0909b18b", message = "hello text message" };
-        //        string msgtext = "MSG " + JsonConvert.SerializeObject(msg);
-        //        ws.Send(msgtext);
-        //        Thread.Sleep(2000);
-        //        Thread.Sleep(2000);
-        //    }
-        //}
-
         private void SaveStartingChannels()
         {
             List<StartingChannel> chans = new List<StartingChannel>();
@@ -471,10 +410,6 @@ namespace FChatDicebot
                 Table = table,
                 TableId = "Cheeses"
             };
-
-            //SavedTables = new List<SavedRollTable>();
-            //SavedTables.Add(saved1);
-            //Utils.WriteToFileAsData(SavedTables, Utils.GetTotalFileName("filefolder", "filename"));
         }
 
     }
@@ -493,185 +428,4 @@ namespace FChatDicebot
 //    BotCommands.Add(newObject);
 
 //    //return newObject;
-//}
-
-
-
-///////////////games graveyard
-//using System;
-//using System.Collections.Generic;
-//using System.Linq;
-//using System.Text;
-//using System.Threading.Tasks;
-
-//namespace FChatDicebot.DiceFunctions
-//{
-//    //NOTE: this game was never finished. The intent is to assign a referee like the non-automated version of kings' game to watch over player numbers
-//    public class KingsGameREFEREE : IGame
-//    {
-//        public string GetGameName()
-//        {
-//            return "KingsGameREFEREE";
-//        }
-
-//        public int GetMaxPlayers()
-//        {
-//            return 20;
-//        }
-
-//        public int GetMinPlayers()
-//        {
-//            return 1;
-//        }
-
-//        public bool AllowAnte()
-//        {
-//            return false;
-//        }
-
-//        public bool UsesFlatAnte()
-//        {
-//            return false;
-//        }
-
-//        public bool KeepSessionDefault()
-//        {
-//            return true;
-//        }
-
-//        public string GetStartingDisplay()
-//        {
-//            return "Kings Game with Referee";
-//        }
-
-//        public string GetEndingDisplay()
-//        {
-//            return "";
-//        }
-
-//        public bool AddGameDataForPlayerJoin(string characterName, GameSession session, string[] terms, out string messageString)
-//        {
-//            messageString = "";
-//            return true;
-//        }
-
-//        public string RunGame(System.Random r, List<String> playerNames, DiceBot diceBot, BotMain botMain, GameSession session)
-//        {
-//            //TESTING
-//            playerNames.Add("testplayer1");
-//            playerNames.Add("testplayer2");
-//            playerNames.Add("testplayer3");
-//            playerNames.Add("testplayer4");
-//            playerNames.Add("testplayer5");
-
-//            int index = r.Next(playerNames.Count);
-
-//            string selectedKing = playerNames[index];
-
-//            int index2 = r.Next(playerNames.Count - 1);
-
-//            if (index2 >= index)
-//                index2++;
-
-//            string selectedReferee = playerNames[index2];
-
-//            int kingTextNumber = r.Next(7);
-//            string spinText = "";
-//            switch(kingTextNumber)
-//            {
-//                case 0:
-//                    spinText = "All hail king ";
-//                    break;
-//                case 1:
-//                    spinText = "The new king is ";
-//                    break;
-//                case 2:
-//                    spinText = "Your king is ";
-//                    break;
-//                case 3:
-//                    spinText = "Behold king ";
-//                    break;
-//                case 4:
-//                    spinText = "A new king has been chosen, ";
-//                    break;
-//                case 5:
-//                    spinText = "This round's king is ";
-//                    break;
-//                case 6:
-//                    spinText = "The king is ";
-//                    break;
-//                default:
-//                    spinText = "The new king is ";
-//                    break;
-//            }
-
-//            int[] assignedNumbers = new int[playerNames.Count - 2];
-
-//            int createdNumbers = 0;
-
-//            List<int> includedInts = new List<int>();
-//            //assign a number to every remaining player
-//            for (int i = 0; i < assignedNumbers.Length; i++)
-//            {
-//                int assignedNumber = r.Next(assignedNumbers.Length - createdNumbers) + 1;
-
-//                int counter = 0;
-//                for (int q = 0; q < assignedNumber; q++ )
-//                {
-//                    counter += 1;
-//                    while (includedInts.Contains(counter))
-//                        counter += 1;
-//                }
-
-//                includedInts.Add(counter);
-//                assignedNumbers[i] = assignedNumber;
-//                createdNumbers++;
-//            }
-
-//            int createdNumberIndex = 0;
-//            int playerNumber = 0;
-
-//            string refereeReportString = "";
-//            foreach (string player in playerNames)
-//            {
-//                if(!string.IsNullOrEmpty(refereeReportString))
-//                {
-//                    refereeReportString += "\n";
-//                }
-//                if (playerNumber != index && playerNumber != index2)
-//                {
-//                    int playerAssignedNumber = assignedNumbers[createdNumberIndex];
-//                    string messageToPlayer = "Your number is " + playerAssignedNumber + " for this round.";
-//                    createdNumberIndex++;
-//                    refereeReportString += Utils.GetCharacterUserTags(player) + " is #" + playerAssignedNumber;
-
-//                    //send the message
-//                    botMain.SendPrivateMessage(messageToPlayer, player);
-//                }
-//                else
-//                {
-//                    if(playerNumber == index)
-//                        refereeReportString += Utils.GetCharacterUserTags(player) + " is the [b]king[/b]";
-//                    else
-//                        refereeReportString += Utils.GetCharacterUserTags(player) + " is the [b]referee[/b].";
-//                }
-//                playerNumber++;
-//            }
-
-//            botMain.SendPrivateMessage(refereeReportString, selectedReferee);
-//            botMain.SendPrivateMessage("You are the king this round!", selectedKing);
-
-//            string outputString = "[color=yellow]Rolling...[/color]\n" + kingTextNumber + Utils.GetCharacterUserTags(selectedKing) +
-//                "!\nThe referee is " + Utils.GetCharacterUserTags(selectedReferee) + ".\nEveryone has been assigned their numbers and the king may make decrees using the numbers 1 - " + assignedNumbers.Length + ".";
-
-//            session.State = DiceFunctions.GameState.Finished;
-            
-//            return outputString;
-//        }
-
-//        public string IssueGameCommand(DiceBot diceBot, BotMain botMain, string character, string channel, GameSession session, string[] terms)
-//        {
-//            return GetGameName() + " has no valid GameCommands";
-//        }
-//    }
 //}

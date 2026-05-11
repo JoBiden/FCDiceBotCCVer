@@ -43,6 +43,16 @@ namespace FChatDicebot.DiceFunctions
             return 0;
         }
 
+        public string GetGameHelp()
+        {
+            string thisGameCommands = "setante, newround, shuffleplayers, showplayers, adddie #, removedie #, setstartdice, forcepenalty (die/dare/strip/token)" +
+                    "\n(as current player only): bet # (face as text) (i.e.: !gc bet 4 threes), challenge, penalty (die/dare/strip/token)";
+            string thisGameStartupOptions = "# (sets ante amount), sides4 (use 4 sided dice), sides6 (use 6 sided dice), sides8 (use 8 sided dice), tokens (allow tokens), sameside (allow increasing # with same side for betting), increasingside (req die face >= existing for betting), increasingnumber (req die number >= existing for betting), startDice3 - startDice8 (set starting dice count), 1swild (a 1 counts as any #)" +
+                    "\nThe default rules are: 5 dice with 6 sides, increasing number, no wilds, no tokens";
+
+            return GameSession.GetGameHelp(GetGameName(), thisGameCommands, thisGameStartupOptions, false, false);
+        }
+
         public string GetStartingDisplay()
         {
             return "[eicon]dbliardice1[/eicon][eicon]dbliardice2[/eicon]";
@@ -108,22 +118,24 @@ namespace FChatDicebot.DiceFunctions
             {
                 session.LiarsDiceData.RulesSet = true;
 
+                string betTypeMessage = "";
                 if(terms.Contains("sameside"))
                 {
                     session.LiarsDiceData.BettingRule = LiarsDiceBettingRule.SameSidesHigherNumber;
-                    messageString += "(bet same sides higher number)";
+                    betTypeMessage = "(bet same sides higher number)";
                 }
                 else if (terms.Contains("increasingside"))
                 {
                     session.LiarsDiceData.BettingRule = LiarsDiceBettingRule.HigherSidesOrHigherNumber_PriorityFace;
-                    messageString += "(bet higher sides or number, increasing dice face)";
+                    betTypeMessage = "(bet higher sides or number, increasing dice face)";
                 }
                 else if (terms.Contains("increasingnumber"))
                 {
                     session.LiarsDiceData.BettingRule = LiarsDiceBettingRule.HigherSidesOrHigherNumber_PriorityNumber;
-                    messageString += "(bet higher sides or number, increasing dice number)";
+                    betTypeMessage = "(bet higher sides or number, increasing dice number)";
                 }
 
+                string diceSidesMessage = "(Die Type: d6)";
                 if(terms.Contains("sides6"))
                 {
                     session.LiarsDiceData.DiceSides = 6;
@@ -131,56 +143,56 @@ namespace FChatDicebot.DiceFunctions
                 else if(terms.Contains("sides4"))
                 {
                     session.LiarsDiceData.DiceSides = 4;
-                    messageString += "(d4)";
+                    diceSidesMessage = "(Die Type: d4)";
                 }
                 else if (terms.Contains("sides8"))
                 {
                     session.LiarsDiceData.DiceSides = 8;
-                    messageString += "(d8)";
+                    diceSidesMessage = "(Die Type: d8)";
                 }
 
+                string wildMessage = "(no wilds)";
                 if(terms.Contains("wild1s") || terms.Contains("wild") || terms.Contains("1swild"))
                 {
                     session.LiarsDiceData.WildOnes = true;
-                    messageString += " (1s are wild)";
+                    wildMessage = "(1s are wild)";
                 }
 
                 if (terms.Contains("startdice5"))
                 {
                     session.LiarsDiceData.StartingDice = 5;
-                    messageString += " (5 starting dice)";
                 }
                 else if (terms.Contains("startdice6"))
                 {
                     session.LiarsDiceData.StartingDice = 6;
-                    messageString += " (6 starting dice)";
                 }
                 else if (terms.Contains("startdice7"))
                 {
                     session.LiarsDiceData.StartingDice = 7;
-                    messageString += " (7 starting dice)";
                 }
                 else if (terms.Contains("startdice3"))
                 {
                     session.LiarsDiceData.StartingDice = 3;
-                    messageString += " (3 starting dice)";
                 }
                 else if (terms.Contains("startdice4"))
                 {
                     session.LiarsDiceData.StartingDice = 4;
-                    messageString += " (4 starting dice)";
                 }
+                string startingDiceMessage = "(" + session.LiarsDiceData.StartingDice + " starting dice)";
 
+                string tokensMessage = "";
                 if (terms.Contains("token") || terms.Contains("tokens"))
                 {
                     session.LiarsDiceData.TokensAvailable = true;
-                    messageString += "(tokens available)";
+                    tokensMessage += "(tokens available)";
                 }
 
-                if(ante > 0)
-                {
-                    messageString += "(ante set to " + ante + ")";
-                }
+                string settingsMessage = betTypeMessage + "";
+                if (!string.IsNullOrEmpty(settingsMessage))
+                    settingsMessage += " ";
+                settingsMessage += diceSidesMessage + " " + wildMessage + " " + startingDiceMessage + (tokensMessage.Length > 0 ? " " : "") + tokensMessage + (ante > 0? " (ante set to " + ante + ")" : "");
+
+                messageString = settingsMessage;
             }
 
             return true;
@@ -269,6 +281,11 @@ namespace FChatDicebot.DiceFunctions
             return outputString + newRoundString;
         }
 
+        public void Update(BotMain botMain, GameSession session, double currentTime)
+        {
+
+        }
+
         private string StartNewRound(BotMain botMain, GameSession session)
         {
             session.LiarsDiceData.CurrentBet = null;
@@ -336,7 +353,7 @@ namespace FChatDicebot.DiceFunctions
         {
             foreach(LiarsDicePlayer p in session.LiarsDiceData.LiarsDicePlayers)
             {
-                DiceRoll d = new DiceRoll() { DiceRolled = p.PlayerDice, DiceSides = session.LiarsDiceData.DiceSides };
+                DiceRoll d = new DiceRoll(p.PlayerName, session.ChannelId, botMain.DiceBot) { DiceRolled = p.PlayerDice, DiceSides = session.LiarsDiceData.DiceSides };
                 d.Roll(botMain.DiceBot.random);
                 string rollResult = d.ResultString(DiceRollFormat.OjEicon6, false);
                 p.ThisRoundDice = d;
@@ -717,18 +734,7 @@ namespace FChatDicebot.DiceFunctions
 
         public string IssueGameCommand(DiceBot diceBot, BotMain botMain, string character, string channel, GameSession session, string[] terms, string[] rawTerms)
         {
-            if (terms.Contains("help"))
-            {
-                return "GameCommands for Liar's Dice:\nnewround, shuffleplayers, showplayers, challenge, help,"
-                    + "\nbet (!gc bet 4 threes),\npenalty (!gc penalty die), forcepenalty(!gc forcepenalty die)\nadddie (!gc adddie 1), removedie (!gc removedie 1)," +
-                    "\n[startup parameters: sides4, sides6, sides8, tokens, sameside, increasingside, increasingnumber, startDice3 - startDice8, 1swild, # (ante)]" +
-                    "\nThe default rules are: 5 dice with 6 sides, increasing number, no wilds, no tokens";
-            }
-            else if(session.State != GameState.GameInProgress)
-            {
-                return "Game commands for " + GetGameName() + " only work while the game is running.";
-            }
-            else if(session.LiarsDiceData.LiarsDicePlayers.Count(a => a.PlayerName == character) < 1)
+            if(session.LiarsDiceData.LiarsDicePlayers.Count(a => a.PlayerName == character) < 1)
             {
                 return "Game commands for " + GetGameName() + " can only be used by characters who are playing the game.";
             }
@@ -739,9 +745,13 @@ namespace FChatDicebot.DiceFunctions
             string returnString = "";
             if (terms.Contains("newround") || terms.Contains("startround"))
             {
-                if(session.LiarsDiceData.currentPlayerPenaltyIndex >= 0)
+                if(session.State != GameState.GameInProgress)
                 {
-                    returnString = "Error: A new round cannot be started while a player has a penalty that needs to be chosen (use !gc penalty TYPE) or forced (!gc forcepenalty TYPE)";
+                    returnString = "Failed: newround requires the game to be in progress to function. Use !startgame instead";
+                }
+                else if(session.LiarsDiceData.currentPlayerPenaltyIndex >= 0)
+                {
+                    returnString = "Failed: A new round cannot be started while a player has a penalty that needs to be chosen (use !gc penalty TYPE) or forced (!gc forcepenalty TYPE)";
                 }
                 else
                 {
@@ -763,7 +773,11 @@ namespace FChatDicebot.DiceFunctions
             }
             else if (terms.Contains("bet") || terms.Contains("challenge"))
             {
-                if (session.LiarsDiceData.currentPlayerPenaltyIndex >= 0)
+                if (session.State != GameState.GameInProgress)
+                {
+                    returnString = "Failed: this command requires the game to be in progress to function.";
+                }
+                else if (session.LiarsDiceData.currentPlayerPenaltyIndex >= 0)
                 {
                     returnString = "The active player needs to select their penalty before continuing.";
                 }
@@ -875,11 +889,15 @@ namespace FChatDicebot.DiceFunctions
             }
             else if (terms.Contains("penalty"))
             {
-                if(session.LiarsDiceData.currentPlayerPenaltyIndex <= -1)
+                if (session.State != GameState.GameInProgress)
+                {
+                    returnString = "Failed: this command requires the game to be in progress to function.";
+                }
+                else if (session.LiarsDiceData.currentPlayerPenaltyIndex <= -1)
                 {
                     returnString = "There is not currently a player who needs to choose a penalty.";
                 }
-                if (!characterIsCurrentActivePenaltyPlayer)
+                else if (!characterIsCurrentActivePenaltyPlayer)
                     returnString = "Only the player recieving a penalty can decide their own penalty.";
                 else
                 {
@@ -909,7 +927,11 @@ namespace FChatDicebot.DiceFunctions
             }
             else if (terms.Contains("forcepenalty"))
             {
-                if (session.LiarsDiceData.currentPlayerPenaltyIndex <= -1)
+                if (session.State != GameState.GameInProgress)
+                {
+                    returnString = "Failed: this command requires the game to be in progress to function.";//for " + GetGameName() + " only work while the game is running.";
+                }
+                else if (session.LiarsDiceData.currentPlayerPenaltyIndex <= -1)
                 {
                     returnString = "There is not currently a player who needs to choose a penalty.";
                 }
@@ -939,30 +961,61 @@ namespace FChatDicebot.DiceFunctions
             }
             else if (terms.Contains("adddie"))
             {
-                int playerNumber = Utils.GetNumberFromInputs(terms);
-                playerNumber -= 1;
-                if(playerNumber >= 0 && playerNumber <= session.Players.Count)
+                if (session.State != GameState.GameInProgress)
                 {
-                    session.LiarsDiceData.LiarsDicePlayers[playerNumber].PlayerDice += 1;
-                    returnString = "Added 1 die for " + Utils.GetCharacterUserTags(session.LiarsDiceData.LiarsDicePlayers[playerNumber].PlayerName) + "." +
-                        "(" + session.LiarsDiceData.LiarsDicePlayers[playerNumber].PlayerDice + " dice remaining)";
+                    returnString = "Failed: this command requires the game to be in progress to function.";//for " + GetGameName() + " only work while the game is running.";
                 }
                 else
                 {
-                    returnString = "Player number invalid. Input a player number between 1 and the number playing.";
+                    int playerNumber = Utils.GetNumberFromInputs(terms);
+                    playerNumber -= 1;
+                    if (playerNumber >= 0 && playerNumber <= session.Players.Count)
+                    {
+                        session.LiarsDiceData.LiarsDicePlayers[playerNumber].PlayerDice += 1;
+                        returnString = "Added 1 die for " + Utils.GetCharacterUserTags(session.LiarsDiceData.LiarsDicePlayers[playerNumber].PlayerName) + "." +
+                            "(" + session.LiarsDiceData.LiarsDicePlayers[playerNumber].PlayerDice + " dice remaining)";
+                    }
+                    else
+                    {
+                        returnString = "Player number invalid. Input a player number between 1 and the number playing.";
+                    }
                 }
             }
             else if (terms.Contains("removedie"))
             {
-                int playerNumber = Utils.GetNumberFromInputs(terms);
-                playerNumber -= 1;
-                if (playerNumber >= 0 && playerNumber <= session.Players.Count)
+                if (session.State != GameState.GameInProgress)
                 {
-                    returnString = ApplyPenalty(diceBot, session, playerNumber, PenaltyType.Die, false);
+                    returnString = "Failed: this command requires the game to be in progress to function.";//for " + GetGameName() + " only work while the game is running.";
                 }
                 else
                 {
-                    returnString = "Player number invalid. Input a player number between 1 and the number playing.";
+                    int playerNumber = Utils.GetNumberFromInputs(terms);
+                    playerNumber -= 1;
+                    if (playerNumber >= 0 && playerNumber <= session.Players.Count)
+                    {
+                        returnString = ApplyPenalty(diceBot, session, playerNumber, PenaltyType.Die, false);
+                    }
+                    else
+                    {
+                        returnString = "Player number invalid. Input a player number between 1 and the number playing.";
+                    }
+                }
+            }
+            else if (terms.Contains("setstartdice") || terms.Contains("startdice"))
+            {
+                int amount = Utils.GetNumberFromInputs(terms);
+                if (amount >= 20)
+                {
+                    returnString = "Failed: start dice cannot exceed 20.";
+                }
+                else if (amount >= 1)
+                {
+                    session.LiarsDiceData.StartingDice = amount;
+                    returnString = "Set the starting dice for this session to [b]" + amount + "[/b].";
+                }
+                else
+                {
+                    returnString = "Failed: start dice need to be at least 1.";
                 }
             }
             else

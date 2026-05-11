@@ -35,9 +35,9 @@ namespace FChatDicebot.BotCommands
                 if (thisChannel.AllowSlots)
                 {
                     CharacterData thisCharacterData = bot.DiceBot.GetCharacterData(characterName, channel);
-                    TimeSpan timeRemaining = DateTime.UtcNow - thisCharacterData.LastSlotsSpin;
+                    double slotsTimeSinceLastSpin = Utils.GetCurrentTimestampSeconds() - thisCharacterData.LastSlotsSpin;
 
-                    if (timeRemaining > TimeSpan.FromSeconds(BotMain.SlotsSpinCooldownSeconds) || thisChannel.RemoveSlotsCooldown)
+                    if (slotsTimeSinceLastSpin > BotMain.SlotsSpinCooldownSeconds || thisChannel.RemoveSlotsCooldown)
                     {
                         //get bet #
                         int betMultiplier = 1;
@@ -124,7 +124,8 @@ namespace FChatDicebot.BotCommands
                             //spin slots for 3 results
                             sendMessage = bot.DiceBot.SpinSlots(usedSlots, characterName, channel, betMultiplier, testCommand);
                             //get graphics for results
-                            thisCharacterData.LastSlotsSpin = DateTime.UtcNow;
+                            thisCharacterData.LastSlotsSpin = Utils.GetCurrentTimestampSeconds();
+                            thisCharacterData.TimesSlotsSpun += 1;
                             commandController.SaveChipsToDisk("Slots");
                             commandController.SaveCharacterDataToDisk();
                         }
@@ -133,17 +134,17 @@ namespace FChatDicebot.BotCommands
                     }
                     else
                     {
-                        bot.SendMessageInChannel("You cannot spin the slots for another " + (BotMain.SlotsSpinCooldownSeconds - timeRemaining.TotalSeconds).ToString("F0") + " seconds.", channel);
+                        bot.SendMessageInChannel("You cannot spin the slots for another " + Utils.PrintTimeFromSeconds(BotMain.SlotsSpinCooldownSeconds - slotsTimeSinceLastSpin), channel);
                     }
                 }
                 else
                 {
-                    bot.SendMessageInChannel("This channel's settings for " + Utils.GetCharacterUserTags("Dice Bot") + " do not allow slots.", channel);
+                    bot.SendMessageInChannel("This channel's settings for " + Utils.GetCharacterUserTags(DiceBot.DiceBotCharacter) + " do not allow slots.", channel);
                 }
             }
             else
             {
-                bot.SendMessageInChannel(Name + " is currently not allowed in this channel under " + Utils.GetCharacterUserTags("Dice Bot") + "'s settings for this channel. (chips must be allowed)", channel);
+                bot.SendMessageInChannel(Name + " is currently not allowed in this channel under " + Utils.GetCharacterUserTags(DiceBot.DiceBotCharacter) + "'s settings for this channel. (chips must be allowed)", channel);
             }
         }
     }

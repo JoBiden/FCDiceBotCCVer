@@ -25,6 +25,7 @@ namespace FChatDicebot.BotCommands
             bool revealHand = false;
             bool secretOutput = false;
             string characterDrawName = commandController.GetCharacterDrawNameFromCommandTerms(characterName, terms);
+            SavedData.ChannelSettings channelSettings = bot.GetChannelSettings(channel);
 
             if (terms.Contains("reveal"))
                 revealHand = true;
@@ -35,11 +36,11 @@ namespace FChatDicebot.BotCommands
             if (terms.Contains("s") || terms.Contains("secret"))
                 secretOutput = true;
 
-            DeckType deckType = commandController.GetDeckTypeFromCommandTerms(terms);
+            string customDeckName = "";
+            DeckType deckType = commandController.GetDeckTypeFromCommandTerms(terms, out customDeckName);
 
-            string customDeckName = Utils.GetCustomDeckName(characterName);
             string deckTypeString = Utils.GetDeckTypeStringHidePlaying(deckType, customDeckName);
-            Hand h = bot.DiceBot.GetHand(channel, deckType, characterName);
+            Hand h = bot.DiceBot.GetHand(channel, deckType, customDeckName, characterName);
 
             string displayName = characterDrawName;
             if (displayName.Contains(DiceBot.PlaySuffix))
@@ -52,41 +53,41 @@ namespace FChatDicebot.BotCommands
             bool showHandSize = !revealHand;
             if (secretOutput)
                 showHandSize = false;
-            outputString += "\n[user]" + displayName + "[/user]'s " + h.GetCollectionName() + ": [/i]" + h.ToString(showHandSize);
+            outputString += "\n[user]" + displayName + "[/user]'s " + h.GetCollectionName() + ": [/i]" + h.Print(showHandSize, channelSettings.CardPrintSetting);
 
-            Hand hiddenplay = bot.DiceBot.GetHand(channel, deckType, characterName + DiceBot.HiddenPlaySuffix);
+            Hand hiddenplay = bot.DiceBot.GetHand(channel, deckType, customDeckName, characterName + DiceBot.HiddenPlaySuffix);
 
             if(!secretOutput && h != null)
             {
-                string privateOutput = "[i]" + deckTypeString + " " + h.GetCollectionName() + ": [/i]" + h.ToString(false);
+                string privateOutput = "[i]" + deckTypeString + " " + h.GetCollectionName() + ": [/i]" + h.Print(false, channelSettings.CardPrintSetting);
                 if(hiddenplay != null && hiddenplay.CardsCount() > 0)
                 {
-                    privateOutput += "\n[i]" + deckTypeString + " " + h.GetCollectionName() + ": [/i]" + hiddenplay.ToString(false);
+                    privateOutput += "\n[i]" + deckTypeString + " " + h.GetCollectionName() + ": [/i]" + hiddenplay.Print(false, channelSettings.CardPrintSetting);
                 }
                 bot.SendPrivateMessage(privateOutput, characterName);
             }
 
-            Hand play = bot.DiceBot.GetHand(channel, deckType, characterName + DiceBot.PlaySuffix);
-            outputString += "\n[i]cards in play: [/i]" + play.ToString();
+            Hand play = bot.DiceBot.GetHand(channel, deckType, customDeckName, characterName + DiceBot.PlaySuffix);
+            outputString += "\n[i]cards in play: [/i]" + play.Print(false, channelSettings.CardPrintSetting);
             if(hiddenplay != null && (hiddenplay.CardsCount() > 0 || allPiles))
             {
-                outputString += "\n[i]hidden cards in play: [/i]" + hiddenplay.ToString(showHandSize);
+                outputString += "\n[i]hidden cards in play: [/i]" + hiddenplay.Print(showHandSize, channelSettings.CardPrintSetting);
             }
-            Hand discarded = bot.DiceBot.GetHand(channel, deckType, DiceBot.DiscardPlayerAlias);
+            Hand discarded = bot.DiceBot.GetHand(channel, deckType, customDeckName, DiceBot.DiscardPlayerAlias);
             if(discarded != null && (discarded.CardsCount() > 0 || allPiles))
             {
-                outputString += "\n[i]discarded cards: [/i]" + discarded.ToString();
+                outputString += "\n[i]discarded cards: [/i]" + discarded.Print(false, channelSettings.CardPrintSetting);
             }
 
             if (characterDrawName == DiceBot.BurnCardsPlayerAlias || allPiles)
             {
-                Hand hNew = bot.DiceBot.GetHand(channel, deckType, DiceBot.BurnCardsPlayerAlias);
-                outputString += "\n[i]burned cards: [/i]" + hNew.ToString();
+                Hand hNew = bot.DiceBot.GetHand(channel, deckType, customDeckName, DiceBot.BurnCardsPlayerAlias);
+                outputString += "\n[i]burned cards: [/i]" + hNew.Print(showHandSize, channelSettings.CardPrintSetting);
             }
             if (characterDrawName == DiceBot.DealerPlayerAlias || allPiles)
             {
-                Hand hNew = bot.DiceBot.GetHand(channel, deckType, DiceBot.DealerPlayerAlias);
-                outputString += "\n[i]dealer's hand: [/i]" + hNew.ToString();
+                Hand hNew = bot.DiceBot.GetHand(channel, deckType, customDeckName, DiceBot.DealerPlayerAlias);
+                outputString += "\n[i]dealer's hand: [/i]" + hNew.Print(showHandSize, channelSettings.CardPrintSetting);
             }
 
             if(secretOutput)

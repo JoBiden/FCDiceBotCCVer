@@ -16,8 +16,10 @@ namespace FChatDicebot.DiceFunctions
         bool KeepSessionDefault();
         int GetMinimumMsBetweenGames();
 
+        string GetGameHelp();
         string GetStartingDisplay();
         string GetEndingDisplay();
+        void Update(BotMain botMain, GameSession session, double currentTime);
 
         string RunGame(System.Random r, String executingPlayer, List<String> playerNames, DiceBot diceBot, BotMain botMain, GameSession session); //run the game and get output
 

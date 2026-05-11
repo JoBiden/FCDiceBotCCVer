@@ -31,15 +31,45 @@ namespace FChatDicebot.BotCommands
                 bool pot = false;
                 bool secret = false;
 
-                if (terms != null && terms.Length >= 1 && terms.Contains("all"))
-                    all = true;
+                string userNameUsed = characterName;
+                if(terms != null && terms.Length >= 1)
+                {
+                    int indexOfSecret = -1;
+                    for (int i = 0; i < terms.Length; i++ )
+                    {
+                        if (terms[i] == "secret")
+                        {
+                            secret = true;
+                            indexOfSecret = i;
+                            break;
+                        }
+                    }
 
-                if (terms != null && terms.Length >= 1 && terms.Contains("pot"))
-                    pot = true;
+                    string[] usedTermsForname = rawTerms;
+                    if(indexOfSecret >= 0)
+                    {
 
-                if (terms != null && terms.Length >= 1 && terms.Contains("secret"))
-                    secret = true;
+                        string removeSecret = rawTerms[indexOfSecret];
+                        usedTermsForname = Utils.GetRemainingTermsAfterRemovingOneTerm(rawTerms, removeSecret);
+                    }
 
+                    string userName = Utils.GetUserNameFromFullInputs(usedTermsForname);
+                    ChipPile foundPile = bot.DiceBot.GetChipPile(userName, channel, false);
+
+                    if(foundPile == null)
+                    {
+                        if (terms.Contains("all"))
+                            all = true;
+
+                        if (terms.Contains("pot"))
+                            pot = true;
+                    }
+                    else
+                    {
+                        userNameUsed = userName;
+                    }
+                }
+                
                 string messageString = "";
                 if (all)
                 {
@@ -50,7 +80,7 @@ namespace FChatDicebot.BotCommands
                     if (pot)
                         messageString = bot.DiceBot.DisplayChipPile(channel, DiceBot.PotPlayerAlias);
                     else
-                        messageString = bot.DiceBot.DisplayChipPile(channel, characterName);
+                        messageString = bot.DiceBot.DisplayChipPile(channel, userNameUsed);
                 }
 
                 if(all || secret)
@@ -65,7 +95,7 @@ namespace FChatDicebot.BotCommands
             }
             else
             {
-                bot.SendMessageInChannel(Name + " is currently not allowed in this channel under " + Utils.GetCharacterUserTags("Dice Bot") + "'s settings for this channel.", channel);
+                bot.SendMessageInChannel(Name + " is currently not allowed in this channel under " + Utils.GetCharacterUserTags(DiceBot.DiceBotCharacter) + "'s settings for this channel.", channel);
             }
         }
     }

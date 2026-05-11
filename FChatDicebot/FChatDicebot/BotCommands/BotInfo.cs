@@ -30,11 +30,12 @@ namespace FChatDicebot.BotCommands
         public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
         {
             int channelsNumber = bot.ChannelsJoined.Count();
-            TimeSpan onlineTime = DateTime.UtcNow - bot.LoginTime;
+            double onlineTime = Utils.GetCurrentTimestampSeconds() - bot.LoginTime;
 
             string resultMessageString = "Chateau Contract Bot was developed by [user]Queen Contract[/user] as an adaptation of Dice Bot, developed by [user]Ambitious Syndra[/user]"
                 + "\nCurrent version " + BotMain.Version
-                + "\nOnline for " + Utils.GetTimeSpanPrint(onlineTime)
+                + "\nCurrently operating in " + channelsNumber + " channels."
+                + "\nOnline for " + Utils.PrintTimeFromSeconds(onlineTime)
                 + "\nFor a list of dice commands, use !dicehelp. See the profiles [user]Chateau Contract[/user] and [user]Dice Bot[/user] for more detailed information (this bot may not be up to date with Dice Bot)";
                 
             if (!commandController.MessageCameFromChannel(channel))

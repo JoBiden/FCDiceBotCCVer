@@ -9,8 +9,8 @@ namespace FChatDicebot.DiceFunctions
 {
     public class Blackjack : IGame
     {
-        private const int DealerTurnMsWaitMs = 1000 * 10;
-        private const int RoundEndingWaitMs = 1000 * 15;
+        private const int RoundEndingWaitMsPerPlayer = 1000;
+        private const int RoundEndingWaitMs = 1000 * 2;
 
         public string GetGameName()
         {
@@ -47,6 +47,16 @@ namespace FChatDicebot.DiceFunctions
             return 60000;
         }
 
+        public string GetGameHelp()
+        {
+            string thisGameCommands = "setante #, currentturn, bet #, changebet #, setminbet #, setmaxbet #\n" +
+                "(as current player only): hit, stand, doubledown";
+            string thisGameStartupOptions = "# (sets your personal bet amount), minbet:# (sets minimum bet amount), x1/x2/x3/x4 (sets deck count), maxbet:# (set maximum bet amount)" +
+                "\nThe default rules are: 2x deck used, no ante, no minbet, no maxbet";
+            
+            return GameSession.GetGameHelp(GetGameName(), thisGameCommands, thisGameStartupOptions, true, false);
+        }
+
         public string GetStartingDisplay()
         {
             return "[eicon]dbblackjack1[/eicon][eicon]dbblackjack2[/eicon]";
@@ -61,7 +71,9 @@ namespace FChatDicebot.DiceFunctions
         {
             if(session.BlackjackGameData != null)
             {
-                string output = session.BlackjackGameData.decksNumber + " decks used, min bet = " + session.BlackjackGameData.minBet + " chips.";
+                string maxBet = session.BlackjackGameData.maxBet >= 0 ? session.BlackjackGameData.maxBet + "" : "none";
+
+                string output = "Rules: " + session.BlackjackGameData.decksNumber + " decks used, min bet: " + session.BlackjackGameData.minBet + ", max bet: " + maxBet ;
 
                 if (session.BlackjackGameData.BlackjackBets != null && session.BlackjackGameData.BlackjackBets.Count > 0)
                 {
@@ -98,22 +110,39 @@ namespace FChatDicebot.DiceFunctions
                     deckNumber = 3;
                 if (terms.Contains("x4") || terms.Contains("quadrouple"))
                     deckNumber = 4;
-                
-                foreach(string s in terms)
+                string maxBet = "";
+
+                foreach (string s in terms)
                 {
-                    if(s.Contains("minbet"))
+                    if (s.Contains("minbet:"))
                     {
-                        string g = s.Replace("minbet", "");
+                        string g = s.Replace("minbet:", "");
                         int minBetResult = 0;
                         int.TryParse(g, out minBetResult);
 
                         session.BlackjackGameData.minBet = minBetResult;
                     }
+                    else if (s.StartsWith("maxbet:"))
+                    {
+                        string mod = s.Replace("maxbet:", "");
+                        int newMaxBet = -1;
+                        int.TryParse(mod, out newMaxBet);
+                        if (newMaxBet < ante)
+                        {
+                            maxBet = "(maximum bet cannot be less than ante: set to none)";
+                        }
+                        else if (newMaxBet >= 0)
+                        {
+                            maxBet = "(max bet: " + newMaxBet + ")";
+                            session.BlackjackGameData.maxBet = newMaxBet;
+                        }
+                    }
                 }
+
                 session.BlackjackGameData.RulesSet = true;
                 session.BlackjackGameData.decksNumber = deckNumber;
 
-                outputString += "Rules set: (minbet: " + session.BlackjackGameData.minBet + ") (decks: " + deckNumber + ")\n";
+                outputString += "Rules set: (minbet: " + session.BlackjackGameData.minBet + ") (decks: " + deckNumber + ") " + maxBet + "\n";
             }
 
             if(session.BlackjackGameData.minBet > ante)
@@ -135,6 +164,8 @@ namespace FChatDicebot.DiceFunctions
         public string RunGame(System.Random r, String executingPlayer, List<String> playerNames, DiceBot diceBot, BotMain botMain, GameSession session)
         {
             string outputString = "[i]Setting up Blackjack...[/i]";
+            SavedData.ChannelSettings channelSettings = botMain.GetChannelSettings(session.ChannelId);
+            session.BlackjackGameData.CardPrintSetting = channelSettings.CardPrintSetting;
 
             bool resetDeck = false;
 
@@ -149,7 +180,7 @@ namespace FChatDicebot.DiceFunctions
                     resetDeck = true;
             }
             if(resetDeck)
-                diceBot.ResetDeck(false, session.BlackjackGameData.decksNumber, session.ChannelId, DeckType.Playing, null);
+                diceBot.ResetDeck(false, session.BlackjackGameData.decksNumber, session.ChannelId, channelSettings.CardPrintSetting, DeckType.Playing, null);
 
             //handle pushes from last round
             List<BlackjackBet> addedPush = new List<BlackjackBet>();
@@ -211,18 +242,18 @@ namespace FChatDicebot.DiceFunctions
             {
                 if(!bet.CannotAfford)
                 {
-                    diceBot.DrawCards(2, false, true, session.ChannelId, DeckType.Playing, bet.PlayerName, false, out drawOut);
-                    Hand h2 = diceBot.GetHand(session.ChannelId, DeckType.Playing, bet.PlayerName);
+                    diceBot.DrawCards(2, false, true, session.ChannelId, DeckType.Playing, null, bet.PlayerName, false, DeckType.NONE, null, out drawOut);
+                    Hand h2 = diceBot.GetHand(session.ChannelId, DeckType.Playing, null, bet.PlayerName);
                     bet.PlayerHand = h2;
 
-                    botMain.SendPrivateMessage("Blackjack hand drawn: " + h2.ToString(), bet.PlayerName);
+                    botMain.SendPrivateMessage("Blackjack hand drawn: " + h2.Print(false, channelSettings.CardPrintSetting, false), bet.PlayerName);
                 }
             }
 
-            diceBot.DrawCards(2, false, true, session.ChannelId, DeckType.Playing, DiceBot.DealerPlayerAlias, false, out drawOut);
-            Hand hdealer = diceBot.GetHand(session.ChannelId, DeckType.Playing, DiceBot.DealerPlayerAlias);
+            diceBot.DrawCards(2, false, true, session.ChannelId, DeckType.Playing, null, DiceBot.DealerPlayerAlias, false, DeckType.NONE, null, out drawOut);
+            Hand hdealer = diceBot.GetHand(session.ChannelId, DeckType.Playing, null, DiceBot.DealerPlayerAlias);
 
-            string dealerStuff = "Dealer cards: " + BlackjackPlayer.GetHandString(hdealer) + "\n";
+            string dealerStuff = "Dealer cards: " + BlackjackPlayer.GetHandString(hdealer, channelSettings.CardPrintSetting) + "\n";
             string playersPrint = dealerStuff + session.BlackjackGameData.PrintPlayers();
 
             session.BlackjackGameData.BlackjackPlayers.RemoveAll(ab => ab.CannotAfford);
@@ -236,6 +267,11 @@ namespace FChatDicebot.DiceFunctions
             session.State = DiceFunctions.GameState.GameInProgress;
             
             return outputString + "\n" + playersPrint + "\n" + currentTurn + " [sub]!gc hit, !gc stand, !gc doubledown[/sub]";
+        }
+
+        public void Update(BotMain botMain, GameSession session, double currentTime)
+        {
+
         }
 
         public string PlayerLeftGame(BotMain botMain, GameSession session, string characterName)
@@ -338,7 +374,7 @@ namespace FChatDicebot.DiceFunctions
         {
             string dealerTurnOutput = "";
 
-            Hand dealerHand = diceBot.GetHand(channel, DeckType.Playing, DiceBot.DealerPlayerAlias);
+            Hand dealerHand = diceBot.GetHand(channel, DeckType.Playing, null, DiceBot.DealerPlayerAlias);
 
             if(dealerHand == null)
                 dealerTurnOutput = "ERROR: dealer hand not found";
@@ -350,7 +386,7 @@ namespace FChatDicebot.DiceFunctions
                     if (!string.IsNullOrEmpty(dealerTurnOutput))
                         dealerTurnOutput += ", ";
                     string junkDraw = "";
-                    lastHandResult = Hit(diceBot, channel, DiceBot.DealerPlayerAlias, out junkDraw);
+                    lastHandResult = Hit(diceBot, channel, DiceBot.DealerPlayerAlias, session.BlackjackGameData.CardPrintSetting, out junkDraw);
                     dealerTurnOutput += "hit for " + junkDraw;
                 }
 
@@ -363,15 +399,17 @@ namespace FChatDicebot.DiceFunctions
                     dealerTurnOutput += "stand.";
             }
 
-            botMain.SendFutureMessage("The dealer is taking her turn: " + dealerTurnOutput, channel, null, true, DealerTurnMsWaitMs);
+            botMain.SendFutureMessage("The dealer is taking her turn: " + dealerTurnOutput, channel, null, true, RoundEndingWaitMs);
         }
 
         public void FinishRound(DiceBot diceBot, BotMain botMain, GameSession session, string channel)
         {
             string outputString = "";
+            SavedData.ChannelSettings channelSettings = botMain.GetChannelSettings(channel);
+
             if (session.BlackjackGameData.BlackjackPlayers != null)
             {
-                Hand dealerHand = diceBot.GetHand(channel, DeckType.Playing, DiceBot.DealerPlayerAlias);
+                Hand dealerHand = diceBot.GetHand(channel, DeckType.Playing, null, DiceBot.DealerPlayerAlias);
                 HandResult dealerResult = EvaluateBlackjackHand(dealerHand);
 
                 //check who beat the dealer
@@ -449,31 +487,31 @@ namespace FChatDicebot.DiceFunctions
                     }
 
                     HandResult res = EvaluateBlackjackHand(bjp.PlayerHand);
-                    outputString += " " + (bjp.PlayerHand != null ? bjp.PlayerHand.ToString() : "(cards not found)") + " = " + res.ToString();
+                    outputString += " " + (bjp.PlayerHand != null ? bjp.PlayerHand.Print(false, channelSettings.CardPrintSetting, false) : "(cards not found)") + " = " + res.ToString();
 
                 }
 
                 HandResult res2 = EvaluateBlackjackHand(dealerHand);
-                outputString = "The dealer's hand: " + (dealerHand != null ? dealerHand.ToString() : "(dealer cards not found)") + " = " + res2.ToString() + "\n" + outputString;
+                outputString = "The dealer's hand: " + (dealerHand != null ? dealerHand.Print(false, channelSettings.CardPrintSetting, false) : "(dealer cards not found)") + " = " + res2.ToString() + "\n" + outputString;
 
-                diceBot.EndHand(channel, false, DeckType.Playing);
+                diceBot.EndHand(channel, false, channelSettings.CardPrintSetting, DeckType.Playing, null);
                 //save chips modifications to disk
                 botMain.BotCommandController.SaveChipsToDisk("BlackjackFinishRound");
             }
 
             //print out all character results
-            botMain.SendFutureMessage("[color=yellow]Round Finished![/color]\n" + outputString, channel, null, true, RoundEndingWaitMs);
+            botMain.SendFutureMessage("[color=yellow]Round Finished![/color]\n" + outputString, channel, null, true, RoundEndingWaitMs * 2);
             session.State = GameState.Finished;
         }
 
-        public HandResult Hit(DiceBot diceBot, string channel, string character, out string truedraw)
+        public HandResult Hit(DiceBot diceBot, string channel, string character, PrintSetting printSetting, out string truedraw)
         {
-            diceBot.DrawCards(1, false, true, channel, DeckType.Playing, character, false, out truedraw);
-            Hand h = diceBot.GetHand(channel, DeckType.Playing, character);
+            diceBot.DrawCards(1, false, true, channel, DeckType.Playing, null, character, false, DeckType.NONE, null, out truedraw);
+            Hand h = diceBot.GetHand(channel, DeckType.Playing, null, character);
             HandResult HandResult = EvaluateBlackjackHand(h);
 
             DeckCard drawnCard = h.GetCardAtIndex(h.CardsCount() - 1);
-            truedraw = Utils.GetCharacterStringFromSpecialName(character) + " hit and drew a " + drawnCard.ToString();
+            truedraw = Utils.GetCharacterStringFromSpecialName(character) + " hit and drew a " + drawnCard.Print(printSetting);
             return HandResult;
         }
 
@@ -483,12 +521,9 @@ namespace FChatDicebot.DiceFunctions
 
             BlackjackPlayer currentPlayer = session.BlackjackGameData.GetCurrentPlayer();
             bool currentPlayerIssuedCommand = currentPlayer != null && currentPlayer.PlayerName == character;
+            SavedData.ChannelSettings channelSettings = botMain.GetChannelSettings(channel);
 
-            if (terms.Contains("help"))
-            {
-                returnString = "The current player can use !gc hit, stand, doubledown. Other commands: currentturn, turn, bet, changebet, setminbet, setante . Startup options: ### (sets your bet amount), minbet### (sets min bet), x1/x2/x3/x4 (sets deck count)";
-            }
-            else if(terms.Contains("forcestand"))
+            if(terms.Contains("forcestand"))
             {
                 var bp = session.BlackjackGameData.GetPlayer(character);
 
@@ -572,11 +607,11 @@ namespace FChatDicebot.DiceFunctions
 
                         string drawString = "";
 
-                        var result = Hit(diceBot, channel, character, out drawString);
+                        var result = Hit(diceBot, channel, character, channelSettings.CardPrintSetting, out drawString);
 
-                        Hand h2 = diceBot.GetHand(channel, DeckType.Playing, character);
+                        Hand h2 = diceBot.GetHand(channel, DeckType.Playing, null, character);
 
-                        string handInformation = "\nBlackjack hand: " + h2.ToString();
+                        string handInformation = "\nBlackjack hand: " + h2.Print(false, channelSettings.CardPrintSetting, false);
 
                         if(result.busted)
                         {
@@ -616,6 +651,13 @@ namespace FChatDicebot.DiceFunctions
                     returnString = "Failed: You must specify a non-zero number to use as your bet.";
                 else if (betAmount < session.BlackjackGameData.minBet)
                     returnString = "Failed: You must specify a number above the minimum bet for this session (" + session.BlackjackGameData.minBet + ")";
+                else if (betAmount > session.BlackjackGameData.maxBet && session.BlackjackGameData.maxBet >= 0)
+                {
+                    int originalBetAmount = betAmount;
+                    betAmount = session.BlackjackGameData.maxBet;
+                    returnString = Utils.GetCharacterUserTags(character) + "'s bet for upcoming rounds has been changed to " + betAmount + ". (reduced from " + originalBetAmount + " by session maximum bet)";
+                    bet.betAmount = betAmount;
+                }
                 else
                 {
                     returnString = Utils.GetCharacterUserTags(character) + "'s bet for upcoming rounds has been changed to " + betAmount + ".";
@@ -642,8 +684,38 @@ namespace FChatDicebot.DiceFunctions
                             bet.betAmount = amount;
                     }
                 }
+                else
+                {
+                    returnString = "Failed: no positive bet amount was found.";
+                }
             }
-            else { returnString += "No such command exists"; }
+            else if (terms.Contains("setmaxbet") || terms.Contains("maxbet"))
+            {
+                int amount = Utils.GetNumberFromInputs(terms);
+                if(terms.Contains("false") || terms.Contains("none") || terms.Contains("off"))
+                {
+                    session.BlackjackGameData.maxBet = -1;
+                    returnString = "Removed maximum bet for this session.";
+                }
+                else if (amount >= 1)
+                {
+                    session.BlackjackGameData.maxBet = amount;
+                    returnString = "Set the maximum bet for this session to [b]" + amount + "[/b]. (updated all bets)";
+
+                    foreach(var bet in session.BlackjackGameData.BlackjackBets)
+                    {
+                        if(bet.betAmount > session.BlackjackGameData.maxBet)
+                        {
+                            bet.betAmount = session.BlackjackGameData.maxBet;
+                        }
+                    }
+                }
+                else
+                {
+                    returnString = "Failed: start dice need to be at least 1.";
+                }
+            }
+            else { returnString += "Failed: No such command exists"; }
 
             return returnString;
         }
@@ -654,6 +726,9 @@ namespace FChatDicebot.DiceFunctions
         public bool RulesSet;
         public int decksNumber = 2;
         public int minBet = 0;
+        public int maxBet = -1;
+
+        public PrintSetting CardPrintSetting = null;
 
         public List<BlackjackBet> BlackjackBets = new List<BlackjackBet>();
         public List<BlackjackPlayer> BlackjackPlayers = new List<BlackjackPlayer>();
@@ -687,7 +762,7 @@ namespace FChatDicebot.DiceFunctions
                 {
                     if (!string.IsNullOrEmpty(rtn))
                         rtn += "\n";
-                    rtn += p.ToString();
+                    rtn += p.Print(CardPrintSetting);
                 } 
             }
             return rtn;
@@ -779,7 +854,7 @@ namespace FChatDicebot.DiceFunctions
 
         public LastRoundResult LastRoundResult;
 
-        public static string GetHandString(Hand hand)
+        public static string GetHandString(Hand hand, PrintSetting printSetting)
         {
 
             if (hand != null && hand.CardsCount() >= 2)
@@ -799,7 +874,7 @@ namespace FChatDicebot.DiceFunctions
                         if (i >= 1)
                             handString += ", ";
 
-                        handString += d.ToString();
+                        handString += d.Print(printSetting);
                     }
                 }
 
@@ -810,7 +885,7 @@ namespace FChatDicebot.DiceFunctions
                 return "(cards not drawn)";
         }
 
-        public override string ToString()
+        public string Print(PrintSetting printSetting)
         {
             string betAmount = "has bet: [b]" + BetAmount + "[/b] chips";
             if (CannotAfford)
@@ -818,7 +893,7 @@ namespace FChatDicebot.DiceFunctions
                 betAmount = "(could not afford the ante and has not joined)";
             }
 
-            return Utils.GetCharacterUserTags(PlayerName) + " " + betAmount + ", " + GetHandString(PlayerHand) + (Active ? "" : " (inactive)");
+            return Utils.GetCharacterUserTags(PlayerName) + " " + betAmount + ", " + GetHandString(PlayerHand, printSetting) + (Active ? "" : " (inactive)");
         }
     }
 

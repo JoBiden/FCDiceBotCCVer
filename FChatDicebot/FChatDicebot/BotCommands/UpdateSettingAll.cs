@@ -23,19 +23,30 @@ namespace FChatDicebot.BotCommands
 
         public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
         {
-            foreach (var settings in bot.SavedChannelSettings)
+            foreach(var character in bot.DiceBot.CharacterDatas)
             {
-                settings.SlotsMultiplierLimit = 1000;
-                if (settings.StartWith500Chips)
-                    settings.StartingChips = 500;
-                else
-                    settings.StartingChips = 0;
+                character.LastSlotsSpin = 1;
             }
+            commandController.SaveCharacterDataToDisk();
 
-            commandController.SaveChannelSettingsToDisk();
-
-            string output = "(All Channels setting updated) set slots multiplier to 1000, updated startingchips";
+            string output = "(All character data updated) set last slots spin to 1";
             
+            //foreach (var settings in bot.SavedChannelSettings)
+            //{
+            //    settings.UseDefaultPotions = true;
+
+            //    //settings.WorkTierRange = 5;
+            //    //settings.WorkMultiplier = 100;
+
+            //    //settings.SlotsMultiplierLimit = 1000;
+            //    //if (settings.StartWith500Chips)
+            //    //    settings.StartingChips = 500;
+            //    //else
+            //    //    settings.StartingChips = 0;
+            //}
+
+            //commandController.SaveChannelSettingsToDisk();
+
             bot.SendMessageInChannel(output, channel);
         }
     }

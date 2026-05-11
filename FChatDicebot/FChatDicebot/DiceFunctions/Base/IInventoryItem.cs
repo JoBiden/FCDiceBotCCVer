@@ -15,13 +15,13 @@ namespace FChatDicebot.DiceFunctions
 
         string GetName();
 
+        string GetName(bool hideDetails);
+
         ItemCategory GetItemCategory();
 
         int GetGoldValue();
 
         bool IsHidden();
-
-        //bool IsWorn();
 
         string Activate();
 

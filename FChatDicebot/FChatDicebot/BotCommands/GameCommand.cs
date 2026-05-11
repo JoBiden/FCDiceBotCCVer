@@ -31,7 +31,7 @@ namespace FChatDicebot.BotCommands
 
                 if (terms.Length < 1)
                 {
-                    messageString = "Error: This command requires parameters.";
+                    messageString = "Failed: This command requires input for which GameCommand to use.";
                 }
                 else
                 {
@@ -47,7 +47,7 @@ namespace FChatDicebot.BotCommands
                         }
                         else
                         {
-                            messageString = "Game session for " + gametype.GetGameName() + " not found or created.";
+                            messageString = "Failed: Game session for " + gametype.GetGameName() + " not found or created.";
                         }
                     }
                 }
@@ -56,7 +56,7 @@ namespace FChatDicebot.BotCommands
             }
             else
             {
-                bot.SendMessageInChannel(Name + " is currently not allowed in this channel under " + Utils.GetCharacterUserTags("Dice Bot") + "'s settings for this channel.", channel);
+                bot.SendMessageInChannel(Name + " is currently not allowed in this channel under " + Utils.GetCharacterUserTags(DiceBot.DiceBotCharacter) + "'s settings for this channel.", channel);
             }
         }
     }

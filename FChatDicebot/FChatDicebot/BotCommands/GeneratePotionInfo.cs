@@ -23,7 +23,7 @@ namespace FChatDicebot.BotCommands
 
         public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
         {
-            List<Enchantment> enchantments = bot.DiceBot.PotionGenerator.GetAllEnchantments();
+            List<Enchantment> enchantments = bot.DiceBot.PotionGenerator.GetAllEnchantments(bot, true, channel);
             string wholeList = string.Join(", ", enchantments.Select(a => (a.suffix) ) );
 
             bot.SendPrivateMessage("[i]List of every generateable potion by suffix name: [/i]" + wholeList, characterName);

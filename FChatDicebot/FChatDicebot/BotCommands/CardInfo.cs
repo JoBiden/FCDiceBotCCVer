@@ -25,6 +25,7 @@ namespace FChatDicebot.BotCommands
             string cardName = Utils.GetFullStringOfInputs(rawTerms);
 
             List<SavedDeck> possibleDecks = bot.SavedDecks.Where(a => a.DeckList.Contains(cardName)).ToList();
+            SavedData.ChannelSettings channelSettings = bot.GetChannelSettings(channel);
 
             string allReturned = "";
 
@@ -44,12 +45,12 @@ namespace FChatDicebot.BotCommands
                     {
                         string[] thisSplit = remainingCards[0].Split('|');
                         DeckCard d = new DeckCard() { specialName = thisSplit[0], description = thisSplit[1] };
-                        allReturned += d.FullDescription();
+                        allReturned += d.FullDescription(channelSettings.CardPrintSetting);
                     }
                     else
                     {
                         DeckCard d = new DeckCard() { specialName = remainingCards[0] };
-                        allReturned += d.FullDescription();
+                        allReturned += d.FullDescription(channelSettings.CardPrintSetting);
                     }
 
                     allReturned += " (" + saved.DeckId + ")";

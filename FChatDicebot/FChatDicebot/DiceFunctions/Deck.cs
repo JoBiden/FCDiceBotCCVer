@@ -9,6 +9,7 @@ namespace FChatDicebot.DiceFunctions
     public class Deck : CardCollection
     {
         public DeckType DeckType;
+
         protected int DeckPosition = 0;
 
         public Deck(DeckType type)
@@ -126,6 +127,109 @@ namespace FChatDicebot.DiceFunctions
                         Cards.Add(new DeckCard() { specialName = "The Void" });
                     }
                     break;
+                case DiceFunctions.DeckType.BreakerRumble:
+                    {
+                        for (int i = 0; i < 8; i++)
+                        {
+                            Cards.Add(new DeckCard() { specialName = "[color=orange]Spank[/color]" });
+                            Cards.Add(new DeckCard() { specialName = "[color=orange]Slam[/color]" });
+                        }
+                        for (int i = 0; i < 7; i++)
+                        {
+                            Cards.Add(new DeckCard() { specialName = "Rest & Relax" });
+                        }
+                        for (int i = 0; i < 6; i++)
+                        {
+                            Cards.Add(new DeckCard() { specialName = "Key" });
+                        }
+                        for (int i = 0; i < 5; i++)
+                        {
+                            Cards.Add(new DeckCard() { specialName = "Scheme" });
+                            Cards.Add(new DeckCard() { specialName = "Bribe the Ref" });
+                            Cards.Add(new DeckCard() { specialName = "[color=orange]Bash[/color]" });
+                            Cards.Add(new DeckCard() { specialName = "[color=orange]Pin Down[/color]" });
+                        }
+                        for (int i = 0; i < 4; i++)
+                        {
+                            Cards.Add(new DeckCard() { specialName = "[color=cyan]Reversal[/color]" });
+                            Cards.Add(new DeckCard() { specialName = "[color=cyan]Resilient[/color]" });
+                            Cards.Add(new DeckCard() { specialName = "[color=cyan]Prestige[/color]" });
+
+                            Cards.Add(new DeckCard() { specialName = "Taunt" });
+                            Cards.Add(new DeckCard() { specialName = "[color=brown]Chastity[/color]" });
+                            Cards.Add(new DeckCard() { specialName = "[color=brown]Collar[/color]" });
+                            Cards.Add(new DeckCard() { specialName = "[color=brown]Arm Binder[/color]" });
+                            Cards.Add(new DeckCard() { specialName = "Blackmail" });
+                        }
+                        for (int i = 0; i < 3; i++)
+                        {
+                            Cards.Add(new DeckCard() { specialName = "Escape Artist" });
+                            Cards.Add(new DeckCard() { specialName = "[color=brown]Butt Plug[/color]" });
+                            //Cards.Add(new DeckCard() { specialName = "[color=brown]Corset[/color]" });
+                            Cards.Add(new DeckCard() { specialName = "[color=cyan]Snatch[/color]" });
+                            Cards.Add(new DeckCard() { specialName = "[color=cyan]High Stakes[/color]" });
+                        }
+                        for (int i = 0; i < 2; i++ )
+                        {
+                            Cards.Add(new DeckCard() { specialName = "[color=cyan]Close Watch[/color]" });
+                            //Cards.Add(new DeckCard() { specialName = "Hot Potato" });
+                        }
+                    }
+                    break;
+                case DiceFunctions.DeckType.BreakerRumbleClassic:
+                    {
+                        for (int i = 0; i < 8; i++)
+                        {
+                            Cards.Add(new DeckCard() { specialName = "[color=orange]Spank[/color]" });
+                            Cards.Add(new DeckCard() { specialName = "[color=orange]Slam[/color]" });
+                        }
+                        for (int i = 0; i < 7; i++)
+                        {
+                            Cards.Add(new DeckCard() { specialName = "Rest & Relax" });
+                        }
+                        for (int i = 0; i < 6; i++)
+                        {
+                            Cards.Add(new DeckCard() { specialName = "Key" });
+                        }
+                        for (int i = 0; i < 5; i++)
+                        {
+                            Cards.Add(new DeckCard() { specialName = "Scheme" });
+                            Cards.Add(new DeckCard() { specialName = "Bribe the Ref" });
+                        }
+                        for (int i = 0; i < 4; i++)
+                        {
+                            Cards.Add(new DeckCard() { specialName = "[color=cyan]Reversal[/color]" });
+                            Cards.Add(new DeckCard() { specialName = "[color=cyan]Resilient[/color]" });
+                            Cards.Add(new DeckCard() { specialName = "[color=cyan]Prestige[/color]" });
+
+                            Cards.Add(new DeckCard() { specialName = "Taunt" });
+                            Cards.Add(new DeckCard() { specialName = "[color=brown]Chastity[/color]" });
+                            Cards.Add(new DeckCard() { specialName = "[color=brown]Collar[/color]" });
+                            Cards.Add(new DeckCard() { specialName = "[color=brown]Arm Binder[/color]" });
+                            Cards.Add(new DeckCard() { specialName = "Blackmail" });
+                        }
+                        for (int i = 0; i < 3; i++)
+                        {
+                            Cards.Add(new DeckCard() { specialName = "Escape Artist" });
+                        }
+                        for (int i = 0; i < 2; i++)
+                        {
+                            Cards.Add(new DeckCard() { specialName = "[color=cyan]Close Watch[/color]" });
+                        }
+                    }
+                    break;
+                case DiceFunctions.DeckType.BreakerRumbleExtra:
+                    {
+                        for (int i = 0; i < 25; i++)
+                        {
+                            Cards.Add(new DeckCard() { specialName = "[color=yellow]Gloat[/color]" });
+                        }
+                        for (int i = 0; i < 5; i++)
+                        {
+                            Cards.Add(new DeckCard() { specialName = "[color=yellow]Mega Gloat[/color]" });
+                        }
+                    }
+                    break;
 
                 case DeckType.Custom:
                     {
@@ -152,7 +256,6 @@ namespace FChatDicebot.DiceFunctions
 
         public override void AddCard(DeckCard d, Random r)
         {
-            //if(Cards.Contains(d.))
             var exist = Cards.FirstOrDefault(abb => abb.Equals(d));
             if (exist != null)
             {
@@ -202,7 +305,7 @@ namespace FChatDicebot.DiceFunctions
             }
         }
 
-        public string GetDeckList()
+        public string GetDeckList(PrintSetting printSetting)
         {
             if (Cards == null)
                 return null;
@@ -213,7 +316,7 @@ namespace FChatDicebot.DiceFunctions
                 if (!string.IsNullOrEmpty(deckList))
                     deckList += ",";
 
-                deckList += d.ToString();
+                deckList += d.Print(printSetting);
 
                 if (!string.IsNullOrEmpty(d.description))
                     deckList += "|" + d.description;
@@ -314,9 +417,12 @@ namespace FChatDicebot.DiceFunctions
         Tarot,
         ManyThings,
         Uno,
+        BreakerRumble,
+        BreakerRumbleExtra,
+        BreakerRumbleClassic,
         Skipbo, //hard to use with current play rules, need piles of some kind
         Placeholder,
-        Placehodler2,
+        NONE,
         Custom
     }
 }

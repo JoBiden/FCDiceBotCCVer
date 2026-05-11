@@ -17,6 +17,11 @@ namespace FChatDicebot.DiceFunctions
 
         public override string ToString()
         {
+            return Print(null);
+        }
+
+        public string Print(PrintSetting cardPrintSetting)
+        {
             string cardStateString = string.IsNullOrEmpty(cardState)? "" : (" (" + cardState + ")" );
             if(!string.IsNullOrEmpty(specialName))
             {
@@ -27,6 +32,8 @@ namespace FChatDicebot.DiceFunctions
             string numString = "";
             string colorString = "";
             string closeColorString = "[/color]";
+            bool fourColorSuits = cardPrintSetting != null && cardPrintSetting.FourColorPlayingCards;
+            bool useTarotIcons = cardPrintSetting != null && cardPrintSetting.TarotIcons;
 
             switch (suit)
             {
@@ -36,10 +43,14 @@ namespace FChatDicebot.DiceFunctions
                     break;
                 case 1:
                     colorString = "[color=red]";
+                    if (fourColorSuits)
+                        colorString = "[color=cyan]";
                     suitString = "♦";
                     break;
                 case 2:
                     colorString = "[color=gray]";
+                    if (fourColorSuits)
+                        colorString = "[color=green]";
                     suitString = "♣";
                     break;
                 case 3:
@@ -64,19 +75,27 @@ namespace FChatDicebot.DiceFunctions
                     break;
                 case 8://y for uno
                     colorString = "[color=red]"; // ✝ sword: latin cross
-                    suitString = "✝";
+                    suitString = " of Swords";//✝";
+                    if(useTarotIcons)
+                        suitString = "✝";
                     break;
                 case 9:
                     colorString = "[color=blue]"; //Ų cup: latin capital U with Ogonek “🍵”
-                    suitString = "🍵";
+                    suitString = " of Cups";//🍵";
+                    if(useTarotIcons)
+                        suitString = "🍵";
                     break;
                 case 10:
                     colorString = "[color=yellow]"; //✪ pentacle  ⛤⍟  “✪”
-                    suitString = "✪";
+                    suitString = " of Pentacles";//✪";
+                    if(useTarotIcons)
+                        suitString = "✪";
                     break;
                 case 11:
                     colorString = "[color=green]"; // ƪ wand: latin letter reversed Esh loop
-                    suitString = "ƪ";
+                    suitString = " of Wands";//ƪ";
+                    if(useTarotIcons)
+                        suitString = "ƪ";
                     break;
             }
             switch (number)
@@ -109,13 +128,13 @@ namespace FChatDicebot.DiceFunctions
                         numString = "[Draw 2]";
                     break;
                 case 12:
-                    if (suit < 4)
+                    if (suit < 4 || suit >= 8)
                         numString = "Q";
                     else if (suit >= 4 && suit < 8)
                         numString = "[Skip]";
                     break;
                 case 13:
-                    if (suit < 4)
+                    if (suit < 4 || suit >= 8)
                         numString = "K";
                     else if (suit >= 4 && suit < 8)
                         numString = "[Reverse]";
@@ -137,9 +156,9 @@ namespace FChatDicebot.DiceFunctions
             return colorString + numString + suitString + closeColorString + cardStateString;
         }
 
-        public string FullDescription()
+        public string FullDescription(PrintSetting printSetting)
         {
-            string nameString = ToString();
+            string nameString = Print(printSetting);
             string descriptionString = ": " + description;
             if (string.IsNullOrEmpty(description))
                 descriptionString = "";
@@ -150,5 +169,11 @@ namespace FChatDicebot.DiceFunctions
         {
             return suit == d.suit && number == d.number && specialName == d.specialName && joker == d.joker;
         }
+    }
+
+    public class PrintSetting
+    {
+        public bool FourColorPlayingCards = false;
+        public bool TarotIcons = false;
     }
 }

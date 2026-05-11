@@ -15,11 +15,13 @@ namespace FChatDicebot.DiceFunctions
 
         protected int GoldValue;
 
-        public Enchantment enchantment; //Rarity; //0-1, 0 being most rare
+        public Enchantment enchantment;
 
         protected bool Hidden;
 
         protected string Name;
+
+        public int RandomSeed;
 
         public InventoryItem(string name, ItemCategory category, double rarity, int goldValue )
         {
@@ -37,6 +39,11 @@ namespace FChatDicebot.DiceFunctions
         }
 
         public virtual string GetName()
+        {
+            return Name;
+        }
+
+        public virtual string GetName(bool hideDetails)
         {
             return Name;
         }
@@ -76,8 +83,6 @@ namespace FChatDicebot.DiceFunctions
             return rarity;
         }
             
-        //bool IsWorn();
-
         public string Activate()
         {
             return "activated " + this.ToString();

@@ -14,10 +14,10 @@ namespace FChatDicebot.DiceFunctions
         public string Description;
         public List<TableRollTrigger> Triggers;
 
-        public string ToString(bool includeRoll)
+        public string ToString(bool includeRoll, bool onlyDescription)
         {
             string rtnString = "";
-            if(includeRoll)
+            if(includeRoll && !onlyDescription)
             {
                 rtnString += string.Format("({0}{1}) ", Roll, (Range > 1? ("-" + (Roll + Range).ToString()) : "") );
             }
@@ -33,17 +33,20 @@ namespace FChatDicebot.DiceFunctions
                     triggersAddition += t.ToString();
                 }
 
-                if(Triggers[0].TableId.StartsWith("!"))
+                if(Triggers[0].Command.StartsWith("!"))
                 {
                     triggersAddition = " [i](perform: " + triggersAddition + ")[/i]";
                 }
-                else
-                {
-                    triggersAddition = " [i](roll on: " + triggersAddition + ")[/i]";
-                }
             }
 
-            rtnString += "[b]" + Name + ": [/b]" + Description + triggersAddition;
+            if(onlyDescription)
+            {
+                rtnString += Description;
+            }
+            else
+            {
+                rtnString += "[b]" + Name + ": [/b]" + Description + triggersAddition;
+            }
 
             return rtnString;
         }
@@ -51,14 +54,11 @@ namespace FChatDicebot.DiceFunctions
 
     public class TableRollTrigger
     {
-        public string TableId;
-        public int RollBonus;
-        public string VariableRollBonus;
+        public string Command;
 
-        public string ToString()
+        public override string ToString()
         {
-            string rollb = Utils.GetRollModifierString(RollBonus);
-            return TableId + (string.IsNullOrEmpty(rollb)? "" : ("(" + rollb +")")) ;
+            return Command;
         }
     }
 }

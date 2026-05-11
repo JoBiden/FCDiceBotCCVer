@@ -30,15 +30,15 @@ namespace FChatDicebot.BotCommands
         public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
         {
             int channelsNumber = bot.ChannelsJoined.Count();
-            TimeSpan onlineTime = DateTime.UtcNow - bot.LoginTime;
+            double onlineTime = Utils.GetCurrentTimestampSeconds() - bot.LoginTime;
 
             if (!commandController.MessageCameFromChannel(channel))
             {
-                bot.SendPrivateMessage("Chateau Contract has been online for " + Utils.GetTimeSpanPrint(onlineTime), characterName);
+                bot.SendPrivateMessage("Chateau Contract has been online for " + Utils.PrintTimeFromSeconds(onlineTime), characterName);
             }
             else
             {
-                bot.SendMessageInChannel("Chateau Contract has been online for " + Utils.GetTimeSpanPrint(onlineTime), channel);
+                bot.SendMessageInChannel("Chateau Contract has been online for " + Utils.PrintTimeFromSeconds(onlineTime), channel);
             }
         }
     }

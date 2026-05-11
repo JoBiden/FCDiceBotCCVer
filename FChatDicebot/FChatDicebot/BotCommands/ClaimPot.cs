@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using FChatDicebot.BotCommands.Base;
 using FChatDicebot.SavedData;
 using Newtonsoft.Json;
+using FChatDicebot.DiceFunctions;
 
 namespace FChatDicebot.BotCommands
 {
@@ -31,9 +32,11 @@ namespace FChatDicebot.BotCommands
                     portion = .5;
 
                 if (terms != null && terms.Length >= 1 && terms.Contains("third"))
-                    portion = .33;
+                    portion = .333333;
 
-                string messageString = bot.DiceBot.ClaimPot(characterName, channel, portion);
+                int getNumberFrom = Utils.GetNumberFromInputs(terms);
+
+                string messageString = bot.DiceBot.ClaimPot(characterName, channel, portion, getNumberFrom);
 
                 commandController.SaveChipsToDisk("ClaimPot");
 
@@ -41,7 +44,7 @@ namespace FChatDicebot.BotCommands
             }
             else
             {
-                bot.SendMessageInChannel(Name + " is currently not allowed in this channel under " + Utils.GetCharacterUserTags("Dice Bot") + "'s settings for this channel.", channel);
+                bot.SendMessageInChannel(Name + " is currently not allowed in this channel under " + Utils.GetCharacterUserTags(DiceBot.DiceBotCharacter) + "'s settings for this channel.", channel);
             }
         }
     }
