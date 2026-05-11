@@ -25,12 +25,52 @@ namespace FChatDicebot.BotCommands
         {
 
             string privateMessage = "";
-            string rollResult = bot.DiceBot.GeneratePotion(terms, characterName, channel, out privateMessage);
 
-            bot.SendMessageInChannel(rollResult, channel);
-            if(!string.IsNullOrEmpty(privateMessage))
+            CharacterData dat = bot.DiceBot.GetCharacterData(characterName, channel);
+
+            string rollResult = bot.DiceBot.GeneratePotion(terms, characterName, channel, true, out privateMessage);
+
+            ChannelSettings settings = bot.GetChannelSettings(channel);
+            ChipPile pile = bot.DiceBot.GetChipPile(characterName, channel);
+            string transactionString = "";
+            bool generate = false;
+            if(settings.PotionChipsCost > 0 && settings.AllowChips)
             {
-                bot.SendPrivateMessage(privateMessage, characterName);
+
+                if(pile.Chips >= settings.PotionChipsCost)
+                {
+                    pile.Chips -= settings.PotionChipsCost;
+
+                    transactionString = "[sub]Paying " + settings.PotionChipsCost + " chips and buying a potion...[/sub]\n";
+
+                    commandController.SaveChipsToDisk("generatepotion");
+
+                    generate = true;
+                }
+                else
+                {
+                    generate = false;
+                }
+            }
+            else
+            {
+                generate = true;
+            }
+
+            if(generate)
+            {
+                bot.SendMessageInChannel(transactionString + rollResult, channel);
+                if (!string.IsNullOrEmpty(privateMessage))
+                {
+                    bot.SendPrivateMessage(privateMessage, characterName);
+                }
+
+                dat.TimesPotionGenerated += 1;
+                commandController.SaveCharacterDataToDisk();
+            }
+            else
+            {
+                bot.SendMessageInChannel("Failed: You could not afford to buy a potion for " + settings.PotionChipsCost + " chips (" + pile.Chips +" held)", channel);
             }
         }
     }

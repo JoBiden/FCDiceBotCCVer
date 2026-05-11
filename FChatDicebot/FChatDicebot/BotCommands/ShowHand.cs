@@ -23,24 +23,25 @@ namespace FChatDicebot.BotCommands
         {
             string characterDrawName = commandController.GetCharacterDrawNameFromCommandTerms(characterName, terms);
 
-            DeckType deckType = commandController.GetDeckTypeFromCommandTerms(terms);
+            string customDeckName = "";
+            DeckType deckType = commandController.GetDeckTypeFromCommandTerms(terms, out customDeckName);
 
-            string customDeckName = Utils.GetCustomDeckName(characterName);
+            SavedData.ChannelSettings channelSettings = bot.GetChannelSettings(channel);
             string deckTypeString = Utils.GetDeckTypeStringHidePlaying(deckType, customDeckName);
 
-            Hand h = bot.DiceBot.GetHand(channel, deckType, characterDrawName);
+            Hand h = bot.DiceBot.GetHand(channel, deckType, customDeckName, characterDrawName);
 
             string displayName = characterDrawName;
             if (displayName.Contains(DiceBot.PlaySuffix))
                 displayName = displayName.Replace(DiceBot.PlaySuffix, "");
 
-            string outputString = "[i]" + deckTypeString + "Showing [user]" + displayName + "[/user]'s " + h.GetCollectionName() + ": [/i]" + h.ToString();
+            string outputString = "[i]" + deckTypeString + "Showing [user]" + displayName + "[/user]'s " + h.GetCollectionName() + ": [/i]" + h.Print(false, channelSettings.CardPrintSetting);
             if (characterDrawName == DiceBot.BurnCardsPlayerAlias)
-                outputString = "[i]" + deckTypeString + "Showing burned cards: [/i]" + h.ToString();
+                outputString = "[i]" + deckTypeString + "Showing burned cards: [/i]" + h.Print(false, channelSettings.CardPrintSetting);
             else if (characterDrawName == DiceBot.DealerPlayerAlias)
-                outputString = "[i]" + deckTypeString + "Showing the dealer's hand: [/i]" + h.ToString();
+                outputString = "[i]" + deckTypeString + "Showing the dealer's hand: [/i]" + h.Print(false, channelSettings.CardPrintSetting);
             else if (characterDrawName == DiceBot.DiscardPlayerAlias)
-                outputString = "[i]" + deckTypeString + "Showing discarded cards: [/i]" + h.ToString();
+                outputString = "[i]" + deckTypeString + "Showing discarded cards: [/i]" + h.Print(false, channelSettings.CardPrintSetting);
 
             bot.SendMessageInChannel(outputString, channel);
         }

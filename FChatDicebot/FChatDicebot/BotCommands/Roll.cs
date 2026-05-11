@@ -23,12 +23,11 @@ namespace FChatDicebot.BotCommands
             if (BotMain._debug)
                 bot.SendMessageInChannel("Command recieved: " + Utils.PrintList(terms), channel);
 
-            bool debugOverride = false;
+            bool debugOverride = true;
             string finalResult = bot.DiceBot.GetRollResult(terms, characterName, channel, debugOverride);
 
             string userName = "[i]" + Utils.GetCharacterUserTags(characterName) + "[/i]: ";
-            //bot.SendMessageInChannel(userName + finalResult, channel);
-
+            
             if (!commandController.MessageCameFromChannel(channel))
             {
                 bot.SendPrivateMessage(userName + finalResult, characterName);

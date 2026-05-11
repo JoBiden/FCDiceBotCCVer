@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using FChatDicebot.BotCommands.Base;
 using FChatDicebot.SavedData;
 using Newtonsoft.Json;
+using FChatDicebot.DiceFunctions;
 
 namespace FChatDicebot.BotCommands
 {
@@ -37,7 +38,13 @@ namespace FChatDicebot.BotCommands
             }
             else if (thisChannel.AllowChips)
             {
-                string messageString = bot.DiceBot.RemoveChipsPile(characterName, channel);
+                string targetedName = characterName;
+                if(rawTerms != null && rawTerms.Length > 0)
+                {
+                    targetedName = Utils.GetUserNameFromFullInputs(rawTerms);
+                }
+
+                string messageString = bot.DiceBot.RemoveChipsPile(targetedName, channel);
 
                 commandController.SaveChipsToDisk("RemovePile");
 
@@ -45,7 +52,7 @@ namespace FChatDicebot.BotCommands
             }
             else
             {
-                bot.SendMessageInChannel(Name + " is currently not allowed in this channel under " + Utils.GetCharacterUserTags("Dice Bot") + "'s settings for this channel.", channel);
+                bot.SendMessageInChannel(Name + " is currently not allowed in this channel under " + Utils.GetCharacterUserTags(DiceBot.DiceBotCharacter) + "'s settings for this channel.", channel);
             }
         }
     }

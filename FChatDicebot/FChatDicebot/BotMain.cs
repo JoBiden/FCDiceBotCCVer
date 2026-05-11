@@ -62,6 +62,7 @@ namespace FChatDicebot
         public const string BreakerWorldChannelId = "adh-c3a7c030da9f2bf4fb24";
         public const string KowloonChannelId = "adh-62144c7343711c3b838f";
         public const string SevenMinutesFateRoomId = "adh-0d4edcedd6eb4839f03b";
+        public const string SuitenGuFateRoomId = "adh-f775cee8ae43d382eca8";
         public const string VelvetCuffBotName = "VelvetCuff";
 
         public BotWebRequests WebRequests;
@@ -81,32 +82,35 @@ namespace FChatDicebot
         public const int StartingChipsInPile = 500;
 
         public const int MinimumCharactersTableId = 2;
-        public const int MaximumCharactersTableName = 30;
-        public const int MaximumCharactersTableDescription = 300;
-        public const int MaximumCharactersTableEntryDescription = 200;
+        public const int MaximumCharactersTableName = 80; //30; 1.42c
+        public const int MaximumCharactersTableDescription = 1000; //300; 1.42c
+        public const int MaximumCharactersTableEntryDescription = 500; //200; 1.42c
         public const int MaximumRollTriggersPerEntry = 4;
         public const int MaximumSavedTablesPerCharacter = 4;
-        public const int MaximumSavedPotionsPerCharacter = 6;
-        public const int MaximumCharactersPotionDescription = 500;
-        public const int MaximumCharactersPotionName = 50;
+        public const int MaximumSavedPotionsPerCharacter = 40;//6;
+        public const int MaximumCharactersPotionDescription = 1000; //500 1.42c
+        public const int MaximumCharactersPotionName = 100; //50 1.42c
         public const int MaximumSavedEntriesPerTable = 50;
         public const int MaximumCardsInDeck = 200;
-        public const int ReconnectTimeMs = 300000; //5 minutes reconnect time
+        public const int ReconnectTimeMs = 120000; //2 minutes reconnect time, was 5 in 1.42c
         public const int InitialWaitTime = 5000;
         public const int SlotsSpinCooldownSeconds = 300; //5 minutes
         public const int LuckForecastCooldownSeconds = 3600; //60 minutes
+        public const int WorkCooldownSeconds = 3600 * 20; //20 hours
+        public const int MaximumWorkMultiplier = 100000;
+        public const int MaximumPotionCost = 100000000;
+        public const int MaximumWorkTierRange = 1000;
+        public const int MaximumWorkBaseAmount = 1000;
 
-        public const int GreetCharacterCooldownMinutes = 60;
+        public const int GreetCharacterCooldownSeconds = 7200;// 60 * 60 * 2;// Minutes = 120;
 
         public const int MaximumCharsInMessage = 11000;
 
-        public TimeSpan Uptime;
-        public TimeSpan LastCheckin;
-        public DateTime LoginTime;
+        public double LoginTime;
         public const int TickTimeMiliseconds = 200;
         public int MinimumTimeBetweenMessages = 1500; //minimum 1 second between messages for FList bot rules
         public int ReconnectTimer = 0;
-        public TimeSpan CheckinInterval = new TimeSpan(0, 0, 20, 0, 0);
+        public const double CheckinIntervalSeconds = 20;
         public List<string> ChannelsJoined = new List<string>();
         public List<UserGeneratedCommand> WaitingChannelOpRequests = new List<UserGeneratedCommand>();
         public List<BuyCommand> WaitingBuyCommands = new List<BuyCommand>();
@@ -129,6 +133,8 @@ namespace FChatDicebot
             LoadChannelSettings();
 
             LoadSavedTables();
+
+            LoadSavedPotions();
 
             LoadSavedSlots();
 
@@ -240,6 +246,37 @@ namespace FChatDicebot
             }
         }
 
+        private void LoadSavedPotions()
+        {
+            SavedPotions = new List<SavedPotion>();
+            string path = Utils.GetTotalFileName(FileFolder, SavedPotionsFileName);
+            try
+            {
+                VerifyDirectoryExists();
+
+                if (File.Exists(path))
+                {
+                    string fileText = File.ReadAllText(path, Encoding.ASCII);
+
+                    if (_debug)
+                        Console.WriteLine("read " + path);
+
+                    SavedPotions = JsonConvert.DeserializeObject<List<SavedPotion>>(fileText);
+
+                    if (_debug)
+                        Console.WriteLine("loaded SavedPotions successfully.");
+                }
+                else
+                {
+                    Console.WriteLine("LoadSavedPotions file does not exist.");
+                }
+            }
+            catch (System.Exception exc)
+            {
+                Console.WriteLine("Exception: Failed to load LoadSavedPotions for " + path + "\n" + exc.ToString());
+            }
+        }
+
         private void BackupAllData()
         {
             VerifyDirectoryExists(FileFolder);
@@ -254,6 +291,8 @@ namespace FChatDicebot
             Utils.CopyFile(SavedDecksFileName, FileFolder, BackupFolder);
             Utils.CopyFile(SavedSlotsFileName, FileFolder, BackupFolder);
             Utils.CopyFile(SavedTablesFileName, FileFolder, BackupFolder);
+            Utils.CopyFile(SavedPotionsFileName, FileFolder, BackupFolder);
+            Utils.CopyFile(PotionGenerationFileName, FileFolder, BackupFolder);
         }
 
         public static void VerifyDirectoryExists(string fileFolder = FileFolder)
@@ -365,9 +404,6 @@ namespace FChatDicebot
             if(_debug)
                 Console.WriteLine("Runloop started");
 
-            Uptime = new TimeSpan();
-            LastCheckin = new TimeSpan();
-
             int LastMessageSent = 0;
 
             using (var ws = new WebSocket(FListChatUri))
@@ -429,6 +465,13 @@ namespace FChatDicebot
                         }
                         try
                         {
+                            DiceBot.UpdateAllGames();
+                        }catch(Exception exc)
+                        {
+                            Console.WriteLine("exception on UpdateAllGames " + exc.ToString());
+                        }
+                        try
+                        {
                             LastMessageSent += TickTimeMiliseconds;
                             totalTicks++;
 
@@ -487,10 +530,6 @@ namespace FChatDicebot
                                 }
                             }
                             HandleWaitingBuyCommands();
-
-                            Uptime.Add(new TimeSpan(0, 0, 0, 0, TickTimeMiliseconds));
-
-                            PerformCheckinIfNecessary(ref Uptime, ref LastCheckin);
 
                         }catch(Exception exc)
                         {
@@ -571,7 +610,7 @@ namespace FChatDicebot
 
             sock.Send(firstIdnRequest.PrintedCommand());
 
-            LoginTime = DateTime.UtcNow;
+            LoginTime = Utils.GetCurrentTimestampSeconds();
 
             //required to wait for the server to stop sending startup messages, otherwise overflow occurs and ws closes
             Console.WriteLine("waiting for " + InitialWaitTime + "ms...");
@@ -640,21 +679,6 @@ namespace FChatDicebot
             Console.WriteLine("idn request created: " + JsonConvert.SerializeObject(idn));
 
             return new BotMessage() { MessageDataFormat = idn, messageType = "IDN" };
-        }
-
-        private void PerformCheckinIfNecessary(ref TimeSpan uptime, ref TimeSpan lastCheckin)
-        {
-            if (Uptime - LastCheckin > CheckinInterval)
-            {
-                bool newTicket = GetNewApiTicket();
-                Utils.AddToLog("performing checkin, newticket? " + newTicket, AccountSettings);
-                Console.WriteLine("performing checkin, newticket? " + newTicket);
-                if(newTicket)
-                {
-                    MessageQueue.AddMessage(GetNewIDNRequest());
-                }
-                LastCheckin += (Uptime - LastCheckin);
-            }
         }
 
         private void HandleWaitingBuyCommands()
@@ -750,18 +774,21 @@ namespace FChatDicebot
 
                         if (s.GreetNewUsers)
                         {
-                            CountdownTimer timer = DiceBot.GetCountdownTimer(jchInfo.channel, jchInfo.character.identity);
-                            if(timer == null || timer.TimerFinished())
+                            CharacterData thisCharacterData = DiceBot.GetCharacterData(jchInfo.character.identity, jchInfo.channel, true);
+
+                            double currentDoubleTime = Utils.GetCurrentTimestampSeconds();
+                            double timeSinceGreet = currentDoubleTime - thisCharacterData.LastGreeted;
+
+                            if (timeSinceGreet < BotMain.GreetCharacterCooldownSeconds)
                             {
-                                DiceBot.StartCountdownTimer(jchInfo.channel, jchInfo.character.identity, jchInfo.character.identity, GreetCharacterCooldownMinutes * 60 * 1000);//cd on greeting each character
-                                timer = DiceBot.GetCountdownTimer(jchInfo.channel, jchInfo.character.identity);
-                                string timerReport = "";
-                                SendMessageInChannel("Welcome to the channel, " + Utils.GetCharacterUserTags(jchInfo.character.identity) + "!" + timerReport, jchInfo.channel);
+                                if (_debug)
+                                    SendMessageInChannel("DEBUG: Cooldown active for: Welcome to the channel, " + Utils.GetCharacterUserTags(jchInfo.character.identity) + "! " + timeSinceGreet + " seconds since last greet.", jchInfo.channel);
                             }
                             else
                             {
-                                if(_debug)
-                                    SendMessageInChannel("Welcome to the channel, " + Utils.GetCharacterUserTags(jchInfo.character.identity) + "! " + timer.GetSecondsRemaining() + " seconds on timer.", jchInfo.channel);
+                                thisCharacterData.LastGreeted = currentDoubleTime;
+                                BotCommandController.SaveCharacterDataToDisk();
+                                SendMessageInChannel("Welcome to the channel, " + Utils.GetCharacterUserTags(jchInfo.character.identity) + "!", jchInfo.channel);
                             }
                         }
                         break;
@@ -796,6 +823,17 @@ namespace FChatDicebot
             {
                 ChannelSettings set = GetChannelSettings(messageContent.channel);
                 prefixChar = set.CommandPrefix.ToString();
+            }
+
+            if(string.IsNullOrEmpty(messageContent.message))
+            {
+                Console.WriteLine("empty message " + messageContent.channel + ", " + messageContent.character + ": " + messageContent.message);
+                return;
+            }
+
+            while(messageContent.message.StartsWith(" ") && messageContent.message.Length > 2)
+            {
+                messageContent.message = messageContent.message.Substring(1);
             }
 
             //bot commands in chat all start with '!'
@@ -896,6 +934,38 @@ namespace FChatDicebot
             MessageQueue.AddMessage(BotMessageFactory.NewMessage(BotMessageFactory.COL, new COLclient() { channel = command.channel } ));
         }
 
+        public List<Enchantment> GetChannelPotions(string channel)
+        {
+            if (string.IsNullOrEmpty(channel))
+                return null;
+
+            if(SavedPotions == null)
+            {
+                Console.WriteLine("Error: savedpotions null");
+                return null;
+            }
+            else
+            {
+                return SavedPotions.Where(a => a.Channel == channel).Select(a => a.Enchantment).ToList();
+            }
+        }
+
+        public List<Enchantment> GetCharacterTotalEnchantments(string characterName)
+        {
+            if (string.IsNullOrEmpty(characterName))
+                return null;
+
+            if (SavedPotions == null)
+            {
+                Console.WriteLine("Error: savedpotions null");
+                return null;
+            }
+            else
+            {
+                return SavedPotions.Where(a => a.OriginCharacter == characterName).Select(a => a.Enchantment).ToList();
+            }
+        }
+
         public ChannelSettings GetChannelSettings(string channel)
         {
             if (string.IsNullOrEmpty(channel))
@@ -915,7 +985,12 @@ namespace FChatDicebot
                     AllowGames = true,
                     AllowSlots = true,
                     SlotsMultiplierLimit = 1000,
+                    WorkMultiplier = 100,
+                    WorkTierRange = 5,
+                    WorkBaseAmount = 0,
                     StartingChips = 0,
+                    UseDefaultPotions = true,
+                    PotionChipsCost = 0,
                     CommandPrefix = '!',
                     ChipsClearance = ChipsClearanceLevel.NONE
                 };

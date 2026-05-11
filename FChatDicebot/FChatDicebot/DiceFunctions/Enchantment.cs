@@ -15,7 +15,8 @@ namespace FChatDicebot.DiceFunctions
         public string CreatedBy;
         public string OverrideEicon;
         public double Rarity; //defaults to 1.0, roll beneath this number on (0-1) double to keep the result. if not, reroll
-        public EnchantmentFlag Flag; 
+        public EnchantmentFlag Flag;
+        public bool HidePotionDetails;
 
         public Enchantment(bool kinky, string prefix, string suffix, string explanation, double rarity = 1, EnchantmentFlag flag = EnchantmentFlag.NONE)
         {
@@ -25,8 +26,9 @@ namespace FChatDicebot.DiceFunctions
             this.explanation = explanation;
             this.Rarity = rarity;
             this.Flag = flag;
-            this.CreatedBy = "Dice Bot";
+            this.CreatedBy = DiceBot.DiceBotCharacter;
             this.OverrideEicon = null;
+            this.HidePotionDetails = false;
         }
 
         public void Copy(Enchantment enchantment)
@@ -39,6 +41,7 @@ namespace FChatDicebot.DiceFunctions
             this.Flag = enchantment.Flag;
             this.CreatedBy = enchantment.CreatedBy;
             this.OverrideEicon = enchantment.OverrideEicon;
+            this.HidePotionDetails = enchantment.HidePotionDetails;
         }
     }
 

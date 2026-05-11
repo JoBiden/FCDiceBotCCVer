@@ -46,6 +46,10 @@ namespace FChatDicebot.BotCommands
                 case "fate":
                     channelIdToSend = BotMain.SevenMinutesFateRoomId;
                     break;
+                case "fategu":
+                case "suitengu":
+                    channelIdToSend = BotMain.SuitenGuFateRoomId;
+                    break;
                 case "chessclub":
                 case "chess":
                     channelIdToSend = BotMain.ChessClubChannelId;

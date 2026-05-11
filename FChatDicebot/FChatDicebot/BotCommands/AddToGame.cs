@@ -26,7 +26,8 @@ namespace FChatDicebot.BotCommands
             ChannelSettings thisChannel = bot.GetChannelSettings(channel);
 
             //get player name to remove
-            string allInputs = Utils.GetFullStringOfInputs(rawTerms);
+            string allInputs = Utils.GetUserNameFromFullInputs(rawTerms);
+
             if (allInputs.Contains("_noreplace_"))
             {
                 allInputs.Replace("_noreplace_", "");

@@ -44,7 +44,7 @@ namespace FChatDicebot.BotCommands
                 }
                 else
                 {
-                    int buyAmount = 2000;// pile.Chips;
+                    int buyAmount = 2000;
 
                     if(terms.Length > 0)
                     {
@@ -65,7 +65,7 @@ namespace FChatDicebot.BotCommands
                         string vcTransactionId = bot.VelvetcuffConnection.CurrentPaymentId;
                         bool added = bot.DiceBot.AddVcChipOrder(buyAmount, characterName, channel, vcTransactionId);
 
-                        responseMessage = Utils.GetCharacterUserTags(characterName) + " has created an order for [color=yellow]" + buyAmount + "[/color] Dice Bot chips.\n[sub]Please accept the VC invoice as soon as possible.[/sub]";// You may only have one buy order active at a time. Orders last a max of 24 hours.[/sub]";
+                        responseMessage = Utils.GetCharacterUserTags(characterName) + " has created an order for [color=yellow]" + buyAmount + "[/color] Dice Bot chips.\n[sub]Please accept the VC invoice as soon as possible.[/sub]";
 
                         bot.BotCommandController.SaveVcChipOrdersToDisk();
                     }

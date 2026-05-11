@@ -27,12 +27,12 @@ namespace FChatDicebot.DiceFunctions
         public PotionGenerator(Random r)
         {
             Random = r;
+
+            LoadPotionGenerationInfo();
         }
 
         private void LoadPotionGenerationInfo()
         {
-            //TODO: come up with way for channels to add their own potions for just that channel... save in channel info?
-            //not used RN (allows load of info from disk instead of from file)
             LoadPotionGenerationFromDisk(BotMain.FileFolder, BotMain.PotionGenerationFileName);
         }
 
@@ -47,17 +47,20 @@ namespace FChatDicebot.DiceFunctions
                 {
                     string fileText = File.ReadAllText(path, Encoding.ASCII);
 
-                    Console.WriteLine("Chip piles file text " + fileText == null ? "null" : fileText.Take(100) + "...");
+                    if(BotMain._debug)
+                        Console.WriteLine("LoadPotionGenerationFromDisk file text " + fileText == null ? "null" : fileText.Take(100) + "...");
+
                     PotionGenerationInfo generationInfo = JsonConvert.DeserializeObject<PotionGenerationInfo>(fileText);
-                    
-                    AllColors = generationInfo.AllColors;
-                    AllAdjectives = generationInfo.AllAdjectives;
-                    AllPotionNouns = generationInfo.AllPotionNouns;
-                    AllEicons = generationInfo.AllEicons;
-                    AllFlavors = generationInfo.AllFlavors;
-                    AllOrigins = generationInfo.AllOrigins;
-                    AllWords = generationInfo.AllWords;
+
+                    //AllColors = generationInfo.AllColors;
+                    //AllAdjectives = generationInfo.AllAdjectives;
+                    //AllPotionNouns = generationInfo.AllPotionNouns;
+                    //AllEicons = generationInfo.AllEicons;
+                    //AllFlavors = generationInfo.AllFlavors;
+                    //AllOrigins = generationInfo.AllOrigins;
+                    AllTriggerWords = generationInfo.AllTriggerWords;
                     AllEnchantments = generationInfo.AllEnchantments;
+                    CommonEnchantments = generationInfo.CommonEnchantments;
 
                     if (BotMain._debug)
                         Console.WriteLine("loaded PotionGenerationInfo successfully.");
@@ -76,10 +79,15 @@ namespace FChatDicebot.DiceFunctions
         private List<string> AllColors = new List<string>() { 
             "white", "pink", "blue", "gold", "silver", 
             "green", "purple", "orange", "red", "brown", 
-            "tan", "teal", "peach", "yellow", "seafoam", 
+            "tan", "teal", "peach", "coral", "yellow", "seafoam", 
             "rainbow", "bronze", "purple", "hazel", "lilac", 
-            "black", "grail mud", "pearl", "lavender", "fuschia", 
-            "olive" };
+            "black", "grail mud", "pearl", "lavender", "fuschia", "prussian blue", "burgundy",
+            "olive", "platinum", "maroon", "beige", "lime green", "olive green",
+            "dark blue", "light blue", "dark gray", "gray", "light gray", "dark green", 
+            "light green", "dark orange", "light orange", "dark red",
+            "light red", "dark brown", "light brown", "dark pink",
+            "light pink", "dark yellow", "light yellow", "dark purple",
+            "light purple", "dark teal", "light teal"};
 
         private List<string> AllAdjectives = new List<string>() {
             "swirling","glowing","bland-looking","spotted","bright",
@@ -117,46 +125,48 @@ namespace FChatDicebot.DiceFunctions
             "pecan pie","eggnog","turkey","deviled eggs","sweet potato",
             "chicken","bubblegum","mead","honey","cheesecake",
             "pineapple","grapefruit","grape","raisin","mud",
-            "boogers","saliva"
+            "boogers","saliva","sardines","salmon","burnt toast",
+            "pine wood","spoiled milk","plain yogurt","mineral water"
         };
 
         private List<string> AllOrigins = new List<string>() {
             "Potion generated!","Please take this potion.","Potion created.","I brewed this for you.","You'll want this one.",
             "Use with caution.","I think the formula was right.","This one is a favorite.","I'm not sure where this one came from.","Not another one of these...",
             "Potions are easy.","Maybe one day I'll run out of these.","Hopefully this helps.","You can thank me later.","A potion for all seasons.",
-            "Don't tell anyone you got it here.","Another freebie, eh?","Potion ready~", "Potion here!","Tell me how this one feels."
+            "Don't tell anyone you got it here.","Another freebie, eh?","Potion ready~", "Potion here!","Tell me how this one feels.",
+            "I got this one on sale.","Potion acquired.","Oh good, you want it.","This is what I had lying around.","Another button push, another potion.",
+            "Made with love.","Take this, I have too many.","Potion generated.","Your potion has arrived."
         };
 
-        private List<string> AllWords = new List<string>() {
-            "idol","that","I","and","servant","king","bottle"
-        };
+        private List<string> AllTriggerWords = new List<string>();
 
-        private List<Enchantment> AllEnchantments = new List<Enchantment>() {
-            new Enchantment(true, "Bloat", "Bloating", "You balloon in size, increasing dramatically in weight. It's all fat, too.", 0.5),
-            new Enchantment(true, "Deep Sleep", "Deep Slumber", "You instantly fall asleep. The slumber is deep enough that it takes quite a lot to wake you up too, but if you're physically damaged you'll awaken.", 0.5),
-            new Enchantment(true, "Clumsy", "Clumsiness", "You lose almost all of your physical coordination. Just walking around is about as good as you can do without messing up somehow.", 0.5),
-            
-            //common here:
-            new Enchantment(false, "Cleansing", "Cleansing", "Removes all potion effects", 2),
-            new Enchantment(false, "Taste Flavoring", "Taste Flavor", "Everything you consume tastes like [Flavor].", 2),
-            new Enchantment(false, "Skin Coloring", "Skin Color", "Changes the color of your skin to [Color].", 2),
-            
-            //additional here:
-            new Enchantment(false, "Strength", "Strength", "Your physical and magical strength is magnified to a huge level!"),
-            new Enchantment(false, "Forgetful", "Forgetfulness", "You find the simplest things hard to remember, and you might as well not even try for about anything longer than a few words."),
-            
+        private List<Enchantment> AllEnchantments = new List<Enchantment>();
 
-        };
+        private List<Enchantment> CommonEnchantments = new List<Enchantment>();
 
-        private List<Enchantment> CommonEnchantments = new List<Enchantment>() {
-            new Enchantment(false, "Cleansing", "Cleansing", "Removes all potion effects", 2),
-            new Enchantment(false, "Taste Flavoring", "Taste Flavor", "Everything you consume tastes like [Flavor].", 2),
-            new Enchantment(false, "Skin Coloring", "Skin Color", "Changes the color of your skin to [Color].", 2),
-        };
-
-        public List<Enchantment> GetAllEnchantments()
+        public List<Enchantment> GetAllEnchantments(BotMain botMain, bool includeCustom, string channel)
         {
-            return AllEnchantments;
+            if(includeCustom)
+            {
+                var potionos = botMain.GetChannelPotions(channel);
+                List<Enchantment> enchantments = new List<Enchantment>(AllEnchantments);
+                enchantments.AddRange(potionos);
+                return enchantments;
+            }
+            else
+            {
+                return AllEnchantments;
+            }
+        }
+
+        public List<Enchantment> GetCommonEnchantments()
+        {
+            return CommonEnchantments;
+        }
+
+        public List<string> GetTriggerWords()
+        {
+            return AllTriggerWords;
         }
 
         private Potion GeneratePotionBase()
@@ -171,44 +181,55 @@ namespace FChatDicebot.DiceFunctions
 
             potion.flavor = GetRandomFlavor(Random);
             potion.eicon = GetRandomEicon(Random);
+            potion.RandomSeed = Random.Next(Int32.MaxValue - 1) + 1;
 
             return potion;
         }
 
-        public Potion GeneratePotionWithSpecificEffect(bool allowFlavor, bool allowLewd, bool requireLewd, string potionEffectSearch)
+        public Potion GeneratePotionWithSpecificEffect(List<Enchantment> channelPotions, bool allowFlavor, bool allowLewd, bool requireLewd, string potionEffectSearch)
         {
             Potion potion = GeneratePotionBase();
 
-            Enchantment specific = GetSpecificEnchantment(potionEffectSearch);
+            Enchantment specific = GetSpecificEnchantment(channelPotions, potionEffectSearch);
 
             potion.enchantment = specific;
+            if (specific != null && !string.IsNullOrEmpty(specific.OverrideEicon))
+                potion.eicon = specific.OverrideEicon;
 
             return potion;
         }
 
-        public Enchantment GetSpecificEnchantment(string potionEffectSearch)
+        public Enchantment GetSpecificEnchantment(List<Enchantment> channelPotions, string potionEffectSearch)
         {
-            return AllEnchantments.FirstOrDefault(a => a.prefix.ToLower() == potionEffectSearch || a.suffix.ToLower() == potionEffectSearch);
+            Enchantment found = channelPotions == null ? null : channelPotions.FirstOrDefault(a => a.prefix.ToLower() == potionEffectSearch || a.suffix.ToLower() == potionEffectSearch);
+
+            return found == null? AllEnchantments.FirstOrDefault(a => a.prefix.ToLower() == potionEffectSearch || a.suffix.ToLower() == potionEffectSearch) : found;
         }
 
-        public Potion GeneratePotion(bool allowFlavor, bool allowLewd, bool requireLewd)
+        public Potion GeneratePotion(List<Enchantment> channelPotions, bool useDefaultPotions, bool allowFlavor, bool allowLewd, bool requireLewd)
         {
             Potion potion = GeneratePotionBase();
 
-            potion.enchantment = GetRandomEnchantment(Random, allowFlavor, allowLewd, requireLewd);
+            potion.enchantment = GetRandomEnchantment(Random, channelPotions, useDefaultPotions, allowFlavor, allowLewd, requireLewd);
+
+            if (potion.enchantment != null && !string.IsNullOrEmpty(potion.enchantment.OverrideEicon))
+                potion.eicon = potion.enchantment.OverrideEicon;
 
             return potion;
         }
 
-        public string GetPotionGenerationOutputString(Potion p)
+        public string GetPotionGenerationOutputString(Potion p, bool includeOrigin)
         {
             if (p == null)
                 return "Error: Potion was null.";
+            System.Random thisRandom = new System.Random(p.RandomSeed > 0 ? p.RandomSeed : Random.Next(100000));
+
             String potionString = p.ToString();
-            String returnString = SubstituteWords(potionString);
+            String returnString = SubstituteWords(potionString, thisRandom);
             if (p.enchantment == null)
                 return returnString;
-            returnString = GetRandomOrigin(Random) + " " + returnString;
+            String originString = GetRandomOrigin(thisRandom);
+            returnString = (includeOrigin? originString + "\n" : "") + returnString;
             return returnString;
         }
 
@@ -230,34 +251,46 @@ namespace FChatDicebot.DiceFunctions
             return strength;
         }
 
-        public string SubstituteWords(string input)
+        public string SubstituteWords(string input, System.Random random)
         {
-            string randomWord = GetRandomWord(Random);
-            string randomColor = GetRandomColor(Random);
-            string randomColor2 = GetRandomColor(Random);
-            string randomFlavor = GetRandomFlavor(Random);
+            string randomWord = GetRandomWord(random);
+            string randomColor = GetRandomColor(random);
+            string randomColor2 = GetUniqueRandomColor(random, new List<string>() { randomColor });
+            string randomFlavor = GetRandomFlavor(random);
 
-            string returnString = input.Replace("[Color]", randomColor)
-                    .Replace("[Color2]", randomColor2)
-                    .Replace("[Flavor]", randomFlavor)
-                    .Replace("[Word]", randomWord);
-            if(input.Contains("[Word2]"))
+            string returnString = input.Replace("#Color#", randomColor)
+                    .Replace("#Color2#", randomColor2)
+                    .Replace("#Flavor#", randomFlavor)
+                    .Replace("#Word#", randomWord);
+            if (input.Contains("#Word2#"))
             {
-                string randomWord2 = GetRandomWord(Random);
-                string randomWord3 = GetRandomWord(Random);
-                string randomWord4 = GetRandomWord(Random);
-                string randomWord5 = GetRandomWord(Random);
-                string randomWord6 = GetRandomWord(Random);
-                string randomWord7 = GetRandomWord(Random);
-                string randomWord8 = GetRandomWord(Random);
-                string randomWord9 = GetRandomWord(Random);
-                string randomWord10 = GetRandomWord(Random);
-                returnString = returnString.Replace("[Word2]", randomWord2).Replace("[Word3]", randomWord3).Replace("[Word4]", randomWord4)
-                    .Replace("[Word5]", randomWord5).Replace("[Word6]", randomWord6).Replace("[Word7]", randomWord7).Replace("[Word8]", randomWord8)
-                    .Replace("[Word9]", randomWord9).Replace("[Word10]", randomWord10);
+                string randomWord2 = GetRandomWord(random);
+                string randomWord3 = GetRandomWord(random);
+                string randomWord4 = GetRandomWord(random);
+                string randomWord5 = GetRandomWord(random);
+                string randomWord6 = GetRandomWord(random);
+                string randomWord7 = GetRandomWord(random);
+                string randomWord8 = GetRandomWord(random);
+                string randomWord9 = GetRandomWord(random);
+                string randomWord10 = GetRandomWord(random);
+                returnString = returnString.Replace("#Word2#", randomWord2).Replace("#Word3#", randomWord3).Replace("#Word4#", randomWord4)
+                    .Replace("#Word5#", randomWord5).Replace("#Word6#", randomWord6).Replace("#Word7#", randomWord7).Replace("#Word8#", randomWord8)
+                    .Replace("#Word9#", randomWord9).Replace("#Word10#", randomWord10);
             }
 
             return returnString;
+        }
+
+        public string GetUniqueRandomColor(Random r, List<string> existing)
+        {
+            string newColor = GetRandomColor(r);
+            int safety = 100;
+            while(existing.Contains(newColor) && safety > 0)
+            {
+                safety--;
+                newColor = GetRandomColor(r);
+            }
+            return newColor;
         }
 
         public string GetRandomColor(Random r)
@@ -287,7 +320,7 @@ namespace FChatDicebot.DiceFunctions
 
         public string GetRandomWord(Random r)
         {
-            return AllWords[r.Next(AllWords.Count)];
+            return AllTriggerWords[r.Next(AllTriggerWords.Count)];
         }
 
         public string GetRandomOrigin(Random r)
@@ -295,26 +328,37 @@ namespace FChatDicebot.DiceFunctions
             return AllOrigins[r.Next(AllOrigins.Count)];
         }
 
-        public Enchantment GetRandomEnchantment(Random r, bool allowFlavor, bool allowLewd, bool requireLewd)
+        public Enchantment GetRandomEnchantment(Random r, List<Enchantment> channelPotion, bool useDefaultPotions, bool allowFlavor, bool allowLewd, bool requireLewd)
         {
-            Enchantment first = GetRandomEnchantment(r, allowLewd, requireLewd);
+            Enchantment first = GetRandomEnchantment(r, channelPotion, useDefaultPotions, allowLewd, requireLewd);
             int safety = 0;
 
             while (!allowFlavor && first.suffix.ToLower().Contains("flavor"))
             {
                 safety++;
-                first = GetRandomEnchantment(r, allowLewd, requireLewd);
+                first = GetRandomEnchantment(r, channelPotion, useDefaultPotions, allowLewd, requireLewd);
             }
 
             return first;
         }
 
-        public Enchantment GetRandomEnchantment(Random r, bool allowKinky, bool requireKinky)
+        private Enchantment GetRandomEnchantment(Random r, List<Enchantment> channelPotions, bool useDefaultPotions, bool allowKinky, bool requireKinky)
         {
             double seed = r.NextDouble();
 
-            List<Enchantment> relevantCommonEnchantments = CommonEnchantments;
-            List<Enchantment> relevantAllEnchantments = AllEnchantments;
+            List<Enchantment> relevantCommonEnchantments = new List<Enchantment>(CommonEnchantments);
+            List<Enchantment> relevantAllEnchantments = new List<Enchantment>(AllEnchantments);
+
+            if (!useDefaultPotions)
+            {
+                relevantCommonEnchantments = new List<Enchantment>();
+                relevantAllEnchantments = new List<Enchantment>();
+            }
+            if(channelPotions != null)
+            {
+                relevantAllEnchantments.AddRange(channelPotions);
+            }
+
             if (requireKinky)
             {
                 relevantCommonEnchantments = relevantCommonEnchantments.Where(ba => ba.kinky).ToList();
@@ -326,7 +370,12 @@ namespace FChatDicebot.DiceFunctions
                 relevantAllEnchantments = relevantAllEnchantments.Where(ba => !ba.kinky).ToList();
             }
 
-            if (seed <= .33) //was .40
+            if(relevantAllEnchantments.Count() == 0)
+            {
+                return new Enchantment(false, "Watery", "of Water", "This is just some water... What happened? [sub](no matching potions found)[/sub]");
+            }
+
+            if (seed <= .33 && useDefaultPotions) //was .40
             {
                 return relevantCommonEnchantments[r.Next(relevantCommonEnchantments.Count)];
             }
@@ -351,15 +400,15 @@ namespace FChatDicebot.DiceFunctions
 
     public class PotionGenerationInfo
     {
-
         public List<string> AllColors;
         public List<string> AllAdjectives;
         public List<string> AllPotionNouns;
         public List<string> AllEicons;
         public List<string> AllFlavors;
         public List<string> AllOrigins;
-        public List<string> AllWords;
+        public List<string> AllTriggerWords;
         public List<Enchantment> AllEnchantments;
+        public List<Enchantment> CommonEnchantments;
 
     }
 }

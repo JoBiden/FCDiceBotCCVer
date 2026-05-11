@@ -24,7 +24,8 @@ namespace FChatDicebot.BotCommands
         public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
         {
             //get player name to remove
-            string allInputs = Utils.GetFullStringOfInputs(rawTerms);
+            string allInputs = Utils.GetUserNameFromFullInputs(rawTerms);
+
             if(allInputs.Contains("_noreplace_"))
             {
                 allInputs.Replace("_noreplace_", "");

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using FChatDicebot.DiceFunctions;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -30,6 +31,13 @@ namespace FChatDicebot.SavedData
         public bool DefaultSlotsFruit;
         public bool UseVcAccountForChips;
         public bool StartupChannel;
+        public bool AllowWork;
+        public int WorkMultiplier;
+        public int WorkTierRange;
+        public int WorkBaseAmount;
+        public PrintSetting CardPrintSetting;
+        public bool UseDefaultPotions;
+        public int PotionChipsCost;
 
         //todo: these settings are currently inactive
         public bool OnlyChannelOpsCanUseAnyBotCommands;

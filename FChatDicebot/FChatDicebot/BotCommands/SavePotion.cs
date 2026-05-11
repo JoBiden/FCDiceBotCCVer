@@ -25,23 +25,21 @@ namespace FChatDicebot.BotCommands
         public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
         {
             string saveJson = Utils.GetFullStringOfInputs(rawTerms);
-            string sendMessage = "save potion NYI";
-
-            bot.SendMessageInChannel(sendMessage, channel);
-            return;
+            string sendMessage = "save potion error";
 
             try
             {
                 FChatDicebot.DiceFunctions.Enchantment newPotion = JsonConvert.DeserializeObject<FChatDicebot.DiceFunctions.Enchantment>(saveJson);
 
-                List<Enchantment> allEnchantments = bot.DiceBot.PotionGenerator.GetAllEnchantments();
+                List<Enchantment> allEnchantments = bot.DiceBot.PotionGenerator.GetAllEnchantments(bot, true, channel);
                 var thisCharacterEnchantments = allEnchantments.Where(a => a.CreatedBy == characterName);
                 string lowerPre = newPotion.prefix.ToLower();
                 string lowerSuf = newPotion.suffix.ToLower();
+                var thisCharacterTotalEnchantments = bot.GetCharacterTotalEnchantments(characterName);
 
                 FChatDicebot.DiceFunctions.Enchantment existingEnchantment = allEnchantments.FirstOrDefault(a => a.suffix.ToLower() == lowerSuf || a.prefix.ToLower() == lowerPre);
 
-                if (thisCharacterEnchantments.Count() >= BotMain.MaximumSavedTablesPerCharacter && existingEnchantment == null)
+                if (thisCharacterTotalEnchantments.Count() >= BotMain.MaximumSavedPotionsPerCharacter && existingEnchantment == null)
                 {
                     sendMessage = "Failed: A character can only save up to " + BotMain.MaximumSavedPotionsPerCharacter + " potions at one time. Delete or overwrite old potions.";
                 }
@@ -67,10 +65,11 @@ namespace FChatDicebot.BotCommands
                     newPotion.Flag = EnchantmentFlag.UserGenerated;
 
                     newPotion.explanation = newPotion.explanation == null ? null : Utils.LimitStringToNCharacters(newPotion.explanation, BotMain.MaximumCharactersPotionDescription);
-                    newPotion.prefix = newPotion.prefix == null ? null : Utils.LimitStringToNCharacters(newPotion.explanation, BotMain.MaximumCharactersPotionName);
-                    newPotion.suffix = newPotion.suffix == null ? null : Utils.LimitStringToNCharacters(newPotion.explanation, BotMain.MaximumCharactersPotionName);
+                    newPotion.prefix = newPotion.prefix == null ? null : Utils.LimitStringToNCharacters(newPotion.prefix, BotMain.MaximumCharactersPotionName);
+                    newPotion.suffix = newPotion.suffix == null ? null : Utils.LimitStringToNCharacters(newPotion.suffix, BotMain.MaximumCharactersPotionName);
                     newPotion.OverrideEicon = newPotion.OverrideEicon == null ? null : Utils.LimitStringToNCharacters(newPotion.OverrideEicon, BotMain.MaximumCharactersPotionName);
-                
+
+                    newPotion.HidePotionDetails = newPotion.HidePotionDetails;
                     if (existingEnchantment != null)
                     {
                         existingEnchantment.Copy(newPotion);
@@ -88,10 +87,8 @@ namespace FChatDicebot.BotCommands
                         bot.SavedPotions.Add(newSavedPotion);
                     }
 
-                    Utils.WriteToFileAsData(bot.SavedPotions, Utils.GetTotalFileName(BotMain.FileFolder, BotMain.SavedPotionsFileName));
-                    //TODO: merge savedpotion implement with the enchantments list
-                    //TODO: load: add the savedpotions on load to the list of available potion enchantments
-
+                    commandController.SavePotionDataToDisk();
+                    
                     sendMessage = "[b]Success[/b]. Potion saved by " + Utils.GetCharacterUserTags(characterName) + ". This can now be generated using !generatepotion " + newPotion.suffix.ToLower();
                 }
             }

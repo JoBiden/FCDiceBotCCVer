@@ -78,7 +78,7 @@ namespace FChatDicebot.BotCommands
                         bot.BotCommandController.SaveChipsToDisk("Cashout");
                         bot.DiceBot.StartCountdownTimer(channel, characterName + DiceBot.PlayerCashoutSuffix, characterName, DiceBot.CashoutCooldownMs);
 
-                        responseMessage = giveChips + "\n" + Utils.GetCharacterUserTags(characterName) + " has cashed out their chips for [color=green]VC$" + cashoutAmount + "[/color]\n[sub]Please accept the VC invoice as soon as possible.[/sub]";// You may not cash out again for 72 hours.[/sub]";
+                        responseMessage = giveChips + "\n" + Utils.GetCharacterUserTags(characterName) + " has cashed out their chips for [color=green]VC$" + cashoutAmount + "[/color]\n[sub]Please accept the VC invoice as soon as possible.[/sub]";
                     }
                     else
                     {

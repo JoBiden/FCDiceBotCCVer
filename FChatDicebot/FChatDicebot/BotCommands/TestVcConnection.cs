@@ -27,7 +27,7 @@ namespace FChatDicebot.BotCommands
             bot.SendMessageInChannel("Authorization completed, token retrieved... " + (bot.VelvetcuffConnection.CurrentOAuthVcKey == null? "null" : bot.VelvetcuffConnection.CurrentOAuthVcKey.Take(10) ) + "... " + success, channel);
             
             //perform create transaction
-            success = bot.VelvetcuffConnection.CreateNewVcTransaction(1000, "Platinum Luxury", "Dice Bot", true, "Cash out for 1000 from casino");
+            success = bot.VelvetcuffConnection.CreateNewVcTransaction(1000, "Platinum Luxury", DiceBot.DiceBotCharacter, true, "Cash out for 1000 from casino");
             bot.SendMessageInChannel("Transaction created... " +  bot.VelvetcuffConnection.CurrentPaymentId + "... " + success, channel);
             
             //perform check transaction

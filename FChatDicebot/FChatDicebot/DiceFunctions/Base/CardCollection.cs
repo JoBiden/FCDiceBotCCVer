@@ -7,6 +7,7 @@ namespace FChatDicebot.DiceFunctions
     public abstract class CardCollection
     {
         public string Id;
+        public string DeckTypeId;
         protected List<DeckCard> Cards;
         protected string CollectionName = "";
 
@@ -16,12 +17,12 @@ namespace FChatDicebot.DiceFunctions
             if (Cards == null || Cards.Count == 0)
                 return CollectionName + " empty";
 
-            rtnString = GetCollectionString(true);
+            rtnString = GetCollectionString(true, null);
 
             return rtnString;
         }
 
-        public string ToString(bool showHandSize, bool includeAddress = true)
+        public string Print(bool showHandSize, PrintSetting printSetting, bool includeAddress = true)
         {
             string rtnString = "";
             if (Cards == null || Cards.Count == 0)
@@ -46,13 +47,13 @@ namespace FChatDicebot.DiceFunctions
             }
             else
             {
-                rtnString = GetCollectionString(includeAddress);
+                rtnString = GetCollectionString(includeAddress, printSetting);
             }
 
             return rtnString;
         }
 
-        private string GetCollectionString(bool includeAddress)
+        private string GetCollectionString(bool includeAddress, PrintSetting printSetting)
         {
             string rtnString = "";
             int counter = 1;
@@ -62,7 +63,7 @@ namespace FChatDicebot.DiceFunctions
                 {
                     rtnString += ", ";
                 }
-                rtnString += (includeAddress? "(" + counter + ") ":"") + d.ToString();
+                rtnString += (includeAddress? "[sub](" + counter + ")[/sub] ":"") + d.Print(printSetting);
                 counter += 1;
             }
             return rtnString;

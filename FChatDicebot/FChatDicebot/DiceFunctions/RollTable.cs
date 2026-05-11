@@ -12,6 +12,7 @@ namespace FChatDicebot.DiceFunctions
         public int DieSides = 0;
         public string Name;
         public string Description;
+        public bool OnlyShowResultDescription;
 
         public List<TableEntry> TableEntries;
 
@@ -23,8 +24,10 @@ namespace FChatDicebot.DiceFunctions
             string rollBonusString = RollBonus != 0 ? (" " + (RollBonus > 0 ? "+" : "") + RollBonus.ToString()) : "";
             string rollModifierString = Utils.GetRollModifierString(rollModifier);
 
-            string nameString = "[b]" + Name + "[/b]\n";
-            string rollString = nameString + "[i]Rolled [b]" + rollAmount + "[/b] (1d" + DieSides + rollBonusString + rollModifierString + ")[/i]";
+            string nameString = "[b]" + Name + "[/b]";
+            string rollString = nameString;
+            if(!OnlyShowResultDescription)
+                rollString += "\n[i]Rolled [b]" + rollAmount + "[/b] (1d" + DieSides + rollBonusString + rollModifierString + ")[/i]";
 
             TableEntry foundEntry = TableEntries.FirstOrDefault(a => a.Roll == rollAmount);
 
@@ -43,7 +46,7 @@ namespace FChatDicebot.DiceFunctions
             List<TableRollTrigger> triggeredRolls = null;
             if(foundEntry != null)
             {
-                rtnString = foundEntry.ToString(includeRollLabel);
+                rtnString = foundEntry.ToString(includeRollLabel, OnlyShowResultDescription);
 
                 if(includeSecondaryRolls)
                 {
@@ -82,7 +85,7 @@ namespace FChatDicebot.DiceFunctions
                     if (!string.IsNullOrEmpty(rtnString))
                         rtnString += "\n";
 
-                    rtnString += t.ToString(true);
+                    rtnString += t.ToString(true, false);
                 }
             }
             return rtnString;

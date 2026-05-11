@@ -21,13 +21,13 @@ namespace FChatDicebot.BotCommands
 
         public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
         {
-            DeckType deckType = commandController.GetDeckTypeFromCommandTerms(terms);
+            string customDeckName = "";
+            DeckType deckType = commandController.GetDeckTypeFromCommandTerms(terms, out customDeckName);
+            SavedData.ChannelSettings channelSettings = bot.GetChannelSettings(channel);
 
             string deckTypeString = Utils.GetDeckTypeStringHidePlaying(deckType, characterName);
             
-            string customDeckName = Utils.GetCustomDeckName(characterName);
-            
-            string deckList = bot.DiceBot.ViewEntireDeck(channel, deckType, customDeckName);
+            string deckList = bot.DiceBot.ViewEntireDeck(channel, channelSettings.CardPrintSetting, deckType, customDeckName);
             bot.SendMessageInChannel("[i]" + deckTypeString + "Channel deck list. :[/i]" + deckList, channel);
         }
     }

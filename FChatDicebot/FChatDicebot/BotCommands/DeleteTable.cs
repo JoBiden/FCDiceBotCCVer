@@ -27,14 +27,14 @@ namespace FChatDicebot.BotCommands
             bool characterIsAdmin = Utils.IsCharacterAdmin(bot.AccountSettings.AdminCharacters, characterName);
             SavedRollTable deleteTable = Utils.GetTableFromId(bot.SavedTables, tableName);
 
-            string sendMessage = "No tables found for [user]" + characterName + "[/user]";
+            string sendMessage = "No tables found for " + Utils.GetCharacterUserTags(characterName) + " with id " + tableName;
             if (deleteTable != null)
             {
                 if (characterName == deleteTable.OriginCharacter || characterIsAdmin)
                 {
                     bot.SavedTables.Remove(deleteTable);
 
-                    sendMessage = "[b]" + deleteTable.TableId + "[/b] deleted by [user]" + characterName + "[/user]";
+                    sendMessage = "[b]" + deleteTable.TableId + "[/b] deleted by " + Utils.GetCharacterUserTags(characterName);
 
                     Utils.WriteToFileAsData(bot.SavedTables, Utils.GetTotalFileName(BotMain.FileFolder, BotMain.SavedTablesFileName));
                 }

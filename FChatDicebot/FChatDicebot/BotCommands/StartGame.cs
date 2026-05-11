@@ -65,9 +65,9 @@ namespace FChatDicebot.BotCommands
                             messageString = sesh.CurrentGame.GetStartingDisplay();
                             messageString += "\n" + bot.DiceBot.StartGame(channel, characterName, gametype, bot, keepSession, endSession);
 
-                            if (gametype.GetMinimumMsBetweenGames() > 0)// sesh.CurrentGame.GetType() == typeof(Roulette))
+                            if (gametype.GetMinimumMsBetweenGames() > 0)
                             {
-                                bot.DiceBot.StartCountdownTimer(channel, gametype.GetGameName(), characterName, gametype.GetMinimumMsBetweenGames());// 5 * 60 * 1000);
+                                bot.DiceBot.StartCountdownTimer(channel, gametype.GetGameName(), characterName, gametype.GetMinimumMsBetweenGames());
                             }
 
                             commandController.SaveChipsToDisk("StartGame");
@@ -83,7 +83,7 @@ namespace FChatDicebot.BotCommands
             }
             else
             {
-                bot.SendMessageInChannel(Name + " is currently not allowed in this channel under " + Utils.GetCharacterUserTags("Dice Bot") + "'s settings for this channel.", channel);
+                bot.SendMessageInChannel(Name + " is currently not allowed in this channel under " + Utils.GetCharacterUserTags(DiceBot.DiceBotCharacter) + "'s settings for this channel.", channel);
             }
         }
     }

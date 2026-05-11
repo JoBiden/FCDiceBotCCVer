@@ -44,6 +44,16 @@ namespace FChatDicebot.DiceFunctions
             return 0;
         }
 
+        public string GetGameHelp()
+        {
+            string thisGameCommands = "showallnumbers, endround" +
+                    "\n(as current player only): awardpoints # # (award points to players of these numbers. i.e.- !gc awardpoints 2 4)";
+            string thisGameStartupOptions = "(none)" +
+                    "\nThe default rules are: The king is chosen at random each round, the king ends the round by awarding points";
+
+            return GameSession.GetGameHelp(GetGameName(), thisGameCommands, thisGameStartupOptions, false, false);
+        }
+
         public string GetStartingDisplay()
         {
             return "[eicon]dbkingsgame1b[/eicon][eicon]dbkingsgame2b[/eicon]";
@@ -222,6 +232,11 @@ namespace FChatDicebot.DiceFunctions
             return outputString;
         }
 
+        public void Update(BotMain botMain, GameSession session, double currentTime)
+        {
+
+        }
+
         private string GetPlayerNumbers(GameSession session)
         {
             string playerRoles = "player roles not recorded";
@@ -291,6 +306,7 @@ namespace FChatDicebot.DiceFunctions
         public string IssueGameCommand(DiceBot diceBot, BotMain botMain, string character, string channel, GameSession session, string[] terms, string[] rawTerms)
         {
             string returnString = "";
+
             if(terms.Contains("showallnumbers"))
             {
                 if(session.State == GameState.GameInProgress)

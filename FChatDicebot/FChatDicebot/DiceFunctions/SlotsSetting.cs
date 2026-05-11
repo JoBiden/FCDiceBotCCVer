@@ -108,24 +108,30 @@ namespace FChatDicebot.DiceFunctions
 
                 
                 bool doubleSetTrigger = false;
-                foreach (var qq in oneSameIds)
+                if(DoubleSetTriggerIndexes != null)
                 {
-                    var thisElement = qq.First();
-                    if (DoubleSetTriggerIndexes.Contains(thisElement.Id))
-                        doubleSetTrigger = true;
+                    foreach (var qq in oneSameIds)
+                    {
+                        var thisElement = qq.First();
+                        if (DoubleSetTriggerIndexes.Contains(thisElement.Id))
+                            doubleSetTrigger = true;
+                    }
                 }
 
                 bool penaltyTrigger = false;
-                foreach( var qq in oneSameIds)
+                if(PenaltyTriggerIndexes != null)
                 {
-                    var thisElement = qq.First();
-                    if(PenaltyTriggerIndexes.Contains(thisElement.Id))
-                        penaltyTrigger = true;
+                    foreach (var qq in oneSameIds)
+                    {
+                        var thisElement = qq.First();
+                        if (PenaltyTriggerIndexes.Contains(thisElement.Id))
+                            penaltyTrigger = true;
+                    }
                 }
 
                 if(twoSameIds != null && twoSameIds.Count() > 0)
                 {
-                    var rollWithTwo = twoSameIds.First();//[0];
+                    var rollWithTwo = twoSameIds.First();
                     int relevantId = rollWithTwo.Id;
 
                     SlotRoll entry = SlotsEntry.FirstOrDefault(a => a.Id == relevantId);
@@ -167,9 +173,9 @@ namespace FChatDicebot.DiceFunctions
             if (existingRolls != null && existingRolls.Count == 2 && existingRolls[0].Id == existingRolls[1].Id)
             {
                 double rerollSeed = rnd.NextDouble();
-                if (!existingRolls[0].WinsJackpot && rollAmount == existingRolls[0].Id && rerollSeed < RerollMatch)// .5)
+                if (!existingRolls[0].WinsJackpot && rollAmount == existingRolls[0].Id && rerollSeed < RerollMatch)
                     rollAmount = rnd.Next(0, entries);//reroll if there's a match y% of the time
-                else if (existingRolls[0].WinsJackpot && rollAmount == existingRolls[0].Id && rerollSeed < RerollJackpot)//.8)
+                else if (existingRolls[0].WinsJackpot && rollAmount == existingRolls[0].Id && rerollSeed < RerollJackpot)
                     rollAmount = rnd.Next(0, entries);//another reroll for jackpot x% of the time
             }
 
@@ -268,7 +274,7 @@ namespace FChatDicebot.DiceFunctions
             {
                 if(WonJackpot)
                 {
-                    winString = "[eicon]fireworks[/eicon][color=yellow]J[/color] [color=orange]A[/color] [color=yellow]C[/color] [color=orange]K[/color] [color=yellow]P[/color] [color=orange]O[/color] [color=yellow]T[/color][eicon]fireworks[/eicon]";
+                    winString = "[eicon]fireworks[/eicon][b][color=yellow]J[/color] [color=orange]A[/color] [color=yellow]C[/color] [color=orange]K[/color] [color=yellow]P[/color] [color=orange]O[/color] [color=yellow]T[/color][/b][eicon]fireworks[/eicon]";
                 }
                 else
                 {

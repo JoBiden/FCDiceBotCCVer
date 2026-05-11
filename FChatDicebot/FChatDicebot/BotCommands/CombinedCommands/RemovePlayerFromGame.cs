@@ -51,7 +51,7 @@ namespace FChatDicebot.BotCommands.Base
                     }
                     else
                     {
-                        messageString = "Error: Game session for " + gametype.GetGameName() + " not found or created.";
+                        messageString = "Failed: Game session for " + gametype.GetGameName() + " not found or created.";
                     }
                 }
 
@@ -59,7 +59,7 @@ namespace FChatDicebot.BotCommands.Base
             }
             else
             {
-                bot.SendMessageInChannel(originCommandName + " is currently not allowed in this channel under " + Utils.GetCharacterUserTags("Dice Bot") + "'s settings for this channel.", channel);
+                bot.SendMessageInChannel(originCommandName + " is currently not allowed in this channel under " + Utils.GetCharacterUserTags(DiceBot.DiceBotCharacter) + "'s settings for this channel.", channel);
             }
         }
     }

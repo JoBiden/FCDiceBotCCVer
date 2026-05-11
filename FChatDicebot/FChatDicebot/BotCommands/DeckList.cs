@@ -21,15 +21,17 @@ namespace FChatDicebot.BotCommands
 
         public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
         {
-            DeckType deckType = commandController.GetDeckTypeFromCommandTerms(terms);
+            string customDeckName = "";
+            DeckType deckType = commandController.GetDeckTypeFromCommandTerms(terms, out customDeckName);
 
-            string customDeckName = Utils.GetCustomDeckName(characterName);
             string deckTypeString = Utils.GetDeckTypeStringHidePlaying(deckType, customDeckName);
+
+            var channelSettings = bot.GetChannelSettings(channel);
 
             Deck a = bot.DiceBot.GetDeck(channel, deckType, customDeckName);
             string sendString = "";
             if(a != null)
-                sendString = "[i]" + deckTypeString + "Channel deck contents: [/i]" + a.ToString();
+                sendString = "[i]" + deckTypeString + "Channel deck contents: [/i]" + a.Print(false, channelSettings.CardPrintSetting);
             else
                 sendString = "[i]Error: " + deckTypeString + " deck not found[/i]";
 

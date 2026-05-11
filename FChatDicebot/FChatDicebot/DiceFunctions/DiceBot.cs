@@ -48,7 +48,6 @@ namespace FChatDicebot.DiceFunctions
         public List<GameSession> GameSessions;
         public List<CountdownTimer> CountdownTimers;
         public PotionGenerator PotionGenerator;
-        public List<ItemOwned> ItemsOwned;
         public List<ChannelDiceRoll> LastRolls;
         public List<VcChipOrder> VcChipOrders;
 
@@ -69,11 +68,10 @@ namespace FChatDicebot.DiceFunctions
             GameSessions = new List<GameSession>();
             CountdownTimers = new List<CountdownTimer>();
             PotionGenerator = new DiceFunctions.PotionGenerator(random);
-            ItemsOwned = new List<ItemOwned>();
             LastRolls = new List<ChannelDiceRoll>();
             VcChipOrders = new List<VcChipOrder>();
 
-            PossibleGames = new List<IGame>() { new HighRoll(), new Poker(), new BottleSpin(), new Roulette(), new KingsGame(), new LiarsDice(), new Pokergame(), new SlamRoll(), new Blackjack(), new RockPaperScissors() };
+            PossibleGames = new List<IGame>() { new HighRoll(), new Poker(), new BottleSpin(), new Roulette(), new KingsGame(), new LiarsDice(), new SlamRoll(), new Blackjack(), new RockPaperScissors(), new Mafia() };
 
             //LoadChipPilesFromDisk(BotMain.FileFolder, BotMain.SavedChipsFileName);
             //LoadCharacterDataFromDisk(BotMain.FileFolder, BotMain.CharacterDataFileName);
@@ -93,8 +91,10 @@ namespace FChatDicebot.DiceFunctions
                 if (File.Exists(path))
                 {
                     string fileText = File.ReadAllText(path, Encoding.ASCII);
-                    
-                    Console.WriteLine("Chip piles file text " + fileText == null? "null" : fileText.Take(100) + "...");
+
+                    if (BotMain._debug)
+                        Console.WriteLine("Chip piles file text " + fileText == null? "null" : fileText.Take(100) + "...");
+
                     ChipPiles = JsonConvert.DeserializeObject<List<ChipPile>>(fileText);
 
                     if (BotMain._debug)
@@ -178,8 +178,8 @@ namespace FChatDicebot.DiceFunctions
                 ChannelId = channel,
                 Character = character,
                 Chips = amount,
-                Created = VelvetcuffConnection.ConvertToSecondsTimestamp(DateTime.UtcNow),
-                LastCheckedTime =  VelvetcuffConnection.ConvertToSecondsTimestamp(DateTime.UtcNow),
+                Created = Utils.GetCurrentTimestampSeconds(),
+                LastCheckedTime = Utils.GetCurrentTimestampSeconds(),
                 TransactionId = vcTransactionId,
                 CheckedCount = 0,
                 OrderStatus = 0
@@ -190,7 +190,7 @@ namespace FChatDicebot.DiceFunctions
         public string RollFitD(int diceNumber, string channel, string character)
         {
             int actualRolled = diceNumber <= 0? 2 : diceNumber;
-            DiceRoll roll = new DiceRoll()
+            DiceRoll roll = new DiceRoll(character, channel, this)
             {
                 DiceRolled = actualRolled,
                 DiceSides = 6,
@@ -262,7 +262,7 @@ namespace FChatDicebot.DiceFunctions
 
             foreach(string s in commandTerms)
             {
-                DiceRoll d = ParseRollFromCommand(s);
+                DiceRoll d = ParseRollFromCommand(s, character, channel);
 
                 d.Roll(random);
 
@@ -294,9 +294,13 @@ namespace FChatDicebot.DiceFunctions
                         }
                         totalResultString += allNumbers[i] + " ";
                     }
+                    
+                    string applyOperatorErrorString = "";
+                    ApplyNegatives(ref allNumbers, ref operators, out applyOperatorErrorString);
+                    if (applyOperatorErrorString != "")
+                        return ((new DiceRoll() { Error = true, ErrorString = applyOperatorErrorString }).ResultString());
 
                     //OOP first */
-                    string applyOperatorErrorString = "";
                     ApplyOperator(ref allNumbers, ref operators, '*', out applyOperatorErrorString);
                     if(applyOperatorErrorString != "")
                         return ((new DiceRoll() { Error = true, ErrorString = applyOperatorErrorString }).ResultString());
@@ -349,6 +353,27 @@ namespace FChatDicebot.DiceFunctions
             return totalResultString;
         }
 
+        public void ApplyNegatives(ref List<long> allNumbers, ref List<char> operators, out string error)
+        {
+            error = "";
+            if(allNumbers.Count() == operators.Count() + 1)
+            {
+                for (int i = 1; i < allNumbers.Count(); i++)
+                {
+                    if(operators[i-1] == '-')
+                    {
+                        allNumbers[i] = -1 * allNumbers[i];
+                        operators[i-1] = '+';
+                    }
+                }
+            }
+            else
+            {
+                error = "incorrect number of operators";
+            }
+
+        }
+
         public void ApplyOperator(ref List<long> allNumbers, ref List<char> operators, char op, out string error)
         {
             error = "";
@@ -380,7 +405,7 @@ namespace FChatDicebot.DiceFunctions
 
                 if ((double)result != resultcheck)
                 {
-                    error = "integer overflow";
+                    error = "long overflow";
                     return;
                 }
 
@@ -444,7 +469,7 @@ namespace FChatDicebot.DiceFunctions
             return commandTerms;
         }
 
-        public DiceRoll ParseRollFromCommand(string command)
+        public DiceRoll ParseRollFromCommand(string command, string characterName, string channelId)
         {
             if (string.IsNullOrEmpty(command))
                 return new DiceRoll() { Error = true, ErrorString = "command empty" };
@@ -550,7 +575,7 @@ namespace FChatDicebot.DiceFunctions
                 return new DiceRoll() { Error = true, ErrorString = "number of dice to choose must be less than total number of dice" };
 
 
-            return new DiceRoll()
+            return new DiceRoll(characterName, channelId, this)
             {
                 DiceRolled = numberDice,
                 DiceSides = numberSides,
@@ -681,12 +706,14 @@ namespace FChatDicebot.DiceFunctions
 
             string newChips = DisplayChipPile(channel, characterName, characterChips);
             string betBonusString = betMultiplier > 1 ? "(x" + betMultiplier + ")" : "";
-            string slotsSpinText = "[eicon]dbslots1[/eicon][eicon]dbslots2[/eicon]\n" + Utils.GetCharacterIconTags(characterName) + " is spinning the [b]" + slotsSetting.Name + "[/b] slot machine! " + betBonusString + "\n[sub]Putting in " + betAmount + " chips and pulling the lever...[/sub] " + result.GetJackpotString();
+            string slotsSpinText = "[eicon]dbslots1[/eicon][eicon]dbslots2[/eicon] " + Utils.GetCharacterIconTags(characterName) + " is spinning the [b]" + slotsSetting.Name + "[/b] slot machine! " + betBonusString + "\n[sub]Putting in " + betAmount + " chips and pulling the lever...[/sub] " + result.GetJackpotString();
             return slotsSpinText + "\n" + result.ToString();
         }
 
-        public string DrawCards(int numberDraws, bool includeJoker, bool fromDeck, string channelId, DeckType deckType, string character, bool secretDraw, out string trueDraw)
+        public string DrawCards(int numberDraws, bool includeJoker, bool fromDeck, string channelId, DeckType deckType, string deckTypeId, string character, bool secretDraw, DeckType fromExtraDecktype, string extraDeckId, out string trueDraw)
         {
+            SavedData.ChannelSettings channelSettings = botMain.GetChannelSettings(channelId);
+
             if (numberDraws <= 0)
                 numberDraws = 1;
 
@@ -696,12 +723,22 @@ namespace FChatDicebot.DiceFunctions
             string totalDrawString = "";
             trueDraw = "";
 
-            string customDeckName = Utils.GetCustomDeckName(character);
-            Deck relevantDeck = GetDeck(channelId, deckType, customDeckName);//just for checking help
+            DeckType deckTypeDrawnFrom = deckType;
+            string deckTypeIdUsed = deckTypeId;
+            if(fromExtraDecktype != DeckType.NONE)
+            {
+                deckTypeDrawnFrom = fromExtraDecktype;
+                deckTypeIdUsed = extraDeckId;
+            }
+            Deck relevantDeck = GetDeck(channelId, deckTypeDrawnFrom, deckTypeIdUsed);//just for checking help
             
+            if(relevantDeck == null)
+            {
+                return "Failed: Deck not found " + deckTypeDrawnFrom + " " + deckTypeIdUsed;
+            }
             string helpOutput = (relevantDeck.GetNumberCardsDrawn() == 0 && secretDraw)? " [sub]note: you can use the 'reveal' parameter to reveal your draws in the channel.[/sub]" : "";
 
-            Hand thisCharacterHand = GetHand(channelId, deckType, character);
+            Hand thisCharacterHand = GetHand(channelId, deckType, deckTypeId, character);
 
             int actualDraws = 0;
 
@@ -716,14 +753,14 @@ namespace FChatDicebot.DiceFunctions
                     break;
                 }
 
-                DeckCard d = DrawCard(random, includeJoker, fromDeck, channelId, deckType, customDeckName);
+                DeckCard d = DrawCard(random, includeJoker, fromDeck, channelId, deckTypeDrawnFrom, deckTypeIdUsed);
                 
                 if(d!= null)
                 {
                     thisCharacterHand.AddCard(d, random);
                     actualDraws++;
 
-                    totalDrawString += d.ToString();
+                    totalDrawString += d.Print(channelSettings.CardPrintSetting);
                 }
                 else
                 {
@@ -747,98 +784,99 @@ namespace FChatDicebot.DiceFunctions
             if (collectionName != null && collectionName.Count() > 2)
                 collectionName = collectionName.Substring(0, 1).ToUpper() + collectionName.Substring(1);//capitalize first in collection name
 
-            trueDraw += "\n[i]Current " + collectionName + ": [/i]" + thisCharacterHand.ToString();
-            totalDrawString += "\n[i]Current " + collectionName + ": [/i]" + thisCharacterHand.ToString(secretDraw) + helpOutput;
+            trueDraw += "\n[i]Current " + collectionName + ": [/i]" + thisCharacterHand.Print(false, channelSettings.CardPrintSetting);
+            totalDrawString += "\n[i]Current " + collectionName + ": [/i]" + thisCharacterHand.Print(secretDraw, channelSettings.CardPrintSetting) + helpOutput;
 
             return totalDrawString;
         }
 
-        public string ViewEntireDeck(string channelId, DeckType deckType, string customDeckName)
+        public string ViewEntireDeck(string channelId, PrintSetting printSetting, DeckType deckType, string customDeckName)
         {
             Deck d = GetDeck(channelId, deckType, customDeckName);
-            return d.GetDeckList();
+            return d.GetDeckList(printSetting);
         }
 
-        public string DiscardCards(List<int> discardsList, bool all, string channelId, DeckType deckType, string character, out int actualDiscards)
+        public string DiscardCards(List<int> discardsList, bool all, string channelId, DeckType deckType, string deckTypeId, string character, out int actualDiscards)
         {
-            return MoveCards(discardsList, all, false, channelId, deckType, character, CardPileId.Hand, CardPileId.Discard, out actualDiscards);   
+            return MoveCards(discardsList, all, false, channelId, deckType, deckTypeId, character, CardPileId.Hand, CardPileId.Discard, out actualDiscards);   
         }
 
-        public string DiscardCardsFromPlay(List<int> discardsList, bool all, string channelId, DeckType deckType, string character, out int actualDiscards)
+        public string DiscardCardsFromPlay(List<int> discardsList, bool all, string channelId, DeckType deckType, string deckTypeId, string character, out int actualDiscards)
         {
-            return MoveCards(discardsList, all, false, channelId, deckType, character, CardPileId.Play, CardPileId.Discard, out actualDiscards);
+            return MoveCards(discardsList, all, false, channelId, deckType, deckTypeId, character, CardPileId.Play, CardPileId.Discard, out actualDiscards);
         }
 
-        public string PlayCards(List<int> playCardsList, bool all, string channelId, DeckType deckType, string character, out int actualPlayedCount)
+        public string PlayCards(List<int> playCardsList, bool all, string channelId, DeckType deckType, string deckTypeId, string character, out int actualPlayedCount)
         {
-            return MoveCards(playCardsList, all, false, channelId, deckType, character, CardPileId.Hand, CardPileId.Play, out actualPlayedCount);   
+            return MoveCards(playCardsList, all, false, channelId, deckType, deckTypeId, character, CardPileId.Hand, CardPileId.Play, out actualPlayedCount);   
         }
 
-        public string PlayCardsFromDiscard(List<int> playCardsList, bool all, string channelId, DeckType deckType, string character, out int actualPlayedCount)
+        public string PlayCardsFromDiscard(List<int> playCardsList, bool all, string channelId, DeckType deckType, string deckTypeId, string character, out int actualPlayedCount)
         {
-            return MoveCards(playCardsList, all, false, channelId, deckType, character, CardPileId.Discard, CardPileId.Play, out actualPlayedCount);
+            return MoveCards(playCardsList, all, false, channelId, deckType, deckTypeId, character, CardPileId.Discard, CardPileId.Play, out actualPlayedCount);
         }
 
-        public string MoveCardsFromTo(List<int> playCardsList, bool all,  bool secret, string channelId, DeckType deckType, string character,
+        public string MoveCardsFromTo(List<int> playCardsList, bool all,  bool secret, string channelId, DeckType deckType, string deckTypeId, string character,
             CardPileId fromPile, CardPileId toPile, out int actualPlayedCount)
         {
-            return MoveCards(playCardsList, all, secret, channelId, deckType, character, fromPile, toPile, out actualPlayedCount);
+            return MoveCards(playCardsList, all, secret, channelId, deckType, deckTypeId, character, fromPile, toPile, out actualPlayedCount);
         }
 
-        private string MoveCards(List<int> moveCardsList, bool all, bool secret, string channelId, DeckType deckType, string character, 
+        private string MoveCards(List<int> moveCardsList, bool all, bool secret, string channelId, DeckType deckType, string deckTypeId, string character, 
             CardPileId fromPile, CardPileId toPile,  out int actualMovedCount)
         {
             actualMovedCount = 0;
+            SavedData.ChannelSettings channelSettings = botMain.GetChannelSettings(channelId);
 
             CardCollection moveFromPile = null;
             CardCollection moveToPile = null;
             switch(fromPile)
             {
                 case CardPileId.Hand:
-                    moveFromPile = GetHand(channelId, deckType, character);
+                    moveFromPile = GetHand(channelId, deckType, deckTypeId, character);
                     break;
                 case CardPileId.Play:
-                    moveFromPile = GetHand(channelId, deckType, character + PlaySuffix);
+                    moveFromPile = GetHand(channelId, deckType, deckTypeId, character + PlaySuffix);
                     break;
                 case CardPileId.Burn:
-                    moveFromPile = GetHand(channelId, deckType, BurnCardsPlayerAlias);
+                    moveFromPile = GetHand(channelId, deckType, deckTypeId, BurnCardsPlayerAlias);
                     break;
                 case CardPileId.Discard:
-                    moveFromPile = GetHand(channelId, deckType, DiscardPlayerAlias);
+                    moveFromPile = GetHand(channelId, deckType, deckTypeId, DiscardPlayerAlias);
                     break;
                 case CardPileId.Dealer:
-                    moveFromPile = GetHand(channelId, deckType, DealerPlayerAlias);
+                    moveFromPile = GetHand(channelId, deckType, deckTypeId, DealerPlayerAlias);
                     break;
                 case CardPileId.Deck:
-                    moveFromPile = GetDeck(channelId, deckType, null);
+                    moveFromPile = GetDeck(channelId, deckType, deckTypeId);
                     break;
                 case CardPileId.HiddenInPlay:
-                    moveFromPile = GetHand(channelId, deckType, character + HiddenPlaySuffix);
+                    moveFromPile = GetHand(channelId, deckType, deckTypeId, character + HiddenPlaySuffix);
                     break;
             }
 
             switch (toPile)
             {
                 case CardPileId.Hand:
-                    moveToPile = GetHand(channelId, deckType, character);
+                    moveToPile = GetHand(channelId, deckType, deckTypeId, character);
                     break;
                 case CardPileId.Play:
-                    moveToPile = GetHand(channelId, deckType, character + PlaySuffix);
+                    moveToPile = GetHand(channelId, deckType, deckTypeId, character + PlaySuffix);
                     break;
                 case CardPileId.Burn:
-                    moveToPile = GetHand(channelId, deckType, BurnCardsPlayerAlias);
+                    moveToPile = GetHand(channelId, deckType, deckTypeId, BurnCardsPlayerAlias);
                     break;
                 case CardPileId.Discard:
-                    moveToPile = GetHand(channelId, deckType, DiscardPlayerAlias);
+                    moveToPile = GetHand(channelId, deckType, deckTypeId, DiscardPlayerAlias);
                     break;
                 case CardPileId.Dealer:
-                    moveToPile = GetHand(channelId, deckType, DealerPlayerAlias);
+                    moveToPile = GetHand(channelId, deckType, deckTypeId, DealerPlayerAlias);
                     break;
                 case CardPileId.Deck:
-                    moveToPile = GetDeck(channelId, deckType, null);
+                    moveToPile = GetDeck(channelId, deckType, deckTypeId);
                     break;
                 case CardPileId.HiddenInPlay:
-                    moveToPile = GetHand(channelId, deckType, character + HiddenPlaySuffix);
+                    moveToPile = GetHand(channelId, deckType, deckTypeId, character + HiddenPlaySuffix);
                     break;
             }
 
@@ -885,7 +923,7 @@ namespace FChatDicebot.DiceFunctions
                     DeckCard d = moveFromPile.GetCardAtIndex(i);
                     if(!secret)
                     {
-                        totalOutputString += d.ToString();
+                        totalOutputString += d.Print(channelSettings.CardPrintSetting);
                     }
                     cardsMoved++;
                     moveToPile.AddCard(d, random);
@@ -908,20 +946,20 @@ namespace FChatDicebot.DiceFunctions
 
             actualMovedCount = currentHandSize - moveFromPile.CardsCount();
 
-            totalOutputString += "\n[i]Current " + moveFromPile.GetCollectionName() + ": [/i]" + moveFromPile.ToString(true);
-            totalOutputString += "\n[i]Current " + moveToPile.GetCollectionName() + ": [/i]" + moveToPile.ToString(true);
+            totalOutputString += "\n[i]Current " + moveFromPile.GetCollectionName() + ": [/i]" + moveFromPile.Print(true, channelSettings.CardPrintSetting);
+            totalOutputString += "\n[i]Current " + moveToPile.GetCollectionName() + ": [/i]" + moveToPile.Print(true, channelSettings.CardPrintSetting);
             
             return totalOutputString;
         }
 
-        public string TakeCardsFromPlay(List<int> drawFromPlayList, bool all, string channelId, DeckType deckType, string character, out int movedCount)
+        public string TakeCardsFromPlay(List<int> drawFromPlayList, bool all, string channelId, DeckType deckType, string deckTypeId, string character, out int movedCount)
         {
-            return MoveCards(drawFromPlayList, all, false, channelId, deckType, character, CardPileId.Play, CardPileId.Hand, out movedCount);
+            return MoveCards(drawFromPlayList, all, false, channelId, deckType, deckTypeId, character, CardPileId.Play, CardPileId.Hand, out movedCount);
         }
 
-        public string TakeCardsFromDiscard(List<int> drawFromDiscardList, bool all, string channelId, DeckType deckType, string character, out int movedCount)
+        public string TakeCardsFromDiscard(List<int> drawFromDiscardList, bool all, string channelId, DeckType deckType, string deckTypeId, string character, out int movedCount)
         {
-            return MoveCards(drawFromDiscardList, all, false, channelId, deckType, character, CardPileId.Discard, CardPileId.Hand, out movedCount);
+            return MoveCards(drawFromDiscardList, all, false, channelId, deckType, deckTypeId, character, CardPileId.Discard, CardPileId.Hand, out movedCount);
         }
 
         public string GetRollTableResult(List<SavedRollTable> savedTables, string tableName, string character, string channel, int rollModifier, bool includeLabel, bool includeSecondaryRolls, int dataX, int dataY, int dataZ, int callDepth)
@@ -939,6 +977,9 @@ namespace FChatDicebot.DiceFunctions
                 TableRollResult res = table.GetRollResult(random, rollModifier, includeLabel, includeSecondaryRolls);
 
                 string returnString = res.ResultString;
+                returnString = returnString.Replace("#x", dataX + "");
+                returnString = returnString.Replace("#y", dataY + "");
+                returnString = returnString.Replace("#z", dataZ + "");
                 string addition = "";
 
                 if(res.TriggeredRolls != null && res.TriggeredRolls.Count > 0 && callDepth > 0)
@@ -947,35 +988,52 @@ namespace FChatDicebot.DiceFunctions
                     {
                         foreach (TableRollTrigger trt in res.TriggeredRolls)
                         {
-                            trt.TableId = trt.TableId.Replace("#x", dataX.ToString());
-                            trt.TableId = trt.TableId.Replace("#y", dataY.ToString());
-                            trt.TableId = trt.TableId.Replace("#z", dataZ.ToString());
-
-                            if(trt.TableId.StartsWith("!"))
+                            if(string.IsNullOrEmpty(trt.Command))
                             {
-                                if(trt.TableId.StartsWith("!roll"))
+                                continue;
+                            }
+                            string thisCommand = trt.Command.Replace("#x", dataX + "");
+                            thisCommand = thisCommand.Replace("#y", dataY + "");
+                            thisCommand = thisCommand.Replace("#z", dataZ + "");
+
+                            if (thisCommand.StartsWith("!"))
+                            {
+                                if (thisCommand.StartsWith("!rolltable"))
                                 {
                                     string commandName = "";
-                                    string[] commandTerms = botMain.SeparateCommandTerms(trt.TableId, out commandName);
+                                    string[] rawTerms = botMain.SeparateCommandTerms(thisCommand, out commandName);
+                                    
+                                    string[] terms = Utils.LowercaseStrings(rawTerms);
+
+                                    string rollResult = BotCommands.RollTable.ParseCommandsAndRoll(botMain, botMain.BotCommandController, terms, character, channel, callDepth - 1);
+                                    
+                                    addition += "\n" + rollResult;
+                                }
+                                else if (thisCommand.StartsWith("!roll "))
+                                {
+                                    string commandName = "";
+                                    string[] commandTerms = botMain.SeparateCommandTerms(thisCommand, out commandName);
 
                                     string rollResult = GetRollResult(commandTerms, character, channel, false);
 
                                     addition += "\n" + rollResult;
                                 }
-                                else if (trt.TableId.StartsWith("!generatepotion"))
+                                else if (thisCommand.StartsWith("!generatepotion"))
                                 {
                                     string commandName = "";
-                                    string[] commandTerms = botMain.SeparateCommandTerms(trt.TableId, out commandName);
+                                    string[] rawTerms = botMain.SeparateCommandTerms(thisCommand, out commandName);
+                                    
+                                    string[] terms = Utils.LowercaseStrings(rawTerms);
 
                                     string privateMessage = "";
-                                    string rollResult = GeneratePotion(commandTerms, character, channel, out privateMessage); //don't send private message?
+                                    string rollResult = GeneratePotion(terms, character, channel, false, out privateMessage); //don't send private message?
 
                                     addition += "\n" + rollResult;
                                 }
-                                else if(trt.TableId.StartsWith("!drawcard"))
+                                else if (thisCommand.StartsWith("!drawcard"))
                                 {
                                     string commandName = "";
-                                    string[] rawTerms = botMain.SeparateCommandTerms(trt.TableId, out commandName);
+                                    string[] rawTerms = botMain.SeparateCommandTerms(thisCommand, out commandName);
 
                                     string[] terms = Utils.LowercaseStrings(rawTerms);
 
@@ -985,12 +1043,12 @@ namespace FChatDicebot.DiceFunctions
                                     if (numberDrawn > 1)
                                         options.cardsS = "s";
 
-                                    string customDeckName = Utils.GetCustomDeckName(character);
+                                    string customDeckName = options.deckTypeId;
                                     string deckTypeString = Utils.GetDeckTypeStringHidePlaying(options.deckType, customDeckName);
                                     string cardDrawingCharacterString = Utils.GetCharacterStringFromSpecialName(options.characterDrawName);
 
                                     string trueDraw = "";
-                                    string messageOutput = "[i]" + cardDrawingCharacterString + ": " + deckTypeString + "Card" + options.cardsS + " drawn:[/i] " + DrawCards(numberDrawn, options.jokers, options.deckDraw, channel, options.deckType, options.characterDrawName, options.secretDraw, out trueDraw);
+                                    string messageOutput = "[i]" + cardDrawingCharacterString + ": " + deckTypeString + "Card" + options.cardsS + " drawn:[/i] " + DrawCards(numberDrawn, options.jokers, options.deckDraw, channel, options.deckType, options.deckTypeId, options.characterDrawName, options.secretDraw, options.fromExtraDeckType, options.extraDeckTypeId, out trueDraw);
 
                                     if (options.secretDraw && !(options.characterDrawName == DiceBot.DealerPlayerAlias || options.characterDrawName == DiceBot.BurnCardsPlayerAlias || options.characterDrawName == DiceBot.DiscardPlayerAlias))
                                     {
@@ -1003,23 +1061,7 @@ namespace FChatDicebot.DiceFunctions
                             }
                             else
                             {
-                                int totalRollBonus = trt.RollBonus;
-                                if(!string.IsNullOrEmpty(trt.VariableRollBonus))
-                                {
-                                    switch(trt.VariableRollBonus.ToLower())
-                                    {
-                                        case "x":
-                                            totalRollBonus += dataX;
-                                            break;
-                                        case "y":
-                                            totalRollBonus += dataY;
-                                            break;
-                                        case "z":
-                                            totalRollBonus += dataZ;
-                                            break;
-                                    }
-                                }
-                                addition += "\n" + GetRollTableResult(savedTables, trt.TableId.ToLower(), character, channel, totalRollBonus, includeLabel, includeSecondaryRolls, dataX, dataY, dataZ, callDepth - 1);
+                                //nothing - no command present (was roll table here)
                             }
 
                         }
@@ -1090,7 +1132,7 @@ namespace FChatDicebot.DiceFunctions
             return cardState;
         }
 
-        public void ShuffleDeck(Random r, string channelId, DeckType deckType, bool fullShuffle, string customDeckName)
+        public void ShuffleDeck(Random r, string channelId, PrintSetting printSetting, DeckType deckType, bool fullShuffle, string customDeckName)
         {
             Deck relevantDeck = GetDeck(channelId, deckType, customDeckName);
 
@@ -1098,7 +1140,7 @@ namespace FChatDicebot.DiceFunctions
             {
                 if (fullShuffle)
                 {
-                    EndHand(channelId, false, deckType);
+                    EndHand(channelId, false, printSetting, deckType, customDeckName);
                     relevantDeck.ShuffleFullDeck(r);
                 }
                 else
@@ -1106,13 +1148,13 @@ namespace FChatDicebot.DiceFunctions
             }
         }
 
-        public void ResetDeck(bool jokers, int deckCopies, string channelId, DeckType deckType, string customDeckName)
+        public void ResetDeck(bool jokers, int deckCopies, string channelId, PrintSetting printSetting, DeckType deckType, string customDeckName)
         {
             Deck relevantDeck = GetDeck(channelId, deckType, customDeckName);
 
             if(relevantDeck != null)
             {
-                EndHand(channelId, false, deckType, true);
+                EndHand(channelId, false, printSetting, deckType, customDeckName, true);
                 SavedDeck d = null;
                 if(deckType == DeckType.Custom)
                     d = Utils.GetDeckFromId(botMain.SavedDecks, customDeckName);
@@ -1131,7 +1173,7 @@ namespace FChatDicebot.DiceFunctions
 
         public Deck GetDeck(string channelId, DeckType deckType, string customDeckName)
         {
-            string deckKey = GetDeckKey(channelId, deckType);
+            string deckKey = GetDeckKey(channelId, deckType, customDeckName);
             Deck thisDeck = ChannelDecks.FirstOrDefault(a => a.Id == deckKey);
             if (thisDeck == null)
             {
@@ -1164,14 +1206,14 @@ namespace FChatDicebot.DiceFunctions
 
         }
 
-        public string EndHand(string channelId, bool reveal, DeckType deckType, bool deleteCards = false)
+        public string EndHand(string channelId, bool reveal, PrintSetting printSettings, DeckType deckType, string deckTypeId, bool deleteCards = false)
         {
-            List<Hand> thisChannelHands = GetChannelHands(channelId, deckType);
+            List<Hand> thisChannelHands = GetChannelHands(channelId, deckType, deckTypeId);
 
             int totalMoved = 0;
             int totalPiles = 0;
 
-            Hand burnedCards = GetHand(channelId, deckType, BurnCardsPlayerAlias);
+            Hand burnedCards = GetHand(channelId, deckType, deckTypeId, BurnCardsPlayerAlias);
             string allCardsMoved = "";
             foreach(Hand h in thisChannelHands)
             {
@@ -1194,7 +1236,7 @@ namespace FChatDicebot.DiceFunctions
                         DeckCard d = h.GetCardAtIndex(i);
                         if (!string.IsNullOrEmpty(allCardsMoved))
                             allCardsMoved += ", ";
-                        allCardsMoved += d.ToString();
+                        allCardsMoved += d.Print(printSettings);
                         cardsMoved++;
                         burnedCards.AddCard(d, random);
                     }
@@ -1204,47 +1246,68 @@ namespace FChatDicebot.DiceFunctions
             }
 
             if (!reveal)
-                allCardsMoved = totalMoved.ToString();
+                allCardsMoved = totalMoved + "";
 
             string sss = totalPiles != 1 ? "s" : "";
             return "Hand Ended. Moved " + allCardsMoved + " cards from " + totalPiles + " pile" + sss + " to burn pile.";
         }
 
-        public List<ItemOwned> GetItemsOwned(string character)
+        public List<InventoryItem> GetItemsOwned(string character, string channel)
         {
-            return ItemsOwned.Where(a => a.character == character).ToList();
+            CharacterData thisCharacter = GetCharacterData(character, channel, false);
+
+            if (thisCharacter != null)
+                return thisCharacter.Inventory;
+            else
+                return null;
         }
 
-        public Potion GetPotionHeld(string character)
+        public Potion GetPotionHeld(string character, string channel)
         {
-            List<ItemOwned> items = GetItemsOwned(character);
+            List<InventoryItem> items = GetItemsOwned(character, channel);
             if(items.Count > 0)
             {
-                ItemOwned own = items.FirstOrDefault(b => b.item.GetItemCategory() == ItemCategory.Potion);
+                InventoryItem own = items.FirstOrDefault(b => b.GetItemCategory() == ItemCategory.Potion);
                 if (own != null)
-                    return (Potion) own.item;
+                    return (Potion) own;
             }
             return null;
         }
 
-        public void SetPotionHeld(string character, Potion potion)
+        public void SetPotionHeld(string character, string channel, Potion potion)
         {
-            List<ItemOwned> items = GetItemsOwned(character);
+            CharacterData data = GetCharacterData(character, channel);
+            List<InventoryItem> items = data.Inventory;
             if (items.Count > 0)
             {
-                ItemOwned own = items.FirstOrDefault(b => b.item.GetItemCategory() == ItemCategory.Potion);
+                InventoryItem own = items.FirstOrDefault(b => b.GetItemCategory() == ItemCategory.Potion);
                 if (own != null)
-                {
-                    ItemsOwned.Remove(own);
-                }
+                    items.Remove(own);
             }
 
-            ItemsOwned.Add(new ItemOwned() { character = character, item = potion });
+            items.Add(potion);
         }
 
-        public Hand GetHand(string channelId, DeckType deckType, string character)
+        public bool RemovePotionHeld(string character, string channel)
         {
-            string deckKey = GetDeckKey(channelId, deckType);
+            CharacterData data = GetCharacterData(character, channel);
+            List<InventoryItem> items = data.Inventory;
+            if (items.Count > 0)
+            {
+                InventoryItem own = items.FirstOrDefault(b => b.GetItemCategory() == ItemCategory.Potion);
+                if (own != null)
+                {
+
+                    items.Remove(own);
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public Hand GetHand(string channelId, DeckType deckType, string deckTypeId, string character)
+        {
+            string deckKey = GetDeckKey(channelId, deckType, deckTypeId);
             Hand h = Hands.FirstOrDefault(a => a.Id == deckKey && a.Character == character);
             if (h == null)
             {
@@ -1267,9 +1330,9 @@ namespace FChatDicebot.DiceFunctions
             return h;
         }
 
-        public List<Hand> GetChannelHands(string channelId, DeckType deckType)
+        public List<Hand> GetChannelHands(string channelId, DeckType deckType, string deckTypeId)
         {
-            string deckKey = GetDeckKey(channelId, deckType);
+            string deckKey = GetDeckKey(channelId, deckType, deckTypeId);
             return Hands.Where(a => a.Id == deckKey).ToList();
         }
 
@@ -1334,11 +1397,18 @@ namespace FChatDicebot.DiceFunctions
 
         public string RemoveChipsPile(string characterName, string channelId)
         {
-            ChipPile characterPile = GetChipPile(characterName, channelId);
-            int amt = characterPile.Chips;
-            ChipPiles.RemoveAll(a => a.Character == characterName && a.ChannelId == channelId);
+            ChipPile characterPile = GetChipPile(characterName, channelId, false);
+            if(characterPile == null)
+            {
+                return "No pile of chips was found for " + Utils.GetCharacterUserTags(characterName) + "";
+            }
+            else
+            {
+                int amt = characterPile.Chips;
+                ChipPiles.RemoveAll(a => a.Character == characterName && a.ChannelId == channelId);
 
-            return Utils.GetCharacterUserTags( characterName) + " removed their pile of chips. (" + amt + ")";
+                return Utils.GetCharacterUserTags(characterName) + "'s pile of chips was removed. (" + amt + ")";
+            }
         }
 
         public string RemoveAllChipsPiles(string characterName, string channelId)
@@ -1383,7 +1453,7 @@ namespace FChatDicebot.DiceFunctions
             string characterString = SpecialCharacterName(characterName)? Utils.GetCharacterStringFromSpecialName(characterName) : Utils.GetCharacterUserTags(characterName);
             string allInString = characterPile.Chips == 0 && moved > 0 ? " [color=red][b](100%)[/b][/color]" : "";
             string targetString = specialCharacterTarget? Utils.GetCharacterStringFromSpecialName(targetCharacterName) : Utils.GetCharacterUserTags(targetCharacterName);
-            return characterString + " gave " + moved + " chips to " + targetString + " " + allInString;
+            return characterString + " gave " + moved + " chips to " + targetString + allInString + ".";
         }
 
         public string TakeChips(string characterName, string targetCharacterName, string channelId, int amount, bool all)
@@ -1402,15 +1472,22 @@ namespace FChatDicebot.DiceFunctions
             return Utils.GetCharacterUserTags(characterName) + " took " + moved + " chips from " + Utils.GetCharacterUserTags(targetCharacterName) + " " + allInString;
         }
 
-        public string ClaimPot(string characterName, string channelId, double portion)
+        public string ClaimPot(string characterName, string channelId, double portion, int actualNumber = -1)
         {
             ChipPile claimingPile = GetChipPile(characterName, channelId);
             ChipPile potPile = GetChipPile(PotPlayerAlias, channelId);
 
             int amount = (int) Math.Round(potPile.Chips * portion);
 
+            if(actualNumber > 0)
+            {
+                amount = actualNumber;
+            }
+
             int moved = MoveChipsFromPile(potPile, claimingPile, amount, false);
-            string fractionString = portion == .5 ? "half " : (portion == .33 ? "a third of " : "");
+            string fractionString = portion == .5 ? "half " : (portion == .333333 ? "a third of " : "");
+            if (actualNumber > 0 && potPile.Chips > 0)
+                fractionString = "some of ";
 
             string charString = Utils.GetCharacterUserTags(characterName);
             if (SpecialCharacterName(characterName))
@@ -1418,7 +1495,10 @@ namespace FChatDicebot.DiceFunctions
                 charString = Utils.GetCharacterStringFromSpecialName(characterName);
             }
 
-            return charString + " claimed " + fractionString + "the pot ([b]" + moved + " chips[/b]).";
+            string remaining = "";
+            if (potPile.Chips > 0)
+                remaining = " (" + potPile.Chips + " chips remain)";
+            return charString + " claimed " + fractionString + "the pot ([b]" + moved + " chips[/b])." + remaining;
         }
 
         private int MoveChipsFromPile(ChipPile sourcePile, ChipPile destinationPile, int amount, bool all)
@@ -1483,7 +1563,7 @@ namespace FChatDicebot.DiceFunctions
                 h.SpecialName = specialAccount;
                 h.DiceUnlocked = false;
                 h.Inventory = new List<InventoryItem>();
-                h.LastSlotsSpin = DateTime.UtcNow - TimeSpan.FromHours(2);
+                h.LastSlotsSpin = 0;
                 CharacterDatas.Add(h);
             }
 
@@ -1503,12 +1583,19 @@ namespace FChatDicebot.DiceFunctions
             return SpecialCharacterName(characterName) ? Utils.GetCharacterStringFromSpecialName(characterName) : Utils.GetCharacterUserTags(characterName);
         }
 
-        public string GetDeckKey(string channelId, DeckType deckType)
+        public string GetDeckKey(string channelId, DeckType deckType, string deckTypeId)
         {
-            return channelId + "_" + deckType;
+            return channelId + "_" + deckType + "_" + deckTypeId;
         }
 
-        public string GeneratePotion(string[] terms, string characterName, string channel, out string privateMessage)
+        public string GetPotionSearchString(string[] terms)
+        {
+            List<string> remainingTerms = terms.Where(a => a != "noflavor" && a != "nolewd" && a != "requirelewd" && a != "s" && a != "secret").ToList();
+            string searchTerm = string.Join(" ", remainingTerms);
+            return searchTerm;
+        }
+
+        public string GeneratePotion(string[] terms, string characterName, string channel, bool includeOrigin, out string privateMessage)
         {
             bool allowFlavor = true;
             bool allowLewd = true;
@@ -1534,21 +1621,23 @@ namespace FChatDicebot.DiceFunctions
             }
             else
             {
-                List<string> remainingTerms = terms.Where(a => a != "noflavor" && a != "nolewd" && a != "requirelewd" && a != "s" && a != "secret").ToList();
-                string searchTerm = string.Join(" ", remainingTerms);
+                string searchTerm = GetPotionSearchString(terms);
+                ChannelSettings settings = botMain.GetChannelSettings(channel);
 
                 Potion potion = null;
 
+                List<Enchantment> channelPotions = botMain.GetChannelPotions(channel);
+
                 if (!string.IsNullOrEmpty(searchTerm))
                 {
-                    potion = GetSpecificPotion(searchTerm);
+                    potion = GetSpecificPotion(channelPotions, settings.UseDefaultPotions, searchTerm);
                 }
                 else
                 {
-                    potion = GetRandomPotion(allowFlavor, allowLewd, requireLewd);
+                    potion = GetRandomPotion(channelPotions, settings.UseDefaultPotions, allowFlavor, allowLewd, requireLewd);
                 }
 
-                string output = PotionGenerator.GetPotionGenerationOutputString(potion);
+                string output = PotionGenerator.GetPotionGenerationOutputString(potion, includeOrigin);
 
                 bool outputHandled = false;
 
@@ -1557,16 +1646,16 @@ namespace FChatDicebot.DiceFunctions
                     if (potion.enchantment.Flag == EnchantmentFlag.WhisperPotionRevealFake)
                     {
                         secret = true;
-                        Potion secondPotion = GetSpecificPotion("fluid flavor");
+                        Potion secondPotion = GetSpecificPotion(null, true, "fluid flavor");
                         if (!allowFlavor)
-                            secondPotion = GetSpecificPotion("lust");
+                            secondPotion = GetSpecificPotion(null, true, "lust");
                         if (!allowLewd)
-                            secondPotion = GetSpecificPotion("skin color");
+                            secondPotion = GetSpecificPotion(null, true, "skin color");
 
                         secondPotion.strength = 1;
-                        string outputFake = PotionGenerator.GetPotionGenerationOutputString(secondPotion);
+                        string outputFake = PotionGenerator.GetPotionGenerationOutputString(secondPotion, includeOrigin);
 
-                        SetPotionHeld(characterName, potion);
+                        SetPotionHeld(characterName, channel, potion);
 
                         privateMessage = output + "\nThe channel has been sent a fake potion. This is your real potion result and it can be shown with !showpotion ";
                         output = outputFake;
@@ -1597,9 +1686,9 @@ namespace FChatDicebot.DiceFunctions
 
                 if (secret && !outputHandled)
                 {
-                    SetPotionHeld(characterName, potion);
+                    SetPotionHeld(characterName, channel, potion);
 
-                    privateMessage = output + "\nThis potion is now a secret and can be shown in channels with !showpotion ";
+                    privateMessage = output + "\nThis potion is now a secret and can be shown in the same channel with !showpotion ";
                     outputMessage = "A potion was generated in secret and sent to " + Utils.GetCharacterUserTags(characterName) + ".";
                 }
                 else
@@ -1608,14 +1697,14 @@ namespace FChatDicebot.DiceFunctions
             return outputMessage;
         }
 
-        public Potion GetRandomPotion(bool allowFlavor, bool allowKinky, bool requireKinky)//todo: make this generator more customizable, and able to store generator(s) to use in the data files
+        public Potion GetRandomPotion(List<Enchantment> channelPotions, bool useDefaultPotions, bool allowFlavor, bool allowKinky, bool requireKinky)//todo: make this generator more customizable, and able to store generator(s) to use in the data files
         {
-            return PotionGenerator.GeneratePotion(allowFlavor, allowKinky, requireKinky); 
+            return PotionGenerator.GeneratePotion(channelPotions, useDefaultPotions, allowFlavor, allowKinky, requireKinky); 
         }
 
-        public Potion GetSpecificPotion(string searchTerm)//todo: make this generator more customizable, and able to store generator(s) to use in the data files
+        public Potion GetSpecificPotion(List<Enchantment> channelPotions, bool useDefaultPotions, string searchTerm)
         {
-            return PotionGenerator.GeneratePotionWithSpecificEffect(true, true, false, searchTerm);
+            return PotionGenerator.GeneratePotionWithSpecificEffect(channelPotions, true, true, false, searchTerm);
         }
 
 
@@ -1639,7 +1728,13 @@ namespace FChatDicebot.DiceFunctions
             {
                 sesh.Players.RemoveAll(a => a == characterName);
                 string leftGameNote = sesh.CurrentGame.PlayerLeftGame(botMain, sesh, characterName);
-                return Utils.GetCharacterUserTags(characterName) + " left " + sesh.CurrentGame.GetGameName() + " successfully.";
+
+                if (sesh.Players.Count() == 0)
+                {
+                    leftGameNote += "\n" + CancelGame(channelId, gameType);
+                }
+
+                return Utils.GetCharacterUserTags(characterName) + " left " + sesh.CurrentGame.GetGameName() + " successfully. " + leftGameNote;
             }
 
             return "";
@@ -1726,6 +1821,19 @@ namespace FChatDicebot.DiceFunctions
             return output;
         }
 
+        public void UpdateAllGames()
+        {
+            double currentTime = Utils.GetCurrentTimestampSeconds();
+            for(int i = 0; i < GameSessions.Count; i++)
+            {
+                GameSession session = GameSessions[i];
+                if(session != null)
+                {
+                    session.UpdateGame(botMain, currentTime);
+                }
+            }
+        }
+
         public GameSession GetGameSession(string channelId, IGame gameType, bool createNew = true)
         {
             GameSession rtn = GameSessions.FirstOrDefault(a => a.ChannelId == channelId && a.CurrentGame.GetGameName() == gameType.GetGameName());
@@ -1736,6 +1844,7 @@ namespace FChatDicebot.DiceFunctions
                 rtn.CurrentGame = gameType;
                 rtn.Players = new List<string>();
                 rtn.State = GameState.Unstarted;
+                rtn.CreationTime = Utils.GetCurrentTimestampSeconds();
 
                 GameSessions.Add(rtn);
             }

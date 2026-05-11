@@ -22,59 +22,73 @@ namespace FChatDicebot.BotCommands
 
         public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
         {
-            ChannelSettings thisChannel = bot.GetChannelSettings(channel);
+            string sendMessage = ParseCommandsAndRoll(bot, commandController, terms, characterName, channel);
+            bot.SendMessageInChannel(sendMessage, channel);
+        }
 
-            if (thisChannel.AllowTableRolls)
+        public static string ParseCommandsAndRoll(BotMain bot, BotCommandController commandController, string[] terms, string characterName, string channel, int callDepth = DiceBot.MaximumSecondaryTableRolls)
+        {
+            string sendMessage = "";
+
+            if(string.IsNullOrEmpty(characterName) || string.IsNullOrEmpty(channel))
             {
-                bool includeLabel = true;
-                bool secondaryRolls = true;
-                int dataX = 0;
-                int dataY = 0;
-                int dataZ = 0;
+                return "Failed: Missing data on rolltable call";
+            }
 
-                if(terms != null && terms.Length >= 1 )
+            ChannelSettings channelSettings = bot.GetChannelSettings(channel);
+
+            if(!channelSettings.AllowTableRolls)
+            {
+                return "Failed: !RollTable is currently not allowed in this channel under " + Utils.GetCharacterUserTags(DiceBot.DiceBotCharacter) + "'s settings for this channel.";
+            }
+
+            bool includeLabel = true;
+            bool secondaryRolls = true;
+            int dataX = 0;
+            int dataY = 0;
+            int dataZ = 0;
+
+            if (terms != null && terms.Length >= 1)
+            {
+                if (terms != null && terms.Length >= 1 && terms.Contains("nolabel"))
+                    includeLabel = false;
+                if (terms != null && terms.Length >= 1 && terms.Contains("nosecondary"))
+                    secondaryRolls = false;
+                string foundTerm = terms.FirstOrDefault(a => a.StartsWith("x"));
+                if (foundTerm != null)
                 {
-                    if (terms != null && terms.Length >= 1 && terms.Contains("nolabel"))
-                        includeLabel = false;
-                    if (terms != null && terms.Length >= 1 && terms.Contains("nosecondary"))
-                        secondaryRolls = false;
-                    string foundTerm = terms.FirstOrDefault(a => a.StartsWith("x"));
-                    if (foundTerm != null)
-                    {
-                        int.TryParse(foundTerm.Replace(" ", "").Replace("x=", ""), out dataX);
-                    }
-                    foundTerm = terms.FirstOrDefault(a => a.StartsWith("y"));
-                    if (foundTerm != null)
-                    {
-                        int.TryParse(foundTerm.Replace(" ", "").Replace("y=", ""), out dataY);
-                    }
-                    foundTerm = terms.FirstOrDefault(a => a.StartsWith("z"));
-                    if (foundTerm != null)
-                    {
-                        int.TryParse(foundTerm.Replace(" ", "").Replace("z=", ""), out dataZ);
-                    }
+                    int.TryParse(foundTerm.Replace(" ", "").Replace("x=", ""), out dataX);
                 }
-
-                int rollModifier = commandController.GetRollModifierFromCommandTerms(terms);
-                string tableName = commandController.GetTableNameFromCommandTerms(terms);
-
-                SavedRollTable savedTable = Utils.GetTableFromId(bot.SavedTables, tableName);
-
-                if(savedTable.DefaultTable || thisChannel.AllowCustomTableRolls)
+                foundTerm = terms.FirstOrDefault(a => a.StartsWith("y"));
+                if (foundTerm != null)
                 {
-                    string sendMessage = bot.DiceBot.GetRollTableResult(bot.SavedTables, tableName, characterName, channel, rollModifier, includeLabel, secondaryRolls, dataX, dataY, dataZ, DiceBot.MaximumSecondaryTableRolls);
-
-                    bot.SendMessageInChannel(sendMessage, channel);
+                    int.TryParse(foundTerm.Replace(" ", "").Replace("y=", ""), out dataY);
                 }
-                else
+                foundTerm = terms.FirstOrDefault(a => a.StartsWith("z"));
+                if (foundTerm != null)
                 {
-                    bot.SendMessageInChannel("Only default tables are allowed in this channel under " + Utils.GetCharacterUserTags("Dice Bot") + "'s settings for this channel.", channel);
+                    int.TryParse(foundTerm.Replace(" ", "").Replace("z=", ""), out dataZ);
                 }
+            }
+
+            int rollModifier = commandController.GetRollModifierFromCommandTerms(terms);
+            string tableName = commandController.GetTableNameFromCommandTerms(terms);
+
+            SavedRollTable savedTable = Utils.GetTableFromId(bot.SavedTables, tableName);
+
+            if (savedTable == null)
+            {
+                sendMessage = "Failed: The table \'" + tableName + "\' was not found.";
+            }
+            else if (savedTable.DefaultTable || channelSettings.AllowCustomTableRolls)
+            {
+                sendMessage = bot.DiceBot.GetRollTableResult(bot.SavedTables, tableName, characterName, channel, rollModifier, includeLabel, secondaryRolls, dataX, dataY, dataZ, callDepth);
             }
             else
             {
-                bot.SendMessageInChannel(Name + " is currently not allowed in this channel under " + Utils.GetCharacterUserTags("Dice Bot") + "'s settings for this channel.", channel);
+                sendMessage = "Failed: Only default tables are allowed in this channel under " + Utils.GetCharacterUserTags(DiceBot.DiceBotCharacter) + "'s settings for this channel.";
             }
+            return sendMessage;
         }
     }
 

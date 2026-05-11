@@ -72,6 +72,11 @@ namespace FChatDicebot
             return request;
         }
 
+        public static int Clamp(int input, int min, int max)
+        {
+            return Math.Max(Math.Min(input, max), min);
+        }
+
         public static string PrintList(string[] stringArray)
         {
             if (stringArray == null || stringArray.Length == 0)
@@ -100,7 +105,7 @@ namespace FChatDicebot
             {
                 if (rtnString.Length > 0)
                     rtnString += ", ";
-                rtnString += i.ToString();
+                rtnString += i;
             }
 
             return rtnString;
@@ -211,7 +216,7 @@ namespace FChatDicebot
 
         public static string SanitizeInput(string s)
         {
-            return s.Replace("}", "").Replace("{", "").Replace("\\", "").Replace("\"", "").Replace("\'", "").Replace("|","").Replace(",","");
+            return s.Replace("}", "").Replace("{", "").Replace("\\", "").Replace("\"", "").Replace("\'", "").Replace("|", "").Replace(",", "");
         }
 
         public static int GetNumberFromInputs(string[] inputs)
@@ -251,6 +256,29 @@ namespace FChatDicebot
             return rtnList;
         }
 
+        public static string[] GetRemainingTermsAfterRemovingOneTerm(string[] inputs, string removeString)
+        {
+            List<string> returnList = new List<string>();
+
+            if (inputs != null && inputs.Length > 0)
+            {
+                bool foundRemoval = false;
+                foreach (string s in inputs)
+                {
+                    if(!foundRemoval && s.ToLower() == removeString.ToLower())
+                    {
+                        foundRemoval = true;
+                    }
+                    else
+                    {
+                        returnList.Add(s);
+                    }
+                }
+            }
+
+            return returnList.ToArray();
+        }
+
         public static string CombineStringArray(string[] input)
         {
             if (input == null)
@@ -266,11 +294,16 @@ namespace FChatDicebot
             return returnString;
         }
 
-        public static string GetChannelIdFromInputs(string[] inputs)
+        public static string GetChannelIdFromInputs(string[] inputs, out string error)
         {
+            error = "";
+
             string returnString = "";
             if (inputs == null || inputs.Length == 0)
+            {
+                error = "Failed: Channel input not found. Include the paste of the channel's invite from using /code.";
                 return returnString;
+            }
 
             string combinedInputs = CombineStringArray(inputs);
 
@@ -279,12 +312,31 @@ namespace FChatDicebot
                 string combined1 = combinedInputs.Replace("[session=", "").Replace("[/session]", "");
 
                 int startIndex = combined1.IndexOf(']') + 1;
-                if (startIndex + 24 >= combined1.Length)
+                if (startIndex + 24 <= combined1.Length)
                 {
                     string s = combined1.Substring(startIndex, 24);
 
                     returnString = s;
                 }
+                else
+                {
+                    error = "Failed: Channel Session input not correct length. Include the entire paste of the channel's invite from using /code.";
+                }
+            }
+            else if(combinedInputs.ToLower().StartsWith("adh-"))
+            {
+                if(combinedInputs.Length != 24)
+                {
+                    error = "Failed: Channel Session input not correct length.";
+                }
+                else
+                {
+                    returnString = combinedInputs;
+                }
+            }
+            else
+            {
+                error = "Failed: Channel Session input not found. Include the entire paste of the channel's invite from using /code.";
             }
 
             return returnString;
@@ -552,6 +604,13 @@ namespace FChatDicebot
             }
         }
 
+        public static string GetUserNameFromFullInputs(string [] inputs)
+        {
+            string partial = GetFullStringOfInputs(inputs);
+            partial = partial.Replace("[user]", "").Replace("[/user]", "").Replace("[b]", "").Replace("[/b]", "").Replace("[icon]", "").Replace("[/icon]", "").Trim();
+            return partial;
+        }
+
         public static string LimitStringToNCharacters(string inputString, int maxCharacters)
         {
             return (inputString.Length > maxCharacters ? inputString.Substring(0, maxCharacters) : inputString);
@@ -569,6 +628,14 @@ namespace FChatDicebot
                     return "Many Things";
                 case DeckType.Uno:
                     return "Uno";
+                case DeckType.BreakerRumble:
+                    return "Breaker Rumble";
+                case DeckType.BreakerRumbleExtra:
+                    return "Breaker Rumble (Extra)";
+                case DeckType.BreakerRumbleClassic:
+                    return "Breaker Rumble (Classic)";
+                case DeckType.NONE:
+                    return "[Deck Error]";
                 case DeckType.Custom:
                     return customDeckName;
             }
@@ -640,12 +707,15 @@ namespace FChatDicebot
             String[] allCards = saveDeckInput.Split(',');
             Deck d = new Deck(DeckType.Custom);
             List<DeckCard> cards = new List<DeckCard>();
-            foreach(string s in allCards)
+            if(allCards != null)
             {
-                string cardName = SanitizeInput(s.Trim());
-                if (s.Count() > 100)
-                    cardName = s.Take(100).ToString();
-                cards.Add(new DeckCard() { specialName = cardName });
+                foreach (string s in allCards)
+                {
+                    string cardName = SanitizeInput(s.Trim());
+                    if (s.Count() > 100)
+                        cardName = s.Take(100).ToString();
+                    cards.Add(new DeckCard() { specialName = cardName });
+                }
             }
             d.InsertNewCards(cards);
 
@@ -813,10 +883,10 @@ namespace FChatDicebot
             return deck;
         }
 
-        public static string GetCustomDeckName(string character)
-        {
-            return character + "'s deck";
-        }
+        //public static string GetCustomDeckName(string character)
+        //{
+        //    return character + "'s deck";
+        //}
 
         public static string GetRollModifierString(int rollModifier)
         {
@@ -1349,6 +1419,38 @@ namespace FChatDicebot
 
             // Less than a minute
             return "less than a minute";
+        }
+
+        public static DateTime ConvertFromSecondsTimestamp(double timestamp)
+        {
+            DateTime origin = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
+            return origin.AddSeconds(timestamp);
+        }
+
+        public static double GetCurrentTimestampSeconds()
+        {
+            return ConvertToSecondsTimestamp(DateTime.UtcNow);
+        }
+
+        public static double ConvertToSecondsTimestamp(DateTime date)
+        {
+            DateTime origin = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
+            TimeSpan diff = date.ToUniversalTime() - origin;
+            return Math.Floor(diff.TotalSeconds);
+        }
+
+        public static string PrintTimeFromSeconds(double seconds)
+        {
+            if (seconds < 0)
+                seconds = 0;
+            string output = seconds.ToString("F1") + " seconds";
+            if(seconds > 60)
+                output = (seconds / 60).ToString("F1") + " minutes";
+            if (seconds > 60 * 60)
+                output = (seconds / (60 * 60)).ToString("F2") + " hours";
+            if (seconds > 60 * 60 * 24)
+                output = (seconds / (60 * 60 * 24)).ToString("F2") + " days";
+            return output;
         }
     }
 }

@@ -25,12 +25,9 @@ namespace FChatDicebot.BotCommands
             newTerms.AddRange(terms.Where( a=> a != "s" && a != "secret"));
             newTerms.Add("reveal");
             string[] replacementTerms = newTerms.ToArray();
-            //string[] newTerms = terms.Where( a=> a != "s" && a != "secret").add
-            //if (!terms.Contains("reveal"))
-            //    terms.add("reveal");
-            
-            DeckType deckType = commandController.GetDeckTypeFromCommandTerms(terms);
-            Hand h = bot.DiceBot.GetHand(channel, deckType, characterName + DiceBot.HiddenPlaySuffix);
+            string deckTypeId = "";
+            DeckType deckType = commandController.GetDeckTypeFromCommandTerms(terms, out deckTypeId);
+            Hand h = bot.DiceBot.GetHand(channel, deckType, deckTypeId, characterName + DiceBot.HiddenPlaySuffix);
             if (h == null || h.CardsCount() == 0)
                 bot.SendMessageInChannel("(No secret cards inn play to reveal)", channel);
             else

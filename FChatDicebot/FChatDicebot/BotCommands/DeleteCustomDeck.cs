@@ -22,27 +22,38 @@ namespace FChatDicebot.BotCommands
 
         public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
         {
-            string customDeckName = Utils.GetCustomDeckName(characterName);
-
-            SavedDeck deleteDeck = Utils.GetDeckFromId(bot.SavedDecks, customDeckName);
-
-            string sendMessage = "No decks found for [user]" + characterName + "[/user]";
-            if (deleteDeck != null)
+            string sendMessage = "";
+            if(terms.Length != 1)
             {
-                if (characterName == deleteDeck.OriginCharacter)
+                sendMessage = "Failed: requires one term (deckId)";
+            }
+            else
+            {
+                string deckTypeId = terms[0];
+
+                SavedDeck deleteDeck = Utils.GetDeckFromId(bot.SavedDecks, deckTypeId);
+
+                if (deleteDeck == null)
                 {
-                    bot.SavedDecks.Remove(deleteDeck);
-
-                    sendMessage = "[b]" + deleteDeck.DeckId + "[/b] deleted by [user]" + characterName + "[/user]";
-
-                    Utils.WriteToFileAsData(bot.SavedDecks, Utils.GetTotalFileName(BotMain.FileFolder, BotMain.SavedDecksFileName));
+                    sendMessage = "Failed: No decks found named " + deckTypeId + "";
                 }
                 else
                 {
-                    sendMessage = "Only " + deleteDeck.OriginCharacter + " can delete their own saved deck.";
+                    if (characterName == deleteDeck.OriginCharacter)
+                    {
+                        bot.SavedDecks.Remove(deleteDeck);
+
+                        sendMessage = "[b]" + deleteDeck.DeckId + "[/b] deleted by [user]" + characterName + "[/user]";
+
+                        Utils.WriteToFileAsData(bot.SavedDecks, Utils.GetTotalFileName(BotMain.FileFolder, BotMain.SavedDecksFileName));
+                    }
+                    else
+                    {
+                        sendMessage = "Only " + deleteDeck.OriginCharacter + " can delete their own saved deck.";
+                    }
                 }
             }
-
+            
             if (!commandController.MessageCameFromChannel(channel))
             {
                 bot.SendPrivateMessage(sendMessage, characterName);

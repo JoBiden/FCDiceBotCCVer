@@ -20,14 +20,16 @@ namespace FChatDicebot.BotCommands.Base
             if ((moveTo == CardPileId.HiddenInPlay || moveFrom == CardPileId.HiddenInPlay) && !terms.Contains("reveal"))
                 options.secretDraw = true;
 
-            string customDeckString = Utils.GetCustomDeckName(characterName);
-            string deckTypeString = Utils.GetDeckTypeStringHidePlaying(options.deckType, customDeckString);
+            //string customDeckString = Utils.GetCustomDeckName(characterName);
+            string deckTypeString = Utils.GetDeckTypeStringHidePlaying(options.deckType, options.deckTypeId);
             string cardDrawingCharacterString = Utils.GetCharacterStringFromSpecialName(options.characterDrawName);
+
+            SavedData.ChannelSettings channelSettings = bot.GetChannelSettings(channel);
 
             int numberDiscards = 0;
 
             string actionString = "";
-            actionString = bot.DiceBot.MoveCardsFromTo(options.moveCardsList, options.all, options.secretDraw, channel, options.deckType, options.characterDrawName, moveFrom, moveTo, out numberDiscards);
+            actionString = bot.DiceBot.MoveCardsFromTo(options.moveCardsList, options.all, options.secretDraw, channel, options.deckType, options.deckTypeId, options.characterDrawName, moveFrom, moveTo, out numberDiscards);
 
             if(numberDiscards > 1 || numberDiscards == 0)
             {
@@ -40,7 +42,7 @@ namespace FChatDicebot.BotCommands.Base
             string privateMessageDraw = "";
             if (options.redraw)
             {
-                messageOutput += "\n [i]Redrawn:[/i] " + bot.DiceBot.DrawCards(numberDiscards, options.jokers, options.deckDraw, channel, options.deckType, options.characterDrawName, options.secretDraw, out trueDraw);
+                messageOutput += "\n [i]Redrawn:[/i] " + bot.DiceBot.DrawCards(numberDiscards, options.jokers, options.deckDraw, channel, options.deckType, options.deckTypeId, options.characterDrawName, options.secretDraw, options.fromExtraDeckType, options.extraDeckTypeId, out trueDraw);
                 privateMessageDraw = "[i]Redrawn:[/i] " + trueDraw;
             }
 
@@ -51,17 +53,17 @@ namespace FChatDicebot.BotCommands.Base
             else if (moveFrom == CardPileId.Hand || moveTo == CardPileId.Hand || moveFrom == CardPileId.HiddenInPlay || moveTo == CardPileId.HiddenInPlay)
             {
                 string privateOutput = "";
-                Hand thisCharacterHand = bot.DiceBot.GetHand(channel, options.deckType, characterName);
+                Hand thisCharacterHand = bot.DiceBot.GetHand(channel, options.deckType, options.deckTypeId, characterName);
                 if(thisCharacterHand != null)
                 {
-                    privateOutput += "[i]After " + moveTypeText + " Current [b]Hand[/b]: [/i]" + thisCharacterHand.ToString();
+                    privateOutput += "[i]After " + moveTypeText + " Current [b]Hand[/b]: [/i]" + thisCharacterHand.Print(false, channelSettings.CardPrintSetting);
                 }
-                Hand thisCharacterHidden = bot.DiceBot.GetHand(channel, options.deckType, characterName + DiceBot.HiddenPlaySuffix);
+                Hand thisCharacterHidden = bot.DiceBot.GetHand(channel, options.deckType, options.deckTypeId, characterName + DiceBot.HiddenPlaySuffix);
                 if (thisCharacterHidden != null && thisCharacterHidden.CardsCount() > 0)
                 {
                     if (!string.IsNullOrEmpty(privateOutput))
                         privateOutput += "\n";
-                    privateOutput += "[i]After " + moveTypeText + " Current [b]Hidden Cards[/b] in Play: [/i]" + thisCharacterHidden.ToString();
+                    privateOutput += "[i]After " + moveTypeText + " Current [b]Hidden Cards[/b] in Play: [/i]" + thisCharacterHidden.Print(false, channelSettings.CardPrintSetting);
                 }
                 if(!string.IsNullOrEmpty(privateOutput))
                 {
@@ -86,6 +88,10 @@ namespace FChatDicebot.BotCommands.Base
     {
         public string characterDrawName;
         public DeckType deckType;
+        public string deckTypeId;
+
+        public DeckType fromExtraDeckType;
+        public string extraDeckTypeId;
 
         public bool secretDraw;
 
@@ -135,8 +141,8 @@ namespace FChatDicebot.BotCommands.Base
             if (moveCardsList.Count > 1)
                 cardsS = "s";
 
-            deckType = commandController.GetDeckTypeFromCommandTerms(terms);
-
+            deckType = commandController.GetDeckTypeFromCommandTerms(terms, out deckTypeId);
+            fromExtraDeckType = commandController.GetExtraDeckTypeFromCommandTerms(terms, out extraDeckTypeId);
         }
 
         public CardCommandOptions(string character, DeckType deckType)

@@ -21,7 +21,13 @@ namespace FChatDicebot.BotCommands
 
         public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
         {
-            Hand characterHand = bot.DiceBot.GetHand(channel, DeckType.Playing, characterName);
+            Hand characterHand = bot.DiceBot.GetHand(channel, DeckType.Playing, null, characterName);
+            bool dealerHand = false;
+            if(terms.Contains("dealer"))
+            {
+                dealerHand = true;
+                characterHand = bot.DiceBot.GetHand(channel, DeckType.Playing, null, DiceBot.DealerPlayerAlias);
+            }
 
             characterHand.Reset();
 
@@ -62,8 +68,15 @@ namespace FChatDicebot.BotCommands
                 }
             }
 
-            bot.SendPrivateMessage("new hand: " + characterHand.ToString(), characterName);
-            bot.SendMessageInChannel(Utils.GetCharacterUserTags(characterName) + " new hand: " + characterHand.ToString(), channel);
+            if(dealerHand)
+            {
+                bot.SendMessageInChannel("The dealer's new hand: " + characterHand.Print(false, null), channel);
+            }
+            else
+            {
+                bot.SendPrivateMessage("new hand: " + characterHand.Print(false, null), characterName);
+                bot.SendMessageInChannel(Utils.GetCharacterUserTags(characterName) + " new hand: " + characterHand.Print(false, null), channel);
+            }
         }
     }
 }

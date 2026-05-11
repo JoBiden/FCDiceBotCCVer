@@ -39,13 +39,14 @@ namespace FChatDicebot.BotCommands
                     deckCopies = 6;
             }
 
-            DeckType deckType = commandController.GetDeckTypeFromCommandTerms(terms);
-
-            string customDeckName = Utils.GetCustomDeckName(characterName);
+            string customDeckName ="";
+            DeckType deckType = commandController.GetDeckTypeFromCommandTerms(terms, out customDeckName);
+            SavedData.ChannelSettings channelSettings = bot.GetChannelSettings(channel);
+            
             string deckTypeString = Utils.GetDeckTypeStringHidePlaying(deckType, customDeckName);
             string deckMultiplier = deckCopies > 1 ? " (x" + deckCopies + " decks combined)" : "";
 
-            bot.DiceBot.ResetDeck(jokers, deckCopies, channel, deckType, customDeckName);
+            bot.DiceBot.ResetDeck(jokers, deckCopies, channel, channelSettings.CardPrintSetting, deckType, customDeckName);
             bot.SendMessageInChannel("[i]" + deckTypeString + "Channel deck reset." + deckMultiplier + (jokers ? " (contains jokers)" : "") + "[/i]", channel);
         }
     }

@@ -32,7 +32,7 @@ namespace FChatDicebot.BotCommands
             string messageString = "";
             
             CharacterData thisCharacterData = bot.DiceBot.GetCharacterData(characterName, channel);
-            double currentDoubleTime = VelvetcuffConnection.ConvertToSecondsTimestamp(DateTime.UtcNow);
+            double currentDoubleTime = Utils.GetCurrentTimestampSeconds();
             double timeSinceForecast = currentDoubleTime - thisCharacterData.LastLuckForecastTime;
 
             if (timeSinceForecast < BotMain.LuckForecastCooldownSeconds && !thisChannel.RemoveLuckForecastCooldown)
@@ -50,7 +50,7 @@ namespace FChatDicebot.BotCommands
             else
             {
                 //display results
-                int randomLuck = bot.DiceBot.random.Next(20);// +1;
+                int randomLuck = bot.DiceBot.random.Next(20);
                 string buildMeter = "[color=cyan]";
                 for (int i = 0; i < 20; i++ )
                 {
@@ -194,6 +194,7 @@ namespace FChatDicebot.BotCommands
 
                 //save cd info
                 thisCharacterData.LastLuckForecastTime = currentDoubleTime;
+                thisCharacterData.TimesLuckForecast += 1;
                 commandController.SaveCharacterDataToDisk();
                 
                 if(thisChannel.AllowChips)

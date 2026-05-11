@@ -49,14 +49,14 @@ namespace FChatDicebot.BotCommands
                     usedSlots = commandController.GetDefaultSlotsSetting(false);
 
                 //spin slots for 3 results
-                string sendMessage = usedSlots.PrintInformation(debugInfo);// bot.DiceBot.SpinSlots(usedSlots, characterName, channel, betNumber);
+                string sendMessage = usedSlots.PrintInformation(debugInfo);
                 //get graphics for results
 
                 bot.SendMessageInChannel(sendMessage, channel);
             }
             else
             {
-                bot.SendMessageInChannel("This channel's settings for " + Utils.GetCharacterUserTags("Dice Bot") + " do not allow one of slots or showing table info.", channel);
+                bot.SendMessageInChannel("This channel's settings for " + Utils.GetCharacterUserTags(DiceBot.DiceBotCharacter) + " do not allow one of slots or showing table info.", channel);
             }
         }
     }

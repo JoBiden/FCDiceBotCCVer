@@ -10,7 +10,6 @@ namespace FChatDicebot.DiceFunctions
     {
         public string potionNoun;
         public string adjective;
-        //public Enchantment enchantment;
         public int strength;
 
         public int printFormat;
@@ -23,35 +22,45 @@ namespace FChatDicebot.DiceFunctions
         public Potion(string name, ItemCategory category, double rarity, int goldValue) : base(name, category, rarity, goldValue)
         {
         }
-
+        
         public override string GetName()
         {
+            return GetName(false);
+        }
+
+        public override string GetName(bool hidePotionDetails)
+        {
             string returnString = "";
-            switch (printFormat)
+            if (hidePotionDetails)
+                returnString = enchantment.prefix;
+            else
             {
-                case 0:
-                case 1:
-                    returnString = adjective + " " + color + " " + potionNoun + " of [b]" + enchantment.suffix + "[/b]";
-                    break;
-                case 2:
-                case 3:
-                    returnString = adjective + " " + color + " [b]" + enchantment.prefix + "[/b] " + potionNoun;
-                    break;
-                case 4:
-                    returnString = adjective + " [b]" + enchantment.prefix + "[/b] " + potionNoun;
-                    break;
-                case 5:
-                    returnString = color + " [b]" + enchantment.prefix + "[/b] " + potionNoun;
-                    break;
-                case 6:
-                    returnString = color + " " + potionNoun + " of [b]" + enchantment.suffix + "[/b]";
-                    break;
-                case 7:
-                    returnString = adjective + " " + potionNoun + " of [b]" + enchantment.suffix + "[/b]";
-                    break;
-                default:
-                    returnString = adjective + " " + color + " " + potionNoun + " of [b]" + enchantment.suffix + "[/b]";
-                    break;
+                switch (printFormat)
+                {
+                    case 0:
+                    case 1:
+                        returnString = adjective + " " + color + " " + potionNoun + " of [b]" + enchantment.suffix + "[/b]";
+                        break;
+                    case 2:
+                    case 3:
+                        returnString = adjective + " " + color + " [b]" + enchantment.prefix + "[/b] " + potionNoun;
+                        break;
+                    case 4:
+                        returnString = adjective + " [b]" + enchantment.prefix + "[/b] " + potionNoun;
+                        break;
+                    case 5:
+                        returnString = color + " [b]" + enchantment.prefix + "[/b] " + potionNoun;
+                        break;
+                    case 6:
+                        returnString = color + " " + potionNoun + " of [b]" + enchantment.suffix + "[/b]";
+                        break;
+                    case 7:
+                        returnString = adjective + " " + potionNoun + " of [b]" + enchantment.suffix + "[/b]";
+                        break;
+                    default:
+                        returnString = adjective + " " + color + " " + potionNoun + " of [b]" + enchantment.suffix + "[/b]";
+                        break;
+                }
             }
 
             return returnString;
@@ -62,6 +71,7 @@ namespace FChatDicebot.DiceFunctions
             if (enchantment == null)
                 return "(invalid potion)";
 
+            bool hidePotionDetails = enchantment.HidePotionDetails;
             string str = "";
             for (int i = 0; i < strength; i++)
                 str += "☆";
@@ -86,13 +96,16 @@ namespace FChatDicebot.DiceFunctions
             string rarity = GetRarityString();
             
             string flavorString = string.IsNullOrEmpty(flavor) ? "" : ( "\n[sub]" + flavor.Substring(0, 1).ToUpper() + flavor.Substring(1) + " flavored. " + rarity + "[/sub]" );
-            string eiconString = "[eicon]" + eicon + "[/eicon]\n";
+            string eiconString = "[eicon]" + eicon + "[/eicon]";
 
-            string potionName = GetName();
-            string returnString = potionName + strengthString + explanationString + flavorString;// "";
+            string potionName = GetName(hidePotionDetails);
+            string returnString = potionName + strengthString + eiconString + explanationString + flavorString;
+            if(hidePotionDetails)
+            {
+                returnString = potionName + eiconString + explanationString;
+            }
             
             returnString = returnString.Substring(0, 1).ToUpper() + returnString.Substring(1);
-            returnString = eiconString + returnString;
             return returnString;
         }
 

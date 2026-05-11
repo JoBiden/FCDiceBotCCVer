@@ -43,6 +43,16 @@ namespace FChatDicebot.DiceFunctions
             return 5 * 60 * 1000;
         }
 
+        public string GetGameHelp()
+        {
+            string thisGameCommands = "bet # [bettype] (adds another bet with amount and bet type)";
+            string thisGameStartupOptions = "# (your bet amount) [bettype] (your bet type)" +
+                    "\nThe default rules are: the ball lands on 0-36 at random and awards bets based on the odds for that bet." +
+                    "\nPossible bet types: red, black, green, firsthalf, secondhalf, first12, second12, third12, even, odd, #0 - #36";
+
+            return GameSession.GetGameHelp(GetGameName(), thisGameCommands, thisGameStartupOptions, true, true);
+        }
+
         public string GetStartingDisplay()
         {
             return "[eicon]dbroulette1[/eicon][eicon]dbroulette2[/eicon]";
@@ -95,6 +105,11 @@ namespace FChatDicebot.DiceFunctions
                 betType = RouletteBet.OneToEighteen;
             else if (terms.Contains("secondhalf"))
                 betType = RouletteBet.NineteenToThirtySix;
+            else if (terms.Contains("#0") || terms.Contains("green"))
+            {
+                betType = RouletteBet.SpecificNumber;
+                betNumber = 0;
+            }
             else if (terms.Contains("#1"))
             {
                 betType = RouletteBet.SpecificNumber;
@@ -410,9 +425,9 @@ namespace FChatDicebot.DiceFunctions
                 {
                     int betWonAmount = bet.amount * betReturn;
 
-                    if (houseChipsPile.Chips < betWonAmount)
+                    if (houseChipsPile.Chips < betWonAmount + 1)
                     {
-                        diceBot.AddChips(DiceBot.HousePlayerAlias, session.ChannelId, betWonAmount, false);
+                        diceBot.AddChips(DiceBot.HousePlayerAlias, session.ChannelId, betWonAmount + 1, false);
                     }
 
                     winningsString += diceBot.GiveChips(DiceBot.HousePlayerAlias, bet.characterName, session.ChannelId, betWonAmount, false);
@@ -431,6 +446,11 @@ namespace FChatDicebot.DiceFunctions
             string outputString = characterBetsString + "\n" + claimPotString + "\n" + rouletteRollString + "\n" + betReturns;
             
             return outputString;
+        }
+
+        public void Update(BotMain botMain, GameSession session, double currentTime)
+        {
+
         }
 
         public int RouletteBetReturn(int rouletteBallResult, List<int> redNumbers, List<int> blackNumbers, RouletteBet betMade, int specificNumberBet)
@@ -534,10 +554,6 @@ namespace FChatDicebot.DiceFunctions
                         messageString = "Error: Failed to add bet data to game session for " + GetGameName() + ".";
                     }
                 }
-            }
-            if(terms.Contains("help"))
-            {
-                messageString = "Add more bets for roulette with !gc bet (bet amount) (bet type), where bet amount is a number of chips and bet type is red, black, firsthalf, secondhalf, first12, second12, third12, even, odd, #1";
             }
 
             return messageString;

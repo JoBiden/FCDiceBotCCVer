@@ -26,7 +26,7 @@ namespace FChatDicebot.BotCommands.Base
 
                 if (ante > 0 && !thisChannel.AllowChips)
                 {
-                    messageString = "Games" + " [b]with chips[/b] are currently not allowed in this channel under " + Utils.GetCharacterUserTags("Dice Bot") + "'s settings for this channel.";
+                    messageString = "Games" + " [b]with chips[/b] are currently not allowed in this channel under " + Utils.GetCharacterUserTags(DiceBot.DiceBotCharacter) + "'s settings for this channel.";
                 }
                 else
                 {
@@ -123,7 +123,7 @@ namespace FChatDicebot.BotCommands.Base
                         }
                         else
                         {
-                            messageString = "Error: Game session for " + gametype.GetGameName() + " not found or created.";
+                            messageString = "Failed: Game session for " + gametype.GetGameName() + " not found or created.";
                         }//end game session null
                     }//end if gametype != null 
                 }
@@ -132,7 +132,7 @@ namespace FChatDicebot.BotCommands.Base
             }
             else
             {
-                bot.SendMessageInChannel("Joining games is currently not allowed in this channel under " + Utils.GetCharacterUserTags("Dice Bot") + "'s settings for this channel.", channel);
+                bot.SendMessageInChannel("Joining games is currently not allowed in this channel under " + Utils.GetCharacterUserTags(DiceBot.DiceBotCharacter) + "'s settings for this channel.", channel);
             }
         }
     }

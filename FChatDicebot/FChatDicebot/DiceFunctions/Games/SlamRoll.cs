@@ -28,12 +28,12 @@ namespace FChatDicebot.DiceFunctions
 
         public bool AllowAnte()
         {
-            return false;
+            return true;
         }
 
         public bool UsesFlatAnte()
         {
-            return false;
+            return true;
         }
 
         public bool KeepSessionDefault()
@@ -44,6 +44,16 @@ namespace FChatDicebot.DiceFunctions
         public int GetMinimumMsBetweenGames()
         {
             return 0;
+        }
+
+        public string GetGameHelp()
+        {
+            string thisGameCommands = "SetAnte #, ShowPlayers, ResetRound, SetHealth # (player name), SetLives # (player name), SetTurn (player name), SetGrowingTwos (on or off)" +
+                    "\n(as current player only): attack, slam, forfeit";
+            string thisGameStartupOptions = "lives# (set starting lives to #: 1, 2, 3, or 4) growingtwos (growing twos on) naturaltwos (growing twos off) singleslam (limited to 1 slam attack) rerollinit (reroll init instead of loser getting it) " +
+                "\nThe default rules are: starting lives: 1, starting health: 500, unlimited slams, growing twos on, initiative passes to losing player";
+
+            return GameSession.GetGameHelp(GetGameName(), thisGameCommands, thisGameStartupOptions, false, false);
         }
 
         public string GetStartingDisplay()
@@ -70,7 +80,17 @@ namespace FChatDicebot.DiceFunctions
             {
                 session.SlamRollData.RulesAssigned = true;
 
-                if (terms.Contains("lives2"))
+                if(ante > 0)
+                {
+                    messageString += "(ante: " + ante + ")";
+                }
+
+                if (terms.Contains("lives1"))
+                {
+                    session.SlamRollData.StartingLives = 1;
+                    messageString += "(starting lives 1)";
+                }
+                else if (terms.Contains("lives2"))
                 {
                     session.SlamRollData.StartingLives = 2;
                     messageString += "(starting lives 2)";
@@ -79,6 +99,11 @@ namespace FChatDicebot.DiceFunctions
                 {
                     session.SlamRollData.StartingLives = 3;
                     messageString += "(starting lives 3)";
+                }
+                else if (terms.Contains("lives4"))
+                {
+                    session.SlamRollData.StartingLives = 4;
+                    messageString += "(starting lives 4)";
                 }
 
                 if (terms.Contains("growingtwos"))
@@ -138,6 +163,28 @@ namespace FChatDicebot.DiceFunctions
 
         public string RunGame(System.Random r, String executingPlayer, List<String> playerNames, DiceBot diceBot, BotMain botMain, GameSession session)
         {
+            if(session.Ante > 0)
+            {
+                string outputErrorAnte = "";
+                foreach(string player in session.Players)
+                {
+                    ChipPile playerPile = diceBot.GetChipPile(player, session.ChannelId, true);
+                    if(playerPile.Chips < session.Ante)
+                    {
+                        if(!string.IsNullOrEmpty(outputErrorAnte))
+                        {
+                            outputErrorAnte += ", ";
+                        }
+                        outputErrorAnte = Utils.GetCharacterUserTags(player) + " cannot afford the ante of " + session.Ante + " chips. (" + playerPile.Chips + " held)";
+                    }
+                }
+                if(!string.IsNullOrEmpty(outputErrorAnte))
+                {
+                    session.State = GameState.Unstarted;
+                    return "Session for SlamRoll failed to start: " + outputErrorAnte;
+                }
+            }
+
             botMain.SendMessageInChannel("[color=yellow]A new [b]Slam Roll[/b] fight is starting...[/color]", session.ChannelId);
 
             if(session.SlamRollData == null)
@@ -175,6 +222,15 @@ namespace FChatDicebot.DiceFunctions
 
                 playerIntrosOutput += Utils.GetCharacterIconTags(playerName) + " has [b]entered the ring[/b]! ";
 
+                string betstring = "";
+
+                if (session.Ante > 0)
+                {
+                    betstring = diceBot.BetChips(playerName, session.ChannelId, session.Ante, false) + "\n";
+                }
+
+                playerIntrosOutput += betstring;
+
                 session.SlamRollData.SlamRollPlayers.Add(p);
             }
 
@@ -193,6 +249,11 @@ namespace FChatDicebot.DiceFunctions
             return outputString;
         }
 
+        public void Update(BotMain botMain, GameSession session, double currentTime)
+        {
+
+        }
+
         public SlamRollPlayer RollHighestInitiativePlayer(GameSession session, DiceBot diceBot, out string outputString)
         {
             outputString = "";
@@ -207,7 +268,7 @@ namespace FChatDicebot.DiceFunctions
             {
                 if (session.SlamRollData.RollForFirstTurn)
                 {
-                    DiceRoll initRoll = new DiceRoll() { DiceSides = 100, DiceRolled = 1 };
+                    DiceRoll initRoll = new DiceRoll(player.Name, session.ChannelId, diceBot) { DiceSides = 100, DiceRolled = 1 };
                     initRoll.Roll(diceBot.random);
                     player.Initiative = (int) initRoll.Total;
                     outputString += "\n" + Utils.GetCharacterUserTags(player.Name) + " rolled [color=gray]" + initRoll.ResultString() + " initiative[/color]";
@@ -376,6 +437,11 @@ namespace FChatDicebot.DiceFunctions
 
             output += " " + GetFlavorTextForMatch(bot.random, finishedByElimination);
 
+            if(session.Ante > 0)
+            {
+                output += "\n" + bot.ClaimPot(winner.Name, session.ChannelId, 1);
+            }
+
             session.State = GameState.Finished;
 
             bot.RemoveGameSession(session.ChannelId, session.CurrentGame);
@@ -468,19 +534,13 @@ namespace FChatDicebot.DiceFunctions
         public string GetRulesText(GameSession session)
         {
             SlamRollData dat = session.SlamRollData;
-            string rules = string.Format("Starting Health: {0}, Starting Lives: {1}, Reroll Init: {2}, Slam Threshold: {3}, Single Slam {4}, Growing Twos {5}", dat.StartingHealth, dat.StartingLives, dat.RollInitiativeAfterRound, dat.SlamThreshold, !dat.AllowMultipleSlams, dat.GrowingTwos);
+            string rules = string.Format("Starting Health: {0}, Starting Lives: {1}, Reroll Init: {2}, Slam Threshold: {3}, Single Slam: {4}, Growing Twos: {5}", dat.StartingHealth, dat.StartingLives, dat.RollInitiativeAfterRound, dat.SlamThreshold, !dat.AllowMultipleSlams, dat.GrowingTwos);
             return rules;
         }
 
         public string IssueGameCommand(DiceBot diceBot, BotMain botMain, string character, string channel, GameSession session, string[] terms, string[] rawTerms)
         {
-            if (terms.Contains("help"))
-            {
-                return "GameCommands for Slam Roll:\n " + CommandsList +
-                    "\nShowPlayers, ResetRound, SetHealth # (player name), SetLives # (player name), SetTurn (player name), SetGrowingTwos (on or off)";
-                    //+ "\n[startup parameters: sides4, sides6, sides8, tokens, sameside, increasingside, startDice3 - startDice8, # (ante)]";
-            }
-            else if(session.State != GameState.GameInProgress)
+            if(session.State != GameState.GameInProgress)
             {
                 return "Game commands for " + GetGameName() + " only work while the game is running.";
             }
@@ -614,7 +674,7 @@ namespace FChatDicebot.DiceFunctions
                 }
                 else
                 {
-                    string allInputs = Utils.GetFullStringOfInputs(rawTerms);
+                    string allInputs = Utils.GetUserNameFromFullInputs(rawTerms);
                     string playerName = allInputs.Substring(allInputs.IndexOf(' ')).Trim();
                     if(terms.Length == 2)
                     {
@@ -648,7 +708,7 @@ namespace FChatDicebot.DiceFunctions
                 }
                 else
                 {
-                    string allInputs = Utils.GetFullStringOfInputs(rawTerms);
+                    string allInputs = Utils.GetUserNameFromFullInputs(rawTerms);
                     string playerName = allInputs.Substring(allInputs.IndexOf(' ')).Trim();
                     if (terms.Length == 2)
                     {
@@ -683,7 +743,7 @@ namespace FChatDicebot.DiceFunctions
                 }
                 else
                 {
-                    string allInputs = Utils.GetFullStringOfInputs(rawTerms);
+                    string allInputs = Utils.GetUserNameFromFullInputs(rawTerms);
                     string playerName = allInputs.Substring(allInputs.IndexOf(' ')).Trim();
 
                     SlamRollPlayer relevantPlayer = GetSlamRollPlayerByName(session, playerName);
@@ -718,7 +778,7 @@ namespace FChatDicebot.DiceFunctions
             {
                 if (terms.Length < 2)
                 {
-                    returnString = "Error: improper command format. Use 'setgrowingtwos (playername)' with (playername) as the user's full display name.";
+                    returnString = "Error: improper command format. Use 'setgrowingtwos (on) or (off)'.";
                 }
                 else
                 {
