@@ -158,6 +158,8 @@
   <ItemGroup>
     <Compile Include="BotCommandController.cs" />
     <Compile Include="BotCommands\ChateauBond.cs" />
+    <Compile Include="BotCommands\ChateauBreed.cs" />
+    <Compile Include="BotCommands\ChateauBirth.cs" />
     <Compile Include="BotCommands\ChateauAdminRename.cs" />
     <Compile Include="BotCommands\ChateauBank.cs" />
     <Compile Include="BotCommands\ChateauPay.cs" />
@@ -349,6 +351,7 @@
     <Compile Include="InteractionProcessors\Commitment\ConsumeProcessor.cs" />
     <Compile Include="InteractionProcessors\Commitment\EmployProcessor.cs" />
     <Compile Include="InteractionProcessors\Commitment\BondProcessor.cs" />
+    <Compile Include="InteractionProcessors\Commitment\BreedProcessor.cs" />
     <Compile Include="InteractionProcessors\Involved\PaymentGiveProcessor.cs" />
     <Compile Include="InteractionProcessors\Involved\PaymentReceiveProcessor.cs" />
     <Compile Include="Model\ChateauDB.cs" />
