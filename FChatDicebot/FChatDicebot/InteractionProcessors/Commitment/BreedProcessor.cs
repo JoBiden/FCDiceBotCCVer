@@ -16,6 +16,18 @@ namespace FChatDicebot.InteractionProcessors.Commitment
         public const int MaxGestationDays = 7;
         public const int DefaultGestationDays = 1;
         public const int DefaultBroodSize = 1;
+        public const int RareTwinChanceDenominator = 100; // 1-in-100 → 1% chance
+
+        // Single mutable RNG used for brood-size rolls. Tests can swap this out for a
+        // seeded Random to make twin-chance and brood-range outcomes deterministic.
+        // (Random isn't thread-safe; the bot processes one command at a time so that's
+        // fine here.)
+        internal static Random Rng = new Random();
+
+        // Key-prefix helpers for MonsterStats so the "monster type" and "category"
+        // namespaces can't collide.
+        public static string MonsterStatsKey(string monsterType) => "monster:" + monsterType.ToLowerInvariant();
+        public static string CategoryStatsKey(string category) => "category:" + category.ToLowerInvariant();
 
         internal struct CategoryDefault
         {
@@ -124,7 +136,13 @@ namespace FChatDicebot.InteractionProcessors.Commitment
             Profile recipientProfile = Database.GetProfile(recipient);
 
             Identifier monsterIdentifier = Database.GetIdentifier(monsterType);
-            ResolveGestationAndBrood(monsterIdentifier, out int gestationDays, out int broodSize);
+            ResolveGestationAndBrood(monsterIdentifier, Rng, out int gestationDays, out int broodSize, out bool isRareTwins);
+
+            // Snapshot the monster's categories on the pregnancy so birth-time category
+            // counters don't need to re-fetch the Identifier (which could have changed).
+            List<string> categoriesSnapshot = monsterIdentifier?.categories != null
+                ? new List<string>(monsterIdentifier.categories)
+                : new List<string>();
 
             DateTime now = DateTime.UtcNow;
             Pregnancy pregnancy = new Pregnancy
@@ -134,7 +152,9 @@ namespace FChatDicebot.InteractionProcessors.Commitment
                 MonsterType = monsterType,
                 ConceivedAt = now,
                 ReadyAt = now.AddDays(gestationDays),
-                BroodSize = broodSize
+                BroodSize = broodSize,
+                Categories = categoriesSnapshot,
+                IsRareTwins = isRareTwins
             };
 
             if (recipientProfile.pregnancies == null)
@@ -150,9 +170,30 @@ namespace FChatDicebot.InteractionProcessors.Commitment
             Database.SetProfile(initiator, initiatorProfile);
             Database.SetProfile(recipient, recipientProfile);
 
+            // Bump the global pregnancy counter for this monster type and each of its
+            // categories. Offspring counters are bumped at birth time, not here.
+            IncrementGlobalPregnancyCounts(Database, monsterType, categoriesSnapshot);
+
             Database.DeletePendingCommand(command.Id);
 
             return "breed";
+        }
+
+        /// <summary>
+        /// Increment the global pregnancy counter by 1 for the monster type and for each
+        /// of its categories. Used at breed time. (Offspring counters live separately and
+        /// are bumped at birth time by ChateauBirth.)
+        /// </summary>
+        public static void IncrementGlobalPregnancyCounts(IChateauDatabase database, string monsterType, IEnumerable<string> categories)
+        {
+            if (string.IsNullOrEmpty(monsterType)) return;
+            database.IncrementMonsterStats(MonsterStatsKey(monsterType), pregnancyDelta: 1, offspringDelta: 0);
+            if (categories == null) return;
+            foreach (var category in categories)
+            {
+                if (string.IsNullOrEmpty(category)) continue;
+                database.IncrementMonsterStats(CategoryStatsKey(category), pregnancyDelta: 1, offspringDelta: 0);
+            }
         }
 
         public override string GetCompletionMessage(Profile initiatorProfile, Profile recipientProfile, string identifier)
@@ -188,8 +229,12 @@ namespace FChatDicebot.InteractionProcessors.Commitment
         /// otherwise the absolute fallback (1 day, brood 1) is used. Each field is
         /// resolved independently — a monster can override only gestation while
         /// inheriting brood size from its category, or vice versa.
+        ///
+        /// When the resolved brood range is exactly [1, 1], a 1% twin chance applies:
+        /// the roll yields 2 instead of 1 and <paramref name="isRareTwins"/> is set so
+        /// the birth message can emit special flavor.
         /// </summary>
-        internal static void ResolveGestationAndBrood(Identifier monsterIdentifier, out int gestationDays, out int broodSize)
+        internal static void ResolveGestationAndBrood(Identifier monsterIdentifier, Random random, out int gestationDays, out int broodSize, out bool isRareTwins)
         {
             CategoryDefault? categoryDefault = ResolveCategoryDefault(monsterIdentifier);
 
@@ -221,7 +266,7 @@ namespace FChatDicebot.InteractionProcessors.Commitment
             }
 
             gestationDays = ClampGestation(resolvedGestation);
-            broodSize = RollBroodSize(resolvedBroodMin, resolvedBroodMax);
+            broodSize = RollBroodSize(resolvedBroodMin, resolvedBroodMax, random, out isRareTwins);
         }
 
         internal static CategoryDefault? ResolveCategoryDefault(Identifier monsterIdentifier)
@@ -254,12 +299,23 @@ namespace FChatDicebot.InteractionProcessors.Commitment
             return rawDays;
         }
 
-        private static int RollBroodSize(int rawMin, int rawMax)
+        internal static int RollBroodSize(int rawMin, int rawMax, Random random, out bool isRareTwins)
         {
+            isRareTwins = false;
             int min = rawMin > 0 ? rawMin : DefaultBroodSize;
             int max = rawMax >= min ? rawMax : min;
-            if (min == max) return min;
-            return new Random().Next(min, max + 1);
+            if (min == max)
+            {
+                // Rare twin chance only fires when both bounds are exactly 1 (the
+                // monster would otherwise always birth a single offspring).
+                if (min == 1 && random.Next(RareTwinChanceDenominator) == 0)
+                {
+                    isRareTwins = true;
+                    return 2;
+                }
+                return min;
+            }
+            return random.Next(min, max + 1);
         }
     }
 }
