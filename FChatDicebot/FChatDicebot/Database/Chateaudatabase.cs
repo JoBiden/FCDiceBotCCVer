@@ -606,6 +606,28 @@ namespace FChatDicebot.Database
             return null;
         }
 
+        // Monster Stats Operations (global aggregate counts for breed/birth)
+        public MonsterStats GetMonsterStats(string key)
+        {
+            var collection = Database.GetCollection<MonsterStats>("MonsterStats");
+            var filter = Builders<MonsterStats>.Filter.Eq(s => s.Id, key);
+            return collection.Find(filter).FirstOrDefault();
+        }
+
+        public void IncrementMonsterStats(string key, int pregnancyDelta, int offspringDelta)
+        {
+            if (string.IsNullOrEmpty(key)) return;
+            if (pregnancyDelta == 0 && offspringDelta == 0) return;
+
+            var collection = Database.GetCollection<MonsterStats>("MonsterStats");
+            var filter = Builders<MonsterStats>.Filter.Eq(s => s.Id, key);
+            var update = Builders<MonsterStats>.Update
+                .Inc(s => s.PregnancyCount, pregnancyDelta)
+                .Inc(s => s.OffspringCount, offspringDelta);
+            var options = new UpdateOptions { IsUpsert = true };
+            collection.UpdateOne(filter, update, options);
+        }
+
         // Mod Message Operations
         public string GetModMessage(string messageLabel)
         {

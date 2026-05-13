@@ -43,6 +43,7 @@ namespace FChatDicebot.Tests.Fixtures
             Database.ClearCollection("Identifiers");
             Database.ClearCollection("ModMessages");
             Database.ClearCollection("Pledges");
+            Database.ClearCollection("MonsterStats");
         }
 
         /// <summary>

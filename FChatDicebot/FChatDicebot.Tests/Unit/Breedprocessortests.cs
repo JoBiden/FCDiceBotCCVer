@@ -17,6 +17,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
         private readonly TestDatabaseFixture _fixture;
         private readonly IChateauDatabase _database;
         private readonly BreedProcessor _processor;
+        private readonly Random _savedRng;
 
         public BreedProcessorTests(TestDatabaseFixture fixture)
         {
@@ -24,6 +25,16 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
             _fixture.Reset();
             _database = _fixture.Database;
             _processor = new BreedProcessor(_database);
+
+            // Default to a deterministic RNG that never triggers the rare-twin event
+            // (Sample()=0.5 → Next(100)=50, never 0). Individual tests can override.
+            _savedRng = BreedProcessor.Rng;
+            BreedProcessor.Rng = new FixedSampleRandom(0.5);
+        }
+
+        public void Dispose()
+        {
+            BreedProcessor.Rng = _savedRng;
         }
 
         [Fact]
@@ -110,10 +121,30 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
             Assert.Equal("Alice", pregnancy.Initiator);
             Assert.Equal("slime", pregnancy.MonsterType);
             Assert.Equal(2, pregnancy.BroodSize);
+            Assert.False(pregnancy.IsRareTwins); // not a twin event — min was already 2
             Assert.True(pregnancy.ConceivedAt >= before.AddSeconds(-1));
             Assert.True(pregnancy.ReadyAt >= pregnancy.ConceivedAt.AddDays(3).AddSeconds(-1));
             Assert.True(pregnancy.ReadyAt <= pregnancy.ConceivedAt.AddDays(3).AddSeconds(1));
             Assert.False(string.IsNullOrEmpty(pregnancy.Id));
+        }
+
+        [Fact]
+        public void ProcessInteraction_StoresMonsterCategoriesOnPregnancy()
+        {
+            new ProfileBuilder().WithUserName("Alice").WithDisplayName("Alice").BuildAndSave(_database);
+            new ProfileBuilder().WithUserName("Bob").WithDisplayName("Bob").BuildAndSave(_database);
+            _fixture.SeedIdentifier(new Identifier
+            {
+                type = "lamia",
+                categories = new[] { "monster", "snake", "beast", "mount" }
+            });
+
+            _processor.ProcessInteraction(SaveAndReturn(BuildPendingCommand("Alice", "Bob", "lamia")));
+
+            var bob = _database.GetProfile("Bob");
+            var pregnancy = bob.pregnancies.Single();
+            Assert.NotNull(pregnancy.Categories);
+            Assert.Equal(new[] { "monster", "snake", "beast", "mount" }, pregnancy.Categories.ToArray());
         }
 
         [Fact]
@@ -129,7 +160,10 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
 
             var bob = _database.GetProfile("Bob");
             var pregnancy = bob.pregnancies.Single();
+            // Default brood is 1, but the twin RNG check runs here. With our fixture's
+            // Sample()=0.5 RNG, Next(100) returns 50 → never triggers the twin event.
             Assert.Equal(1, pregnancy.BroodSize);
+            Assert.False(pregnancy.IsRareTwins);
             Assert.True(pregnancy.ReadyAt <= pregnancy.ConceivedAt.AddDays(1).AddSeconds(1));
         }
 
@@ -226,7 +260,6 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
                 type = "basilisk",
                 description = "a basilisk",
                 categories = new[] { "snake" }
-                // no explicit gestationDays/broodSize fields → category default applies
             });
 
             var pendingCommand = BuildPendingCommand("Alice", "Bob", "basilisk");
@@ -244,15 +277,12 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
         [Fact]
         public void ProcessInteraction_MultipleCategories_HighestPriorityWins()
         {
-            // Lamia-shaped identifier — snake (priority 6) should beat beast (9), mount (7),
-            // and monster (10). Carapace ties snake at 6 but appears later in the categories
-            // array, so snake stays the best.
             new ProfileBuilder().WithUserName("Alice").WithDisplayName("Alice").BuildAndSave(_database);
             new ProfileBuilder().WithUserName("Bob").WithDisplayName("Bob").BuildAndSave(_database);
             _fixture.SeedIdentifier(new Identifier
             {
                 type = "lamia",
-                description = "Also known as Naga, these snake like creatures love to wrap others in their coils.",
+                description = "lamia",
                 categories = new[] { "monster", "snake", "beast", "mount", "carapace", "poison" }
             });
 
@@ -263,8 +293,8 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
 
             var bob = _database.GetProfile("Bob");
             var pregnancy = bob.pregnancies.Single();
-            Assert.InRange(pregnancy.BroodSize, 4, 8); // snake brood 4-8
-            Assert.True(pregnancy.ReadyAt <= pregnancy.ConceivedAt.AddDays(3).AddSeconds(1)); // snake 3 days
+            Assert.InRange(pregnancy.BroodSize, 4, 8);
+            Assert.True(pregnancy.ReadyAt <= pregnancy.ConceivedAt.AddDays(3).AddSeconds(1));
         }
 
         [Fact]
@@ -276,7 +306,6 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
             {
                 type = "bee",
                 categories = new[] { "monster", "insect", "flight" }
-                // insect (1) beats flight (6) and monster (10).
             });
 
             var pendingCommand = BuildPendingCommand("Alice", "Bob", "bee");
@@ -292,7 +321,6 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
         [Fact]
         public void ProcessInteraction_OnlyCosmeticCategories_UsesFallback()
         {
-            // poison, cutting, perfume aren't in the defaults table — fall back to (1 day, brood 1)
             new ProfileBuilder().WithUserName("Alice").WithDisplayName("Alice").BuildAndSave(_database);
             new ProfileBuilder().WithUserName("Bob").WithDisplayName("Bob").BuildAndSave(_database);
             _fixture.SeedIdentifier(new Identifier
@@ -315,7 +343,6 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
         [Fact]
         public void ProcessInteraction_ExplicitGestationOverridesCategory_BroodInheritsFromCategory()
         {
-            // dragon category → 7 day / brood 1, but explicit gestationDays=2 overrides only gestation.
             new ProfileBuilder().WithUserName("Alice").WithDisplayName("Alice").BuildAndSave(_database);
             new ProfileBuilder().WithUserName("Bob").WithDisplayName("Bob").BuildAndSave(_database);
             _fixture.SeedIdentifier(new Identifier
@@ -333,7 +360,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
             var bob = _database.GetProfile("Bob");
             var pregnancy = bob.pregnancies.Single();
             Assert.True(pregnancy.ReadyAt <= pregnancy.ConceivedAt.AddDays(2).AddSeconds(1));
-            Assert.Equal(1, pregnancy.BroodSize); // inherited from dragon
+            Assert.Equal(1, pregnancy.BroodSize); // inherited from dragon (min=max=1) — twin chance disabled by RNG
         }
 
         [Fact]
@@ -360,6 +387,113 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
         {
             var identifier = new Identifier { type = "mystery", categories = new string[0] };
             Assert.Null(BreedProcessor.ResolveCategoryDefault(identifier));
+        }
+
+        // ─── Rare twin tests ──────────────────────────────────────────────────
+
+        [Fact]
+        public void RollBroodSize_MinMaxBothOne_NoTwinTrigger_ReturnsOne()
+        {
+            int result = BreedProcessor.RollBroodSize(1, 1, new FixedSampleRandom(0.5), out bool isTwins);
+            Assert.Equal(1, result);
+            Assert.False(isTwins);
+        }
+
+        [Fact]
+        public void RollBroodSize_MinMaxBothOne_TwinTrigger_ReturnsTwoAndSetsFlag()
+        {
+            int result = BreedProcessor.RollBroodSize(1, 1, new FixedSampleRandom(0.0), out bool isTwins);
+            Assert.Equal(2, result);
+            Assert.True(isTwins);
+        }
+
+        [Fact]
+        public void RollBroodSize_MinMaxBothTwo_NoTwinChanceFires()
+        {
+            // Twin chance is gated on min==max==1 specifically.
+            int result = BreedProcessor.RollBroodSize(2, 2, new FixedSampleRandom(0.0), out bool isTwins);
+            Assert.Equal(2, result);
+            Assert.False(isTwins);
+        }
+
+        [Fact]
+        public void ProcessInteraction_RareTwinTriggers_PregnancyFlaggedAndBroodIsTwo()
+        {
+            BreedProcessor.Rng = new FixedSampleRandom(0.0); // Next(100) → 0 → twin fires
+
+            new ProfileBuilder().WithUserName("Alice").WithDisplayName("Alice").BuildAndSave(_database);
+            new ProfileBuilder().WithUserName("Bob").WithDisplayName("Bob").BuildAndSave(_database);
+            _fixture.SeedIdentifier(new Identifier
+            {
+                type = "dragon",
+                categories = new[] { "dragon" } // dragon → min=max=1
+            });
+
+            _processor.ProcessInteraction(SaveAndReturn(BuildPendingCommand("Alice", "Bob", "dragon")));
+
+            var bob = _database.GetProfile("Bob");
+            var pregnancy = bob.pregnancies.Single();
+            Assert.Equal(2, pregnancy.BroodSize);
+            Assert.True(pregnancy.IsRareTwins);
+        }
+
+        // ─── Global counter tests ─────────────────────────────────────────────
+
+        [Fact]
+        public void ProcessInteraction_IncrementsGlobalPregnancyCounters()
+        {
+            new ProfileBuilder().WithUserName("Alice").WithDisplayName("Alice").BuildAndSave(_database);
+            new ProfileBuilder().WithUserName("Bob").WithDisplayName("Bob").BuildAndSave(_database);
+            _fixture.SeedIdentifier(new Identifier
+            {
+                type = "lamia",
+                categories = new[] { "monster", "snake", "beast" }
+            });
+
+            _processor.ProcessInteraction(SaveAndReturn(BuildPendingCommand("Alice", "Bob", "lamia")));
+
+            var monsterStats = _database.GetMonsterStats(BreedProcessor.MonsterStatsKey("lamia"));
+            Assert.NotNull(monsterStats);
+            Assert.Equal(1, monsterStats.PregnancyCount);
+            Assert.Equal(0, monsterStats.OffspringCount); // breed doesn't bump offspring
+
+            Assert.Equal(1, _database.GetMonsterStats(BreedProcessor.CategoryStatsKey("monster")).PregnancyCount);
+            Assert.Equal(1, _database.GetMonsterStats(BreedProcessor.CategoryStatsKey("snake")).PregnancyCount);
+            Assert.Equal(1, _database.GetMonsterStats(BreedProcessor.CategoryStatsKey("beast")).PregnancyCount);
+        }
+
+        [Fact]
+        public void ProcessInteraction_GlobalPregnancyCountersAccumulateAcrossBreeds()
+        {
+            new ProfileBuilder().WithUserName("Alice").WithDisplayName("Alice").BuildAndSave(_database);
+            new ProfileBuilder().WithUserName("Bob").WithDisplayName("Bob").BuildAndSave(_database);
+            new ProfileBuilder().WithUserName("Carol").WithDisplayName("Carol").BuildAndSave(_database);
+            _fixture.SeedIdentifier(new Identifier
+            {
+                type = "slime",
+                categories = new[] { "slime" }
+            });
+
+            _processor.ProcessInteraction(SaveAndReturn(BuildPendingCommand("Alice", "Bob", "slime")));
+            _processor.ProcessInteraction(SaveAndReturn(BuildPendingCommand("Alice", "Carol", "slime")));
+
+            Assert.Equal(2, _database.GetMonsterStats(BreedProcessor.MonsterStatsKey("slime")).PregnancyCount);
+            Assert.Equal(2, _database.GetMonsterStats(BreedProcessor.CategoryStatsKey("slime")).PregnancyCount);
+        }
+
+        [Fact]
+        public void ProcessInteraction_UnknownMonster_StillBumpsMonsterTypeCounter()
+        {
+            new ProfileBuilder().WithUserName("Alice").WithDisplayName("Alice").BuildAndSave(_database);
+            new ProfileBuilder().WithUserName("Bob").WithDisplayName("Bob").BuildAndSave(_database);
+
+            // No identifier seeded — categories will be empty but the monster-type key
+            // should still be incremented.
+            _processor.ProcessInteraction(SaveAndReturn(BuildPendingCommand("Alice", "Bob", "mystery")));
+
+            var stats = _database.GetMonsterStats(BreedProcessor.MonsterStatsKey("mystery"));
+            Assert.NotNull(stats);
+            Assert.Equal(1, stats.PregnancyCount);
         }
 
         [Fact]
@@ -397,8 +531,18 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
             return pendingCommand;
         }
 
-        public void Dispose()
+        /// <summary>
+        /// A Random whose Sample() always returns the same fixed value. Because Random's
+        /// public methods (Next(int), Next(int,int)) are implemented in terms of Sample,
+        /// overriding it gives us deterministic outcomes for both single-arg and
+        /// range-arg Next calls. Pass 0.5 for "middle of every range, never zero" or 0.0
+        /// for "always lower bound / always trigger rare events keyed on Next(N)==0."
+        /// </summary>
+        private class FixedSampleRandom : Random
         {
+            private readonly double _sample;
+            public FixedSampleRandom(double sample) { _sample = sample; }
+            protected override double Sample() => _sample;
         }
     }
 }
