@@ -52,6 +52,7 @@ namespace FChatDicebot.BotCommands
                 bot.SendPrivateMessage(
                     "You've already bred " + recipientProfile.displayName + " too recently. Please respect that 'Commitment' interactions are meant to be meaningful, and not spammed. " + recipientProfile.displayName + " will be available to bred by you again in " + remaining,
                     characterName);
+                //test comment to confirm Claude sees this edit
                 return;
             }
 
