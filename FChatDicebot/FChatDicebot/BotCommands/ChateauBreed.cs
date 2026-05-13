@@ -13,7 +13,7 @@ namespace FChatDicebot.BotCommands
             Aliases = new string[] { };
             Category = "Commitment Interaction";
             ShortDescription = "Breed another resident with new monster life";
-            LongDescription = "Implant the recipient with a new monstrous pregnancy. The recipient must !consent. Gestation duration is set per monster in the catalog (1-7 days). Multiple concurrent pregnancies are supported. Once gestation completes, the carrier may use !birth to release the brood.";
+            LongDescription = "Breed a willing host. The host must !consent. Gestation duration varies per species. Multiple pregnancies can be carried at once. Once gestation completes, the host may give !birth at any time. Cooldowns are per breeder/bred pair - you can impregnate other people or be bred by others without waiting.";
             Usage = "!breed [noparse][user]NameInUserTag[/user][/noparse] {monster}";
             RelatedCommands = new string[] { "birth", "monsterize", "consent", "dossier" };
             CooldownDuration = "1 Day";
@@ -50,7 +50,7 @@ namespace FChatDicebot.BotCommands
             {
                 string remaining = Utils.GetTimeSpanPrint(initiatorProfile.timers[pairKey].timerEnd - DateTime.UtcNow);
                 bot.SendPrivateMessage(
-                    "You've already bred " + recipientProfile.displayName + " too recently. Please respect that 'Commitment' interactions are meant to be just that - a commitment. " + recipientProfile.displayName + " will be available to breed again in " + remaining,
+                    "You've already bred " + recipientProfile.displayName + " too recently. Please respect that 'Commitment' interactions are meant to be meaningful, and not spammed. " + recipientProfile.displayName + " will be available to bred by you again in " + remaining,
                     characterName);
                 return;
             }

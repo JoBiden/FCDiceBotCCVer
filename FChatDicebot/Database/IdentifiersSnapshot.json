@@ -1,0 +1,4788 @@
+[
+  {
+    "_id": {
+      "$oid": "63365afa5e28c1a926dccff3"
+    },
+    "type": "bottomless",
+    "description": "An outfit with nothing to preserve modesty below the waist, except perhaps some footwear.",
+    "categories": [
+      "attire"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63365e3c5e28c1a926dccff4"
+    },
+    "type": "oriental",
+    "description": "Traditional garb that had roots on island nations to the East in many planes.",
+    "categories": [
+      "attire"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63365f215e28c1a926dccff5"
+    },
+    "type": "regal",
+    "description": "The finest of garments fit for royalty, usually involving an ornamental headpiece.",
+    "categories": [
+      "attire"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63365f535e28c1a926dccff6"
+    },
+    "type": "nude",
+    "description": "The default one is born with, the absence of attire.",
+    "categories": [
+      "attire"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63365fa35e28c1a926dccff7"
+    },
+    "type": "wedding",
+    "description": "A white dress, a black suit, or other clothing meant to be worn on the wedding day.",
+    "categories": [
+      "attire"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633660065e28c1a926dccff8"
+    },
+    "type": "stripper",
+    "description": "A highly revealing outfit that clearly informs onlookers that your body is for sale.",
+    "categories": [
+      "attire"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633660545e28c1a926dccff9"
+    },
+    "type": "piercings",
+    "description": "When the number of piercings reaches a certain point, it's fashion without a need for clothing on top of it.",
+    "categories": [
+      "attire"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633660b35e28c1a926dccffa"
+    },
+    "type": "gyaru",
+    "description": "A tanned body meant to protest restrictive beauty standards, and skimpy clothes that let everyone know you're a sex loving party girl",
+    "categories": [
+      "attire"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633660e75e28c1a926dccffb"
+    },
+    "type": "bondage",
+    "description": "Usually involving a lot of leather, this outfit restricts movement or the senses in some fashion.",
+    "categories": [
+      "attire"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633661275e28c1a926dccffc"
+    },
+    "type": "idol",
+    "description": "An outfit made for the stage, so you can shine bright for all your adoring fans.",
+    "categories": [
+      "attire"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6336619c5e28c1a926dccffd"
+    },
+    "type": "bunnygirl",
+    "description": "This leotard and bunny ear combo is often accompanied by leggings or fishnets. A mainstay in gambling halls.",
+    "categories": [
+      "attire"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633661f55e28c1a926dccffe"
+    },
+    "type": "shibari",
+    "description": "Silken rope bondage tied in artful ways around the body.",
+    "categories": [
+      "attire"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633662705e28c1a926dccfff"
+    },
+    "type": "maidoutfit",
+    "description": "Usually featuring black and white frills, an outfit meant to titillate your employer while you tend to the chores.",
+    "categories": [
+      "attire"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633663465e28c1a926dcd000"
+    },
+    "type": "swimsuit",
+    "description": "Almost as revealing as underwear, a swimsuit still manages to preserve some shred of modesty in or by the water.",
+    "categories": [
+      "attire"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633663895e28c1a926dcd001"
+    },
+    "type": "slutty",
+    "description": "Don't mistake these clothes for implied consent, but when you're dressed so skimpily, you're probably not planning to say no...",
+    "categories": [
+      "attire"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633663b75e28c1a926dcd002"
+    },
+    "type": "punk",
+    "description": "Leather, spikes, piercings, dyed hair, and other body mods define this rebellious look.",
+    "categories": [
+      "attire"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633664255e28c1a926dcd003"
+    },
+    "type": "office",
+    "description": "A professional look that defines the workspace of the middle class, as well as their sexual fantasies.",
+    "categories": [
+      "attire"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633664fa5e28c1a926dcd004"
+    },
+    "type": "casual",
+    "description": "Not dressed to impress, this low effort but comfortable everyday wear still has a pleasant appeal.",
+    "categories": [
+      "attire"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6336654d5e28c1a926dcd005"
+    },
+    "type": "bimbo",
+    "description": "Like, there's a lot of like, pink and stuff for bimbo at- att- clothes. Probably plastic surgery too.",
+    "categories": [
+      "attire"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633665995e28c1a926dcd006"
+    },
+    "type": "armored",
+    "description": "Heavy, durable, and ready for combat. Unless you're wearing slut armor like a chainmail bikini.",
+    "categories": [
+      "attire"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633665ce5e28c1a926dcd007"
+    },
+    "type": "practical",
+    "description": "No nonsense. This outfit says you're here to get the job done, no bells whistles or frills.",
+    "categories": [
+      "attire"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633665fd5e28c1a926dcd008"
+    },
+    "type": "traditional",
+    "description": "Clothing from another era, often with high cultural significance.",
+    "categories": [
+      "attire"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633666685e28c1a926dcd009"
+    },
+    "type": "bitchsuit",
+    "description": "Piddlefour bondage that essentially requires you to walk on all fours, with padded leather that forces you into the pose.",
+    "categories": [
+      "attire"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6336670d5e28c1a926dcd00a"
+    },
+    "type": "socks",
+    "description": "Somehow, wearing just your socks feels even lewder than walking around nude. Often these socks are knee or thigh high.",
+    "categories": [
+      "attire"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6336674d5e28c1a926dcd00b"
+    },
+    "type": "lingerie",
+    "description": "Sheer, lacey, and/or revealing outfits specifically designed to be sexy in the bedroom.",
+    "categories": [
+      "attire"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633667845e28c1a926dcd00c"
+    },
+    "type": "cosplay",
+    "description": "Costumes that help you to look just like your favorite character from your favorite media.",
+    "categories": [
+      "attire"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633667b45e28c1a926dcd00d"
+    },
+    "type": "formal",
+    "description": "Evening wear perfect for fancy cocktail parties and other high class social affairs.",
+    "categories": [
+      "attire"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633668215e28c1a926dcd00e"
+    },
+    "type": "topless",
+    "description": "An outfit with nothing to preserve modesty above the waist, except perhaps past the shoulders and neck.",
+    "categories": [
+      "attire"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633668815e28c1a926dcd00f"
+    },
+    "type": "workout",
+    "description": "Breathable clothes that allow for freedom of movement, making it easy to exercise and work up a sweat.",
+    "categories": [
+      "attire"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633668ab5e28c1a926dcd010"
+    },
+    "type": "ruined",
+    "description": "Whatever this was before, its now strips of fabric and materials that barely looks like clothes.",
+    "categories": [
+      "attire"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633669355e28c1a926dcd011"
+    },
+    "type": "western",
+    "description": "Perfect for herding cattle. Defined by large hats and spurred boots.",
+    "categories": [
+      "attire"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633669cc5e28c1a926dcd012"
+    },
+    "type": "latex",
+    "description": "Skintight material often meant to objectify and fetishize the wearer.",
+    "categories": [
+      "attire"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63366a615e28c1a926dcd013"
+    },
+    "type": "musk",
+    "description": "Natural pheremones and bodily odors.",
+    "categories": [
+      "scent",
+      "vice"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63366a835e28c1a926dcd014"
+    },
+    "type": "seminal",
+    "description": "The smell of cum, semen, nut, virile seed.",
+    "categories": [
+      "scent",
+      "vice"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63366ada5e28c1a926dcd015"
+    },
+    "type": "lemonade",
+    "description": "The smell of pee, piss, or whatever you wish to call the golden waste.",
+    "categories": [
+      "scent",
+      "vice"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63366b045e28c1a926dcd016"
+    },
+    "type": "floral",
+    "description": "The natural smell of flowers and mother nature.",
+    "categories": [
+      "scent",
+      "vice"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63366b855e28c1a926dcd017"
+    },
+    "type": "sweet",
+    "description": "Sugary smells, easy to find in bakeries and candy stores. One of the five main olfactory sensations. ",
+    "categories": [
+      "scent",
+      "vice"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63366bc35e28c1a926dcd018"
+    },
+    "type": "savory",
+    "description": "Delicious smells rich in umami, the meaty smell of fulfillment. One of the five main olfactory sensations. ",
+    "categories": [
+      "scent",
+      "vice"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63366c095e28c1a926dcd019"
+    },
+    "type": "spicy",
+    "description": "Acidic smells, the light burn of chilis and curries and citrus. One of the five main olfactory sensations.",
+    "categories": [
+      "scent",
+      "vice"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63366c785e28c1a926dcd01a"
+    },
+    "type": "bitter",
+    "description": "Sharp and pungent smells that often take some adjustment to appreciate. One of the five main olfactory sensations.",
+    "categories": [
+      "scent",
+      "vice"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63366d755e28c1a926dcd01b"
+    },
+    "type": "salty",
+    "description": "The smell of the ocean that helps to awaken other smells. One of the five main olfactory sensations.",
+    "categories": [
+      "scent",
+      "vice"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63366ded5e28c1a926dcd01c"
+    },
+    "type": "liquor",
+    "description": "A boozy smell that can signify the release of worries, a dose of extraversion perfect for parties, or a numbing escape from daily woes.",
+    "categories": [
+      "scent",
+      "vice"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63366e9d5e28c1a926dcd01d"
+    },
+    "type": "perfume",
+    "description": "Applied scents made to appeal to your partner, with sometimes difficult to describe notes.",
+    "categories": [
+      "scent",
+      "vice"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633679c65e28c1a926dcd01e"
+    },
+    "type": "fire",
+    "description": "Heat, destruction, the burning of fuel. One of the four elements.",
+    "categories": [
+      "substance"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633679e55e28c1a926dcd01f"
+    },
+    "type": "water",
+    "description": "Liquid flow, the universal solvent. One of the four elements.",
+    "categories": [
+      "substance"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63367a5f5e28c1a926dcd020"
+    },
+    "type": "earth",
+    "description": "Rocks, dirt, solid planetary substance. One of the four elements.",
+    "categories": [
+      "substance"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63367a815e28c1a926dcd021"
+    },
+    "type": "air",
+    "description": "Gaseous freedom, the breath of the wind. One of the four elements.",
+    "categories": [
+      "substance"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63367e8e5e28c1a926dcd022"
+    },
+    "type": "golden",
+    "description": "Pee, piss, there's many names for this lemonade tinted waste.",
+    "categories": [
+      "substance",
+      "vice"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63369b715e28c1a926dcd023"
+    },
+    "type": "cum",
+    "description": "Ejaculate, nut, whether feminine juices or spunky seed.",
+    "categories": [
+      "substance",
+      "vice"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63374262b2270d32b67ae451"
+    },
+    "type": "goo",
+    "description": "Often sourced from slimes, this stretchy, viscous, amorphous material comes in many colors and varieties.",
+    "categories": [
+      "substance",
+      "vice"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63374581b2270d32b67ae452"
+    },
+    "type": "lustessence",
+    "description": "This enigmatic substance responds to desires like a ferrous fluid in a magnetic field, seeking to satisfy those longings. Its purple coloring is so dark it looks black unless it catches the light.",
+    "categories": [
+      "substance",
+      "vice"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63374d2bb2270d32b67ae453"
+    },
+    "type": "pollen",
+    "description": "Fluffy plant reproductive material that floats along in the breeze.",
+    "categories": [
+      "substance",
+      "vice"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63374da6b2270d32b67ae454"
+    },
+    "type": "sap",
+    "description": "Sticky, syrupy, and often sweet plant liquid.",
+    "categories": [
+      "substance",
+      "vice"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63374e42b2270d32b67ae455"
+    },
+    "type": "pre",
+    "description": "Lubricating precum, almost as good as the real thing.",
+    "categories": [
+      "substance",
+      "vice"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63374e79b2270d32b67ae456"
+    },
+    "type": "saliva",
+    "description": "Clear, slippery, watery drool.",
+    "categories": [
+      "substance",
+      "vice"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63375c63b2270d32b67ae457"
+    },
+    "type": "sweat",
+    "description": "Salty wet proof of physical exertion, stress, or high temperatures.",
+    "categories": [
+      "substance",
+      "vice"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63375ca0b2270d32b67ae458"
+    },
+    "type": "drug",
+    "description": "An addictive substance that alters the mind.",
+    "categories": [
+      "substance",
+      "vice"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63375ce5b2270d32b67ae459"
+    },
+    "type": "drink",
+    "description": "Liquid foodstuffs meant to be imbibed. Could be juice, dairy, or any number of culinary options.",
+    "categories": [
+      "substance",
+      "vice"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63375d22b2270d32b67ae45a"
+    },
+    "type": "food",
+    "description": "Solid foodstuffs meant to be consumed. Whether it's vegetable, fruit, meat, or grain, the culinary options are limitless.",
+    "categories": [
+      "substance",
+      "vice"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63375d78b2270d32b67ae45b"
+    },
+    "type": "energy",
+    "description": "Whether it's electricity, plasma, or magical batteries, energy is the capacity for work in any form.",
+    "categories": [
+      "substance",
+      "vice"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63375e48b2270d32b67ae45c"
+    },
+    "type": "copper",
+    "description": "Traditionally the lowest value coin, 10 of which are worth a silver.",
+    "categories": [
+      "currency"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63375e7db2270d32b67ae45d"
+    },
+    "type": "silver",
+    "description": "Traditionally the middle value coin, 10 of which are worth a gold.",
+    "categories": [
+      "currency"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63376434b2270d32b67ae45e"
+    },
+    "type": "gold",
+    "description": "The gold standard against which items and currencies are often compared. Traditionally worth 10 silver.",
+    "categories": [
+      "currency"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63376466b2270d32b67ae45f"
+    },
+    "type": "sex",
+    "description": "Sex has been used as a currency for as long as currency has existed.",
+    "categories": [
+      "currency"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63376490b2270d32b67ae460"
+    },
+    "type": "it",
+    "description": "What is IT? It's IT, and IT is the only one of ITs kind.",
+    "categories": [
+      "currency"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633764bcb2270d32b67ae461"
+    },
+    "type": "lint",
+    "description": "It looks like someone just reached in their pocket to acquire this.",
+    "categories": [
+      "currency"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63376549b2270d32b67ae462"
+    },
+    "type": "favors",
+    "description": "You scratch my back, I scratch yours. It's said the Queen built her empire off favors owed.",
+    "categories": [
+      "currency"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633765efb2270d32b67ae463"
+    },
+    "type": "soul",
+    "description": "The substance that defines one's self and their destiny. A powerful individual will naturally have more weight to their soul - this is not an indication of quantity, but of substance.",
+    "categories": [
+      "currency"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63376631b2270d32b67ae464"
+    },
+    "type": "stats",
+    "description": "STR, CHA, WIS, even whole LVL... considering how often you can respec, it's easier just to bucket these all together before someone stronger drains it all away.",
+    "categories": [
+      "currency"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63376a6db2270d32b67ae465"
+    },
+    "type": "art",
+    "description": "A beautiful creation has worth in the eyes of the beholder.",
+    "categories": [
+      "currency"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63376c08b2270d32b67ae466"
+    },
+    "type": "contraband",
+    "description": "If it's banned, then it has worth. Just don't get caught with too much.",
+    "categories": [
+      "currency"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63376c28b2270d32b67ae467"
+    },
+    "type": "gems",
+    "description": "Valuable and colorful stones dug from the earth.",
+    "categories": [
+      "currency"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63376c47b2270d32b67ae468"
+    },
+    "type": "rocks",
+    "description": "These are just stones like you could find on the ground outside.",
+    "categories": [
+      "currency"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63376c77b2270d32b67ae469"
+    },
+    "type": "exposure",
+    "description": "There's no such thing as bad publicity, but does this really count as payment?",
+    "categories": [
+      "currency"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63376cd2b2270d32b67ae46a"
+    },
+    "type": "shinies",
+    "description": "Little bits of metal, colored glass, tiny creatures are known to covet anything shiny.",
+    "categories": [
+      "currency"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63376d11b2270d32b67ae46b"
+    },
+    "type": "trophies",
+    "description": "You won and/or participated, congratulations!",
+    "categories": [
+      "currency"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63376d8ab2270d32b67ae46c"
+    },
+    "type": "ious",
+    "description": "I owe you! These promissory notes are often hastily scribbled on a stray piece of paper and can be payed out no matter how broke you are.",
+    "categories": [
+      "currency"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63376d9fb2270d32b67ae46d"
+    },
+    "type": "number",
+    "description": "Number go up! Wow!",
+    "categories": [
+      "currency"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63376ddeb2270d32b67ae46e"
+    },
+    "type": "secrets",
+    "description": "If it wasn't worth knowing, it wouldn't be a secret.",
+    "categories": [
+      "currency"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63376e0cb2270d32b67ae46f"
+    },
+    "type": "premiums",
+    "description": "This currency is better than the others! Why? Because it's premium!",
+    "categories": [
+      "currency"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63376e3bb2270d32b67ae470"
+    },
+    "type": "papers",
+    "description": "Are these colorful papers really as good as gold? If you say so...",
+    "categories": [
+      "currency"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63376e68b2270d32b67ae471"
+    },
+    "type": "coupons",
+    "description": "These are practically worthless on their own, but if you spend a different currency, you can use these so you don't have to spend as much!",
+    "categories": [
+      "currency"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63376ea3b2270d32b67ae472"
+    },
+    "type": "songs",
+    "description": "Bards will insist a song is worth more than simple coin. If that were true, they wouldn't sing them in exchange for coin, would they?",
+    "categories": [
+      "currency"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63376f08b2270d32b67ae473"
+    },
+    "type": "pleasure",
+    "description": "Pleasure comes in many forms, and while fleeting, is still highly valued.",
+    "categories": [
+      "currency"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63376f69b2270d32b67ae474"
+    },
+    "type": "experience",
+    "description": "It's been said that experiences are the best thing to spend your money on, so why does it feel like getting paid in experience is a scam?",
+    "categories": [
+      "currency"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63376fb8b2270d32b67ae475"
+    },
+    "type": "funfact",
+    "description": "Fun fact! There are exactly 69 currencies in circulation. Have you seen them all?",
+    "categories": [
+      "currency"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63377043b2270d32b67ae476"
+    },
+    "type": "supermegaultrararehyperdeluxecollectible",
+    "description": "Woah! These aren't just rare, they're super mega ultra rare AND hyper deluxe!",
+    "categories": [
+      "currency"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337706cb2270d32b67ae477"
+    },
+    "type": "collectible",
+    "description": "Why collect these? Because that's how you build your collection!",
+    "categories": [
+      "currency"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633770acb2270d32b67ae478"
+    },
+    "type": "cummies",
+    "description": "Yummy yummy cummies~",
+    "categories": [
+      "currency"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633770d2b2270d32b67ae479"
+    },
+    "type": "brushies",
+    "description": "It feels so good to brush against these bristles...",
+    "categories": [
+      "currency"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633770fab2270d32b67ae47a"
+    },
+    "type": "stickers",
+    "description": "You can stick them anywhere!",
+    "categories": [
+      "currency"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63377121b2270d32b67ae47b"
+    },
+    "type": "rarities",
+    "description": "These are hard to find, and even harder to describe.",
+    "categories": [
+      "currency"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63377164b2270d32b67ae47c"
+    },
+    "type": "chainblocks",
+    "description": "No you see, it's better than regular currencies because it's not regulated by banks, it's on the chainblock! What do you mean this is just wood blocks chained together, you just don't get it.",
+    "categories": [
+      "currency"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633771cab2270d32b67ae47d"
+    },
+    "type": "stones",
+    "description": "These aren't rocks, they're STONES. They're smoother, it's totally different.",
+    "categories": [
+      "currency"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337721bb2270d32b67ae47e"
+    },
+    "type": "eggs",
+    "description": "Freshly laid! Good for breakfast, hatching, or giving to a bunny to paint and hide.",
+    "categories": [
+      "currency"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63377259b2270d32b67ae47f"
+    },
+    "type": "treats",
+    "description": "Perfect for rewarding good behavior.",
+    "categories": [
+      "currency"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63377274b2270d32b67ae480"
+    },
+    "type": "tricks",
+    "description": "Wait, this isn't a treat!",
+    "categories": [
+      "currency"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633772bfb2270d32b67ae481"
+    },
+    "type": "string",
+    "description": "A short thread, not to be confused with a sequence of characters.",
+    "categories": [
+      "currency"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63377334b2270d32b67ae482"
+    },
+    "type": "wood",
+    "description": "A flexible and slightly soft building material that you can make into almost anything.",
+    "categories": [
+      "currency"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63377374b2270d32b67ae483"
+    },
+    "type": "ores",
+    "description": "Raw metals that need a little processing to become something useful.",
+    "categories": [
+      "currency"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63377390b2270d32b67ae484"
+    },
+    "type": "rings",
+    "description": "Did a hedgehog get hurt somewhere nearby?",
+    "categories": [
+      "currency"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633773a1b2270d32b67ae485"
+    },
+    "type": "hexagons",
+    "description": "The bestagons.",
+    "categories": [
+      "currency"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633773d1b2270d32b67ae486"
+    },
+    "type": "platinum",
+    "description": "You don't see this high value coin very often. Traditionally worth 10 gold.",
+    "categories": [
+      "currency"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63377402b2270d32b67ae487"
+    },
+    "type": "electrum",
+    "description": "Are you sure this is a standard coin? Part gold, part silver, and worth somewhere between the two.",
+    "categories": [
+      "currency"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337743bb2270d32b67ae488"
+    },
+    "type": "medals",
+    "description": "Awarded for a job well done!",
+    "categories": [
+      "currency"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63377473b2270d32b67ae489"
+    },
+    "type": "gachas",
+    "description": "So you're saying that it's random what I get, and I have to buy hundreds to make sure I get the one I want?",
+    "categories": [
+      "currency"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63377489b2270d32b67ae48a"
+    },
+    "type": "memes",
+    "description": "Haha, so relatable. Have you seen this one?",
+    "categories": [
+      "currency"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633774aeb2270d32b67ae48b"
+    },
+    "type": "feathers",
+    "description": "Which weighs more, a pound of these, or a pound of steel?",
+    "categories": [
+      "currency"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633774e1b2270d32b67ae48c"
+    },
+    "type": "teeth",
+    "description": "There's one fairy in particular who really values these for some reason.",
+    "categories": [
+      "currency"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337753eb2270d32b67ae48d"
+    },
+    "type": "pride",
+    "description": "You're filled with a sense of accomplishment after working hard for this.",
+    "categories": [
+      "currency"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63377565b2270d32b67ae48e"
+    },
+    "type": "hugs",
+    "description": "Why are people constantly giving these out for free?",
+    "categories": [
+      "currency"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633775a2b2270d32b67ae48f"
+    },
+    "type": "hats",
+    "description": "Do you wear one big hat, or lots of hats stacked on top of each other? Decisions decisions.",
+    "categories": [
+      "currency"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633775beb2270d32b67ae490"
+    },
+    "type": "leaves",
+    "description": "If these aren't valuable, then how come people are always raking them into piles like a dragon horde?",
+    "categories": [
+      "currency"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633775f1b2270d32b67ae491"
+    },
+    "type": "caps",
+    "description": "The lids from bottles that will probably stick around even in the case of an apocalypse.",
+    "categories": [
+      "currency"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63377627b2270d32b67ae492"
+    },
+    "type": "horns",
+    "description": "These were ethically sourced, right? You didn't hunt an endangered monster for these, right?",
+    "categories": [
+      "currency"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337765cb2270d32b67ae493"
+    },
+    "type": "something",
+    "description": "What's the payment? Uh... something, I dunno.",
+    "categories": [
+      "currency"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337766db2270d32b67ae494"
+    },
+    "type": "stories",
+    "description": "Once upon a time...",
+    "categories": [
+      "currency"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337768bb2270d32b67ae495"
+    },
+    "type": "spanking",
+    "description": "Ow! That stings...",
+    "categories": [
+      "currency"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633776e5b2270d32b67ae496"
+    },
+    "type": "gummies",
+    "description": "Fruity, sweet, sour, in all sorts of fun shapes and sizes!",
+    "categories": [
+      "currency"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63377710b2270d32b67ae497"
+    },
+    "type": "cookies",
+    "description": "Just like grandma used to click.",
+    "categories": [
+      "currency"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63377741b2270d32b67ae498"
+    },
+    "type": "ectoplasm",
+    "description": "Are you sure this is spooky ghost slime and not just regular slime? Well, it is glowing in the dark...",
+    "categories": [
+      "currency"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63377784b2270d32b67ae499"
+    },
+    "type": "scales",
+    "description": "Reptiles shed these like crazy, and they're very useful in armor and decoration alike.",
+    "categories": [
+      "currency"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633777ceb2270d32b67ae49a"
+    },
+    "type": "credits",
+    "description": "No, we don't accept debit.",
+    "categories": [
+      "currency"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633777e0b2270d32b67ae49b"
+    },
+    "type": "candies",
+    "description": "Sugary teeth rotting goodness!",
+    "categories": [
+      "currency"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633777f2b2270d32b67ae49c"
+    },
+    "type": "cake",
+    "description": "Some would say this is better than sex.",
+    "categories": [
+      "currency"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63377861b2270d32b67ae49d"
+    },
+    "type": "deciq",
+    "description": "The Queen only made 10 of these before distributing them to loved ones, so they'll always be valuable.",
+    "categories": [
+      "currency"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337786cb2270d32b67ae49e"
+    },
+    "type": "centiq",
+    "description": "The Queen only made 100 of these before distributing them to loved ones, so they'll always be valuable.",
+    "categories": [
+      "currency"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63377878b2270d32b67ae49f"
+    },
+    "type": "milliq",
+    "description": "The Queen only made 1000 of these before distributing them to loved ones, so they'll always be valuable.",
+    "categories": [
+      "currency"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63377907b2270d32b67ae4a0"
+    },
+    "type": "nothing",
+    "description": "You get NOTHING! Good DAY!",
+    "categories": [
+      "currency"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63377a9eb2270d32b67ae4a1"
+    },
+    "type": "paraslime",
+    "description": "These parasitic slimes make their home inside your skull, stomach, balls, womb, and/or other cavity. When embraced in a symbiotic way, they can seep out and form blob like shapes to seat or carry you.",
+    "categories": [
+      "parasite"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63377b2bb2270d32b67ae4a2"
+    },
+    "type": "bimboslime",
+    "description": "These pink slimes feed on your intelligence, slowly turning you into a ditzy bimbo. Advanced infection will turn your entire body into a bimbo shaped slime.",
+    "categories": [
+      "parasite"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63377baeb2270d32b67ae4a3"
+    },
+    "type": "lustleeches",
+    "description": "Lust Leeches are heart shaped creatures that reside in lust essence. They use its power to only spread in desired scenarios, making their spread itself a desired outcome. Advanced infection is known to show as floating hearts or heart shaped pupils.",
+    "categories": [
+      "parasite"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63377bc9b2270d32b67ae4a4"
+    },
+    "type": "love",
+    "description": "Fill me with your love baby~",
+    "categories": [
+      "parasite"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63377c1fb2270d32b67ae4a5"
+    },
+    "type": "tentacles",
+    "description": "These squirmy wriggling creatures grow inside a host and spread through sexual contact before full grown specimens crawl out to form a tentacle nest or seek out new hosts on their own.",
+    "categories": [
+      "parasite"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63377debb2270d32b67ae4a6"
+    },
+    "type": "nymites",
+    "description": "Originating from the Nymir bloodline, hosting these is an honor for the progenitor's children.",
+    "categories": [
+      "parasite"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63377ebfb2270d32b67ae4a7"
+    },
+    "type": "tail",
+    "description": "One or multiple swaying appendages that extend past the posterior and aid in balance.",
+    "categories": [
+      "bodypart"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63377ef4b2270d32b67ae4a8"
+    },
+    "type": "ear",
+    "description": "Sound sensitive body parts usually found on the side of the head. Known to be particularly sensitive for some.",
+    "categories": [
+      "bodypart"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63377f7cb2270d32b67ae4a9"
+    },
+    "type": "armpit",
+    "description": "The smelly fold where an arm reaches the torso. A hotspot for sweat and musk.",
+    "categories": [
+      "bodypart"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63377fb3b2270d32b67ae4aa"
+    },
+    "type": "pussy",
+    "description": "A female reproductive organ, meant to take a pounding and be poured full of cum.",
+    "categories": [
+      "bodypart"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63377fffb2270d32b67ae4ab"
+    },
+    "type": "horn",
+    "description": "Hard protrusions often used in self defense or mating rituals.",
+    "categories": [
+      "bodypart"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63378039b2270d32b67ae4ac"
+    },
+    "type": "wing",
+    "description": "Flight enabling body parts that are often covered in feathers and sensitive to airflow and touch alike.",
+    "categories": [
+      "bodypart"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63378075b2270d32b67ae4ad"
+    },
+    "type": "mouth",
+    "description": "Usually used to eat, the mucous membranes within are too similar to that of reproductive organs to be ignored.",
+    "categories": [
+      "bodypart"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633780ceb2270d32b67ae4ae"
+    },
+    "type": "hand",
+    "description": "Whether claw, paw, stub, or ambidextrous digits, these manipulators at the end of the arm are often sensitive and incredibly useful.",
+    "categories": [
+      "bodypart"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633780feb2270d32b67ae4af"
+    },
+    "type": "midriff",
+    "description": "The lower front side of a torso, the core of the body that holds everything together. Often contains vital organs, including the womb.",
+    "categories": [
+      "bodypart"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63378163b2270d32b67ae4b0"
+    },
+    "type": "foot",
+    "description": "Usually in contact with the ground, these hoofs, paws, stubs, and feet will often be just a touch dirty unless given special care.",
+    "categories": [
+      "bodypart"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633781eeb2270d32b67ae4b1"
+    },
+    "type": "breast",
+    "description": "Originally formed to provide milk to mammalian offspring, these firm but yielding orbs have found their way onto all sorts of creatures as a sensitive and overtly feminine sexual feature even when underdeveloped.",
+    "categories": [
+      "bodypart"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63378225b2270d32b67ae4b2"
+    },
+    "type": "ass",
+    "description": "The cushiony rear usually used to sit. Perfect for spanking and groping.",
+    "categories": [
+      "bodypart"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633782a3b2270d32b67ae4b3"
+    },
+    "type": "corset",
+    "description": "Corset training involves adjusting to the cinching pressure of corsets, wearing them tighter and tighter to shape the body into tight waisted dramatic curves.",
+    "categories": [
+      "training"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633782f0b2270d32b67ae4b4"
+    },
+    "type": "heel",
+    "description": "Heel training involves wearing higher and higher heels, learning to walk with the feet at more and more dramatic angles. Known to make legs and asses look incredible as well.",
+    "categories": [
+      "training"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337838bb2270d32b67ae4b5"
+    },
+    "type": "anal",
+    "description": "Usually involving plugs or other toys, anal training stretches the rear passage to accommodate large insertions with ease and emphasize the pleasure of being stretched. Sometimes results in gaping.",
+    "categories": [
+      "training"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633783e6b2270d32b67ae4b6"
+    },
+    "type": "deepthroat",
+    "description": "Without proper training, deepthroating will often lead to unpleasant teeth or gagging. Once trained, holding your breath allows a throat to be thoroughly used and abused for minutes without pause.",
+    "categories": [
+      "training"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337842bb2270d32b67ae4b7"
+    },
+    "type": "ponygirl",
+    "description": "Involving bridles, saddles, reins, and hooves, this extreme bondage training teaches a normally humanoid creature to behave and enjoy being treated like a beast of burden.",
+    "categories": [
+      "training"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63378474b2270d32b67ae4b8"
+    },
+    "type": "obedience",
+    "description": "Obedience training is the use of reward and punishment as carrots and sticks to encourage obedience even without motivation. Once trained, you'll obey before even thinking about what has been asked.",
+    "categories": [
+      "training"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63378600b2270d32b67ae4b9"
+    },
+    "type": "mathematics",
+    "description": "Manipulating numbers is a skill universal to reality as we know it, and training in their patterns is key for several advanced disciplines.",
+    "categories": [
+      "training"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63378673b2270d32b67ae4ba"
+    },
+    "type": "magic",
+    "description": "The weave which pervades most worlds has many names and many arts centered upon its manipulation. Whether it's a holy, arcane, or nature based practice, learning magic broadens ones capabilities in a myriad of fashions.",
+    "categories": [
+      "training"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633786c1b2270d32b67ae4bb"
+    },
+    "type": "flight",
+    "description": "Some are born with the instincts needed to fly, others need to learn the hard way. Regardless of your initial talents, further practice allows one to soar through the sky in more intricate maneuvers.",
+    "categories": [
+      "training"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63378785b2270d32b67ae4bc"
+    },
+    "type": "instrument",
+    "description": "Strings, percussion, brass, woodwinds - there's many ways to create music through physical objects. Once you've learned one it gets a little easier to learn another.",
+    "categories": [
+      "training"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633787b3b2270d32b67ae4bd"
+    },
+    "type": "dance",
+    "description": "Everyone can move their body as the music guides, but it takes practice and skill to move your body in an artful way that truly expresses yourself.",
+    "categories": [
+      "training"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63378957b2270d32b67ae4be"
+    },
+    "type": "furniture",
+    "description": "Usually large and stationary, but functional in some capacity, or at least highly aesthetic.",
+    "categories": [
+      "object"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63378977b2270d32b67ae4bf"
+    },
+    "type": "painting",
+    "description": "Art on a canvas, put up on display.",
+    "categories": [
+      "object"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633789b7b2270d32b67ae4c0"
+    },
+    "type": "statue",
+    "description": "A sculpture that stands stationary for onlookers to muse over.",
+    "categories": [
+      "object"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633789dbb2270d32b67ae4c1"
+    },
+    "type": "tableware",
+    "description": "Pots, pans, cups, spoons, anything that's used to hold or manipulate food and drink.",
+    "categories": [
+      "object"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633789feb2270d32b67ae4c2"
+    },
+    "type": "trinket",
+    "description": "A small object that's hard to categorize. Usually not very useful and only kept around because they're neat.",
+    "categories": [
+      "object"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63378a21b2270d32b67ae4c3"
+    },
+    "type": "book",
+    "description": "A container of words, stories, and knowledge. Usually in the form of pages bound together.",
+    "categories": [
+      "object"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63378a73b2270d32b67ae4c4"
+    },
+    "type": "toy",
+    "description": "A source of entertainment, whether innocent or sexual in nature.",
+    "categories": [
+      "object"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63378ab5b2270d32b67ae4c5"
+    },
+    "type": "clothing",
+    "description": "Something to be worn, whether that's jewelry, underwear, overcoat, or the tops and bottoms of an outfit.",
+    "categories": [
+      "object"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63378acdb2270d32b67ae4c6"
+    },
+    "type": "trash",
+    "description": "This is worthless, go throw it out.",
+    "categories": [
+      "object"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63378b0bb2270d32b67ae4c7"
+    },
+    "type": "orb",
+    "description": "A fleshcrafted form that keeps the breasts, mouth, ass, and sexual organs in a loose orb that fits in your hand.",
+    "categories": [
+      "object"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63378b38b2270d32b67ae4c8"
+    },
+    "type": "dildo",
+    "description": "A phallic sextoy for penetrative pleasure.",
+    "categories": [
+      "object"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63378b9cb2270d32b67ae4c9"
+    },
+    "type": "onahole",
+    "description": "A crafted sexual orifice that is pleasurable to penetrate.",
+    "categories": [
+      "object"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63378bc8b2270d32b67ae4ca"
+    },
+    "type": "tool",
+    "description": "Something that is used to get a job done, and usually portable enough to carry with ease.",
+    "categories": [
+      "object"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63378be7b2270d32b67ae4cb"
+    },
+    "type": "building",
+    "description": "A structure that can be walked in and out of.",
+    "categories": [
+      "object"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63378c0ab2270d32b67ae4cc"
+    },
+    "type": "vehicle",
+    "description": "A device designed to aid travel, either through speed, comfort, or novel mediums.",
+    "categories": [
+      "object"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633794f8b2270d32b67ae4cd"
+    },
+    "type": "cook",
+    "description": "Through culinary works, cooks ensure that residents of the Chateau are not only fed, but satisfied by their meals.",
+    "categories": [
+      "job"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633795e8b2270d32b67ae4ce"
+    },
+    "type": "tinkerer",
+    "description": "Magical engineers, tinkerers create marvelous contraptions. Their creations can be seen installed about the Chateau, and are sold in both mass produced and custom built fashions.",
+    "categories": [
+      "job"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633797ddb2270d32b67ae4cf"
+    },
+    "type": "musician",
+    "description": "Musicians and bards are hired to play music and set the mood about the Chateau.",
+    "categories": [
+      "job"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633798e6b2270d32b67ae4d0"
+    },
+    "type": "mount",
+    "description": "Mounts are ridden for pleasure and sport both inside and out of the Chateau.",
+    "categories": [
+      "job"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337996eb2270d32b67ae4d1"
+    },
+    "type": "livestock",
+    "description": "Beasts of burden are used to work the fields, aid in construction, and perform other tasks of manual labor. Some are used as showbeasts, putting an emphasis on health and appearance.",
+    "categories": [
+      "job"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633799a5b2270d32b67ae4d2"
+    },
+    "type": "smith",
+    "description": "Artisans that refine ore and craft metalworks for art, construction, and day to day use.",
+    "categories": [
+      "job"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633799ecb2270d32b67ae4d3"
+    },
+    "type": "footstool",
+    "description": "Comfy bodies who stay close at hand and low to the floor to allow their betters to put their feet up.",
+    "categories": [
+      "job"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63379a35b2270d32b67ae4d4"
+    },
+    "type": "cumfactory",
+    "description": "Those who have virile spunk and are milked of their cum regularly. Many residents rely on the steady flow of cum to enhance or sustain their diet.",
+    "categories": [
+      "job"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63379abcb2270d32b67ae4d5"
+    },
+    "type": "librarian",
+    "description": "Studious knowledge keepers who tend to the books in the library.",
+    "categories": [
+      "job"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63379ae5b2270d32b67ae4d6"
+    },
+    "type": "storyteller",
+    "description": "The oral tradition is alive and well in the Chateau, and storytelling bards are encouraged to orate, act, or sing their tales in the library and elsewhere.",
+    "categories": [
+      "job"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63379b1ab2270d32b67ae4d7"
+    },
+    "type": "worshipper",
+    "description": "Whether its a deity, a superior, or a singular body part, worshippers make sure those who deserve it are slathered in loving attention.",
+    "categories": [
+      "job"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63379b79b2270d32b67ae4d8"
+    },
+    "type": "whore",
+    "description": "Whores sell sexual favors for profit, but don't forget that they still get to choose which clients they sell to and which acts they perform.",
+    "categories": [
+      "job"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63379beab2270d32b67ae4d9"
+    },
+    "type": "slave",
+    "description": "Less a job and more a station in life. Slaves have decided that someone else has the right to make all of their decisions for them, but even this extreme power exchange can be rescinded at the drop of a hat.",
+    "categories": [
+      "job"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63379c7bb2270d32b67ae4da"
+    },
+    "type": "armcandy",
+    "description": "Paid for their beauty, armcandy simply follows their employer around and stays close while looking cute and/or sexy, acting more as accessories than people.",
+    "categories": [
+      "job"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63379cb7b2270d32b67ae4db"
+    },
+    "type": "sponsor",
+    "description": "Sugardaddies and sugarmommies as well as professional investors share the job of bankrolling someone else's endeavors.",
+    "categories": [
+      "job"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63379d1eb2270d32b67ae4dc"
+    },
+    "type": "milktank",
+    "description": "Often found in milking machines, these milkers are tasked with producing as much nutritious milk as they can to feed the residents of the Chateau.",
+    "categories": [
+      "job"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63379d93b2270d32b67ae4dd"
+    },
+    "type": "intern",
+    "description": "Underappreciated, underpayed, no one is required to be an intern for any reason at the Chateau. Interns are here by choice because they like the humiliation.",
+    "categories": [
+      "job"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63379de8b2270d32b67ae4de"
+    },
+    "type": "cuntlicker",
+    "description": "Skilled with their tongue, cuntlickers are tasked with bringing pussies to orgasm or otherwise keeping them on edge at their employers discretion.",
+    "categories": [
+      "job"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63379e4db2270d32b67ae4df"
+    },
+    "type": "bodyguard",
+    "description": "Bodyguards are tasked with ensuring the safety of an individual or population. They're well versed in takedowns, de-escalation, and defensive techniques.",
+    "categories": [
+      "job"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63379e99b2270d32b67ae4e0"
+    },
+    "type": "physicaltrainer",
+    "description": "Gymbunnies and body builders can help guide others through the exercise necessary for their dream physique.",
+    "categories": [
+      "job"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63379ec4b2270d32b67ae4e1"
+    },
+    "type": "broodmother",
+    "description": "More than a breeder, broodmothers are constantly gravid, laying eggs and/or giving birth to create large numbers of offspring.",
+    "categories": [
+      "job"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63379f1eb2270d32b67ae4e2"
+    },
+    "type": "seedbed",
+    "description": "Host to the spawn of others, seedbeds allow their bodies to be used to raise parasitic creatures and other exotic lifeforms.",
+    "categories": [
+      "job"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63379f58b2270d32b67ae4e3"
+    },
+    "type": "merchant",
+    "description": "From simple cashiers to plane traveling salesman, merchants are payed to help facilitate the distribution of goods.",
+    "categories": [
+      "job"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63379f94b2270d32b67ae4e4"
+    },
+    "type": "pet",
+    "description": "Beloved companions, pets are often collared and well trained to follow orders. (The leash holder should initiate interactions with this bond).",
+    "categories": [
+      "bond"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63379ff8b2270d32b67ae4e5"
+    },
+    "type": "breeder",
+    "description": "Breeders are mothers, fathers, and others who devote themselves to producing and raising offspring.",
+    "categories": [
+      "job"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337a053b2270d32b67ae4e6"
+    },
+    "type": "seat",
+    "description": "Seats are meant to be sat on, providing their betters a place to rest no matter where they are.",
+    "categories": [
+      "job"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337a098b2270d32b67ae4e7"
+    },
+    "type": "secretary",
+    "description": "Professional assistants, secretaries might not be required to fuck their employer, but it is highly implied that it's one of their many duties.",
+    "categories": [
+      "job"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337a0d2b2270d32b67ae4e8"
+    },
+    "type": "fucktoy",
+    "description": "Fucktoys are walking sexual playthings, who agree to let their employer toy with their body however they please.",
+    "categories": [
+      "job"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337a10bb2270d32b67ae4e9"
+    },
+    "type": "lapwarmer",
+    "description": "Lapwarmers sit upon their employer's lap, keeping them cozy and toasty. This often means keeping their cock tightly held inside them as well.",
+    "categories": [
+      "job"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337a165b2270d32b67ae4ea"
+    },
+    "type": "bitch",
+    "description": "Lower than a pet, a bitch is someone you can yell at and ridicule for being so pathetic, and they'll likely agree with you and possibly cum from being put in their place.",
+    "categories": [
+      "job"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337a19db2270d32b67ae4eb"
+    },
+    "type": "gardener",
+    "description": "Gardeners have a green thumb and tend to plant life, whether sentient, aesthetic, or produce.",
+    "categories": [
+      "job"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337a1c1b2270d32b67ae4ec"
+    },
+    "type": "mage",
+    "description": "No matter your school of magic, Mages are payed to manipulate the weave in useful ways.",
+    "categories": [
+      "job"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337a239b2270d32b67ae4ed"
+    },
+    "type": "beasthandler",
+    "description": "Often wielding leather instruments like crops and leads, Beasthandlers tend to livestock, pets, and mounts through training, cleaning, and feeding.",
+    "categories": [
+      "job"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337a2a4b2270d32b67ae4ee"
+    },
+    "type": "cocksucker",
+    "description": "Willing mouths to stick your dick in. Expert cocksuckers will be trained in deepthroating and know how to do the work for you.",
+    "categories": [
+      "job"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337a2dfb2270d32b67ae4ef"
+    },
+    "type": "urinal",
+    "description": "If you need somewhere to pee, urinals are on-hand to take care of your biological needs.",
+    "categories": [
+      "job"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337a337b2270d32b67ae4f0"
+    },
+    "type": "tailor",
+    "description": "As talented as Rona is, she couldn't possibly tend to all the fashion needs around the Chateau. Luckily there's tailors willing to lend a helping hand.",
+    "categories": [
+      "job"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337a378b2270d32b67ae4f1"
+    },
+    "type": "maid",
+    "description": "Houseservants, butlers, and maids are tasked with keeping cleanliness and order. They might serve the Chateau as a whole or be assigned to a specific individual.",
+    "categories": [
+      "job"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337a3b6b2270d32b67ae4f2"
+    },
+    "type": "bathassistant",
+    "description": "When you take a bath at the Chateau, these assistants are available to thoroughly clean every part of you. This often involves a long tongue, and sometimes making a new mess that they promptly clean as well.",
+    "categories": [
+      "job"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337a407b2270d32b67ae4f3"
+    },
+    "type": "walkingdildo",
+    "description": "A dick on legs, a being who exists solely to sustain their cock for the use of others.",
+    "categories": [
+      "job"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337a43fb2270d32b67ae4f4"
+    },
+    "type": "researcher",
+    "description": "Researchers advance knowledge by observing and experimenting in various fields.",
+    "categories": [
+      "job"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337a469b2270d32b67ae4f5"
+    },
+    "type": "alchemist",
+    "description": "Alchemists craft potions with incredible effects, magical consumables that can be stored and sold.",
+    "categories": [
+      "job"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337a512b2270d32b67ae4f6"
+    },
+    "type": "shrub",
+    "description": "Bushy foliage that can be trimmed into gorgeous shapes.",
+    "categories": [
+      "plant"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337a54db2270d32b67ae4f7"
+    },
+    "type": "flower",
+    "description": "Colorful, aromatic, and always worth appreciating.",
+    "categories": [
+      "plant"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337a59bb2270d32b67ae4f8"
+    },
+    "type": "tree",
+    "description": "Large plants with stiff trunks and branches. Perfect for creating shade, leaning against, and producing fruit.",
+    "categories": [
+      "plant"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337a5eab2270d32b67ae4f9"
+    },
+    "type": "sapling",
+    "description": "Immature plants that have a long way to grow.",
+    "categories": [
+      "plant"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337a614b2270d32b67ae4fa"
+    },
+    "type": "vine",
+    "description": "Creepers and flexible rope like plants that climb and wrap around structures and trees.",
+    "categories": [
+      "plant"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337a662b2270d32b67ae4fb"
+    },
+    "type": "weed",
+    "description": "Durable and sometimes undesired plant life. Beloved by stoners.",
+    "categories": [
+      "plant"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337a6d9b2270d32b67ae4fc"
+    },
+    "type": "myroom",
+    "description": "The Chateau provides guest rooms as well as permanent and highly customizable lodging for their residents. This one belongs to the initiator of an interaction.",
+    "categories": [
+      "location",
+      "secondfloor"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337a6e8b2270d32b67ae4fd"
+    },
+    "type": "theirroom",
+    "description": "The Chateau provides guest rooms as well as permanent and highly customizable lodging for their residents. This one belongs to the recipient of an interaction.",
+    "categories": [
+      "location",
+      "secondfloor"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337a715b2270d32b67ae4fe"
+    },
+    "type": "theirworkshop",
+    "description": "The Chateau provides spacious places of work for residents with large projects. This one belongs to the recipient of an interaction.",
+    "categories": [
+      "location",
+      "topfloor"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337a723b2270d32b67ae4ff"
+    },
+    "type": "myworkshop",
+    "description": "The Chateau provides spacious places of work for residents with large projects. This one belongs to the initiator of an interaction.",
+    "categories": [
+      "location",
+      "topfloor"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337a76fb2270d32b67ae500"
+    },
+    "type": "mycave",
+    "description": "The Chateau provides underground residence for those who require particularly spacious or peculiar homes. This one belongs to the initiator of an interaction.",
+    "categories": [
+      "location",
+      "basement"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337a8e1b2270d32b67ae501"
+    },
+    "type": "treasury",
+    "description": "Access to this room is less restricted than you might think. Residents can simply walk in, grab some pocket change, and walk out. As all things in the Château, Consent is what keeps things moving smoothly. Any attempt to leave with an item that isn't meant to leave simply fails at the teleportation circle.",
+    "categories": [
+      "location",
+      "topfloor"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337a92ab2270d32b67ae502"
+    },
+    "type": "theircave",
+    "description": "The Chateau provides underground residence for those who require particularly spacious or peculiar homes. This one belongs to the recipient of an interaction.",
+    "categories": [
+      "location",
+      "basement"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337a967b2270d32b67ae503"
+    },
+    "type": "magiclibrary",
+    "description": "The small section of the library with magical secrets, tomes, and other artifacts too sensitive for public view. These objects aren't even allowed to leave the room without explicit permission. If a caster needs some practice, there is a training dummy isolated in a hollow dome of anti-magic and other wards. Any potentially cataclysmic mishaps are thus well contained.",
+    "categories": [
+      "location",
+      "topfloor"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337a98cb2270d32b67ae504"
+    },
+    "type": "storage",
+    "description": "The attic, that extra space to store anything that just doesn't quite belong in your room, but which isn't valuable enough to warrant space in the treasury. This is the great miscellaneous dumping grounds, some of it dusty and ancient, some of it just raw resources like iron scrap, some of it overflow from the gift shop. Some parts of the room have an attempt at organization. For the most part though, sifting through the piles is a practice in trusting your desires to lead you to what you seek.",
+    "categories": [
+      "location",
+      "topfloor"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337a9bbb2270d32b67ae505"
+    },
+    "type": "loom",
+    "description": "This room covered in a web of mannequins, rainbow fabrics, and hundreds of outfits is situated directly over the entryway. Rona is both seamstress and soothsayer, pulling strings behind the scenes to make sure Château operations go smoothly. Residents are free to stop by and request new clothes any time, if the drider hasn't already predicted their needs in advance. However, not even Contract is allowed in the private backroom where Rona spends much of her time.",
+    "categories": [
+      "location",
+      "topfloor"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337aa16b2270d32b67ae506"
+    },
+    "type": "queenroom",
+    "description": "The Queen's bed rivals the cuddle puddle in size, a monolithic spread of silken purple sheets fit for a dragon, dominating the room. She's fond of letting pets and residents share her bed as well. This can sometimes be a sexual affair, but far more often, it's a chance to cuddle with affection and sleep peacefully through the night.",
+    "categories": [
+      "location",
+      "secondfloor"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337aa38b2270d32b67ae507"
+    },
+    "type": "queenstudy",
+    "description": "When Contract needs a quiet place to retreat to, somewhere to practice her instruments, fill out some forms, or read a book, this is where she goes. That's not to say it's a room exclusively for solitude. There's often a pet, maid, or other resident slut sharing her company. Some of her personal affects are on display here, sentimental objects, reminders of adventures long ago, and treasured artifacts.",
+    "categories": [
+      "location",
+      "secondfloor"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337aa73b2270d32b67ae508"
+    },
+    "type": "cuddlepuddle",
+    "description": "Separated from the hallway by pillared archways instead of doors, this cushioned expanse is filled with a wealth of pillows. The floor is slightly depressed such that the pillows look like a sea you could dive into, a narrow walkable and sittable strip of floor along the walls. There's a weak magical force that draws the pillows back towards the room in order to save the maids some clean up, but it's not strong enough to prevent someone from carrying a pillow with them if they need it.",
+    "categories": [
+      "location",
+      "secondfloor"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337aaafb2270d32b67ae509"
+    },
+    "type": "chapel",
+    "description": "The Queen is not devout herself, but she does have a healthy respect for the power gods wield, and this chapel is a place for angels and the religious to offer their prayers. There are those who worship Contract as a goddess, although she does not view herself as such. The chapel also sees use for marriage ceremonies, both traditional and debased. Residents have been known to marry cocks, breasts, or even inanimate objects that they hold near and dear.",
+    "categories": [
+      "location",
+      "secondfloor"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337abd3b2270d32b67ae50a"
+    },
+    "type": "throne",
+    "description": "This room sometimes has a throne in it, but Contract only brings it out for special occasions. Far more frequently, this regal portion of the Chateau is used for formal affairs. Celebrations, balls, ceremonies, and other large gatherings that need lots of floor space and a good view.",
+    "categories": [
+      "location",
+      "secondfloor"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337acb0b2270d32b67ae50b"
+    },
+    "type": "library",
+    "description": "A massive collection of books that spans two stories publicly, and a third for residents only. There's little reading nooks insulated from each other with magical silence, and bardic story telling is just as valued as written mediums, performers free to emote as loudly, dramatically, and magically as they want without fear of disturbing other library goers. All of the books have arcane trackers on them, of course - residents can take them wherever they like without a formal checkout process, understanding that library staff might magically recall them after too much time has passed.\n\nThe second floor of the library contains books and tales from other worlds, amassed primarily from residents who used to live there and have made donations. To many residents, Earth stories are like science fiction, with mystical technology they've never dreamed of. The Queen is notably ignorant of most weave-thin technologies (as she calls them), aside from the stories and examples her pets have shared with her.",
+    "categories": [
+      "location",
+      "secondfloor",
+      "groundfloor"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337afc0b2270d32b67ae50c"
+    },
+    "type": "entrance",
+    "description": "The ceiling is adorned with purple mage lights, and a marble staircase with carpeted steps lead to the second floor. The front doors of the Château span the full thirty foot height of two stories. Like matryoshka dolls, a slightly smaller door is nested within, and another, and another, all the way down to a door less than a foot tall. This style of door that perfectly accommodates creatures of any size is representative of the Château's willingness to accept creatures of all statures, but it would be highly impractical for the whole Château to have setups for so many disparate sizes. Rather, creatures of massive sizes are provided with magical accommodations to scale them down to size once they're inside.",
+    "categories": [
+      "location",
+      "groundfloor"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337aff7b2270d32b67ae50d"
+    },
+    "type": "kitchen",
+    "description": "A typical dining hall, serving meals with fresh ingredients from the fields and livestock~ Of course, since a good portion of the residents quite enjoy the taste of cum, it might be best to avoid anything described as 'creamy' or served with 'special sauce' if that's not your cup of tea. There's a door through the kitchen on the west side that leads outside, easy access to the fields and stables. There's also a stair case down to the kitchen cellar, and the bar has it's own staircase directly to the root cellar.",
+    "categories": [
+      "location",
+      "groundfloor"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337b02ab2270d32b67ae50e"
+    },
+    "type": "lab",
+    "description": "Where lewd science meets alchemical madness. Felix and Gort are common faces around here, locked in a friendly competition to develop the best products for mass production. Testing is well structured and rigorous as far as what makes it into production proper, but there's a good number of consensual but impromptu tests as well. There's always hard spell casting to make up for any tests gone wrong - True Polymorph is a potent 'undo' spell. A stair case leads down from the labs to the milking facilities. Sexual fluids are a secret ingredient most competitors don't have, after all.",
+    "categories": [
+      "location",
+      "groundfloor"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337b0f8b2270d32b67ae50f"
+    },
+    "type": "lounge",
+    "description": "The most lavishly furnished room of the office where cozy first meetings are often had. Violet flame harmlessly crackles in a fireplace across from a purple couch with two arm chairs on either side. Right in the middle is a coffee table that's covered in refreshments and finger food more often than not.",
+    "categories": [
+      "location",
+      "groundfloor"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337b12db2270d32b67ae510"
+    },
+    "type": "giftshop",
+    "description": "This tiny little store has all of the fantastic and fabulous products from the Contract brand. Illusory displays allow a massive catalogue of products to be browsed through without the need to walk down rows and rows of shelves, and there's even tiny lust essence spheres that allow you to hold an imitation product in hand before asking a clerk to put together your purchase. The store front is intentionally positioned so visitors see it as they prepare to depart.",
+    "categories": [
+      "location",
+      "groundfloor"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337b14cb2270d32b67ae511"
+    },
+    "type": "aquarium",
+    "description": "These aquatic facilities dip down into the subterranean passages, and the already massive tanks look even bigger when you're swimming in them. The water is carefully maintained with a magical alkaline that can support both saltwater and freshwater natives. Naturally, this is the place to go to hang out with mermaids, fishgirls, and other cuties. Potions of water breathing and other supportive gear is readily available!",
+    "categories": [
+      "location",
+      "groundfloor"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337b191b2270d32b67ae512"
+    },
+    "type": "myoffice",
+    "description": "The Chateau provides office space for anyone who needs it, whether long term or permanent. This one belongs to the initiator of an interaction.",
+    "categories": [
+      "location",
+      "groundfloor"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337b19cb2270d32b67ae513"
+    },
+    "type": "theiroffice",
+    "description": "The Chateau provides office space for anyone who needs it, whether long term or permanent. This one belongs to the recipient of an interaction.",
+    "categories": [
+      "location",
+      "groundfloor"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337b3c0b2270d32b67ae514"
+    },
+    "type": "garden",
+    "description": "Hedge lined walkways divide the garden that can be viewed through windows on all three inner walls of the Château. Many harpies use the fountain as their literal bird bath instead of using the hotsprings. On the northern end, just before the forest, is a green house warded by warning signs in eldritch text anyone can read. It's impossible to enter this home of dangerous flora such as mandragora and piranha plants without saying the phrase \"I know the greenhouse is dangerous, and I accept the risks.\" At the base of lotus hill is a beautiful lavender colored gazebo perfect for tea parties.",
+    "categories": [
+      "location",
+      "exterior"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337b604b2270d32b67ae515"
+    },
+    "type": "forest",
+    "description": "This forest might look easy to get lost in, but if you walk in a straight line long enough, you always end up back at the Château. Forest is actually a mild misnomer - the type of flora varies, and the area near the Beast Pens is closer to a jungle. The fields are penned in by deciduous trees, the northern expanse is mostly evergreens, and to the south are open meadows.",
+    "categories": [
+      "location",
+      "exterior"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337b628b2270d32b67ae516"
+    },
+    "type": "fields",
+    "description": "These large fields grow a variety of crops for the Château residents, and provide an outlet for beasts of burden and those who enjoy literally fruitful physical labor. Many of these fruits and vegetables can't be found on places like Earth, such as 'Citrus Shockers' whose seeds are sour crystals. The grains are more or less the same as anywhere, however - rice and wheat add a lovely staple to any diet. Towards the northern end of the fields is a walled arena for athletic events and show ponies to perform with room for an audience.",
+    "categories": [
+      "location",
+      "exterior"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337b658b2270d32b67ae517"
+    },
+    "type": "beastpens",
+    "description": "Where feral creatures are allowed to indulge in their nature, stalking about natural habitats. Visitors are barred from entry unless escorted by a qualified guide. Even residents enter at their own risk, consenting to whatever happens with the creatures within that don't possess the mental faculties for polite discussion. All of these beasts still carry a mark, and will be naturally disinclined from violating consent due to the difficulty of pushing past the magical protection. Likewise, the marks are able to interpret their desires and communicate the beast's consent on their behalf.",
+    "categories": [
+      "location",
+      "exterior"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337b67eb2270d32b67ae518"
+    },
+    "type": "stables",
+    "description": "Where horses, dragons, and other domesticated creatures are well cared for. Cows and other livestock are hooked up to milking machines, reptiles and avians lay eggs, and beasts of burden rest when they aren't pulling carts or helping in the fields. Unicorns and other creatures better suited for display are thoroughly groomed on the regular.",
+    "categories": [
+      "location",
+      "exterior"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337b6a2b2270d32b67ae519"
+    },
+    "type": "hotsprings",
+    "description": "Rocky terrain and a humid atmosphere. Fiery elementals that live below these lounging pools heat the water to perfection. The baths are mixed genders, but the steam seems to have a mind of its own, blocking unwanted views and unwanted viewers so everyone has the show and audience they came for.",
+    "categories": [
+      "location",
+      "exterior"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337b6c2b2270d32b67ae51a"
+    },
+    "type": "cellar",
+    "description": "A place for magically and naturally preserved edible goods. Accessed from the kitchen above, there's also a door to the Milking Facilities, since so many Chateau residents have diets that require cum or other naturally produced ingredients. Some of the liquors to be found in the casks are centuries or even millennia old.",
+    "categories": [
+      "location",
+      "basement"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337b6f1b2270d32b67ae51b"
+    },
+    "type": "rootgarden",
+    "description": "Not all crops are best grown on the surface. This area is home to the roots, fungi, and other crops that require a dark underground environment to thrive. The portion under the greenhouse is just as dangerous as the above ground counterpart, and warded in an identical manner. The passage in the green house and the door from the kitchen cellar are the primary ways this room is accessed.",
+    "categories": [
+      "location",
+      "basement"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337b725b2270d32b67ae51c"
+    },
+    "type": "milkingstalls",
+    "description": "Cattle aren't the only thing to get milked at the Chateau. Whether it's cocks being drained of their seed, mothers wishing to donate their breastmilk, or egg layers wishing to lose themselves in the bliss of laying, all sorts of contraptions both biological and arcane exist to make the process pleasurable, efficient, and safe. There are those who spend practically their whole lives here, but a vast majority prefer only to spend a day now and then, before returning to their usual business.",
+    "categories": [
+      "location",
+      "basement"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337e73c127e1135eba45ba4"
+    },
+    "type": "alraune",
+    "description": "Plant monsters that attract partners with sweet perfumes and the promise of delicious nectar.",
+    "categories": [
+      "monster",
+      "alraune",
+      "perfume"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337e788127e1135eba45ba5"
+    },
+    "type": "barometz",
+    "description": "A type of alraune with a juice filled fruit and the appearance of a sheep trapped within.",
+    "categories": [
+      "monster",
+      "alraune",
+      "perfume",
+      "horned"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337e7d6127e1135eba45ba6"
+    },
+    "type": "liliraune",
+    "description": "A fusion of two alraune, or the splitting of one into a form with two identical bodies still connected near the stem.",
+    "categories": [
+      "monster",
+      "alraune",
+      "perfume"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337e87a127e1135eba45ba7"
+    },
+    "type": "angel",
+    "description": "A holy being, like a winged human with a glowing halo. Most that you find at the Chateau will view sex and/or reproduction as a divine and holy act.",
+    "categories": [
+      "monster",
+      "angel",
+      "flight",
+      "holy",
+      "feathered"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337e8ab127e1135eba45ba8"
+    },
+    "type": "cupid",
+    "description": "An angel adorned in heart motifs and romantic colors. Their arrows are said to inspire love.",
+    "categories": [
+      "monster",
+      "angel",
+      "flight",
+      "holy",
+      "feathered"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337e8f7127e1135eba45ba9"
+    },
+    "type": "darkangel",
+    "description": "An angel with dark coloration who has given in to her own cravings, enjoying pleasure for its own sake.",
+    "categories": [
+      "monster",
+      "angel",
+      "flight",
+      "feathered",
+      "corrupt"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337e936127e1135eba45baa"
+    },
+    "type": "valkyrie",
+    "description": "A holy protector who believes their might serves a righteous cause.",
+    "categories": [
+      "monster",
+      "angel",
+      "flight",
+      "feathered",
+      "holy"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337e95e127e1135eba45bab"
+    },
+    "type": "darkvalkyrie",
+    "description": "A fallen holy warrior who uses their might to satisfy their own desires.",
+    "categories": [
+      "monster",
+      "angel",
+      "feathered",
+      "corrupt",
+      "flight"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337e9c3127e1135eba45bac"
+    },
+    "type": "houri",
+    "description": "An angel of love, whose feelings are pure and unwavering.",
+    "categories": [
+      "monster",
+      "angel",
+      "holy"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337ea22127e1135eba45bad"
+    },
+    "type": "ant",
+    "description": "Worker ants diligently dig tunnels, while queen ants will breed almost nonstop to keep the colony population healthy.",
+    "categories": [
+      "monster",
+      "insect",
+      "carapace"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337ea64127e1135eba45bae"
+    },
+    "type": "primate",
+    "description": "Its said that humanoids and these monkey like creatures share a common ancestor.",
+    "categories": [
+      "monster",
+      "beast"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337ead4127e1135eba45baf"
+    },
+    "type": "arachne",
+    "description": "Creatures with arachnid lower bodies that spin webs and ensnare their partners.",
+    "categories": [
+      "monster",
+      "arachne",
+      "insect",
+      "poison"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337eb19127e1135eba45bb0"
+    },
+    "type": "drider",
+    "description": "Arachnes which scurry about on fully arachnid lower bodies, vaguely resembling an insectoid centaur.",
+    "categories": [
+      "monster",
+      "arachne",
+      "insect",
+      "poison",
+      "mount"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337eb97127e1135eba45bb1"
+    },
+    "type": "scorpion",
+    "description": "Sometimes referred to as Girtablilu, these arachnids with large stingers are well suited to the desert.",
+    "categories": [
+      "monster",
+      "arachne",
+      "insect",
+      "poison",
+      "mount"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337edc3127e1135eba45bb2"
+    },
+    "type": "armor",
+    "description": "Armor animated by a living soul. Can be worn by others in a symbiotic manner.",
+    "categories": [
+      "monster",
+      "construct",
+      "carapace"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337eddb127e1135eba45bb3"
+    },
+    "type": "goat",
+    "description": "Horned creatures with a strong stomach that can digest almost anything.",
+    "categories": [
+      "monster",
+      "beast",
+      "horned"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337ee1b127e1135eba45bb4"
+    },
+    "type": "bat",
+    "description": "Winged creatures of the night sometimes mistaken for vampires. While not necessarily blind, most are nearsighted, preferring to navigate with echolocation.",
+    "categories": [
+      "monster",
+      "beast",
+      "winged",
+      "nocturnal"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337ee37127e1135eba45bb5"
+    },
+    "type": "bear",
+    "description": "Big fluffy fur balls that are incredibly strong. They have a penchant for honey and give great hugs.",
+    "categories": [
+      "monster",
+      "beast"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337ee66127e1135eba45bb6"
+    },
+    "type": "bee",
+    "description": "Fuzzy yellow and black striped insectoids that buzz about the garden, pollenating crops and alraune alike.",
+    "categories": [
+      "monster",
+      "insect"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337ee8a127e1135eba45bb7"
+    },
+    "type": "beetle",
+    "description": "Armor plated insectoids, often with strong pincers or mandibles.",
+    "categories": [
+      "monster",
+      "insect",
+      "carapace"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337eee9127e1135eba45bb8"
+    },
+    "type": "crab",
+    "description": "Armored, clawed sea dwellers that walk quickly from side to side. The epitome of evolution.",
+    "categories": [
+      "monster",
+      "aquatic",
+      "carapace",
+      "cutting"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337ef1c127e1135eba45bb9"
+    },
+    "type": "cat",
+    "description": "Sometimes referred to as nekomata, these feline creatures are as standoffish as they are adorable.",
+    "categories": [
+      "monster",
+      "cat",
+      "beast"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337ef60127e1135eba45bba"
+    },
+    "type": "cheshire",
+    "description": "A cat from wonderland with a distinctive smile and a checkered pattern. Known to be pranksters.",
+    "categories": [
+      "monster",
+      "cat",
+      "wonderland",
+      "beast"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337ef98127e1135eba45bbb"
+    },
+    "type": "sphinx",
+    "description": "A cat with a penchant for riddles, native to the desert. Said to be very wise.",
+    "categories": [
+      "monster",
+      "cat",
+      "beast"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337f015127e1135eba45bbc"
+    },
+    "type": "horse",
+    "description": "The classic mount, hooved creatures that are fast and reliable.",
+    "categories": [
+      "monster",
+      "horse",
+      "beast",
+      "mount"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337f06a127e1135eba45bbd"
+    },
+    "type": "centaur",
+    "description": "Half humanoid, half horse, all pride. Centaurs are usually very skilled with a bow.",
+    "categories": [
+      "monster",
+      "horse",
+      "beast",
+      "mount"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337f0d0127e1135eba45bbe"
+    },
+    "type": "nightmare",
+    "description": "A dark centaur that can visit the world of dreams.",
+    "categories": [
+      "monster",
+      "horse",
+      "beast",
+      "mount",
+      "nocturnal",
+      "corrupt",
+      "flight"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337f110127e1135eba45bbf"
+    },
+    "type": "unicorn",
+    "description": "The epitome of purity, these white centaurs with a single horn are said to only be rideable by virgins.",
+    "categories": [
+      "monster",
+      "horse",
+      "beast",
+      "mount",
+      "holy",
+      "horned"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337f186127e1135eba45bc0"
+    },
+    "type": "bicorn",
+    "description": "A corrupt unicorn who has given in to carnal pleasure. It is said only those who have been deflowered may ride these twin horned beasts.",
+    "categories": [
+      "monster",
+      "horse",
+      "beast",
+      "mount",
+      "corrupt",
+      "horned"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337f1e3127e1135eba45bc1"
+    },
+    "type": "deer",
+    "description": "Flighty creatures, like fragile horses with majestic horns.",
+    "categories": [
+      "monster",
+      "horse",
+      "beast",
+      "horned",
+      "mount"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337f227127e1135eba45bc2"
+    },
+    "type": "centipede",
+    "description": "Long insectoids with small uncountable legs. Beware their poison.",
+    "categories": [
+      "monster",
+      "insect",
+      "poison"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337f2b3127e1135eba45bc3"
+    },
+    "type": "chimera",
+    "description": "Originally a beast that combined the traits of lions, dragons, goats, and snakes, the term has also come to describe any beast resulting from the fusion of other species.",
+    "categories": [
+      "monster",
+      "beast",
+      "poison",
+      "flight"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337f2e1127e1135eba45bc4"
+    },
+    "type": "manticore",
+    "description": "A winged but fluffy beast, known for their distinctively sexual and dangerous tails.",
+    "categories": [
+      "monster",
+      "beast",
+      "flight",
+      "poison"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337f36f127e1135eba45bc5"
+    },
+    "type": "doll",
+    "description": "Usually humanoid in shape, these playthings are often light and easy to manipulate, sometimes made a puppet by outside forces.",
+    "categories": [
+      "monster",
+      "construct"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337f803127e1135eba45bc6"
+    },
+    "type": "jabberwock",
+    "description": "A dragon who has been corrupted by wonderland to value lewdness above physical prowess. They have extra mouths for the sake of extracting as much semen as possible.",
+    "categories": [
+      "monster",
+      "dragon",
+      "wonderland",
+      "poison",
+      "flight",
+      "horned",
+      "carapace"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337f84a127e1135eba45bc7"
+    },
+    "type": "dryad",
+    "description": "Spirits of the forest, sometimes rooted in place and appearing as trees.",
+    "categories": [
+      "monster",
+      "intangible"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337f8c1127e1135eba45bc8"
+    },
+    "type": "dullahan",
+    "description": "Beings whose heads, and sometimes other parts as well, can be detached while still maintaining sensation through a magical link to the main body.",
+    "categories": [
+      "monster"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337ff3f127e1135eba45bc9"
+    },
+    "type": "giant",
+    "description": "Incredibly large humanoid creatures.",
+    "categories": [
+      "monster",
+      "giant"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6337ff70127e1135eba45bca"
+    },
+    "type": "cyclops",
+    "description": "Giants with only one eye, sometimes accompanied by a horn as well.",
+    "categories": [
+      "monster",
+      "giant",
+      "horned"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63380125127e1135eba45bcb"
+    },
+    "type": "oni",
+    "description": "Giants whose horns channel magical power.",
+    "categories": [
+      "monster",
+      "giant",
+      "horned"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633801b5127e1135eba45bcc"
+    },
+    "type": "mosquito",
+    "description": "Like insectoid vampires, these creatures drink blood as part of their reproductive cycle.",
+    "categories": [
+      "monster",
+      "insect",
+      "flight"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63380307127e1135eba45bcd"
+    },
+    "type": "fox",
+    "description": "Furry and cunning vulpine creatures.",
+    "categories": [
+      "monster",
+      "fox",
+      "beast"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6338033d127e1135eba45bce"
+    },
+    "type": "kitsune",
+    "description": "Multitailed foxes that have magical prowess. The more tails, the more tower, said to peak with nine tailed foxes.",
+    "categories": [
+      "monster",
+      "fox",
+      "beast"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6338043f127e1135eba45bcf"
+    },
+    "type": "beholder",
+    "description": "Floating bulbous creatures with multiple eyes, capable of inflicting maladies with a simple gaze.",
+    "categories": [
+      "monster",
+      "flight"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6338045e127e1135eba45bd0"
+    },
+    "type": "ghost",
+    "description": "Undead ephemeral spirits.",
+    "categories": [
+      "monster",
+      "flight",
+      "intangible"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633804a4127e1135eba45bd1"
+    },
+    "type": "goblin",
+    "description": "Small gremlins, often with green skin, that have a reputation of being walking cum rags and cock sockets.",
+    "categories": [
+      "monster"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6338050c127e1135eba45bd2"
+    },
+    "type": "automaton",
+    "description": "A mechanical being that imitates natural life.",
+    "categories": [
+      "monster",
+      "construct",
+      "carapace"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6338052b127e1135eba45bd3"
+    },
+    "type": "gargoyle",
+    "description": "A winged creature of stone, easy to mistake for a statue when standing still.",
+    "categories": [
+      "monster",
+      "carapace",
+      "flight"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6338054e127e1135eba45bd4"
+    },
+    "type": "golem",
+    "description": "Magically animated earth that assists in laborious tasks.",
+    "categories": [
+      "monster",
+      "construct",
+      "carapace"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63380797127e1135eba45bd5"
+    },
+    "type": "livinglava",
+    "description": "A stone creature with molten patches that are warm like a hot bath.",
+    "categories": [
+      "monster",
+      "fiery"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6338081d127e1135eba45bd6"
+    },
+    "type": "skeleton",
+    "description": "Reanimated bones that are often fond of puns.",
+    "categories": [
+      "monster"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63380862127e1135eba45bd7"
+    },
+    "type": "gryphon",
+    "description": "Part lion, part eagle, these noble beasts are as loyal as they come.",
+    "categories": [
+      "monster",
+      "beast",
+      "flight",
+      "mount",
+      "feathered"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633808f4127e1135eba45bd8"
+    },
+    "type": "harpy",
+    "description": "Humanoids with wings replacing much of their arms. Known to 'roost' by wrapping their legs tight around a partner's hips.",
+    "categories": [
+      "monster",
+      "bird",
+      "beast",
+      "flight",
+      "feathered"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6338092d127e1135eba45bd9"
+    },
+    "type": "siren",
+    "description": "Harpies with alluring singing voices that can hypnotize and charm.",
+    "categories": [
+      "monster",
+      "bird",
+      "beast",
+      "flight",
+      "feathered"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63380985127e1135eba45bda"
+    },
+    "type": "jubjub",
+    "description": "Pink harpy lovebirds from wonderland whose large bosoms make them flightless. More than a little bird brained.",
+    "categories": [
+      "monster",
+      "bird",
+      "wonderland",
+      "beast",
+      "flight",
+      "feathered"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633809bf127e1135eba45bdb"
+    },
+    "type": "owl",
+    "description": "Wise and nocturnal avian creatures. Their necks are said to rotate all the way around.",
+    "categories": [
+      "monster",
+      "bird",
+      "beast",
+      "flight",
+      "feathered",
+      "nocturnal"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633809f9127e1135eba45bdc"
+    },
+    "type": "thunderbird",
+    "description": "A lightning infused harpy that can channel electricity to stimulate and arouse.",
+    "categories": [
+      "monster",
+      "bird",
+      "beast",
+      "flight",
+      "feathered",
+      "electric"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63380a9d127e1135eba45bdd"
+    },
+    "type": "roc",
+    "description": "Giant birds whose wings are said to eclipse the sky.",
+    "categories": [
+      "monster",
+      "bird",
+      "giant",
+      "beast",
+      "flight",
+      "feathered",
+      "mount"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63380ac1127e1135eba45bde"
+    },
+    "type": "phoenix",
+    "description": "Fiery birds who are born again from the ashes.",
+    "categories": [
+      "monster",
+      "bird",
+      "beast",
+      "flight",
+      "feathered",
+      "fiery"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63380bb6127e1135eba45bdf"
+    },
+    "type": "imp",
+    "description": "Fledgling demons looking to prove themselves.",
+    "categories": [
+      "monster",
+      "infernal",
+      "flight",
+      "horned",
+      "corrupt"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63380be0127e1135eba45be0"
+    },
+    "type": "archimp",
+    "description": "A demon who has decided to remain an imp despite their increased power, lording over the other imps while still bowing to their superiors.",
+    "categories": [
+      "monster",
+      "infernal",
+      "flight",
+      "corrupt",
+      "horned"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63380c39127e1135eba45be1"
+    },
+    "type": "devil",
+    "description": "Although similar to demons, devils are honorably bound by contracts and laws. Its said the Queen earned her namesake while learning from devils in the nine hells millennia ago.",
+    "categories": [
+      "monster",
+      "infernal",
+      "corrupt",
+      "flight",
+      "horned"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63380c5a127e1135eba45be2"
+    },
+    "type": "demon",
+    "description": "Infernal and chaotic creatures said to be the incarnation of evil.",
+    "categories": [
+      "monster",
+      "infernal",
+      "corrupt"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63380cad127e1135eba45be3"
+    },
+    "type": "succubus",
+    "description": "Synonymous with incubus, these infernal creatures seduce others and are capable of changing their body to suit others desires.",
+    "categories": [
+      "monster",
+      "infernal",
+      "flight",
+      "corrupt",
+      "perfume",
+      "horned"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63380d3a127e1135eba45be4"
+    },
+    "type": "lilim",
+    "description": "A succubus powerful enough to rule their own realm, just as the Queen does. Their lands and underlings are capable of sustaining lust essence, channeling sexual energy and desire into a powerful tool.",
+    "categories": [
+      "monster",
+      "infernal",
+      "flight",
+      "corrupt",
+      "horned",
+      "perfume"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63380ef9127e1135eba45be6"
+    },
+    "type": "lamia",
+    "description": "Also known as Naga, these snake like creatures love to wrap others in their coils.",
+    "categories": [
+      "monster",
+      "snake",
+      "beast",
+      "mount",
+      "carapace",
+      "poison"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63380f4e127e1135eba45be7"
+    },
+    "type": "bunyip",
+    "description": "These fluffy serpents are much softer than their scaled lamia counterparts.",
+    "categories": [
+      "monster",
+      "snake",
+      "beast",
+      "mount"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63381002127e1135eba45be8"
+    },
+    "type": "basilisk",
+    "description": "A reptilian creature said to have a paralyzing, petrifying, or even lethal gaze.",
+    "categories": [
+      "monster",
+      "snake",
+      "beast",
+      "poison"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63381096127e1135eba45be9"
+    },
+    "type": "medusa",
+    "description": "These snake-haired creatures are known to turn those who look upon them to stone.",
+    "categories": [
+      "monster",
+      "snake",
+      "beast"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633810f3127e1135eba45bea"
+    },
+    "type": "lizard",
+    "description": "A little like dragons, but smaller, and without wings or magical breath.",
+    "categories": [
+      "monster",
+      "beast",
+      "carapace"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6338111e127e1135eba45beb"
+    },
+    "type": "salamander",
+    "description": "Fiery and spirited lizards, often with red coloring.",
+    "categories": [
+      "monster",
+      "beast",
+      "carapace",
+      "fiery"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63381177127e1135eba45bec"
+    },
+    "type": "mandragora",
+    "description": "Sensitive plants with a dangerous scream.",
+    "categories": [
+      "monster",
+      "alraune"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633811b2127e1135eba45bed"
+    },
+    "type": "mantis",
+    "description": "Bugs with bladed forearms, rumored to devour their partners after sex.",
+    "categories": [
+      "monster",
+      "insect",
+      "cutting",
+      "carapace"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6338121a127e1135eba45bee"
+    },
+    "type": "mushroom",
+    "description": "Also known as Matango or Myconid, these decomposers like the cold and damp.",
+    "categories": [
+      "monster",
+      "alraune",
+      "perfume",
+      "poison"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6338131c127e1135eba45bef"
+    },
+    "type": "mermaid",
+    "description": "These humanoid fish are the gorgeous denizens of the deep.",
+    "categories": [
+      "monster",
+      "aquatic"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6338134a127e1135eba45bf0"
+    },
+    "type": "shark",
+    "description": "Fierce aquatic predators who constantly regrow and shed their teeth.",
+    "categories": [
+      "monster",
+      "aquatic"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633813b8127e1135eba45bf1"
+    },
+    "type": "selkie",
+    "description": "Natural cosplayers, these merfolk dress up to look like seals and other creatures.",
+    "categories": [
+      "monster",
+      "aquatic"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6338140e127e1135eba45bf2"
+    },
+    "type": "mimic",
+    "description": "These often amorphous creatures imitate every day objects like chests before leaping out to surprise others.",
+    "categories": [
+      "monster",
+      "mimic"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63381452127e1135eba45bf3"
+    },
+    "type": "coinmimic",
+    "description": "A mimic that imitates currency, spreading its young through mercantile exchanges.",
+    "categories": [
+      "monster",
+      "mimic"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633814ca127e1135eba45bf4"
+    },
+    "type": "minotaur",
+    "description": "Ox like humanoid creatures known for immense strength and guarding labyrinths.",
+    "categories": [
+      "monster",
+      "cow",
+      "beast",
+      "horned"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63381519127e1135eba45bf5"
+    },
+    "type": "holstaur",
+    "description": "Tame minotaurs bred for their milk production.",
+    "categories": [
+      "monster",
+      "cow",
+      "beast",
+      "horned"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63381526127e1135eba45bf6"
+    },
+    "type": "cow",
+    "description": "Moooooooo",
+    "categories": [
+      "monster",
+      "cow",
+      "beast",
+      "horned"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6338155f127e1135eba45bf7"
+    },
+    "type": "mouse",
+    "description": "Round ears and a penchant for cheese define these small rodents.",
+    "categories": [
+      "monster",
+      "beast"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6338158b127e1135eba45bf8"
+    },
+    "type": "ogre",
+    "description": "These green half giants have layers, like onions.",
+    "categories": [
+      "monster",
+      "giant"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633815ce127e1135eba45bf9"
+    },
+    "type": "orc",
+    "description": "Monstrous humanoids known for their anger, high sex drive, and physical strength.",
+    "categories": [
+      "monster"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633815df127e1135eba45bfa"
+    },
+    "type": "pig",
+    "description": "Oink oink!",
+    "categories": [
+      "monster",
+      "beast"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63381600127e1135eba45bfb"
+    },
+    "type": "moth",
+    "description": "Beautiful furry butterflies of the night.",
+    "categories": [
+      "monster",
+      "insect",
+      "nocturnal",
+      "flight"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63381626127e1135eba45bfc"
+    },
+    "type": "butterfly",
+    "description": "Flying insects with colorful and eye catching wings.",
+    "categories": [
+      "monster",
+      "insect",
+      "flight"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63381641127e1135eba45bfd"
+    },
+    "type": "rabbit",
+    "description": "Long eared furballs known to breed rapidly.",
+    "categories": [
+      "monster",
+      "beast"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633816cd127e1135eba45bfe"
+    },
+    "type": "turtle",
+    "description": "Cute little reptiles which carry their shell home on their back.",
+    "categories": [
+      "monster",
+      "aquatic",
+      "carapace"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633816f7127e1135eba45bff"
+    },
+    "type": "satyr",
+    "description": "Goat humanoids who roam the forest and know how to party.",
+    "categories": [
+      "monster",
+      "horned"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63381748127e1135eba45c00"
+    },
+    "type": "kraken",
+    "description": "Squid like creatures that can be gigantic in nature. Their suckers hold on tight when grasping their partners.",
+    "categories": [
+      "monster",
+      "aquatic"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6338178b127e1135eba45c01"
+    },
+    "type": "scylla",
+    "description": "Octopus like creatures that roam the depths. They have eight tentacles to hold you tight with.",
+    "categories": [
+      "monster",
+      "aquatic"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633817ba127e1135eba45c02"
+    },
+    "type": "mindflayer",
+    "description": "Creatures that devour intellects through aural penetration, whether physical or psychic.",
+    "categories": [
+      "monster",
+      "corrupt"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633817e4127e1135eba45c03"
+    },
+    "type": "sheep",
+    "description": "Sheep wool is incredibly useful for warm clothing.",
+    "categories": [
+      "monster",
+      "beast",
+      "horned"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63381805127e1135eba45c04"
+    },
+    "type": "snail",
+    "description": "Slimy and slow creatures with a hardened shell upon their back.",
+    "categories": [
+      "monster",
+      "insect",
+      "carapace"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63381844127e1135eba45c05"
+    },
+    "type": "slug",
+    "description": "Not quite a slime, but you'd be forgiven for thinking this slimy mass is related.",
+    "categories": [
+      "monster",
+      "insect"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633818cf127e1135eba45c06"
+    },
+    "type": "slime",
+    "description": "An amorphous creature that can change their shape freely.",
+    "categories": [
+      "monster",
+      "slime"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63381ba8127e1135eba45c07"
+    },
+    "type": "queenslime",
+    "description": "A slime that has grown so large, they can form multiple human sized slimes or establish a hive.",
+    "categories": [
+      "monster",
+      "slime"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63381be6127e1135eba45c08"
+    },
+    "type": "shoggoth",
+    "description": "A corrupt slime that serves high level succubi with a maid like appearance and demeanor.",
+    "categories": [
+      "monster",
+      "slime",
+      "corrupt"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63381c49127e1135eba45c09"
+    },
+    "type": "slimecarrier",
+    "description": "The host of a slime parasite whose consciousness has fused with the slime, becoming a slime-humanoid hybrid, the two bodies engaged in constant coitus.",
+    "categories": [
+      "monster",
+      "slime",
+      "mount"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63381d0a127e1135eba45c0a"
+    },
+    "type": "essenceelemental",
+    "description": "Creatures that embody lust essence, created only in the lairs of powerful lilims.",
+    "categories": [
+      "monster",
+      "elemental",
+      "corrupt",
+      "flight",
+      "intangible",
+      "slime"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63381d29127e1135eba45c0b"
+    },
+    "type": "fireelemental",
+    "description": "Fire embodied, creatures of passion and intense heat.",
+    "categories": [
+      "monster",
+      "elemental",
+      "fiery",
+      "flight",
+      "intangible"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63381d78127e1135eba45c0c"
+    },
+    "type": "earthelemental",
+    "description": "Earth embodied, creatures of heavy and sturdy stability.",
+    "categories": [
+      "monster",
+      "elemental",
+      "carapace"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63381dac127e1135eba45c0d"
+    },
+    "type": "waterelemental",
+    "description": "Water embodied, creatures of liquid and flow.",
+    "categories": [
+      "monster",
+      "elemental",
+      "aquatic",
+      "intangible"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63381dcf127e1135eba45c0e"
+    },
+    "type": "airelemental",
+    "description": "Air embodied, creatures of lighthearted freedom.",
+    "categories": [
+      "monster",
+      "elemental",
+      "flight",
+      "intangible"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63381dfe127e1135eba45c0f"
+    },
+    "type": "squirrel",
+    "description": "Large cheeks, bushy tails, and an obsession with nuts define these cuties.",
+    "categories": [
+      "monster",
+      "beast"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6338216a127e1135eba45c10"
+    },
+    "type": "vampire",
+    "description": "Powerful bloodsucking humanoids, who can turn others into more of their kind.",
+    "categories": [
+      "monster",
+      "flight",
+      "corrupt",
+      "nocturnal"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6338222c127e1135eba45c11"
+    },
+    "type": "fairy",
+    "description": "Tiny winged humanoids that somehow manage to take insertions as big as or bigger than they are.",
+    "categories": [
+      "monster",
+      "flight"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63382369127e1135eba45c12"
+    },
+    "type": "elf",
+    "description": "Whether they're monsters is debatable, but these long eared and long lived sluts are a common sight.",
+    "categories": [
+      "monster"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63382396127e1135eba45c13"
+    },
+    "type": "dwarf",
+    "description": "Whether they're monsters is debatable, but these sturdy and reliable shortstacks are a common sight.",
+    "categories": [
+      "monster"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633825ff127e1135eba45c14"
+    },
+    "type": "sword",
+    "description": "A living sword animated by a soul. Can be wielded symbiotically.",
+    "categories": [
+      "monster",
+      "construct",
+      "cutting"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633829a4127e1135eba45c15"
+    },
+    "type": "tanuki",
+    "description": "Playful shapeshifting raccoons.",
+    "categories": [
+      "monster",
+      "beast",
+      "flight"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "633829d5127e1135eba45c16"
+    },
+    "type": "akaname",
+    "description": "Otherwise known as 'filth lickers', the long tongues of these monsters are perfect for bath assistants.",
+    "categories": [
+      "monster"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63382a42127e1135eba45c17"
+    },
+    "type": "tiger",
+    "description": "Fierce cats with orange and black stripes.",
+    "categories": [
+      "monster",
+      "cat",
+      "beast",
+      "mount"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63382a6f127e1135eba45c18"
+    },
+    "type": "frog",
+    "description": "Often covered in mucus, these slimy aquatic creatures have powerful legs and long sticky tongues.",
+    "categories": [
+      "monster",
+      "aquatic",
+      "poison"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63382abd127e1135eba45c19"
+    },
+    "type": "raiju",
+    "description": "A magical weasel that turns sexual energy into electric pleasure.",
+    "categories": [
+      "monster",
+      "beast",
+      "electric"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63382afe127e1135eba45c1a"
+    },
+    "type": "wolf",
+    "description": "The wild untamed version of canines. Prefers to roam in packs.",
+    "categories": [
+      "monster",
+      "dog",
+      "beast",
+      "nocturnal"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63382b38127e1135eba45c1b"
+    },
+    "type": "anubis",
+    "description": "A dog native to the desert that protects royal tombs.",
+    "categories": [
+      "monster",
+      "dog",
+      "beast"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63382b6c127e1135eba45c1c"
+    },
+    "type": "werewolf",
+    "description": "Shifting between human and wolf, many owe their transformation to the moon's light.",
+    "categories": [
+      "monster",
+      "dog",
+      "beast",
+      "nocturnal"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63382b8b127e1135eba45c1d"
+    },
+    "type": "dog",
+    "description": "Loyal companions who love a good bone.",
+    "categories": [
+      "monster",
+      "dog",
+      "beast"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63382bb1127e1135eba45c1e"
+    },
+    "type": "hellhound",
+    "description": "Dark and fiery hounds from hell. Known to be fiercely protective.",
+    "categories": [
+      "monster",
+      "dog",
+      "beast",
+      "fiery",
+      "infernal"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63382bed127e1135eba45c1f"
+    },
+    "type": "worm",
+    "description": "Limbless and often plump creatures that wiggle about and love a good cuddle.",
+    "categories": [
+      "monster",
+      "insect",
+      "worm"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63382c19127e1135eba45c20"
+    },
+    "type": "bookworm",
+    "description": "Worms with an intense love for the written word. They roam the library and enjoy a good book as much as a good partner to snuggle up to while reading it.",
+    "categories": [
+      "monster",
+      "insect",
+      "worm"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63382c81127e1135eba45c21"
+    },
+    "type": "wonderworm",
+    "description": "Worms from wonderland that consume strangely flavored tobaccos from hookahs.",
+    "categories": [
+      "monster",
+      "insect",
+      "wonderland",
+      "worm"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63382ccf127e1135eba45c22"
+    },
+    "type": "lich",
+    "description": "Beings whose key to 'immortality' relies on placing their soul in an exterior vessel.",
+    "categories": [
+      "monster",
+      "nocturnal"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "63382ce6127e1135eba45c23"
+    },
+    "type": "zombie",
+    "description": "Undead whose flesh has definitely seen better days. Loves brains.",
+    "categories": [
+      "monster"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "64d0666debf98acc8531a893"
+    },
+    "type": "arm",
+    "description": "A connective appendage well suited for interacting with the world. Not neccessarily attached to a hand - harpies often have wings at the end of their arms, insects may have nubs or talons, etc.",
+    "categories": [
+      "bodypart"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "64d0681debf98acc8531a894"
+    },
+    "type": "leg",
+    "description": "A connective appendage that supports weight. Usually attached to a foot, but not neccessarily a humanoid one.",
+    "categories": [
+      "bodypart"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "64d06d76ebf98acc8531a895"
+    },
+    "type": "joint",
+    "description": "Like elbows and knees, any body part that bends frequently and might hide something in the fold.",
+    "categories": [
+      "bodypart"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "64d06df4ebf98acc8531a896"
+    },
+    "type": "neck",
+    "description": "What connects your head to your torso, generally speaking.",
+    "categories": [
+      "bodypart"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "64d06e53ebf98acc8531a898"
+    },
+    "type": "back",
+    "description": "The part of your torso which tends to be behind you as a bipedal, or facing towards the sky when you have more than two legs.",
+    "categories": [
+      "bodypart"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "64d06ed3ebf98acc8531a899"
+    },
+    "type": "eye",
+    "description": "A sensory organ for sight, usually spheres front and center on your face.",
+    "categories": [
+      "bodypart"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "64d06facebf98acc8531a89b"
+    },
+    "type": "nose",
+    "description": "An organ for sensing smell, usually with two tiny holes to breath through.",
+    "categories": [
+      "bodypart"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "64d07027ebf98acc8531a89e"
+    },
+    "type": "decolletage",
+    "description": "The flat area above the chest, and below the neck.",
+    "categories": [
+      "bodypart"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "64d071c7ebf98acc8531a89f"
+    },
+    "type": "lowerback",
+    "description": "The tramp stamp, the lumbar, the back of the torso just above the ass.",
+    "categories": [
+      "bodypart"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "64d1c29debf98acc8531a8a0"
+    },
+    "type": "face",
+    "description": "The expressive part of one's head",
+    "categories": [
+      "bodypart"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "64d1c316ebf98acc8531a8a3"
+    },
+    "type": "body",
+    "description": "The whole of one's body, from top to bottom and front to back.",
+    "categories": [
+      "bodypart"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "64d1c334ebf98acc8531a8a4"
+    },
+    "type": "torso",
+    "description": "The middle part of the body where vital organs usually stay.",
+    "categories": [
+      "bodypart"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "64d1c42debf98acc8531a8a6"
+    },
+    "type": "dick",
+    "description": "A male reproductive organ, meant to deliver a pounding and spew lots of cum.",
+    "categories": [
+      "bodypart"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "64d1c4c8ebf98acc8531a8a7"
+    },
+    "type": "ball",
+    "description": "A cum producing orb, usually dangling between the legs in pairs.",
+    "categories": [
+      "bodypart"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "64d707c44e6e9fa55529061a"
+    },
+    "type": "gambler",
+    "description": "Gamblers earn money by betting money, staking it all on their skills. Those who can't bankroll their escapades end up betting their body instead.",
+    "categories": [
+      "job"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "64d708464e6e9fa55529061b"
+    },
+    "type": "dealer",
+    "description": "Dealers work for the house casino, whether that's literally dealing cards or waiting tables. Depending on how one is dressed, they might spend most of their time under the table.",
+    "categories": [
+      "job"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "64d70a084e6e9fa55529061c"
+    },
+    "type": "soothsayer",
+    "description": "Literally a 'speaker of truth', these advisors are known to have the foresight (whether magical or intellectual) to peer into the future.",
+    "categories": [
+      "job"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "64d70b064e6e9fa55529061d"
+    },
+    "type": "bartender",
+    "description": "Not only do they make incredible drinks, they make sure your night is both safe and pleasant.",
+    "categories": [
+      "job"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "64d70b7b4e6e9fa55529061e"
+    },
+    "type": "builder",
+    "description": "Whether it's wood, concrete, marble, metal, or something far more exotic, builders shape the Chateau to the needs of its residents with their constructions.",
+    "categories": [
+      "job"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "64d70e674e6e9fa55529061f"
+    },
+    "type": "healer",
+    "description": "Traditionally tasked with the physical wellbeing of others, the residents of the Chateau are known to be healthier than most. It's no wonder many prefer to focus on 'sexual healing'.",
+    "categories": [
+      "job"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "64d70f0f4e6e9fa555290620"
+    },
+    "type": "manabattery",
+    "description": "Those who have magical potential but not the skill to tap into it, and instead offer their energy reserves to a superior.",
+    "categories": [
+      "job"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "64d7112d4e6e9fa555290621"
+    },
+    "type": "adventurer",
+    "description": "Travelers, archeologists, questers, anyone who leaves the safety of the Chateau to brave the unknown.",
+    "categories": [
+      "job"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "64d712194e6e9fa555290622"
+    },
+    "type": "stylist",
+    "description": "Whether it's doing makeup, choosing outfits, or inspiring confidence, a Stylist will help anyone look and feel their best.",
+    "categories": [
+      "job"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "64d7139f4e6e9fa555290623"
+    },
+    "type": "scribe",
+    "description": "Whether authoring their own works or aiding in the copying, translation, and interpretation of written works, scribes are experts of language in one form or another.",
+    "categories": [
+      "job"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "64d715014e6e9fa555290624"
+    },
+    "type": "brute",
+    "description": "When you need someone big and strong, you call a brute for the heavy lifting. Some will use their bulk to bully tribute out of weaker denizens, but don't worry - the little ones are enjoying it too.",
+    "categories": [
+      "job"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "64d715f44e6e9fa555290625"
+    },
+    "type": "athlete",
+    "description": "Those who push physical performance to the limit, and then show off their prowess for the entertainment of others.",
+    "categories": [
+      "job"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "64d7164c4e6e9fa555290626"
+    },
+    "type": "manager",
+    "description": "The Queen can't micromanage everything herself, so managers of various sorts fill the gaps.",
+    "categories": [
+      "job"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "64d716ea4e6e9fa555290627"
+    },
+    "type": "royal",
+    "description": "Royals act as representitives of their people, and often receive some personal service so they can better focus on important civil matters. Those who expect their title to carry authority over Chateau residents, however, are in for a rude awakening.",
+    "categories": [
+      "job"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "64d7188b4e6e9fa555290628"
+    },
+    "type": "artist",
+    "description": "Although many professions will proclaim themselves artists, those employing artists in the Chateau are looking for painters, drawers, and experts in light and color.",
+    "categories": [
+      "job"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "64d71d934e6e9fa55529062a"
+    },
+    "type": "jester",
+    "description": "Jokers, clowns, comedians, dumbasses and stooges. Their humor is [s]sometimes misplaced[/s] [i]always underappreciated! Who the heck writes these things, what are you telling everyone about us, ya wierd textual embodiment of lore. More like emborediment of snore![/i]",
+    "categories": [
+      "job"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "64d71e464e6e9fa55529062b"
+    },
+    "type": "guest",
+    "description": "Guests are those here on business, or who have yet to settle in. Although just as valid and worthy of respect as any resident, they lack a permanent place in the community, and may have some things to learn about local culture.",
+    "categories": [
+      "job"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "64d763f74e6e9fa55529062e"
+    },
+    "type": "restroom",
+    "description": "Littered about the Chateau and taking various forms, a restroom is where one makes waste. It's usually not discussed in polite conversation, but fans of Golden fluids may have special interest in these nooks.",
+    "categories": [
+      "location"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "64d83e7d4e6e9fa555290632"
+    },
+    "type": "arena",
+    "description": "The arena is where athletes, show animals, and other performers can display their prowess before a large audience. The stands are shaped like a fierce dragon complete with a VIP room in it's jaws and concession stands between the legs.",
+    "categories": [
+      "location",
+      "exterior"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6580ecdbf444fa3f69c0f118"
+    },
+    "type": "milk",
+    "description": "Traditionally from a cow, this creamy nutritious substance could have come from almost any creature here in the Chateau.",
+    "categories": [
+      "substance"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6587510f38ef324758679a9c"
+    },
+    "type": "boss",
+    "description": "If you rarely work and opt to tell other people what to do instead, you might be a boss. Luckily there's lots of residents that are just looking for someone to give their life purpose.",
+    "categories": [
+      "job"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "658751c338ef324758679a9d"
+    },
+    "type": "caretaker",
+    "description": "Homebodies who focus on caring for others, some with a more dominant inclination than others.",
+    "categories": [
+      "job"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "65875b6938ef324758679a9e"
+    },
+    "type": "corrupter",
+    "description": "Not neccessarily forces for evil, corrupters help others to realize lives that are more liberated, pleasure-seeking, and often monstrous.",
+    "categories": [
+      "job"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "65875c1438ef324758679a9f"
+    },
+    "type": "purifier",
+    "description": "Not neccessarily bastions of good, purifiers help guide others to lives that are more morally guided, rich, and pleasureful.",
+    "categories": [
+      "job"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "658bd9b738ef324758679ab6"
+    },
+    "type": "marriage",
+    "description": "The ritual union of two lovers who intend to proceed in life together as a family. Usually commemorated by the exchanging of rings and a commitment to uphold proclaimed vows.",
+    "categories": [
+      "bond"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "658bda2f38ef324758679ab8"
+    },
+    "type": "offspring",
+    "description": "Mother/Daughter, Father/Son, Parent/Offspring. A commitment, whether through birth or adoption, to care for and raise another. (The parent should initiate interactions with this bond).",
+    "categories": [
+      "bond"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "658bdaae38ef324758679ab9"
+    },
+    "type": "disciple",
+    "description": "A pledge to train, educate, or otherwise take another under your wing in a professional capacity. (The mentor should initiate interactions with this bond).",
+    "categories": [
+      "bond"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "658be52438ef324758679aba"
+    },
+    "type": "sibling",
+    "description": "Whether through shared parentage or choice, brothers sisters and siblings share common upbringings and value that bond as family.",
+    "categories": [
+      "bond"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "658be6fb38ef324758679abb"
+    },
+    "type": "piety",
+    "description": "A pledge to regard another as godlike, and a focal point for one's faith and worship. (The worshipper should initiate interactions with this bond).",
+    "categories": [
+      "bond"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "658be84b38ef324758679abc"
+    },
+    "type": "protection",
+    "description": "A promise to protect one that is less powerful than yourself in some regard. (The protector should initiate interactions with this bond).",
+    "categories": [
+      "bond"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "658be91f38ef324758679abd"
+    },
+    "type": "fealty",
+    "description": "A pledge to regard another as their lord, usually offering their physical prowess to the cause. (The servant should initiate interactions with this bond).",
+    "categories": [
+      "bond"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "658bebb438ef324758679abe"
+    },
+    "type": "family",
+    "description": "Not as direct as sibling or parent/offspring connections, family includes uncles and aunts, cousins, grandparents, grandchildren, and all extensions thereof.",
+    "categories": [
+      "bond"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "658bece138ef324758679abf"
+    },
+    "type": "roommate",
+    "description": "Roommates share a household together in some form, sharing the responsibility and benefits of common space. If they don't live in the Chateau, they might also contribute to rent together.",
+    "categories": [
+      "bond"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "658bed3b38ef324758679ac0"
+    },
+    "type": "coworker",
+    "description": "Coworkers perform similar or related work, usually for the same boss, but not neccessarily.",
+    "categories": [
+      "bond"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "658bf21e38ef324758679ac1"
+    },
+    "type": "submission",
+    "description": "Usually of a sexual nature, a submissive promises to obey and please their dominant. (The submissive should initiate interactions with this bond).",
+    "categories": [
+      "bond"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "658bf65138ef324758679ac2"
+    },
+    "type": "ally",
+    "description": "Allies are part of the same adventuring party, motley crew, or otherwise cooperative team. ",
+    "categories": [
+      "bond"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "658bf6b938ef324758679ac3"
+    },
+    "type": "subordinate",
+    "description": "A subordinate might be an employee, goon or other low-level servant of their boss who has most likely [b]!employ[/b]'d them in some fashion. (The subordinate should initiate interactions with this bond).",
+    "categories": [
+      "bond"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "658bf9d138ef324758679ac4"
+    },
+    "type": "thrall",
+    "description": "Conditioned to value their hypnotist's instructions to a reality warping degree, thralls have usually lost a degree of self identity and serve as an extension of another's will. (The enthraller should initiate interactions with this bond).",
+    "categories": [
+      "bond"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "658bfb7338ef324758679ac5"
+    },
+    "type": "partner",
+    "description": "Whether as lovers, never-weds, or just to see how it feels, boyfriends girlfriends and partners are devoted to each other romantically and/or sexually.",
+    "categories": [
+      "bond"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "658bff9c38ef324758679ac6"
+    },
+    "type": "fuckbuddy",
+    "description": "Fuckbuddies, friends with benefits, and fucktoys are sexually involved, but aren't as romantically inclined as partners.",
+    "categories": [
+      "bond"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "658c060e38ef324758679ac7"
+    },
+    "type": "property",
+    "description": "Whether as a slave or literal object, property has given up their right to personhood and is now just a possession of someone else. Note that the Chateau has institutions in place that can restore lost personhood as soon as an object no longer regards itself as simple property. (The owner should initiate interactions with this bond).",
+    "categories": [
+      "bond"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "658c07b638ef324758679ac8"
+    },
+    "type": "rival",
+    "description": "Rivals are competitors, opponents, but never quite enemies. They spur each other to do better and prove that love and hate are two sides of the same coin.",
+    "categories": [
+      "bond"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "658c087338ef324758679aca"
+    },
+    "type": "inspiration",
+    "description": "Inspirations are one sided bonds, where one party inspires the other through their actions and works while rarely interacting directly. (The idolizer should initiate interactions with this bond, like asking for an autograph).",
+    "categories": [
+      "bond"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "658c08fa38ef324758679acb"
+    },
+    "type": "client",
+    "description": "Clients and patrons are those who purchase another's work, in such a fashion that the provider recognizes them. (The worker should initiate interactions with this bond).",
+    "categories": [
+      "bond"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "6592c86262e292e013311ea8"
+    },
+    "type": "dragon",
+    "description": "Overgrown flying lizards, usually with magical breath and a pride complex.",
+    "categories": [
+      "monster",
+      "beast",
+      "flying",
+      "dragon",
+      "horned",
+      "carapace"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "67a3175d05808219705086ea"
+    },
+    "type": "tongue",
+    "description": "A personal tentacle, usually in the mouth, used for tasting. Certain flavors are more common than others in the Chateau~",
+    "categories": [
+      "bodypart"
+    ]
+  },
+  {
+    "_id": {
+      "$oid": "686b8a2f329cc728a7108655"
+    },
+    "type": "dorse",
+    "description": "Also known as a 'Queen's Stallions', these horse-like creatures retain humanoid features, and their entire body has taken on a dick-like appearance. Their tails are often totems inserted in the anus that represent a past life.",
+    "categories": [
+      "monster",
+      "horse",
+      "beast",
+      "mount"
+    ]
+  }
+]

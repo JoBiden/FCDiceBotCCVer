@@ -13,9 +13,9 @@ namespace FChatDicebot.BotCommands
             Name = "birth";
             Aliases = new string[] { };
             Category = "Commitment Interaction";
-            ShortDescription = "Release a pregnancy that has finished gestating";
-            LongDescription = "Self-action: release one of your pending pregnancies once it has finished gestating. With no argument, the oldest ready pregnancy is birthed. Pass a 1-based index to pick a specific ready pregnancy. (NPC naming arguments are accepted but ignored until the NPC system is installed.)";
-            Usage = "!birth\nor\n!birth {index}\nor\n!birth {index} name=\"Name\"\nor\n!birth {index} name=\"Name\" description=\"...\"";
+            ShortDescription = "Birth a pregnancy that has finished gestating";
+            LongDescription = "Birth your young once they have finished gestating. If multiple pregnancies are ready to be born, you will be messaged a numbered list of the pregnancies, and can choose which pregnancy to birth, or '!birth all' to birth every pregnancy you are able to.";
+            Usage = "!birth\nor\n!birth {index}\n";
             RelatedCommands = new string[] { "breed", "dossier" };
             CooldownDuration = null;
             CooldownAppliesTo = null;
@@ -66,13 +66,13 @@ namespace FChatDicebot.BotCommands
             {
                 if (pregnancies.Count == 0)
                 {
-                    error = "You have no pregnancies to birth.";
+                    error = "You aren't pregnant! Ask someone to !breed you first.";
                 }
                 else
                 {
                     var soonest = ordered.OrderBy(x => x.Pregnancy.ReadyAt).First().Pregnancy;
                     string remaining = Utils.GetTimeSpanPrint(soonest.ReadyAt - now);
-                    error = "None of your pregnancies are ready yet. The next one is ready in " + remaining + ".";
+                    error = pregnancies.Count == 1 ? "You aren't ready to give birth yet. Your young will be ready in " + remaining + "." : "None of your young are ready yet. The next will be ready in " + remaining + ".";
                 }
                 return null;
             }
@@ -110,7 +110,7 @@ namespace FChatDicebot.BotCommands
             database.IncrementCount(characterName, "birth");
 
             string broodPhrase = target.Pregnancy.BroodSize > 1
-                ? "a brood of " + target.Pregnancy.BroodSize + " " + target.Pregnancy.MonsterType + "s"
+                ? "a brood of " + target.Pregnancy.BroodSize + " " + target.Pregnancy.MonsterType + "s" //do we have a pluralization rule for monster types that don't pluralize with an 's'?
                 : Utils.AnOrA(target.Pregnancy.MonsterType) + " " + target.Pregnancy.MonsterType;
 
             return carrier.displayName + " has given birth to " + broodPhrase

@@ -51,7 +51,6 @@ namespace FChatDicebot.InteractionProcessors.Commitment
             new CategoryDefault { Category = "infernal",   Priority = 5, GestationDays = 4, BroodSizeMin = 1, BroodSizeMax = 3 },
             new CategoryDefault { Category = "aquatic",    Priority = 6, GestationDays = 3, BroodSizeMin = 3, BroodSizeMax = 8 },
             new CategoryDefault { Category = "snake",      Priority = 6, GestationDays = 3, BroodSizeMin = 4, BroodSizeMax = 8 },
-            new CategoryDefault { Category = "carapace",   Priority = 6, GestationDays = 3, BroodSizeMin = 3, BroodSizeMax = 6 },
             new CategoryDefault { Category = "bird",       Priority = 6, GestationDays = 3, BroodSizeMin = 2, BroodSizeMax = 5 },
             new CategoryDefault { Category = "feathered",  Priority = 6, GestationDays = 3, BroodSizeMin = 2, BroodSizeMax = 5 },
             new CategoryDefault { Category = "flight",     Priority = 6, GestationDays = 3, BroodSizeMin = 2, BroodSizeMax = 5 },
@@ -59,12 +58,10 @@ namespace FChatDicebot.InteractionProcessors.Commitment
             new CategoryDefault { Category = "cow",        Priority = 7, GestationDays = 5, BroodSizeMin = 1, BroodSizeMax = 1 },
             new CategoryDefault { Category = "mount",      Priority = 7, GestationDays = 5, BroodSizeMin = 1, BroodSizeMax = 1 },
             new CategoryDefault { Category = "horned",     Priority = 8, GestationDays = 4, BroodSizeMin = 1, BroodSizeMax = 2 },
-            new CategoryDefault { Category = "wonderland", Priority = 8, GestationDays = 3, BroodSizeMin = 1, BroodSizeMax = 2 },
             new CategoryDefault { Category = "beast",      Priority = 9, GestationDays = 3, BroodSizeMin = 2, BroodSizeMax = 5 },
             new CategoryDefault { Category = "cat",        Priority = 9, GestationDays = 3, BroodSizeMin = 2, BroodSizeMax = 5 },
             new CategoryDefault { Category = "dog",        Priority = 9, GestationDays = 3, BroodSizeMin = 2, BroodSizeMax = 5 },
             new CategoryDefault { Category = "fox",        Priority = 9, GestationDays = 3, BroodSizeMin = 2, BroodSizeMax = 5 },
-            new CategoryDefault { Category = "monster",    Priority = 10, GestationDays = 2, BroodSizeMin = 1, BroodSizeMax = 2 },
         };
 
         public override string InteractionType => "breed";
@@ -162,7 +159,7 @@ namespace FChatDicebot.InteractionProcessors.Commitment
         {
             return initiatorProfile.displayName + " has bred " + recipientProfile.displayName
                 + " with new " + identifier + " life! "
-                + recipientProfile.displayName + " will carry the pregnancy until they're ready to !birth their brood.";
+                + recipientProfile.displayName + " will carry the pregnancy until they're ready to !birth their young.";
         }
 
         public override string GetConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
