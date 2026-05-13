@@ -41,6 +41,7 @@ namespace FChatDicebot.InteractionProcessors
             RegisterProcessor(new ConsumeProcessor());
             RegisterProcessor(new EmployProcessor());
             RegisterProcessor(new BondProcessor());
+            RegisterProcessor(new BreedProcessor());
 
             //involved interactions
             RegisterProcessor(new FeedProcessor());

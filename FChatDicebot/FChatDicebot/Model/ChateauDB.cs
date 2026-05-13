@@ -24,9 +24,20 @@ namespace FChatDicebot.Model
         public Dictionary<string, int> jobExperience { get; set; } = new Dictionary<string, int>();
         public List<Title> titles { get; set; } = new List<Title>();
         public int[] displayedTitleSlots { get; set; } = new int[9] { -1, -1, -1, -1, -1, -1, -1, -1, -1 };
+        public List<Pregnancy> pregnancies { get; set; } = new List<Pregnancy>();
 
 
 
+    }
+
+    public class Pregnancy
+    {
+        public string Id { get; set; }
+        public string Initiator { get; set; }
+        public string MonsterType { get; set; }
+        public DateTime ConceivedAt { get; set; }
+        public DateTime ReadyAt { get; set; }
+        public int BroodSize { get; set; }
     }
 
     public class Title
@@ -86,6 +97,16 @@ namespace FChatDicebot.Model
         public string type { get; set; }
         public string description { get; set; }
         public string[] categories { get; set; }
+        // Per-monster overrides for the breed/birth interaction. Zero = unset; in that
+        // case BreedProcessor falls back to its category-defaults table (and finally to
+        // 1 day / brood 1 if no category matches). [BsonIgnoreIfDefault] keeps zero
+        // values out of the DB so existing identifier docs don't need migration.
+        [BsonIgnoreIfDefault]
+        public int gestationDays { get; set; } = 0;
+        [BsonIgnoreIfDefault]
+        public int broodSizeMin { get; set; } = 0;
+        [BsonIgnoreIfDefault]
+        public int broodSizeMax { get; set; } = 0;
     }
     public class Interaction
     {
