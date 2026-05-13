@@ -17,6 +17,56 @@ namespace FChatDicebot.InteractionProcessors.Commitment
         public const int DefaultGestationDays = 1;
         public const int DefaultBroodSize = 1;
 
+        internal struct CategoryDefault
+        {
+            public string Category;
+            public int Priority;
+            public int GestationDays;
+            public int BroodSizeMin;
+            public int BroodSizeMax;
+        }
+
+        // Priority-ordered lookup. Lower priority number wins when a monster has multiple
+        // matching categories (e.g. Lamia: [monster, snake, beast, mount, carapace, poison]
+        // resolves to snake). Categories not in this table contribute nothing.
+        internal static readonly CategoryDefault[] CategoryDefaults = new[]
+        {
+            new CategoryDefault { Category = "insect",     Priority = 1, GestationDays = 2, BroodSizeMin = 5, BroodSizeMax = 15 },
+            new CategoryDefault { Category = "worm",       Priority = 1, GestationDays = 2, BroodSizeMin = 6, BroodSizeMax = 20 },
+            new CategoryDefault { Category = "arachne",    Priority = 1, GestationDays = 3, BroodSizeMin = 4, BroodSizeMax = 12 },
+            new CategoryDefault { Category = "dragon",     Priority = 2, GestationDays = 7, BroodSizeMin = 1, BroodSizeMax = 1 },
+            new CategoryDefault { Category = "giant",      Priority = 2, GestationDays = 7, BroodSizeMin = 1, BroodSizeMax = 1 },
+            new CategoryDefault { Category = "slime",      Priority = 3, GestationDays = 2, BroodSizeMin = 2, BroodSizeMax = 5 },
+            new CategoryDefault { Category = "alraune",    Priority = 3, GestationDays = 4, BroodSizeMin = 3, BroodSizeMax = 8 },
+            new CategoryDefault { Category = "undead",     Priority = 4, GestationDays = 4, BroodSizeMin = 1, BroodSizeMax = 2 },
+            new CategoryDefault { Category = "construct",  Priority = 4, GestationDays = 5, BroodSizeMin = 1, BroodSizeMax = 1 },
+            new CategoryDefault { Category = "intangible", Priority = 4, GestationDays = 5, BroodSizeMin = 1, BroodSizeMax = 1 },
+            new CategoryDefault { Category = "elemental",  Priority = 4, GestationDays = 3, BroodSizeMin = 1, BroodSizeMax = 2 },
+            new CategoryDefault { Category = "fiery",      Priority = 4, GestationDays = 4, BroodSizeMin = 1, BroodSizeMax = 2 },
+            new CategoryDefault { Category = "electric",   Priority = 4, GestationDays = 3, BroodSizeMin = 1, BroodSizeMax = 2 },
+            new CategoryDefault { Category = "mimic",      Priority = 4, GestationDays = 3, BroodSizeMin = 1, BroodSizeMax = 3 },
+            new CategoryDefault { Category = "angel",      Priority = 5, GestationDays = 5, BroodSizeMin = 1, BroodSizeMax = 1 },
+            new CategoryDefault { Category = "holy",       Priority = 5, GestationDays = 5, BroodSizeMin = 1, BroodSizeMax = 1 },
+            new CategoryDefault { Category = "corrupt",    Priority = 5, GestationDays = 4, BroodSizeMin = 1, BroodSizeMax = 3 },
+            new CategoryDefault { Category = "infernal",   Priority = 5, GestationDays = 4, BroodSizeMin = 1, BroodSizeMax = 3 },
+            new CategoryDefault { Category = "aquatic",    Priority = 6, GestationDays = 3, BroodSizeMin = 3, BroodSizeMax = 8 },
+            new CategoryDefault { Category = "snake",      Priority = 6, GestationDays = 3, BroodSizeMin = 4, BroodSizeMax = 8 },
+            new CategoryDefault { Category = "carapace",   Priority = 6, GestationDays = 3, BroodSizeMin = 3, BroodSizeMax = 6 },
+            new CategoryDefault { Category = "bird",       Priority = 6, GestationDays = 3, BroodSizeMin = 2, BroodSizeMax = 5 },
+            new CategoryDefault { Category = "feathered",  Priority = 6, GestationDays = 3, BroodSizeMin = 2, BroodSizeMax = 5 },
+            new CategoryDefault { Category = "flight",     Priority = 6, GestationDays = 3, BroodSizeMin = 2, BroodSizeMax = 5 },
+            new CategoryDefault { Category = "nocturnal",  Priority = 6, GestationDays = 4, BroodSizeMin = 1, BroodSizeMax = 3 },
+            new CategoryDefault { Category = "cow",        Priority = 7, GestationDays = 5, BroodSizeMin = 1, BroodSizeMax = 1 },
+            new CategoryDefault { Category = "mount",      Priority = 7, GestationDays = 5, BroodSizeMin = 1, BroodSizeMax = 1 },
+            new CategoryDefault { Category = "horned",     Priority = 8, GestationDays = 4, BroodSizeMin = 1, BroodSizeMax = 2 },
+            new CategoryDefault { Category = "wonderland", Priority = 8, GestationDays = 3, BroodSizeMin = 1, BroodSizeMax = 2 },
+            new CategoryDefault { Category = "beast",      Priority = 9, GestationDays = 3, BroodSizeMin = 2, BroodSizeMax = 5 },
+            new CategoryDefault { Category = "cat",        Priority = 9, GestationDays = 3, BroodSizeMin = 2, BroodSizeMax = 5 },
+            new CategoryDefault { Category = "dog",        Priority = 9, GestationDays = 3, BroodSizeMin = 2, BroodSizeMax = 5 },
+            new CategoryDefault { Category = "fox",        Priority = 9, GestationDays = 3, BroodSizeMin = 2, BroodSizeMax = 5 },
+            new CategoryDefault { Category = "monster",    Priority = 10, GestationDays = 2, BroodSizeMin = 1, BroodSizeMax = 2 },
+        };
+
         public override string InteractionType => "breed";
         public override string InvestmentLevel => "commitment";
 
@@ -76,14 +126,8 @@ namespace FChatDicebot.InteractionProcessors.Commitment
             Profile initiatorProfile = Database.GetProfile(initiator);
             Profile recipientProfile = Database.GetProfile(recipient);
 
-            int gestationDays = DefaultGestationDays;
-            int broodSize = DefaultBroodSize;
             Identifier monsterIdentifier = Database.GetIdentifier(monsterType);
-            if (monsterIdentifier != null)
-            {
-                gestationDays = ClampGestation(monsterIdentifier.gestationDays);
-                broodSize = RollBroodSize(monsterIdentifier);
-            }
+            ResolveGestationAndBrood(monsterIdentifier, out int gestationDays, out int broodSize);
 
             DateTime now = DateTime.UtcNow;
             Pregnancy pregnancy = new Pregnancy
@@ -140,6 +184,72 @@ namespace FChatDicebot.InteractionProcessors.Commitment
             return "breed_pair_" + otherUser;
         }
 
+        /// <summary>
+        /// Computes the gestation duration and brood size for a monster, with three
+        /// layers of fallback: explicit per-Identifier fields (when &gt; 0) override
+        /// everything, otherwise the highest-priority matching category default applies,
+        /// otherwise the absolute fallback (1 day, brood 1) is used. Each field is
+        /// resolved independently — a monster can override only gestation while
+        /// inheriting brood size from its category, or vice versa.
+        /// </summary>
+        internal static void ResolveGestationAndBrood(Identifier monsterIdentifier, out int gestationDays, out int broodSize)
+        {
+            CategoryDefault? categoryDefault = ResolveCategoryDefault(monsterIdentifier);
+
+            int resolvedGestation = DefaultGestationDays;
+            int resolvedBroodMin = DefaultBroodSize;
+            int resolvedBroodMax = DefaultBroodSize;
+
+            if (categoryDefault.HasValue)
+            {
+                resolvedGestation = categoryDefault.Value.GestationDays;
+                resolvedBroodMin = categoryDefault.Value.BroodSizeMin;
+                resolvedBroodMax = categoryDefault.Value.BroodSizeMax;
+            }
+
+            if (monsterIdentifier != null)
+            {
+                if (monsterIdentifier.gestationDays > 0)
+                {
+                    resolvedGestation = monsterIdentifier.gestationDays;
+                }
+                if (monsterIdentifier.broodSizeMin > 0)
+                {
+                    resolvedBroodMin = monsterIdentifier.broodSizeMin;
+                }
+                if (monsterIdentifier.broodSizeMax > 0)
+                {
+                    resolvedBroodMax = monsterIdentifier.broodSizeMax;
+                }
+            }
+
+            gestationDays = ClampGestation(resolvedGestation);
+            broodSize = RollBroodSize(resolvedBroodMin, resolvedBroodMax);
+        }
+
+        internal static CategoryDefault? ResolveCategoryDefault(Identifier monsterIdentifier)
+        {
+            if (monsterIdentifier == null || monsterIdentifier.categories == null) return null;
+
+            CategoryDefault? best = null;
+            foreach (var category in monsterIdentifier.categories)
+            {
+                if (string.IsNullOrEmpty(category)) continue;
+                for (int i = 0; i < CategoryDefaults.Length; i++)
+                {
+                    if (string.Equals(CategoryDefaults[i].Category, category, StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (!best.HasValue || CategoryDefaults[i].Priority < best.Value.Priority)
+                        {
+                            best = CategoryDefaults[i];
+                        }
+                        break;
+                    }
+                }
+            }
+            return best;
+        }
+
         private static int ClampGestation(int rawDays)
         {
             if (rawDays < 1) return DefaultGestationDays;
@@ -147,10 +257,10 @@ namespace FChatDicebot.InteractionProcessors.Commitment
             return rawDays;
         }
 
-        private static int RollBroodSize(Identifier monsterIdentifier)
+        private static int RollBroodSize(int rawMin, int rawMax)
         {
-            int min = monsterIdentifier.broodSizeMin > 0 ? monsterIdentifier.broodSizeMin : DefaultBroodSize;
-            int max = monsterIdentifier.broodSizeMax >= min ? monsterIdentifier.broodSizeMax : min;
+            int min = rawMin > 0 ? rawMin : DefaultBroodSize;
+            int max = rawMax >= min ? rawMax : min;
             if (min == max) return min;
             return new Random().Next(min, max + 1);
         }

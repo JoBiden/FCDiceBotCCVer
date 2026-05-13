@@ -217,6 +217,152 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
         }
 
         [Fact]
+        public void ProcessInteraction_CategoryFallback_SnakeOnly_UsesSnakeDefaults()
+        {
+            new ProfileBuilder().WithUserName("Alice").WithDisplayName("Alice").BuildAndSave(_database);
+            new ProfileBuilder().WithUserName("Bob").WithDisplayName("Bob").BuildAndSave(_database);
+            _fixture.SeedIdentifier(new Identifier
+            {
+                type = "basilisk",
+                description = "a basilisk",
+                categories = new[] { "snake" }
+                // no explicit gestationDays/broodSize fields → category default applies
+            });
+
+            var pendingCommand = BuildPendingCommand("Alice", "Bob", "basilisk");
+            _database.AddPendingCommand(pendingCommand);
+
+            _processor.ProcessInteraction(pendingCommand);
+
+            var bob = _database.GetProfile("Bob");
+            var pregnancy = bob.pregnancies.Single();
+            Assert.InRange(pregnancy.BroodSize, 4, 8);
+            Assert.True(pregnancy.ReadyAt >= pregnancy.ConceivedAt.AddDays(3).AddSeconds(-1));
+            Assert.True(pregnancy.ReadyAt <= pregnancy.ConceivedAt.AddDays(3).AddSeconds(1));
+        }
+
+        [Fact]
+        public void ProcessInteraction_MultipleCategories_HighestPriorityWins()
+        {
+            // Lamia-shaped identifier — snake (priority 6) should beat beast (9), mount (7),
+            // and monster (10). Carapace ties snake at 6 but appears later in the categories
+            // array, so snake stays the best.
+            new ProfileBuilder().WithUserName("Alice").WithDisplayName("Alice").BuildAndSave(_database);
+            new ProfileBuilder().WithUserName("Bob").WithDisplayName("Bob").BuildAndSave(_database);
+            _fixture.SeedIdentifier(new Identifier
+            {
+                type = "lamia",
+                description = "Also known as Naga, these snake like creatures love to wrap others in their coils.",
+                categories = new[] { "monster", "snake", "beast", "mount", "carapace", "poison" }
+            });
+
+            var pendingCommand = BuildPendingCommand("Alice", "Bob", "lamia");
+            _database.AddPendingCommand(pendingCommand);
+
+            _processor.ProcessInteraction(pendingCommand);
+
+            var bob = _database.GetProfile("Bob");
+            var pregnancy = bob.pregnancies.Single();
+            Assert.InRange(pregnancy.BroodSize, 4, 8); // snake brood 4-8
+            Assert.True(pregnancy.ReadyAt <= pregnancy.ConceivedAt.AddDays(3).AddSeconds(1)); // snake 3 days
+        }
+
+        [Fact]
+        public void ProcessInteraction_InsectCategory_HasLargeBrood()
+        {
+            new ProfileBuilder().WithUserName("Alice").WithDisplayName("Alice").BuildAndSave(_database);
+            new ProfileBuilder().WithUserName("Bob").WithDisplayName("Bob").BuildAndSave(_database);
+            _fixture.SeedIdentifier(new Identifier
+            {
+                type = "bee",
+                categories = new[] { "monster", "insect", "flight" }
+                // insect (1) beats flight (6) and monster (10).
+            });
+
+            var pendingCommand = BuildPendingCommand("Alice", "Bob", "bee");
+            _database.AddPendingCommand(pendingCommand);
+
+            _processor.ProcessInteraction(pendingCommand);
+
+            var bob = _database.GetProfile("Bob");
+            var pregnancy = bob.pregnancies.Single();
+            Assert.InRange(pregnancy.BroodSize, 5, 15);
+        }
+
+        [Fact]
+        public void ProcessInteraction_OnlyCosmeticCategories_UsesFallback()
+        {
+            // poison, cutting, perfume aren't in the defaults table — fall back to (1 day, brood 1)
+            new ProfileBuilder().WithUserName("Alice").WithDisplayName("Alice").BuildAndSave(_database);
+            new ProfileBuilder().WithUserName("Bob").WithDisplayName("Bob").BuildAndSave(_database);
+            _fixture.SeedIdentifier(new Identifier
+            {
+                type = "vial",
+                categories = new[] { "poison", "cutting" }
+            });
+
+            var pendingCommand = BuildPendingCommand("Alice", "Bob", "vial");
+            _database.AddPendingCommand(pendingCommand);
+
+            _processor.ProcessInteraction(pendingCommand);
+
+            var bob = _database.GetProfile("Bob");
+            var pregnancy = bob.pregnancies.Single();
+            Assert.Equal(1, pregnancy.BroodSize);
+            Assert.True(pregnancy.ReadyAt <= pregnancy.ConceivedAt.AddDays(1).AddSeconds(1));
+        }
+
+        [Fact]
+        public void ProcessInteraction_ExplicitGestationOverridesCategory_BroodInheritsFromCategory()
+        {
+            // dragon category → 7 day / brood 1, but explicit gestationDays=2 overrides only gestation.
+            new ProfileBuilder().WithUserName("Alice").WithDisplayName("Alice").BuildAndSave(_database);
+            new ProfileBuilder().WithUserName("Bob").WithDisplayName("Bob").BuildAndSave(_database);
+            _fixture.SeedIdentifier(new Identifier
+            {
+                type = "dracoling",
+                categories = new[] { "dragon" },
+                gestationDays = 2
+            });
+
+            var pendingCommand = BuildPendingCommand("Alice", "Bob", "dracoling");
+            _database.AddPendingCommand(pendingCommand);
+
+            _processor.ProcessInteraction(pendingCommand);
+
+            var bob = _database.GetProfile("Bob");
+            var pregnancy = bob.pregnancies.Single();
+            Assert.True(pregnancy.ReadyAt <= pregnancy.ConceivedAt.AddDays(2).AddSeconds(1));
+            Assert.Equal(1, pregnancy.BroodSize); // inherited from dragon
+        }
+
+        [Fact]
+        public void ResolveCategoryDefault_LamiaCategories_ReturnsSnakeEntry()
+        {
+            var identifier = new Identifier
+            {
+                type = "lamia",
+                categories = new[] { "monster", "snake", "beast", "mount", "carapace", "poison" }
+            };
+            var resolved = BreedProcessor.ResolveCategoryDefault(identifier);
+            Assert.True(resolved.HasValue);
+            Assert.Equal("snake", resolved.Value.Category);
+        }
+
+        [Fact]
+        public void ResolveCategoryDefault_NullIdentifier_ReturnsNull()
+        {
+            Assert.Null(BreedProcessor.ResolveCategoryDefault(null));
+        }
+
+        [Fact]
+        public void ResolveCategoryDefault_EmptyCategories_ReturnsNull()
+        {
+            var identifier = new Identifier { type = "mystery", categories = new string[0] };
+            Assert.Null(BreedProcessor.ResolveCategoryDefault(identifier));
+        }
+
+        [Fact]
         public void ProcessInteraction_PregnancyPersistsAcrossReloads()
         {
             new ProfileBuilder().WithUserName("Alice").WithDisplayName("Alice").BuildAndSave(_database);

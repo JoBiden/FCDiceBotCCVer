@@ -97,12 +97,16 @@ namespace FChatDicebot.Model
         public string type { get; set; }
         public string description { get; set; }
         public string[] categories { get; set; }
+        // Per-monster overrides for the breed/birth interaction. Zero = unset; in that
+        // case BreedProcessor falls back to its category-defaults table (and finally to
+        // 1 day / brood 1 if no category matches). [BsonIgnoreIfDefault] keeps zero
+        // values out of the DB so existing identifier docs don't need migration.
         [BsonIgnoreIfDefault]
-        public int gestationDays { get; set; } = 1;
+        public int gestationDays { get; set; } = 0;
         [BsonIgnoreIfDefault]
-        public int broodSizeMin { get; set; } = 1;
+        public int broodSizeMin { get; set; } = 0;
         [BsonIgnoreIfDefault]
-        public int broodSizeMax { get; set; } = 1;
+        public int broodSizeMax { get; set; } = 0;
     }
     public class Interaction
     {
