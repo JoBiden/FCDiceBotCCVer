@@ -273,7 +273,7 @@ namespace FChatDicebot.Tests.Unit
         {
             string[] input = { "[session=test]123456789012345678901234[/session]" };
 
-            string result = Utils.GetChannelIdFromInputs(input);
+            string result = Utils.GetChannelIdFromInputs(input, out _);
 
             Assert.Equal("123456789012345678901234", result);
         }
@@ -283,7 +283,7 @@ namespace FChatDicebot.Tests.Unit
         {
             string[] input = { "no session here" };
 
-            string result = Utils.GetChannelIdFromInputs(input);
+            string result = Utils.GetChannelIdFromInputs(input, out _);
 
             Assert.Equal("", result);
         }
@@ -293,7 +293,7 @@ namespace FChatDicebot.Tests.Unit
         {
             string[] input = new string[0];
 
-            string result = Utils.GetChannelIdFromInputs(input);
+            string result = Utils.GetChannelIdFromInputs(input, out _);
 
             Assert.Equal("", result);
         }
@@ -303,7 +303,7 @@ namespace FChatDicebot.Tests.Unit
         {
             string[] input = null;
 
-            string result = Utils.GetChannelIdFromInputs(input);
+            string result = Utils.GetChannelIdFromInputs(input, out _);
 
             Assert.Equal("", result);
         }
@@ -330,18 +330,6 @@ namespace FChatDicebot.Tests.Unit
             string result = Utils.GetCharacterIconTags("TestCharacter");
 
             Assert.Equal("[icon]TestCharacter[/icon]", result);
-        }
-
-        #endregion
-
-        #region GetCustomDeckName Tests
-
-        [Fact]
-        public void GetCustomDeckName_AppendsPostfix()
-        {
-            string result = Utils.GetCustomDeckName("Player1");
-
-            Assert.Equal("Player1's deck", result);
         }
 
         #endregion

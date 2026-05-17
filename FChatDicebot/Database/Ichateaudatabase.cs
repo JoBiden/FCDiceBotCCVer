@@ -70,6 +70,10 @@ namespace FChatDicebot.Database
         List<Identifier> GetIdentifiersByCategory(string category);
         List<Identifier> GetAllIdentifiers();
 
+        // Monster Stats Operations (global aggregate counts for breed/birth)
+        MonsterStats GetMonsterStats(string key);
+        void IncrementMonsterStats(string key, int pregnancyDelta, int offspringDelta);
+
         // Mod Message Operations
         string GetModMessage(string messageLabel);
 

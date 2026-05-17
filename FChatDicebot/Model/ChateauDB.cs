@@ -24,9 +24,45 @@ namespace FChatDicebot.Model
         public Dictionary<string, int> jobExperience { get; set; } = new Dictionary<string, int>();
         public List<Title> titles { get; set; } = new List<Title>();
         public int[] displayedTitleSlots { get; set; } = new int[9] { -1, -1, -1, -1, -1, -1, -1, -1, -1 };
+        public List<Pregnancy> pregnancies { get; set; } = new List<Pregnancy>();
 
 
 
+    }
+
+    public class Pregnancy
+    {
+        public string Id { get; set; }
+        public string Initiator { get; set; }
+        public string MonsterType { get; set; }
+        public DateTime ConceivedAt { get; set; }
+        public DateTime ReadyAt { get; set; }
+        public int BroodSize { get; set; }
+        // Snapshot of the monster's categories at breed time. Stored on the pregnancy
+        // so birth can update per-category global counters without re-fetching the
+        // Identifier (which may have been edited or removed between breed and birth).
+        [BsonIgnoreIfNull]
+        public List<string> Categories { get; set; }
+        // True when the brood-size roll triggered the rare twin event (the monster's
+        // resolved min and max were both 1, but the 1% twin chance produced 2 anyway).
+        // Used to emit special "rare twins" flavor in the birth message.
+        [BsonIgnoreIfDefault]
+        public bool IsRareTwins { get; set; }
+    }
+
+    /// <summary>
+    /// Aggregate count of all pregnancies conceived and all offspring born for either a
+    /// specific monster type or a category. Keys are prefixed with "monster:" or
+    /// "category:" so the two namespaces can't collide. Maintained incrementally at
+    /// breed/birth time; could in principle be reconstructed by re-scanning every
+    /// profile and historical interaction.
+    /// </summary>
+    public class MonsterStats
+    {
+        [BsonId]
+        public string Id { get; set; } // e.g. "monster:lamia" or "category:snake"
+        public int PregnancyCount { get; set; }
+        public int OffspringCount { get; set; }
     }
 
     public class Title
@@ -86,6 +122,16 @@ namespace FChatDicebot.Model
         public string type { get; set; }
         public string description { get; set; }
         public string[] categories { get; set; }
+        // Per-monster overrides for the breed/birth interaction. Zero = unset; in that
+        // case BreedProcessor falls back to its category-defaults table (and finally to
+        // 1 day / brood 1 if no category matches). [BsonIgnoreIfDefault] keeps zero
+        // values out of the DB so existing identifier docs don't need migration.
+        [BsonIgnoreIfDefault]
+        public int gestationDays { get; set; } = 0;
+        [BsonIgnoreIfDefault]
+        public int broodSizeMin { get; set; } = 0;
+        [BsonIgnoreIfDefault]
+        public int broodSizeMax { get; set; } = 0;
     }
     public class Interaction
     {

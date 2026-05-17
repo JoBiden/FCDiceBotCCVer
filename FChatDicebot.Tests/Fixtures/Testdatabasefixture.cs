@@ -1,4 +1,7 @@
 ﻿using FChatDicebot.Database;
+using FChatDicebot.Model;
+using MongoDB.Bson;
+using MongoDB.Driver;
 using System;
 using Xunit;
 
@@ -40,6 +43,7 @@ namespace FChatDicebot.Tests.Fixtures
             Database.ClearCollection("Identifiers");
             Database.ClearCollection("ModMessages");
             Database.ClearCollection("Pledges");
+            Database.ClearCollection("MonsterStats");
         }
 
         /// <summary>
@@ -50,6 +54,22 @@ namespace FChatDicebot.Tests.Fixtures
         {
             // You can add common test data here if needed
             // For example, common identifiers, duties, etc.
+        }
+
+        /// <summary>
+        /// Inserts an Identifier document directly into the Identifiers collection.
+        /// Used by processor tests that need a specific identifier to exist in the DB
+        /// (e.g. BreedProcessor reads gestation/brood fields off the monster identifier).
+        /// </summary>
+        public void SeedIdentifier(Identifier identifier)
+        {
+            if (identifier.Id == ObjectId.Empty)
+            {
+                identifier.Id = ObjectId.GenerateNewId();
+            }
+            var client = new MongoClient(TestConfiguration.TestConnectionString);
+            var database = client.GetDatabase(TestConfiguration.TestDatabaseName);
+            database.GetCollection<Identifier>("Identifiers").InsertOne(identifier);
         }
 
         public void Dispose()
