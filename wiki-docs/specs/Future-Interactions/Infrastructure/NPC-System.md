@@ -69,13 +69,13 @@ Initial integrations (other specs trigger this):
 
 ## Files to create/modify
 
-- `FChatDicebot/FChatDicebot/Model/NPC.cs` *(new)*
-- `FChatDicebot/FChatDicebot/Database/IChateauDatabase.cs` *(modify — add NPC accessors)*
-- `FChatDicebot/FChatDicebot/Database/MongoChateauDatabase.cs` *(modify — implement)*
-- `FChatDicebot/FChatDicebot/BotCommands/Npcs.cs` *(new)*
-- `FChatDicebot/FChatDicebot/BotCommands/NpcInfo.cs` *(new)*
-- `FChatDicebot/FChatDicebot/BotCommands/RenameNpc.cs` *(new)*
-- `FChatDicebot/FChatDicebot/BotCommands/DescribeNpc.cs` *(new)*
-- `FChatDicebot/FChatDicebot/NpcNameGenerator.cs` *(new)*
+- `FChatDicebot/Model/NPC.cs` *(new)*
+- `FChatDicebot/Database/IChateauDatabase.cs` *(modify — add NPC accessors)*
+- `FChatDicebot/Database/MongoChateauDatabase.cs` *(modify — implement)*
+- `FChatDicebot/BotCommands/Npcs.cs` *(new)*
+- `FChatDicebot/BotCommands/NpcInfo.cs` *(new)*
+- `FChatDicebot/BotCommands/RenameNpc.cs` *(new)*
+- `FChatDicebot/BotCommands/DescribeNpc.cs` *(new)*
+- `FChatDicebot/NpcNameGenerator.cs` *(new)*
 - `FChatDicebot.Tests/Unit/NPCRepositoryTests.cs` *(new)*
 - `FChatDicebot.Tests/Unit/NPCNameGeneratorTests.cs` *(new)*

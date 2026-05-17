@@ -2,6 +2,7 @@ using FChatDicebot.Database;
 using FChatDicebot.Model;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace FChatDicebot.InteractionProcessors
 {
@@ -110,8 +111,10 @@ namespace FChatDicebot.InteractionProcessors
         public abstract string GetCompletionMessage(Profile initiatorProfile, Profile recipientProfile, string identifier);
 
         /// <summary>
-        /// Basic validation - checks that profiles exist.
-        /// Override to add interaction-specific validation.
+        /// Basic validation - checks that profiles exist and honors any recipient-blocking
+        /// status effects (e.g. a !break on the relevant body part). Override to add
+        /// interaction-specific validation; overrides that still want status-effect gating
+        /// should call <see cref="GetActiveStatusEffects"/> themselves.
         /// </summary>
         public virtual ValidationResult ValidateInteraction(string initiator, string recipient, string identifier)
         {
@@ -128,15 +131,87 @@ namespace FChatDicebot.InteractionProcessors
                 return ValidationResult.Failure(ChateauInteractionHandler.notFoundText(recipient));
             }
 
+            var recipientEffects = GetActiveStatusEffects(recipientProfile, StatusEffectCallSite.Consent, isInitiator: false);
+            var recipientBlocker = recipientEffects.Blockers.FirstOrDefault(b => b.BlocksRecipient);
+            if (recipientBlocker != null)
+            {
+                return ValidationResult.Failure(recipientBlocker.Reason);
+            }
+
             return ValidationResult.Success();
         }
 
         /// <summary>
-        /// Default consent warning. Override to provide interaction-specific warnings.
+        /// Default consent warning. Appends any active status-effect consent fragments for the
+        /// recipient, prefixing each with a single space (contributors should not include
+        /// their own leading whitespace). Override to provide interaction-specific warnings;
+        /// overrides that still want status-effect text should call
+        /// <see cref="GetActiveStatusEffects"/> with <see cref="StatusEffectCallSite.Consent"/>
+        /// and use <see cref="AppendStatusFragments"/> to apply the same spacing convention.
         /// </summary>
         public virtual string GetConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
-            return $"{initiatorProfile.displayName} wants to {InteractionType} with {recipientProfile.displayName}. Do you !consent?";
+            string baseWarning = $"{initiatorProfile.displayName} wants to {InteractionType} with {recipientProfile.displayName}. Do you !consent?";
+            var effects = GetActiveStatusEffects(recipientProfile, StatusEffectCallSite.Consent, isInitiator: false);
+            return AppendStatusFragments(baseWarning, effects.ConsentWarnings);
+        }
+
+        /// <summary>
+        /// Concatenate a base message with status-effect fragments, separating each non-empty
+        /// fragment with a single leading space. Use this in overridden
+        /// <see cref="GetConsentWarning"/> / <see cref="GetCompletionMessage"/> implementations
+        /// so spacing stays consistent across processors.
+        /// </summary>
+        protected static string AppendStatusFragments(string baseMessage, IEnumerable<string> fragments)
+        {
+            if (fragments == null) return baseMessage ?? string.Empty;
+            string result = baseMessage ?? string.Empty;
+            foreach (var fragment in fragments)
+            {
+                if (string.IsNullOrEmpty(fragment)) continue;
+                result += " " + fragment;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// Walks <see cref="StatusEffectRegistry"/> and aggregates each contributor's fragments
+        /// for the given profile. Returns an empty fragments instance if no contributors are
+        /// registered. Processors call this from <see cref="GetConsentWarning"/>,
+        /// <see cref="GetCompletionMessage"/>, and <see cref="ValidateInteraction"/> to opt
+        /// into status-effect surfacing.
+        ///
+        /// Contributors own their own state mutations (e.g. odorize decrementing its use
+        /// counter); the helper itself is a pure aggregator.
+        /// </summary>
+        /// <param name="profile">Initiator or recipient profile to inspect.</param>
+        /// <param name="callSite">Which lifecycle phase is asking.</param>
+        /// <param name="isInitiator">True if <paramref name="profile"/> is the initiator of
+        /// the parent interaction. Defaults to false (recipient) to match the most common
+        /// call shape.</param>
+        protected StatusEffectFragments GetActiveStatusEffects(
+            Profile profile,
+            StatusEffectCallSite callSite,
+            bool isInitiator = false)
+        {
+            var merged = new StatusEffectFragments();
+            if (profile == null) return merged;
+
+            foreach (var contributor in StatusEffectRegistry.GetAllContributors())
+            {
+                StatusEffectFragments contributed;
+                try
+                {
+                    contributed = contributor.Contribute(profile, callSite, InteractionType, isInitiator);
+                }
+                catch (Exception)
+                {
+                    // A misbehaving contributor must not break the parent interaction.
+                    continue;
+                }
+                merged.MergeWith(contributed);
+            }
+            return merged;
         }
 
         /// <summary>

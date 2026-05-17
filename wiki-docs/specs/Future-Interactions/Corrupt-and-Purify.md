@@ -123,12 +123,12 @@ The dice roll happens in `GetCompletionMessage`, not deterministic.
 
 ## Files to create/modify
 
-- `FChatDicebot/FChatDicebot/InteractionProcessors/Commitment/CorruptionProcessor.cs` *(new — registered for both `"corrupt"` and `"purify"`)*
-- `FChatDicebot/FChatDicebot/BotCommands/Corrupt.cs` *(new)*
-- `FChatDicebot/FChatDicebot/BotCommands/Purify.cs` *(new — thin wrapper that flips verb_sign)*
-- `FChatDicebot/FChatDicebot/Model/Profile.cs` *(modify — `dailyMagnitudes`)*
-- `FChatDicebot/FChatDicebot/InteractionProcessors/InteractionProcessorRegistry.cs` *(modify — register both interaction types pointing to one processor instance)*
-- `FChatDicebot/FChatDicebot/InteractionProcessors/StatusEffectContributors/CorruptionStatusContributor.cs` *(new)*
-- `FChatDicebot/FChatDicebot/InteractionProcessors/StatusEffectRegistry.cs` *(modify — register)*
+- `FChatDicebot/InteractionProcessors/Commitment/CorruptionProcessor.cs` *(new — registered for both `"corrupt"` and `"purify"`)*
+- `FChatDicebot/BotCommands/Corrupt.cs` *(new)*
+- `FChatDicebot/BotCommands/Purify.cs` *(new — thin wrapper that flips verb_sign)*
+- `FChatDicebot/Model/Profile.cs` *(modify — `dailyMagnitudes`)*
+- `FChatDicebot/InteractionProcessors/InteractionProcessorRegistry.cs` *(modify — register both interaction types pointing to one processor instance)*
+- `FChatDicebot/InteractionProcessors/StatusEffectContributors/CorruptionStatusContributor.cs` *(new)*
+- `FChatDicebot/InteractionProcessors/StatusEffectRegistry.cs` *(modify — register)*
 - `FChatDicebot.Tests/Unit/CorruptionProcessorTests.cs` *(new)*
 - `FChatDicebot.Tests/Unit/CorruptionStatusContributorTests.cs` *(new)*

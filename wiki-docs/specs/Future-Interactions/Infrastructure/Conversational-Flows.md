@@ -82,9 +82,9 @@ MongoDB collection `ConversationalFlows`. Indexed on `OwnerName` (unique). Recor
 
 ## Files to create/modify
 
-- `FChatDicebot/FChatDicebot/Conversational/ConversationalFlow.cs` *(new)*
-- `FChatDicebot/FChatDicebot/Conversational/IConversationalFlowHandler.cs` *(new)*
-- `FChatDicebot/FChatDicebot/Conversational/ConversationalFlowRegistry.cs` *(new)*
-- `FChatDicebot/FChatDicebot/Conversational/ConversationalFlowDispatcher.cs` *(new)*
-- `FChatDicebot/FChatDicebot/BotCommandController.cs` *(modify — route to dispatcher before normal parsing if flow active)*
+- `FChatDicebot/Conversational/ConversationalFlow.cs` *(new)*
+- `FChatDicebot/Conversational/IConversationalFlowHandler.cs` *(new)*
+- `FChatDicebot/Conversational/ConversationalFlowRegistry.cs` *(new)*
+- `FChatDicebot/Conversational/ConversationalFlowDispatcher.cs` *(new)*
+- `FChatDicebot/BotCommandController.cs` *(modify — route to dispatcher before normal parsing if flow active)*
 - `FChatDicebot.Tests/Unit/ConversationalFlowDispatcherTests.cs` *(new)*

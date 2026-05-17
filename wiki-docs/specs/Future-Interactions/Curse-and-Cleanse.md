@@ -162,15 +162,15 @@ Out of v1 scope unless the user requests it. Pattern: same conversational flow a
 
 ## Files to create/modify
 
-- `FChatDicebot/FChatDicebot/Model/Curse.cs` *(new)*
-- `FChatDicebot/FChatDicebot/Model/CurseInstance.cs` *(new)*
-- `FChatDicebot/FChatDicebot/InteractionProcessors/Consequence/CurseProcessor.cs` *(new)*
-- `FChatDicebot/FChatDicebot/BotCommands/Curse.cs` *(new)*
-- `FChatDicebot/FChatDicebot/BotCommands/Cleanse.cs` *(new)*
-- `FChatDicebot/FChatDicebot/InteractionProcessors/StatusEffectContributors/CurseStatusContributor.cs` *(new)*
-- `FChatDicebot/FChatDicebot/Database/IChateauDatabase.cs` *(modify — Curse accessors)*
-- `FChatDicebot/FChatDicebot/InteractionProcessors/InteractionProcessorRegistry.cs` *(modify — register)*
-- `FChatDicebot/FChatDicebot/InteractionProcessors/StatusEffectRegistry.cs` *(modify — register)*
+- `FChatDicebot/Model/Curse.cs` *(new)*
+- `FChatDicebot/Model/CurseInstance.cs` *(new)*
+- `FChatDicebot/InteractionProcessors/Consequence/CurseProcessor.cs` *(new)*
+- `FChatDicebot/BotCommands/Curse.cs` *(new)*
+- `FChatDicebot/BotCommands/Cleanse.cs` *(new)*
+- `FChatDicebot/InteractionProcessors/StatusEffectContributors/CurseStatusContributor.cs` *(new)*
+- `FChatDicebot/Database/IChateauDatabase.cs` *(modify — Curse accessors)*
+- `FChatDicebot/InteractionProcessors/InteractionProcessorRegistry.cs` *(modify — register)*
+- `FChatDicebot/InteractionProcessors/StatusEffectRegistry.cs` *(modify — register)*
 - Seed data file: `FChatDicebot/Data/curses.starter.json` *(new — loaded into MongoDB on first run)*
 - `FChatDicebot.Tests/Unit/CurseProcessorTests.cs` *(new)*
 - `FChatDicebot.Tests/Unit/CurseStatusContributorTests.cs` *(new)*

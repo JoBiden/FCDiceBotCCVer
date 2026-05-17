@@ -107,9 +107,9 @@ If only one advances, phrasing reflects the asymmetry: "...the tutoring pays off
 
 ## Files to create/modify
 
-- `FChatDicebot/FChatDicebot/InteractionProcessors/Commitment/TrainProcessor.cs` *(new)*
-- `FChatDicebot/FChatDicebot/BotCommands/Train.cs` *(new)*
-- `FChatDicebot/FChatDicebot/Model/Profile.cs` *(modify — `trainings` dict)*
-- `FChatDicebot/FChatDicebot/InteractionProcessors/InteractionProcessorRegistry.cs` *(modify — register)*
-- `FChatDicebot/FChatDicebot/ChateauSystemTitles.cs` *(modify — apprentice/adept/master/grandmaster)*
+- `FChatDicebot/InteractionProcessors/Commitment/TrainProcessor.cs` *(new)*
+- `FChatDicebot/BotCommands/Train.cs` *(new)*
+- `FChatDicebot/Model/Profile.cs` *(modify — `trainings` dict)*
+- `FChatDicebot/InteractionProcessors/InteractionProcessorRegistry.cs` *(modify — register)*
+- `FChatDicebot/ChateauSystemTitles.cs` *(modify — apprentice/adept/master/grandmaster)*
 - `FChatDicebot.Tests/Unit/TrainProcessorTests.cs` *(new)*

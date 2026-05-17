@@ -43,7 +43,7 @@ This page explains the overall architecture of FCDiceBot and how the major compo
 
 ### 1. BotMain (938 lines)
 
-**Location:** `FChatDicebot/FChatDicebot/BotMain.cs`
+**Location:** `FChatDicebot/BotMain.cs`
 
 The heart of the bot, responsible for:
 
@@ -84,7 +84,7 @@ The heart of the bot, responsible for:
 
 ### 2. BotCommandController (442 lines)
 
-**Location:** `FChatDicebot/FChatDicebot/BotCommandController.cs`
+**Location:** `FChatDicebot/BotCommandController.cs`
 
 Command discovery, dispatch, and execution:
 
@@ -117,7 +117,7 @@ Command discovery, dispatch, and execution:
 
 ### 3. ChateauInteractionHandler
 
-**Location:** `FChatDicebot/FChatDicebot/ChateauInteractionHandler.cs`
+**Location:** `FChatDicebot/ChateauInteractionHandler.cs`
 
 Routes interactions to processors or legacy handler:
 
@@ -138,7 +138,7 @@ Routes interactions to processors or legacy handler:
 
 ### 4. InteractionProcessorRegistry
 
-**Location:** `FChatDicebot/FChatDicebot/InteractionProcessors/InteractionProcessorRegistry.cs`
+**Location:** `FChatDicebot/InteractionProcessors/InteractionProcessorRegistry.cs`
 
 Manages all interaction processors:
 
@@ -163,7 +163,7 @@ Manages all interaction processors:
 
 ### 5. DiceBot
 
-**Location:** `FChatDicebot/FChatDicebot/DiceFunctions/DiceBot.cs`
+**Location:** `FChatDicebot/DiceFunctions/DiceBot.cs`
 
 Dice rolling and game management:
 
@@ -192,7 +192,7 @@ Dice rolling and game management:
 **Dual Storage System:**
 
 #### MongoDB (Primary)
-**Location:** `FChatDicebot/FChatDicebot/Database/Chateaudatabase.cs`
+**Location:** `FChatDicebot/Database/Chateaudatabase.cs`
 
 - Database: "ChateauDb"
 - Collections:
@@ -210,7 +210,7 @@ Dice rolling and game management:
 - Used for: account settings, channel settings, chips, tables, decks, slots, coupons
 
 #### MonDB Adapter
-**Location:** `FChatDicebot/FChatDicebot/MonDB.cs`
+**Location:** `FChatDicebot/MonDB.cs`
 
 - Static facade over IChateauDatabase
 - Backward compatibility layer

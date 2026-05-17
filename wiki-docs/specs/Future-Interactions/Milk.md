@@ -94,8 +94,8 @@ If the recipient is corrupted/purified, the warning includes the modifier flavor
 
 ## Files to create/modify
 
-- `FChatDicebot/FChatDicebot/InteractionProcessors/Involved/MilkProcessor.cs` *(new)*
-- `FChatDicebot/FChatDicebot/BotCommands/Milk.cs` *(new)*
-- `FChatDicebot/FChatDicebot/InteractionProcessors/InteractionProcessorRegistry.cs` *(modify — register)*
+- `FChatDicebot/InteractionProcessors/Involved/MilkProcessor.cs` *(new)*
+- `FChatDicebot/BotCommands/Milk.cs` *(new)*
+- `FChatDicebot/InteractionProcessors/InteractionProcessorRegistry.cs` *(modify — register)*
 - `FChatDicebot.Tests/Unit/MilkProcessorTests.cs` *(new)*
 - `FChatDicebot.Tests/Unit/MilkBottleIntegrationTests.cs` *(new)*

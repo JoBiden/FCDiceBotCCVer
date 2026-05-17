@@ -128,15 +128,15 @@ When listing pregnancies (e.g. `!pregnancies` informational command — recommen
 
 ## Files to create/modify
 
-- `FChatDicebot/FChatDicebot/InteractionProcessors/Commitment/BreedProcessor.cs` *(new)*
-- `FChatDicebot/FChatDicebot/BotCommands/Breed.cs` *(new)*
-- `FChatDicebot/FChatDicebot/BotCommands/Birth.cs` *(new — system command, not interaction)*
-- `FChatDicebot/FChatDicebot/Model/Pregnancy.cs` *(new)*
-- `FChatDicebot/FChatDicebot/Model/Profile.cs` *(modify — add `pregnancies`)*
-- `FChatDicebot/FChatDicebot/Model/Identifier.cs` *(modify — add `gestationDays`, `broodSizeMin/Max`)*
-- `FChatDicebot/FChatDicebot/InteractionProcessors/InteractionProcessorRegistry.cs` *(modify — register)*
-- `FChatDicebot/FChatDicebot/InteractionProcessors/StatusEffectContributors/PregnancyStatusContributor.cs` *(new)*
-- `FChatDicebot/FChatDicebot/InteractionProcessors/StatusEffectRegistry.cs` *(modify — register)*
+- `FChatDicebot/InteractionProcessors/Commitment/BreedProcessor.cs` *(new)*
+- `FChatDicebot/BotCommands/Breed.cs` *(new)*
+- `FChatDicebot/BotCommands/Birth.cs` *(new — system command, not interaction)*
+- `FChatDicebot/Model/Pregnancy.cs` *(new)*
+- `FChatDicebot/Model/Profile.cs` *(modify — add `pregnancies`)*
+- `FChatDicebot/Model/Identifier.cs` *(modify — add `gestationDays`, `broodSizeMin/Max`)*
+- `FChatDicebot/InteractionProcessors/InteractionProcessorRegistry.cs` *(modify — register)*
+- `FChatDicebot/InteractionProcessors/StatusEffectContributors/PregnancyStatusContributor.cs` *(new)*
+- `FChatDicebot/InteractionProcessors/StatusEffectRegistry.cs` *(modify — register)*
 - `FChatDicebot.Tests/Unit/BreedProcessorTests.cs` *(new)*
 - `FChatDicebot.Tests/Unit/BirthCommandTests.cs` *(new)*
-- Recommended: `FChatDicebot/FChatDicebot/BotCommands/Pregnancies.cs` *(new — informational list)*
+- Recommended: `FChatDicebot/BotCommands/Pregnancies.cs` *(new — informational list)*

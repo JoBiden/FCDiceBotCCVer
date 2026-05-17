@@ -150,18 +150,18 @@ Triggered by `!defineparasite` — starts a [Conversational Flow](Infrastructure
 
 ## Files to create/modify
 
-- `FChatDicebot/FChatDicebot/Model/Parasite.cs` *(new)*
-- `FChatDicebot/FChatDicebot/Model/ParasiteInstance.cs` *(new)*
-- `FChatDicebot/FChatDicebot/InteractionProcessors/Consequence/InfestProcessor.cs` *(new)*
-- `FChatDicebot/FChatDicebot/BotCommands/Infest.cs` *(new)*
-- `FChatDicebot/FChatDicebot/BotCommands/Purge.cs` *(new)*
-- `FChatDicebot/FChatDicebot/BotCommands/DefineParasite.cs` *(new)*
-- `FChatDicebot/FChatDicebot/Conversational/Handlers/DefineParasiteFlowHandler.cs` *(new)*
-- `FChatDicebot/FChatDicebot/InteractionProcessors/StatusEffectContributors/ParasiteStatusContributor.cs` *(new)*
-- `FChatDicebot/FChatDicebot/Database/IChateauDatabase.cs` *(modify — add `GetParasite`, `SaveParasite`, `ListParasites`)*
-- `FChatDicebot/FChatDicebot/InteractionProcessors/InteractionProcessorRegistry.cs` *(modify — register)*
-- `FChatDicebot/FChatDicebot/InteractionProcessors/StatusEffectRegistry.cs` *(modify — register)*
-- `FChatDicebot/FChatDicebot/Conversational/ConversationalFlowRegistry.cs` *(modify — register)*
+- `FChatDicebot/Model/Parasite.cs` *(new)*
+- `FChatDicebot/Model/ParasiteInstance.cs` *(new)*
+- `FChatDicebot/InteractionProcessors/Consequence/InfestProcessor.cs` *(new)*
+- `FChatDicebot/BotCommands/Infest.cs` *(new)*
+- `FChatDicebot/BotCommands/Purge.cs` *(new)*
+- `FChatDicebot/BotCommands/DefineParasite.cs` *(new)*
+- `FChatDicebot/Conversational/Handlers/DefineParasiteFlowHandler.cs` *(new)*
+- `FChatDicebot/InteractionProcessors/StatusEffectContributors/ParasiteStatusContributor.cs` *(new)*
+- `FChatDicebot/Database/IChateauDatabase.cs` *(modify — add `GetParasite`, `SaveParasite`, `ListParasites`)*
+- `FChatDicebot/InteractionProcessors/InteractionProcessorRegistry.cs` *(modify — register)*
+- `FChatDicebot/InteractionProcessors/StatusEffectRegistry.cs` *(modify — register)*
+- `FChatDicebot/Conversational/ConversationalFlowRegistry.cs` *(modify — register)*
 - `FChatDicebot.Tests/Unit/InfestProcessorTests.cs` *(new)*
 - `FChatDicebot.Tests/Unit/ParasiteStatusContributorTests.cs` *(new)*
 - `FChatDicebot.Tests/Unit/PurgeCommandTests.cs` *(new)*

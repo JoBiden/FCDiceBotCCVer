@@ -124,13 +124,13 @@ The full validation table needs the user's sign-off before this spec lands in co
 
 ## Files to create/modify
 
-- `FChatDicebot/FChatDicebot/Model/BreakInstance.cs` *(new)*
-- `FChatDicebot/FChatDicebot/InteractionProcessors/Consequence/BreakProcessor.cs` *(new)*
-- `FChatDicebot/FChatDicebot/BotCommands/Break.cs` *(new)*
-- `FChatDicebot/FChatDicebot/BotCommands/Rest.cs` *(new)*
-- `FChatDicebot/FChatDicebot/InteractionProcessors/StatusEffectContributors/BreakStatusContributor.cs` *(new)*
-- `FChatDicebot/FChatDicebot/InteractionProcessors/InteractionProcessorRegistry.cs` *(modify — register)*
-- `FChatDicebot/FChatDicebot/InteractionProcessors/StatusEffectRegistry.cs` *(modify — register)*
+- `FChatDicebot/Model/BreakInstance.cs` *(new)*
+- `FChatDicebot/InteractionProcessors/Consequence/BreakProcessor.cs` *(new)*
+- `FChatDicebot/BotCommands/Break.cs` *(new)*
+- `FChatDicebot/BotCommands/Rest.cs` *(new)*
+- `FChatDicebot/InteractionProcessors/StatusEffectContributors/BreakStatusContributor.cs` *(new)*
+- `FChatDicebot/InteractionProcessors/InteractionProcessorRegistry.cs` *(modify — register)*
+- `FChatDicebot/InteractionProcessors/StatusEffectRegistry.cs` *(modify — register)*
 - Migration / seed: ensure the 10 break parts exist in the `Identifiers` catalog with category `"break"`.
 - `FChatDicebot.Tests/Unit/BreakProcessorTests.cs` *(new)*
 - `FChatDicebot.Tests/Unit/BreakAutoHealTests.cs` *(new)*

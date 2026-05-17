@@ -105,7 +105,7 @@ The bot will automatically create the `ChateauDb` database and collections on fi
 
 If using a remote MongoDB instance, update the connection string in:
 
-`FChatDicebot/FChatDicebot/Database/Chateaudatabase.cs`
+`FChatDicebot/Database/Chateaudatabase.cs`
 
 ```csharp
 const string connectionString = "mongodb://your-remote-host:27017";

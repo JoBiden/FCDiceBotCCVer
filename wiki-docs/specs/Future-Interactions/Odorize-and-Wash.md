@@ -125,13 +125,13 @@ Multiple distinct scents on the same profile **all** contribute and **all** decr
 
 ## Files to create/modify
 
-- `FChatDicebot/FChatDicebot/Model/ScentLayer.cs` *(new)*
-- `FChatDicebot/FChatDicebot/InteractionProcessors/Consequence/OdorizeProcessor.cs` *(new)*
-- `FChatDicebot/FChatDicebot/BotCommands/Odorize.cs` *(new)*
-- `FChatDicebot/FChatDicebot/BotCommands/Wash.cs` *(new)*
-- `FChatDicebot/FChatDicebot/InteractionProcessors/StatusEffectContributors/OdorizeStatusContributor.cs` *(new)*
-- `FChatDicebot/FChatDicebot/InteractionProcessors/InteractionProcessorRegistry.cs` *(modify — register)*
-- `FChatDicebot/FChatDicebot/InteractionProcessors/StatusEffectRegistry.cs` *(modify — register)*
+- `FChatDicebot/Model/ScentLayer.cs` *(new)*
+- `FChatDicebot/InteractionProcessors/Consequence/OdorizeProcessor.cs` *(new)*
+- `FChatDicebot/BotCommands/Odorize.cs` *(new)*
+- `FChatDicebot/BotCommands/Wash.cs` *(new)*
+- `FChatDicebot/InteractionProcessors/StatusEffectContributors/OdorizeStatusContributor.cs` *(new)*
+- `FChatDicebot/InteractionProcessors/InteractionProcessorRegistry.cs` *(modify — register)*
+- `FChatDicebot/InteractionProcessors/StatusEffectRegistry.cs` *(modify — register)*
 - `FChatDicebot.Tests/Unit/OdorizeProcessorTests.cs` *(new)*
 - `FChatDicebot.Tests/Unit/OdorizeStatusContributorTests.cs` *(new)*
 - `FChatDicebot.Tests/Unit/WashCommandTests.cs` *(new)*
