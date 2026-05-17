@@ -50,3 +50,6 @@ x86/
 
 # Other
 *.zip
+
+# Claude Code worktrees and session data
+.claude/
