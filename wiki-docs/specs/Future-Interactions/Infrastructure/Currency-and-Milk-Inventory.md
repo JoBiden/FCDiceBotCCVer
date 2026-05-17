@@ -112,11 +112,11 @@ Bob sold 3 bottles of cum (sourced from Alice) for 75 copper. Empty bottles refu
 
 ## Files to create/modify
 
-- `FChatDicebot/FChatDicebot/Model/MilkBottle.cs` *(new)*
-- `FChatDicebot/FChatDicebot/Model/Profile.cs` *(modify — add `milkInventory`, `emptyBottles`)*
-- `FChatDicebot/FChatDicebot/ChateauCurrency.cs` *(new — denominations, pricing, parsing)*
-- `FChatDicebot/FChatDicebot/BotCommands/Sell.cs` *(new)*
-- `FChatDicebot/FChatDicebot/BotCommands/Pay.cs` *(modify — accept denomination shorthand)*
+- `FChatDicebot/Model/MilkBottle.cs` *(new)*
+- `FChatDicebot/Model/Profile.cs` *(modify — add `milkInventory`, `emptyBottles`)*
+- `FChatDicebot/ChateauCurrency.cs` *(new — denominations, pricing, parsing)*
+- `FChatDicebot/BotCommands/Sell.cs` *(new)*
+- `FChatDicebot/BotCommands/Pay.cs` *(modify — accept denomination shorthand)*
 - `FChatDicebot.Tests/Unit/MilkInventoryTests.cs` *(new)*
 - `FChatDicebot.Tests/Unit/SellCommandTests.cs` *(new)*
 - `FChatDicebot.Tests/Unit/CurrencyDisplayTests.cs` *(new)*

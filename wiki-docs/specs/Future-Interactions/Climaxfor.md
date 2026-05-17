@@ -100,9 +100,9 @@ Flavor descriptor pool size ~12, weighted by the count that day:
 
 ## Files to create/modify
 
-- `FChatDicebot/FChatDicebot/InteractionProcessors/Involved/ClimaxforProcessor.cs` *(new)*
-- `FChatDicebot/FChatDicebot/BotCommands/Climaxfor.cs` *(new)*
-- `FChatDicebot/FChatDicebot/InteractionProcessors/InteractionProcessorRegistry.cs` *(modify — register)*
-- `FChatDicebot/FChatDicebot/Model/Profile.cs` *(modify — `dailyClimaxCounts`)*
-- `FChatDicebot/FChatDicebot/ChateauSystemTitles.cs` *(modify — climax titles)*
+- `FChatDicebot/InteractionProcessors/Involved/ClimaxforProcessor.cs` *(new)*
+- `FChatDicebot/BotCommands/Climaxfor.cs` *(new)*
+- `FChatDicebot/InteractionProcessors/InteractionProcessorRegistry.cs` *(modify — register)*
+- `FChatDicebot/Model/Profile.cs` *(modify — `dailyClimaxCounts`)*
+- `FChatDicebot/ChateauSystemTitles.cs` *(modify — climax titles)*
 - `FChatDicebot.Tests/Unit/ClimaxforProcessorTests.cs` *(new)*

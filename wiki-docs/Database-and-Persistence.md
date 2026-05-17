@@ -38,7 +38,7 @@ mongodb://localhost:27017
 
 **Database Name:** `ChateauDb`
 
-**Location:** `FChatDicebot/FChatDicebot/Database/Chateaudatabase.cs`
+**Location:** `FChatDicebot/Database/Chateaudatabase.cs`
 
 ```csharp
 const string connectionString = "mongodb://localhost:27017";
@@ -660,7 +660,7 @@ private void BackupDataFiles() {
 
 **MonDB Static Adapter:**
 
-**Location:** `FChatDicebot/FChatDicebot/MonDB.cs`
+**Location:** `FChatDicebot/MonDB.cs`
 
 Provides static methods that delegate to an `IChateauDatabase` instance:
 
@@ -689,7 +689,7 @@ public static class MonDB
 
 ### IChateauDatabase Interface
 
-**Location:** `FChatDicebot/FChatDicebot/Database/Ichateaudatabase.cs`
+**Location:** `FChatDicebot/Database/Ichateaudatabase.cs`
 
 Defines all database operations:
 
@@ -728,7 +728,7 @@ public interface IChateauDatabase
 
 ### ChateauDatabase Implementation
 
-**Location:** `FChatDicebot/FChatDicebot/Database/Chateaudatabase.cs`
+**Location:** `FChatDicebot/Database/Chateaudatabase.cs`
 
 MongoDB implementation of `IChateauDatabase`:
 

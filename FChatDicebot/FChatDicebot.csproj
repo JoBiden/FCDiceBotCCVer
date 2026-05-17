@@ -340,6 +340,9 @@
     <Compile Include="InteractionProcessors\IInteractionProcessor.cs" />
     <Compile Include="InteractionProcessors\InteractionProcessorBase.cs" />
     <Compile Include="InteractionProcessors\InteractionProcessorRegistry.cs" />
+    <Compile Include="InteractionProcessors\IStatusEffectContributor.cs" />
+    <Compile Include="InteractionProcessors\StatusEffectFragments.cs" />
+    <Compile Include="InteractionProcessors\StatusEffectRegistry.cs" />
     <Compile Include="InteractionProcessors\Involved\DressupProcessor.cs" />
     <Compile Include="InteractionProcessors\Involved\FeedProcessor.cs" />
     <Compile Include="InteractionProcessors\Involved\GoldenProcessor.cs" />

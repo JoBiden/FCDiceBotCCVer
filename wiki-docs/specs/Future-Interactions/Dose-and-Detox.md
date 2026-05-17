@@ -134,13 +134,13 @@ When the parent interaction *itself* would naturally provide the vice — i.e.:
 
 ## Files to create/modify
 
-- `FChatDicebot/FChatDicebot/Model/ViceInstance.cs` *(new)*
-- `FChatDicebot/FChatDicebot/InteractionProcessors/Consequence/DoseProcessor.cs` *(new)*
-- `FChatDicebot/FChatDicebot/BotCommands/Dose.cs` *(new)*
-- `FChatDicebot/FChatDicebot/BotCommands/Detox.cs` *(new)*
-- `FChatDicebot/FChatDicebot/InteractionProcessors/StatusEffectContributors/DoseStatusContributor.cs` *(new)*
-- `FChatDicebot/FChatDicebot/InteractionProcessors/InteractionProcessorRegistry.cs` *(modify — register)*
-- `FChatDicebot/FChatDicebot/InteractionProcessors/StatusEffectRegistry.cs` *(modify — register)*
+- `FChatDicebot/Model/ViceInstance.cs` *(new)*
+- `FChatDicebot/InteractionProcessors/Consequence/DoseProcessor.cs` *(new)*
+- `FChatDicebot/BotCommands/Dose.cs` *(new)*
+- `FChatDicebot/BotCommands/Detox.cs` *(new)*
+- `FChatDicebot/InteractionProcessors/StatusEffectContributors/DoseStatusContributor.cs` *(new)*
+- `FChatDicebot/InteractionProcessors/InteractionProcessorRegistry.cs` *(modify — register)*
+- `FChatDicebot/InteractionProcessors/StatusEffectRegistry.cs` *(modify — register)*
 - `FChatDicebot.Tests/Unit/DoseProcessorTests.cs` *(new)*
 - `FChatDicebot.Tests/Unit/DoseStatusContributorTests.cs` *(new)*
 - `FChatDicebot.Tests/Unit/DetoxCommandTests.cs` *(new)*
