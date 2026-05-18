@@ -26,8 +26,12 @@ namespace FChatDicebot.Model
         public int[] displayedTitleSlots { get; set; } = new int[9] { -1, -1, -1, -1, -1, -1, -1, -1, -1 };
         public List<Pregnancy> pregnancies { get; set; } = new List<Pregnancy>();
 
-
-
+        // Sparse daily quota tracker keyed like "corruption_{recipient}_{yyyy-MM-dd}".
+        // Each entry records magnitude already spent that UTC day by this profile against
+        // a single recipient. Entries with stale date prefixes are dropped on next write
+        // (see CorruptionProcessor.PruneStaleQuotaEntries) so the map stays small.
+        [BsonIgnoreIfNull]
+        public Dictionary<string, int> dailyMagnitudes { get; set; } = new Dictionary<string, int>();
     }
 
     public class Pregnancy

@@ -198,6 +198,8 @@
     <Compile Include="BotCommands\ChateauMonsterize.cs" />
     <Compile Include="BotCommands\ChateauOdorize.cs" />
     <Compile Include="BotCommands\ChateauWash.cs" />
+    <Compile Include="BotCommands\ChateauCorrupt.cs" />
+    <Compile Include="BotCommands\ChateauPurify.cs" />
     <Compile Include="BotCommands\ChateauRename.cs" />
     <Compile Include="BotCommands\ChateauSpank.cs" />
     <Compile Include="BotCommands\ChateauDossier.cs" />
@@ -361,6 +363,9 @@
     <Compile Include="InteractionProcessors\Commitment\EmployProcessor.cs" />
     <Compile Include="InteractionProcessors\Commitment\BondProcessor.cs" />
     <Compile Include="InteractionProcessors\Commitment\BreedProcessor.cs" />
+    <Compile Include="InteractionProcessors\Commitment\CorruptionProcessor.cs" />
+    <Compile Include="InteractionProcessors\Commitment\CorruptionCommandSupport.cs" />
+    <Compile Include="InteractionProcessors\StatusEffectContributors\CorruptionStatusContributor.cs" />
     <Compile Include="InteractionProcessors\Involved\PaymentGiveProcessor.cs" />
     <Compile Include="InteractionProcessors\Involved\PaymentReceiveProcessor.cs" />
     <Compile Include="Model\ChateauDB.cs" />

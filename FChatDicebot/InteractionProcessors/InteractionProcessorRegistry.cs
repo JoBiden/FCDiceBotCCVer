@@ -1,7 +1,7 @@
 using FChatDicebot.InteractionProcessors.Casual;
-using FChatDicebot.InteractionProcessors.Involved;
 using FChatDicebot.InteractionProcessors.Commitment;
 using FChatDicebot.InteractionProcessors.Consequence;
+using FChatDicebot.InteractionProcessors.Involved;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -42,6 +42,11 @@ namespace FChatDicebot.InteractionProcessors
             RegisterProcessor(new EmployProcessor());
             RegisterProcessor(new BondProcessor());
             RegisterProcessor(new BreedProcessor());
+            // CorruptionProcessor backs both !corrupt and !purify — same instance under
+            // two type keys so each verb routes to the shared sign-aware logic.
+            var corruption = new CorruptionProcessor();
+            RegisterProcessor(corruption);
+            RegisterProcessor(CorruptionProcessor.PurifyType, corruption);
 
             //involved interactions
             RegisterProcessor(new FeedProcessor());
@@ -59,11 +64,21 @@ namespace FChatDicebot.InteractionProcessors
         }
 
         /// <summary>
-        /// Register a processor for a specific interaction type
+        /// Register a processor under its own InteractionType key.
         /// </summary>
         private static void RegisterProcessor(IInteractionProcessor processor)
         {
             _processors[processor.InteractionType.ToLower()] = processor;
+        }
+
+        /// <summary>
+        /// Register a processor under an additional alias type key. Used when one processor
+        /// instance backs multiple interaction verbs (e.g. CorruptionProcessor handles both
+        /// <c>"corrupt"</c> and <c>"purify"</c>).
+        /// </summary>
+        private static void RegisterProcessor(string interactionType, IInteractionProcessor processor)
+        {
+            _processors[interactionType.ToLower()] = processor;
         }
 
         /// <summary>

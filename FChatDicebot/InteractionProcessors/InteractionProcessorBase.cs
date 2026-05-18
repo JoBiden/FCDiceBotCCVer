@@ -15,6 +15,11 @@ namespace FChatDicebot.InteractionProcessors
     {
         protected readonly IChateauDatabase Database;
         protected string _lastRateLimitMessage = string.Empty;
+        // Optional out-of-band note a processor wants the consent handler to send privately
+        // to the initiator (e.g. corrupt/purify's "this didn't land because your queued
+        // pending raced against the daily quota" notice). Drained after ProcessInteraction
+        // by ChateauConsent via GetAndClearInitiatorPrivateMessage.
+        protected string _lastInitiatorPrivateMessage = string.Empty;
 
         public enum VerbTense
         {
@@ -97,6 +102,19 @@ namespace FChatDicebot.InteractionProcessors
         {
             string msg = _lastRateLimitMessage;
             _lastRateLimitMessage = string.Empty;
+            return msg;
+        }
+
+        /// <summary>
+        /// Drain any pending out-of-band private note the processor wants sent to the
+        /// initiator (used by corrupt/purify when a queued pending interaction lands
+        /// after the daily quota has been spent — no channel message, but the initiator
+        /// gets a privately-routed heads-up). Returns empty string when nothing's pending.
+        /// </summary>
+        public string GetAndClearInitiatorPrivateMessage()
+        {
+            string msg = _lastInitiatorPrivateMessage;
+            _lastInitiatorPrivateMessage = string.Empty;
             return msg;
         }
 

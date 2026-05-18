@@ -2,7 +2,7 @@
 
 Shared mechanism that lets passive status effects (odorize, dose, break, infest, corrupt, curse) surface text and validation gates in *other* interactions' consent and completion phases.
 
-**Status:** Implemented (initial infrastructure landed; registry seeded empty until the first consequence-interaction contributor lands).
+**Status:** Implemented. Registry currently seeded with `OdorizeStatusContributor` (Tier 3) and `CorruptionStatusContributor` (Tier 2 corrupt/purify); the remaining consequence interactions (dose / break / infest / curse) will add their own contributors as they land.
 
 ## Goal
 
@@ -100,7 +100,19 @@ if (relevantBlocker != null)
 
 ## Persistence
 
-No new collections. Status-effect state lives on the `Profile` of whichever interaction set it (e.g. `profile.characteristics["odorize_musk_uses"] = "3"` for odorize). Each contributor reads from there.
+No new collections. Status-effect state lives on the `Profile` of whichever interaction set it (e.g. `profile.characteristics["odorize_musk_uses"] = "3"` for odorize, `profile.characteristics["corruption"] = "-50"` for corrupt/purify). Each contributor reads from there.
+
+## Out-of-band private notifications to the initiator
+
+A separate channel for the case where a processor needs to message the initiator privately after a consent fires (e.g. corrupt/purify's TOCTOU "your queued interaction landed but daily quota was already spent" notice):
+
+```csharp
+// On InteractionProcessorBase
+protected string _lastInitiatorPrivateMessage = string.Empty;
+public string GetAndClearInitiatorPrivateMessage();   // also on IInteractionProcessor
+```
+
+`ChateauConsent` drains this after every `ProcessInteraction` and routes any non-empty result to a private message. Processors that don't need it leave the field empty; the channel adds no overhead.
 
 ## Tests
 
