@@ -2,9 +2,10 @@
 
 Breed the recipient with new monster life, then have them birth at a time of their choosing. Multiple concurrent pregnancies are supported and indexed.
 
+**Status:** Implemented.
 **Investment level:** Commitment (for `!breed`); `!birth` is a self-action with a time gate, not a consent interaction.
 **Reversal:** `!birth` releases an individual pregnancy — but "reversal" in the cost-bearing sense doesn't apply; abortion / cancellation is **not** in scope. (Add a separate `!miscarry` spec later if requested.)
-**Depends on:** [NPC-System](Infrastructure/NPC-System.md) (degrades gracefully without it — see Assumptions)
+**Depends on:** [NPC-System](Future-Interactions/Infrastructure/NPC-System.md) (degrades gracefully without it — see Assumptions)
 
 ## `!breed` command syntax
 
@@ -17,7 +18,7 @@ Breed the recipient with new monster life, then have them birth at a time of the
 - Recipient must be registered.
 - `monster` must resolve via the existing monster catalog (`MonDB.getIdentifier(monster)` with category `"monster"`).
 - The recipient's pregnancy slot count is **uncapped** (insect broods, etc.). Multiple pregnancies of the same monster type are allowed.
-- Initiator-side broken-state check (`break:dick` or `break:ball`) blocks `!breed`. The block is on the initiator, not the recipient — see [Break-and-Rest](Break-and-Rest.md) and `IStatusEffectContributor` validation surface.
+- Initiator-side broken-state check (`break:dick` or `break:ball`) blocks `!breed`. The block is on the initiator, not the recipient — see [Break-and-Rest](Future-Interactions/Break-and-Rest.md) and `IStatusEffectContributor` validation surface.
 - Recipient-side `break:pussy` or `break:ass` may block depending on monster's gestation route — but for v1, treat `break:body` as the only recipient-side blocker. **Override** if a per-monster route map is desired.
 
 ## `!breed` processor logic (`BreedProcessor`)
@@ -58,7 +59,7 @@ If no NPC system is installed (graceful degradation), `name=` and `description=`
 ## `!birth` processor logic
 
 1. Pop the chosen pregnancy from `recipient.pregnancies`.
-2. If [NPC-System](Infrastructure/NPC-System.md) is installed:
+2. If [NPC-System](Future-Interactions/Infrastructure/NPC-System.md) is installed:
    - Create a single named `NPC` record. Name = explicit `name=` or generator fallback (per-species pool, then `"{Species} Spawn #{shortId}"`).
    - If brood size > 1, set `Attributes["brood_size"] = broodSize.ToString()` on the NPC.
    - `ParentNames = [initiator, recipient]` from the pregnancy.

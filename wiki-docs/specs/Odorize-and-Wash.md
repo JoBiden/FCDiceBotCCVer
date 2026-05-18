@@ -2,6 +2,7 @@
 
 Saturate the recipient with a scent that gets noticed in subsequent interactions and fades by mention rather than by time. `!wash` removes one layer of one scent per day.
 
+**Status:** Implemented.
 **Investment level:** Consequence
 **Reversal:** `!wash` (one layer/day, no other cost — the cost *is* the slow pace).
 **Depends on:** [Status-Effect-Hook](Infrastructure/Status-Effect-Hook.md)

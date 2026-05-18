@@ -179,6 +179,8 @@
     <Compile Include="BotCommands\ChateauC.cs" />
     <Compile Include="BotCommands\ChateauGolden.cs" />
     <Compile Include="BotCommands\ChateauFeed.cs" />
+    <Compile Include="BotCommands\ChateauMilk.cs" />
+    <Compile Include="BotCommands\ChateauSell.cs" />
     <Compile Include="BotCommands\ChateauDressup.cs" />
     <Compile Include="BotCommands\ChateauConsume.cs" />
     <Compile Include="BotCommands\ChateauObjectify.cs" />
@@ -349,6 +351,7 @@
     <Compile Include="InteractionProcessors\StatusEffectRegistry.cs" />
     <Compile Include="InteractionProcessors\Involved\DressupProcessor.cs" />
     <Compile Include="InteractionProcessors\Involved\FeedProcessor.cs" />
+    <Compile Include="InteractionProcessors\Involved\MilkProcessor.cs" />
     <Compile Include="InteractionProcessors\Involved\GoldenProcessor.cs" />
     <Compile Include="InteractionProcessors\Consequence\RenameProcessor.cs" />
     <Compile Include="InteractionProcessors\Consequence\MonsterizeProcessor.cs" />
@@ -369,6 +372,8 @@
     <Compile Include="InteractionProcessors\Involved\PaymentGiveProcessor.cs" />
     <Compile Include="InteractionProcessors\Involved\PaymentReceiveProcessor.cs" />
     <Compile Include="Model\ChateauDB.cs" />
+    <Compile Include="Model\MilkBottle.cs" />
+    <Compile Include="ChateauCurrency.cs" />
     <Compile Include="MonDB.cs" />
     <Compile Include="DiceFunctions\Games\Mafia.cs" />
     <Compile Include="DiceFunctions\VcChipOrder.cs" />

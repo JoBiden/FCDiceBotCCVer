@@ -52,6 +52,7 @@ namespace FChatDicebot.InteractionProcessors
             RegisterProcessor(new FeedProcessor());
             RegisterProcessor(new GoldenProcessor());
             RegisterProcessor(new DressupProcessor());
+            RegisterProcessor(new MilkProcessor());
             RegisterProcessor(new PaymentGiveProcessor());
             RegisterProcessor(new PaymentReceiveProcessor());
 

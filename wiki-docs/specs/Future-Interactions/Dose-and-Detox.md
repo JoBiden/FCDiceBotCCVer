@@ -4,7 +4,7 @@ Dose the recipient with an addictive vice. Cravings appear in subsequent interac
 
 **Investment level:** Consequence
 **Reversal:** `!detox` (with cost).
-**Depends on:** [Status-Effect-Hook](Infrastructure/Status-Effect-Hook.md), interacts with `!feed` (existing), `!odorize` ([Odorize-and-Wash](Odorize-and-Wash.md))
+**Depends on:** [Status-Effect-Hook](../Infrastructure/Status-Effect-Hook.md), interacts with `!feed` (existing), `!odorize` ([Odorize-and-Wash](../Odorize-and-Wash.md))
 
 ## Vice catalog
 

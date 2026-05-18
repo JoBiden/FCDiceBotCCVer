@@ -4,7 +4,7 @@ Cum with or for someone (or yourself). Mostly flavor, but interacts with [Dose-a
 
 **Investment level:** Involved
 **Reversal:** none
-**Depends on:** [Status-Effect-Hook](Infrastructure/Status-Effect-Hook.md)
+**Depends on:** [Status-Effect-Hook](../Infrastructure/Status-Effect-Hook.md)
 
 ## Command syntax
 

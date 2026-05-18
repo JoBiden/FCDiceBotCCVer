@@ -32,6 +32,13 @@ namespace FChatDicebot.Model
         // (see CorruptionProcessor.PruneStaleQuotaEntries) so the map stays small.
         [BsonIgnoreIfNull]
         public Dictionary<string, int> dailyMagnitudes { get; set; } = new Dictionary<string, int>();
+
+        // Trophy/sellable bottles. One entry per milking session — not aggregated, so a
+        // (substance, sourceName) pair can carry multiple entries with different milkedAt
+        // and corruptionTag. See MilkBottle for the per-entry shape. The Chateau provides
+        // the empty bottles needed to milk; the player's "bottle" tally from selling lives
+        // in the standard `currencies` dict under ChateauCurrency.BottleCurrency.
+        public List<MilkBottle> milkInventory { get; set; } = new List<MilkBottle>();
     }
 
     public class Pregnancy

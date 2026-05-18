@@ -132,7 +132,7 @@ The strongest tier uses *"radiates"*; the milder tiers use *"emanates"*.
 ## Cross-spec consumers
 
 - [Milk](Milk.md): the `corruptionTag` on milk bottles is computed from the ≥ ±10 thresholds (this spec's first non-neutral band).
-- [Climaxfor](Climaxfor.md): may add its own initiator-side flavor based on the same characteristic.
+- [Climaxfor](Future-Interactions/Climaxfor.md): may add its own initiator-side flavor based on the same characteristic.
 
 ## TOCTOU private-message wiring
 
