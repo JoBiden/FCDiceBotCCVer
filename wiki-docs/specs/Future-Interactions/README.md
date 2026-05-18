@@ -32,16 +32,16 @@ Infrastructure must land before the features that depend on it. Within each tier
 
 | Spec | Reversal | Depends on |
 |------|----------|------------|
-| [Breed-and-Birth](Breed-and-Birth.md) | `!birth` (paired) | NPC-System (optional) |
+| [Breed-and-Birth](Breed-and-Birth.md) *(implemented)* | `!birth` (paired) | NPC-System (optional) |
 | [Train](Train.md) | — | — |
-| [Corrupt-and-Purify](Corrupt-and-Purify.md) | `!purify` (single processor) | Status-Effect-Hook |
+| [Corrupt-and-Purify](Corrupt-and-Purify.md) *(implemented)* | `!purify` (single processor) | Status-Effect-Hook |
 
 ### Tier 3 — Consequence interactions
 
 | Spec | Reversal | Depends on |
 |------|----------|------------|
 | [Infest-and-Purge](Infest-and-Purge.md) | `!purge` | Status-Effect-Hook, Conversational-Flows (custom parasites only) |
-| [Odorize-and-Wash](Odorize-and-Wash.md) | `!wash` | Status-Effect-Hook |
+| [Odorize-and-Wash](Odorize-and-Wash.md) *(implemented)* | `!wash` | Status-Effect-Hook |
 | [Curse-and-Cleanse](Curse-and-Cleanse.md) | `!cleanse` | Status-Effect-Hook |
 | [Break-and-Rest](Break-and-Rest.md) | `!rest` | Status-Effect-Hook |
 | [Dose-and-Detox](Dose-and-Detox.md) | `!detox` | Status-Effect-Hook |

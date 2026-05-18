@@ -1,134 +1,191 @@
 # `!corrupt` + `!purify`
 
-Move someone's corruption value down (corrupt) or up (purify). One signed integer per character; no caps except `int.MinValue` / `int.MaxValue`.
+Move someone's corruption value down (corrupt) or up (purify). One signed integer per character, stored as a string in `profile.characteristics["corruption"]`.
 
-**Investment level:** Commitment
-**Reversal:** Same processor handles both directions (single processor, two command aliases).
-**Depends on:** [Status-Effect-Hook](Infrastructure/Status-Effect-Hook.md)
+**Status:** Implemented.
+**Investment level:** Commitment.
+**Reversal:** Same processor handles both directions — one `CorruptionProcessor` instance registered under both `"corrupt"` and `"purify"` interaction-type keys.
+**Depends on:** [Status-Effect-Hook](Infrastructure/Status-Effect-Hook.md).
 
 ## Command syntax
 
 ```
-!corrupt [user]Bob[/user] {amount}      → amount is positive: subtracts from Bob's corruption (more corrupt)
+!corrupt [user]Bob[/user] {amount}      → positive amount: shifts Bob's corruption value downward (more corrupt)
 !corrupt [user]Bob[/user] -{amount}     → equivalent to !purify {amount}
-!purify  [user]Bob[/user] {amount}      → adds to Bob's corruption (more pure)
+!purify  [user]Bob[/user] {amount}      → shifts Bob's corruption value upward (more pure)
 !purify  [user]Bob[/user] -{amount}     → equivalent to !corrupt {amount}
 ```
 
-If `amount` omitted, default to `1`.
+If `amount` is omitted, defaults to `1`. Self-target is allowed.
+
+## Daily quota
+
+A single initiator may move any single recipient's corruption value by **at most 10 total magnitude per UTC day**, summed across both directions. `!corrupt 6` then `!purify 5` on the same recipient → second call partially clamps to 4.
+
+- Tracked on the **initiator's** `Profile.dailyMagnitudes` (new field, `Dictionary<string, int>`).
+- Key shape: `corruption_{recipientUserName}_{yyyy-MM-dd}` (UTC date).
+- Stale-date entries are pruned on next write to keep the map small. `[BsonIgnoreIfNull]` so legacy profiles don't grow an empty field.
+
+Clamping happens at **both** command time (so the recipient never sees a consent prompt for a magnitude that can't fully land) and process time (TOCTOU safety net for rapid command queueing).
 
 ## Validation
 
-- Recipient must be registered.
-- `amount` parses as a positive integer once sign-flipping is resolved.
-- **Daily per-initiator quota**: a single initiator may move *any single recipient's* corruption value by **at most 10 total per UTC day**, summed across both directions. Initiating `!corrupt 6` then `!purify 5` = 11 total magnitude → second call partially clamps to 4. Reject the *excess* with a warning, not the whole command.
-- Self-target allowed (philosophy: you can corrupt or purify yourself).
+- Recipient must be registered (falls through to `ChateauInteractionHandler.notFoundText` on failure, same pattern as `!breed`).
+- `amount` parses as an integer (`ChateauPay`-style wording on failure).
+- `amount == 0` rejected with a "no needle movement" private message.
+- Quota fully exhausted → command refuses *before* sending a consent prompt; the initiator gets a private heads-up.
+- Quota partially available → command pre-clamps the pending magnitude and sends an "enthusiasm appreciated" private heads-up before forwarding the (clamped) consent prompt.
 
 ## Processor logic (`CorruptionProcessor`)
 
-Single processor, registered under both interaction types `"corrupt"` and `"purify"`. Determines effective sign from:
+Single processor registered twice: once under its own `InteractionType` (`"corrupt"`) and a second time under `"purify"` via a new `RegisterProcessor(string aliasType, IInteractionProcessor)` overload on `InteractionProcessorRegistry`.
 
-1. The verb (`corrupt` ⇒ negative, `purify` ⇒ positive).
-2. The amount sign (negative flips the verb's sign).
+### Effective verb resolution
 
-Composite: effective delta = `verb_sign * sign(amount) * abs(amount)`.
+The command computes the **effective verb** before creating the pending interaction. Effective verb = `verbSign(typedVerb) * sign(amount)`:
 
-Then:
+| Typed | Amount | Effective verb |
+|-------|-------:|----------------|
+| `corrupt` | `+N` | `corrupt` |
+| `corrupt` | `-N` | `purify` |
+| `purify` | `+N` | `purify` |
+| `purify` | `-N` | `corrupt` |
 
-1. Read `recipient.characteristics["corruption"]` as int (default 0).
-2. Look up `initiator.timers["corruption_quota_" + recipient.userName + "_" + UtcDay]` for today's already-used quota magnitude.
-3. Compute clamped magnitude = `min(abs(delta), 10 - already_used)`.
-4. Apply: `recipient.characteristics["corruption"] = old + sign(delta) * clamped`.
-5. Update quota tracker.
-6. Set 24-hour cooldown timer (standard commitment).
-7. Increment counts: `corruptgive` / `corrupttake` if delta is negative; `purifygive` / `purifytake` if positive.
-8. Save interaction. Delete pending command.
+Stored on `Interaction.type`. The processor never re-derives direction.
+
+### Identifier payload trick
+
+The `Interaction.identifier` field is repurposed as a compact `"{verb}|{magnitude}"` payload:
+
+- Set by the command with the **requested** (pre-clamped) magnitude.
+- Overwritten inside `ProcessInteraction` with the **actually applied** magnitude (after process-time clamp).
+- Read by `GetCompletionMessage` immediately after `ProcessInteraction` returns — they share the in-memory `PendingCommand`, so the rewrite is visible.
+
+This is the only way to get the post-clamp magnitude into `GetCompletionMessage`, whose signature is `(Profile, Profile, string identifier)` — there is no per-call state slot on the interface.
+
+### Process flow
+
+1. Read `effectiveVerb` from `Interaction.type` and `requestedMagnitude` from the identifier payload.
+2. Look up the initiator's current quota usage for today against this recipient.
+3. `appliedMagnitude = Math.Min(requestedMagnitude, RemainingQuota)`.
+4. **If applied > 0:** update `recipient.characteristics["corruption"]`, update `initiator.dailyMagnitudes`, and (after `SetProfile`) call `IncrementDifferentCounts` with direction-keyed labels (`corruptgive`/`corrupttake` or `purifygive`/`purifytake`).
+   **If applied == 0** (rare TOCTOU from rapid command queueing): suppress channel output (set identifier magnitude to 0 — `GetCompletionMessage` returns empty) and stash a private heads-up for the initiator in `_lastInitiatorPrivateMessage`; ChateauConsent drains it via `GetAndClearInitiatorPrivateMessage`.
+5. Rewrite identifier with `appliedMagnitude`, then `AddInteraction`.
+6. `SetProfile` for both participants **before** the count increments — the count increments go directly to the DB; doing them after `SetProfile` avoids the in-memory profile clobbering them back to zero.
+7. `DeletePendingCommand`.
+
+**Self-target:** initiator and recipient resolve to the same `Profile` reference so reads/writes against the underlying record stay coherent; only one `SetProfile` call is made.
+
+### Direction-of-effect wording (`LevelChange`)
+
+The user-facing "increasing corruption" / "decreasing purity" wording is chosen from the **end-state side**, not the verb's direction. Going from `2` to `7` via `!purify 5` reads as *"increasing their purity by 5"*; going from `-7` to `-2` via the same `!purify 5` reads as *"decreasing their corruption by 5"*. Implemented by the `CorruptionProcessor.LevelChange.From(oldValue, newValue)` struct, called by both consent and completion paths (consent uses the projected new value; completion uses the actual stored value, recovered as `newCorruption - sign * appliedMagnitude`).
+
+| Old | New | Side | Action |
+|-----|-----|------|--------|
+| 2 | 7 | purity | increasing |
+| 7 | 2 | purity | decreasing |
+| -7 | -2 | corruption | decreasing |
+| -2 | -7 | corruption | increasing |
+| -2 | 3 | purity | increasing (cross-zero) |
+| 5 | 0 | purity | decreasing (inherits side from prior) |
+
+The zero end-state gets a special trailing clause — *"…leaving them once again neutral in the eternal tug of war of purity and corruption."* — instead of the standard *"leaving them with X degrees of (corruption|purity)"*.
+
+### Easter egg
+
+`1 / EasterEggChanceDenominator` (= 1/20 = 5%) of completion messages substitute the verb for its inverse — `corrupt` → `un-purify`, `purify` → `un-corrupt`. The `Rng` field is `internal static` so tests can swap in a seeded `Random` or an `AlwaysZeroRandom` to force the egg.
 
 ## Persistence
 
-On `Profile`:
-
 ```csharp
-// in characteristics
-characteristics["corruption"] = "<signed int>"; // negative = corrupt, positive = pure
+// On the recipient's Profile
+characteristics["corruption"] = "<signed int>";  // negative = corrupt, positive = pure
+
+// On the initiator's Profile (new field)
+[BsonIgnoreIfNull]
+public Dictionary<string, int> dailyMagnitudes;  // key: corruption_{recipient}_{yyyy-MM-dd}
 ```
 
-On `Profile.timers`:
+## Counts incremented (per call with appliedMagnitude > 0)
 
-```csharp
-timers["corruption_quota_{recipientName}_{yyyy-MM-dd}"] = CoolDown {
-    timerEnd = next UTC day midnight,
-    // re-uses the existing CoolDown shape — `quota_used_magnitude` stored as a side field if extended,
-    // OR use a new typed `Dictionary<string, int>` on profile for daily quotas (cleaner).
-}
-```
+- Effective `corrupt`: `corruptgive` on initiator, `corrupttake` on recipient.
+- Effective `purify`: `purifygive` on initiator, `purifytake` on recipient.
 
-**Recommended:** add a new `dailyMagnitudes` dictionary instead of overloading timers:
-
-```csharp
-public Dictionary<string, int> dailyMagnitudes; // key = "corruption_{recipient}_{yyyy-MM-dd}", value = magnitude consumed
-```
-
-Pruned by date at write time (drop entries where the date prefix is not today).
+Direction-keyed (not verb-typed) so `!corrupt -5` correctly bumps the purify counters.
 
 ## Status-effect contributions
 
-`CorruptionStatusContributor` reads `recipient.characteristics["corruption"]` and emits flavor on completion messages of other interactions:
+`CorruptionStatusContributor` (registered in `StatusEffectRegistry.Initialize()`) reads `profile.characteristics["corruption"]` and emits a fragment on the **completion** call site of other interactions. Consent and validation paths are intentionally silent. Self-referencing call sites (`"corrupt"` / `"purify"` as the parent `interactionType`) are skipped so the corrupt/purify completion message doesn't get a redundant fragment on top.
 
-| Range | Flavor descriptor |
-|-------|-------------------|
-| ≤ -100 | "utterly debased" |
-| -99 to -50 | "deeply corrupted" |
-| -49 to -10 | "tinged with corruption" |
-| -9 to 9 | (no fragment) |
-| 10 to 49 | "noticeably purified" |
-| 50 to 99 | "radiant with purity" |
-| ≥ 100 | "transcendently pure" |
+| Range | Fragment |
+|-------|----------|
+| ≤ -100 | An absolute aura of corruption radiates from {name}. |
+| -99 to -50 | A strong aura of corruption emanates from {name}. |
+| -49 to -10 | A faint aura of corruption emanates from {name}. |
+| -9 to 9 | *(no fragment)* |
+| 10 to 49 | A faint aura of purity emanates from {name}. |
+| 50 to 99 | A strong aura of purity emanates from {name}. |
+| ≥ 100 | An absolute aura of purity radiates from {name}. |
 
-Examples in other specs:
+The strongest tier uses *"radiates"*; the milder tiers use *"emanates"*.
 
-- [Milk](Milk.md): "corrupt milk" / "purified milk" tags on bottles, derived from these thresholds (use **±10** as the threshold for the bottle tag — same as the `tinged with corruption` / `noticeably purified` band).
-- [Climaxfor](Climaxfor.md): adds a "wickedly satisfied" / "blessedly serene" flavor.
+## Cross-spec consumers
 
-## Easter egg
+- [Milk](Milk.md): the `corruptionTag` on milk bottles is computed from the ≥ ±10 thresholds (this spec's first non-neutral band).
+- [Climaxfor](Climaxfor.md): may add its own initiator-side flavor based on the same characteristic.
 
-Roughly 5% of completion messages should render the verb as `un-purify` (when corrupting) or `un-corrupt` (when purifying):
+## TOCTOU private-message wiring
 
-> "Alice un-purifies Bob by a magnitude of 3. Bob's corruption is now -8."
+Added to support the rare case where a queued pending lands but its quota has been eaten between command and consent:
 
-The dice roll happens in `GetCompletionMessage`, not deterministic.
+- `IInteractionProcessor.GetAndClearInitiatorPrivateMessage()` — drained by `ChateauConsent` after every successful `ProcessInteraction`.
+- `InteractionProcessorBase._lastInitiatorPrivateMessage` — backing field for any processor that wants to use this channel.
+- `CorruptionProcessor.QuotaExhaustedPrivateMessage(verb, displayName)` — shared between the command-time refusal and the TOCTOU fallback so the two paths can't drift.
 
-## Consent warning
-
-> "Alice wants to {corrupt|purify} you by {amount} magnitude. Your corruption is currently {value}; if you !consent it will become {projected_value} (or less, if Alice has already used some of their daily quota with you). Do you !consent?"
+Any future processor that wants out-of-band private notifications to the initiator after a consent fires can set `_lastInitiatorPrivateMessage` and the existing drain will deliver it.
 
 ## Tests
 
-- `CorruptionProcessorTests.cs`:
-  - Sign flipping: `!corrupt -5` ↔ `!purify 5`.
-  - Daily quota: 6 + 5 → second clamps to 4 with partial-success message.
-  - Self-target works.
-  - Counts go to the right give/take labels based on effective sign.
-- `CorruptionStatusContributorTests.cs`:
-  - Threshold bands return correct fragments.
-  - 0 returns no fragment.
-  - Easter-egg occurrence is non-zero in 200 trials and approximately 5%.
+- `CorruptionProcessorTests.cs` (~50 tests):
+  - Sign-flipping for `EffectiveVerb` across all four verb × sign combinations.
+  - Identifier-payload round-trip + parse defaults on garbage input.
+  - Quota math (`RemainingQuota`, `RecordUsedQuota` pruning by date and not crossing recipients).
+  - Quota partial clamp (the spec's 6 + 5 → 4 case).
+  - Different recipients / different initiators don't share quotas.
+  - Self-target.
+  - Directional counts on success.
+  - Pending command deleted on success.
+  - Identifier rewritten with applied magnitude.
+  - Completion wording for the corrupt-side, purify-side, cross-zero, and lands-exactly-at-zero cases.
+  - TOCTOU exhaustion: empty completion + private note that matches the command-time refusal wording.
+  - `GetAndClearInitiatorPrivateMessage` clears after drain.
+  - Consent wording for end-state-on-corruption / end-state-on-purity / cross-zero.
+  - `LevelChange.From` direction resolution across 10 representative combos.
+  - `DescribeCurrentLevel` neutrality + non-zero degrees rendering.
+  - Easter-egg substitution (forced via `AlwaysZeroRandom`) and statistical sanity over 200 trials.
+- `CorruptionStatusContributorTests.cs` (~15 tests): null profile, consent silence, neutral-band silence, exact band thresholds for all 6 tiers, self-reference skip, no leading whitespace, unparseable / missing field defaults.
 
-## Assumptions
+## Assumptions and overrides
 
-- 5% easter-egg rate is hardcoded. **Override** in a constant.
-- Daily quota magnitude limit is 10. **Override** if play-tests show it's too restrictive.
-- Storage as a stringified int in `characteristics`. **Override:** add a typed int slot on `Profile` if desired.
-- `dailyMagnitudes` over timer-overload is a recommendation; either works.
+- **`DailyMagnitudeLimit = 10`** — overridable as a constant on `CorruptionProcessor`.
+- **`EasterEggChanceDenominator = 20` (5%)** — overridable as a constant.
+- **Storage as stringified int in `characteristics`** — matches every other simple scalar in the Profile model. Override would be a typed `int corruption` slot if the value gets accessed in hot paths.
+- **`dailyMagnitudes` over timer-overload** — the spec originally suggested either approach; the typed dictionary won for clarity.
+- **`Profile.dailyMagnitudes`** is initialized in C# but defaults to `null` on legacy profiles loaded from MongoDB (the initializer doesn't run on deserialization). All callers null-check before use.
 
-## Files to create/modify
+## Files created / modified
 
+- `FChatDicebot/Model/ChateauDB.cs` *(modified — added `dailyMagnitudes` field on `Profile`)*
 - `FChatDicebot/InteractionProcessors/Commitment/CorruptionProcessor.cs` *(new — registered for both `"corrupt"` and `"purify"`)*
-- `FChatDicebot/BotCommands/Corrupt.cs` *(new)*
-- `FChatDicebot/BotCommands/Purify.cs` *(new — thin wrapper that flips verb_sign)*
-- `FChatDicebot/Model/Profile.cs` *(modify — `dailyMagnitudes`)*
-- `FChatDicebot/InteractionProcessors/InteractionProcessorRegistry.cs` *(modify — register both interaction types pointing to one processor instance)*
+- `FChatDicebot/InteractionProcessors/Commitment/CorruptionCommandSupport.cs` *(new — shared command-side parse/wire/pre-clamp logic; placed outside `FChatDicebot.BotCommands` so the reflection loader skips it)*
+- `FChatDicebot/BotCommands/ChateauCorrupt.cs` *(new — thin shell delegating to `CorruptionCommandSupport`)*
+- `FChatDicebot/BotCommands/ChateauPurify.cs` *(new — thin shell delegating to `CorruptionCommandSupport`)*
 - `FChatDicebot/InteractionProcessors/StatusEffectContributors/CorruptionStatusContributor.cs` *(new)*
-- `FChatDicebot/InteractionProcessors/StatusEffectRegistry.cs` *(modify — register)*
-- `FChatDicebot.Tests/Unit/CorruptionProcessorTests.cs` *(new)*
-- `FChatDicebot.Tests/Unit/CorruptionStatusContributorTests.cs` *(new)*
+- `FChatDicebot/InteractionProcessors/InteractionProcessorRegistry.cs` *(modified — alias-registration overload + register both type keys)*
+- `FChatDicebot/InteractionProcessors/StatusEffectRegistry.cs` *(modified — register contributor)*
+- `FChatDicebot/InteractionProcessors/IInteractionProcessor.cs` *(modified — `GetAndClearInitiatorPrivateMessage` on the interface)*
+- `FChatDicebot/InteractionProcessors/InteractionProcessorBase.cs` *(modified — `_lastInitiatorPrivateMessage` field + drain accessor)*
+- `FChatDicebot/BotCommands/ChateauConsent.cs` *(modified — drain `GetAndClearInitiatorPrivateMessage` after each `ProcessInteraction`)*
+- `FChatDicebot/FChatDicebot.csproj` *(modified — `<Compile Include>` entries for new files)*
+- `FChatDicebot.Tests/Unit/Corruptionprocessortests.cs` *(new)*
+- `FChatDicebot.Tests/Unit/Corruptionstatuscontributortests.cs` *(new)*

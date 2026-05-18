@@ -78,6 +78,14 @@ namespace FChatDicebot.BotCommands
                         Profile recipProfile = MonDB.getProfile(toConsent.pendingInteraction.recipient);
                         channelMessage += processor.GetCompletionMessage(initProfile, recipProfile, toConsent.pendingInteraction.identifier);
                         channelMessage += CheckRateLimitsAndGetMessage(toConsent.pendingInteraction);
+
+                        // Drain any out-of-band private note the processor wants sent to
+                        // the initiator (e.g. corrupt/purify's TOCTOU exhaustion notice).
+                        string initiatorPrivate = processor.GetAndClearInitiatorPrivateMessage();
+                        if (!string.IsNullOrEmpty(initiatorPrivate))
+                        {
+                            bot.SendPrivateMessage(initiatorPrivate, toConsent.pendingInteraction.initiator);
+                        }
                     }
                     else
                     {
@@ -110,6 +118,14 @@ namespace FChatDicebot.BotCommands
                     Profile recipProfile = MonDB.getProfile(toConsent.pendingInteraction.recipient);
                     channelMessage += processor.GetCompletionMessage(initProfile, recipProfile, toConsent.pendingInteraction.identifier);
                     channelMessage += CheckRateLimitsAndGetMessage(toConsent.pendingInteraction);
+
+                    // Drain any out-of-band private note the processor wants sent to
+                    // the initiator (e.g. corrupt/purify's TOCTOU exhaustion notice).
+                    string initiatorPrivate = processor.GetAndClearInitiatorPrivateMessage();
+                    if (!string.IsNullOrEmpty(initiatorPrivate))
+                    {
+                        bot.SendPrivateMessage(initiatorPrivate, toConsent.pendingInteraction.initiator);
+                    }
                 }
                 else
                 {

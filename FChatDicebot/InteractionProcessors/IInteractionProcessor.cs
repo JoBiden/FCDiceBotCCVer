@@ -56,6 +56,16 @@ namespace FChatDicebot.InteractionProcessors
         /// <param name="identifier">The identifier (if any) for this interaction</param>
         /// <returns>The message to display in channel</returns>
         string GetCompletionMessage(Profile initiatorProfile, Profile recipientProfile, string identifier);
+
+        /// <summary>
+        /// Drain any out-of-band private note the processor wants delivered to the
+        /// initiator after <see cref="ProcessInteraction"/> ran (e.g. corrupt/purify's
+        /// "your queued interaction landed but daily quota was already spent" notice).
+        /// Returns empty string when nothing is pending; the consent handler is expected
+        /// to call this once per processed interaction and route any non-empty result to
+        /// a private message.
+        /// </summary>
+        string GetAndClearInitiatorPrivateMessage();
     }
 
     /// <summary>
