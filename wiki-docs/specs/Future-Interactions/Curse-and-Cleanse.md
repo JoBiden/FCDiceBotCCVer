@@ -4,7 +4,7 @@ Apply a consequential curse to the recipient. Curses fall into three buckets and
 
 **Investment level:** Consequence
 **Reversal:** `!cleanse` (with cost).
-**Depends on:** [Status-Effect-Hook](Infrastructure/Status-Effect-Hook.md)
+**Depends on:** [Status-Effect-Hook](../Infrastructure/Status-Effect-Hook.md)
 
 ## Bucket taxonomy
 

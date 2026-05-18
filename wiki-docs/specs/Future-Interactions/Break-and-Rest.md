@@ -4,7 +4,7 @@ Break a part of the recipient so it can't be used for several days. `!rest` acce
 
 **Investment level:** Consequence
 **Reversal:** `!rest` (skipping work to heal); also auto-heals one level per day.
-**Depends on:** [Status-Effect-Hook](Infrastructure/Status-Effect-Hook.md)
+**Depends on:** [Status-Effect-Hook](../Infrastructure/Status-Effect-Hook.md)
 
 ## Breakable parts
 

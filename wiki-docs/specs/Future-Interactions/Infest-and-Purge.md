@@ -4,7 +4,7 @@ Infest the recipient with a parasite. Parasites have a chance to spread on each 
 
 **Investment level:** Consequence (`!infest`); `!purge` is a self-action with a cost.
 **Reversal:** `!purge` (with cost).
-**Depends on:** [Status-Effect-Hook](Infrastructure/Status-Effect-Hook.md), [Conversational-Flows](Infrastructure/Conversational-Flows.md) (only for the custom-parasite definition flow — fall back to hand-authored parasites if that infrastructure isn't built yet).
+**Depends on:** [Status-Effect-Hook](../Infrastructure/Status-Effect-Hook.md), [Conversational-Flows](Infrastructure/Conversational-Flows.md) (only for the custom-parasite definition flow — fall back to hand-authored parasites if that infrastructure isn't built yet).
 
 ## Parasite catalog
 
