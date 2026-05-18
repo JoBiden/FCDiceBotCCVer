@@ -78,6 +78,24 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
         }
 
         [Fact]
+        public void ValidateInteraction_IdentifierMissingMonsterCategory_ReturnsFailure()
+        {
+            new ProfileBuilder().WithUserName("Alice").WithDisplayName("Alice").BuildAndSave(_database);
+            new ProfileBuilder().WithUserName("Bob").WithDisplayName("Bob").BuildAndSave(_database);
+            // Identifier exists but isn't a monster (e.g. it's a scent) — should be rejected.
+            _fixture.SeedIdentifier(new Identifier
+            {
+                type = "musk",
+                description = "musk",
+                categories = new[] { "scent" }
+            });
+
+            var result = _processor.ValidateInteraction("Alice", "Bob", "musk");
+
+            Assert.False(result.IsValid);
+        }
+
+        [Fact]
         public void ValidateInteraction_KnownMonster_ReturnsSuccess()
         {
             new ProfileBuilder().WithUserName("Alice").WithDisplayName("Alice").BuildAndSave(_database);

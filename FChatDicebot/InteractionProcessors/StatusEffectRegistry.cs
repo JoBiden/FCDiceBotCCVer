@@ -1,3 +1,4 @@
+using FChatDicebot.InteractionProcessors.StatusEffectContributors;
 using System.Collections.Generic;
 
 namespace FChatDicebot.InteractionProcessors
@@ -25,9 +26,8 @@ namespace FChatDicebot.InteractionProcessors
         {
             if (_initialized) return;
 
-            // Contributors are added here as their feature lands. Until the first consequence
-            // interaction (odorize / dose / break / infest / corrupt / curse) is implemented,
-            // this list is intentionally empty — the helper degrades to an empty result.
+            // Contributors are added here as their feature lands.
+            RegisterContributor(new OdorizeStatusContributor(MonDB.GetDatabase()));
 
             _initialized = true;
         }
