@@ -26,6 +26,7 @@ Design + as-implemented documentation for the Chateau Contract interaction syste
 |------|----------|------------|
 | [Breed-and-Birth](Breed-and-Birth.md) | `!birth` (paired, time-gated) | NPC-System (optional, currently unshipped) |
 | [Corrupt-and-Purify](Corrupt-and-Purify.md) | `!purify` (single shared processor) | Status-Effect-Hook |
+| [Train](Train.md) | none | — |
 
 ### Consequence
 

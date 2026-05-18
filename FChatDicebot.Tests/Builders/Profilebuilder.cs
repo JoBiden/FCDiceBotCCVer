@@ -27,7 +27,8 @@ namespace FChatDicebot.Tests.Builders
                 timers = new Dictionary<string, CoolDown>(),
                 currencies = new Dictionary<string, int>(),
                 jobExperience = new Dictionary<string, int>(),
-                milkInventory = new List<MilkBottle>()
+                milkInventory = new List<MilkBottle>(),
+                trainings = new Dictionary<string, int>()
             };
         }
 
@@ -93,6 +94,12 @@ namespace FChatDicebot.Tests.Builders
             return this;
         }
 
+        public ProfileBuilder WithTrainingLevel(string trainingId, int level)
+        {
+            _profile.trainings[trainingId] = level;
+            return this;
+        }
+
         /// <summary>
         /// Returns the built profile without saving to database.
         /// Useful for testing validation logic.
@@ -123,6 +130,7 @@ namespace FChatDicebot.Tests.Builders
             registeredProfile.currencies = _profile.currencies;
             registeredProfile.jobExperience = _profile.jobExperience;
             registeredProfile.milkInventory = _profile.milkInventory;
+            registeredProfile.trainings = _profile.trainings;
 
             // Now save with the correct _id
             database.SetProfile(_profile.userName, registeredProfile);

@@ -42,6 +42,7 @@ namespace FChatDicebot.InteractionProcessors
             RegisterProcessor(new EmployProcessor());
             RegisterProcessor(new BondProcessor());
             RegisterProcessor(new BreedProcessor());
+            RegisterProcessor(new TrainProcessor());
             // CorruptionProcessor backs both !corrupt and !purify — same instance under
             // two type keys so each verb routes to the shared sign-aware logic.
             var corruption = new CorruptionProcessor();
