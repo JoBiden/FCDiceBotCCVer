@@ -2,6 +2,7 @@ using FChatDicebot.Database;
 using FChatDicebot.Model;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace FChatDicebot.InteractionProcessors.Commitment
 {
@@ -119,6 +120,11 @@ namespace FChatDicebot.InteractionProcessors.Commitment
             if (monsterIdentifier == null)
             {
                 return ValidationResult.Failure(ChateauInteractionHandler.notFoundText(identifier));
+            }
+            if (monsterIdentifier.categories == null
+                || !monsterIdentifier.categories.Contains("monster", StringComparer.OrdinalIgnoreCase))
+            {
+                return ValidationResult.Failure(ChateauInteractionHandler.typeNotFoundText("monster"));
             }
 
             return ValidationResult.Success();
