@@ -31,9 +31,7 @@ The shipped Tier 0 infra ([Status-Effect-Hook](../Infrastructure/Status-Effect-H
 
 ### Tier 2 — Commitment interactions
 
-| Spec | Reversal | Depends on |
-|------|----------|------------|
-| [Train](Train.md) | — | — |
+*(All currently-designed Commitment specs have shipped. See [`specs/README.md`](../README.md) for the as-implemented docs.)*
 
 ### Tier 3 — Consequence interactions
 

@@ -39,6 +39,11 @@ namespace FChatDicebot.Model
         // the empty bottles needed to milk; the player's "bottle" tally from selling lives
         // in the standard `currencies` dict under ChateauCurrency.BottleCurrency.
         public List<MilkBottle> milkInventory { get; set; } = new List<MilkBottle>();
+
+        // Per-training skill levels (0-100). Key is the training identifier (e.g. "magic"),
+        // value is the current level. Populated by TrainProcessor; consumed by !work for
+        // task selection / compensation modifiers.
+        public Dictionary<string, int> trainings { get; set; } = new Dictionary<string, int>();
     }
 
     public class Pregnancy
