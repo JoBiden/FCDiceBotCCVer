@@ -44,6 +44,14 @@ namespace FChatDicebot.Model
         // value is the current level. Populated by TrainProcessor; consumed by !work for
         // task selection / compensation modifiers.
         public Dictionary<string, int> trainings { get; set; } = new Dictionary<string, int>();
+
+        // Per-day climax tally for the climaxer (the person actually orgasming). Key is
+        // "yyyy-MM-dd" in UTC; value is how many times this profile climaxed that day.
+        // Populated by ClimaxforProcessor for both !climaxfor and !climax. Drives the
+        // daily-streak titles (Endurance / Tireless / Inhuman) and weights the flavor
+        // descriptor selection. Old entries are pruned on write (keep last 30 days).
+        [BsonIgnoreIfNull]
+        public Dictionary<string, int> dailyClimaxCounts { get; set; } = new Dictionary<string, int>();
     }
 
     public class Pregnancy

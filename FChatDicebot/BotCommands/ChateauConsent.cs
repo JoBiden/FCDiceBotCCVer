@@ -217,6 +217,10 @@ namespace FChatDicebot.BotCommands
                 case "feed": return ("feedgive", "feedtake");
                 case "golden": return ("goldengive", "goldentake");
                 case "dressup": return ("dressupgive", "dressuptake");
+                // climaxfor: initiator = climaxer = climaxtake; recipient = partner = climaxgive
+                case "climaxfor": return ("climaxtake", "climaxgive");
+                // climax: roles are inverted from climaxfor (recipient is the climaxer)
+                case "climax": return ("climaxgive", "climaxtake");
                 default: return (string.Empty, string.Empty);
             }
         }

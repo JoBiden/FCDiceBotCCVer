@@ -28,7 +28,8 @@ namespace FChatDicebot.Tests.Builders
                 currencies = new Dictionary<string, int>(),
                 jobExperience = new Dictionary<string, int>(),
                 milkInventory = new List<MilkBottle>(),
-                trainings = new Dictionary<string, int>()
+                trainings = new Dictionary<string, int>(),
+                dailyClimaxCounts = new Dictionary<string, int>()
             };
         }
 
@@ -100,6 +101,12 @@ namespace FChatDicebot.Tests.Builders
             return this;
         }
 
+        public ProfileBuilder WithDailyClimaxCount(string utcDayKey, int count)
+        {
+            _profile.dailyClimaxCounts[utcDayKey] = count;
+            return this;
+        }
+
         /// <summary>
         /// Returns the built profile without saving to database.
         /// Useful for testing validation logic.
@@ -131,6 +138,7 @@ namespace FChatDicebot.Tests.Builders
             registeredProfile.jobExperience = _profile.jobExperience;
             registeredProfile.milkInventory = _profile.milkInventory;
             registeredProfile.trainings = _profile.trainings;
+            registeredProfile.dailyClimaxCounts = _profile.dailyClimaxCounts;
 
             // Now save with the correct _id
             database.SetProfile(_profile.userName, registeredProfile);

@@ -373,6 +373,10 @@
     <Compile Include="InteractionProcessors\StatusEffectContributors\CorruptionStatusContributor.cs" />
     <Compile Include="InteractionProcessors\Involved\PaymentGiveProcessor.cs" />
     <Compile Include="InteractionProcessors\Involved\PaymentReceiveProcessor.cs" />
+    <Compile Include="InteractionProcessors\Involved\ClimaxforProcessor.cs" />
+    <Compile Include="InteractionProcessors\Involved\ClimaxCommandSupport.cs" />
+    <Compile Include="BotCommands\ChateauClimaxfor.cs" />
+    <Compile Include="BotCommands\ChateauClimax.cs" />
     <Compile Include="Model\ChateauDB.cs" />
     <Compile Include="Model\MilkBottle.cs" />
     <Compile Include="ChateauCurrency.cs" />
