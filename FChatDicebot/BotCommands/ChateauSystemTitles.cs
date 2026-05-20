@@ -26,6 +26,7 @@ namespace FChatDicebot
 
             // Check all title criteria
             newTitles.AddRange(CheckInteractionCountTitles(profile));
+            newTitles.AddRange(CheckDailyClimaxTitles(profile));
 
             // Future: Add more title check methods here as we implement them
             // newTitles.AddRange(CheckBondTitles(profile));
@@ -195,13 +196,14 @@ namespace FChatDicebot
                 ("dressuptake", 10, "Full Wardrobe"),
                 ("dressuptake", 25, "Never Out Of Style"),
 
-                //might need to refactor for different climax types
-                // Climax - giving
+                // Climax - giving (the partner role: helped someone else climax via
+                // !climaxfor with you as the recipient, or !climax with you as the initiator)
                 ("climaxgive", 5, "Generous Lover"),
                 ("climaxgive", 10, "Cum Collector"),
                 ("climaxgive", 25, "CliMAX"),
 
-                // Climax - taking
+                // Climax - taking (the climaxer role: the person actually orgasming, via
+                // !climaxfor as initiator, !climax as recipient, or any self-target)
                 ("climaxtake", 1, "Drank The Juice"),
                 ("climaxtake", 5, "Cum Again?"),
                 ("climaxtake", 10, "Came Buckets"),
@@ -448,6 +450,55 @@ namespace FChatDicebot
                         earnedTitles.Add(milestone.titleText);
                     }
                 }
+            }
+
+            return earnedTitles;
+        }
+
+        /// <summary>
+        /// Check for titles earned by climaxing many times within the same Chateau day.
+        /// Unlike the lifetime-count titles, these gate on today's entry in
+        /// <see cref="Profile.dailyClimaxCounts"/> (set by ClimaxforProcessor for the
+        /// person actually orgasming). Each tier is awarded once-ever; reaching the
+        /// threshold again on a later day surfaces flavor in the completion text but
+        /// does not re-award the title.
+        /// </summary>
+        private static List<string> CheckDailyClimaxTitles(Profile profile)
+        {
+            List<string> earnedTitles = new List<string>();
+
+            if (profile.dailyClimaxCounts == null) return earnedTitles;
+            if (profile.titles == null)
+            {
+                profile.titles = new List<Title>();
+            }
+
+            string todayKey = DateTime.UtcNow.Date.ToString("yyyy-MM-dd");
+            if (!profile.dailyClimaxCounts.TryGetValue(todayKey, out int todayCount)) return earnedTitles;
+
+            var dailyMilestones = new List<(int threshold, string titleText)>
+            {
+                (3,  "Rule of Three"),
+                (5,  "Can Go All Night"),
+                (10, "Inhuman Stamina"),
+            };
+
+            foreach (var milestone in dailyMilestones)
+            {
+                if (todayCount < milestone.threshold) continue;
+
+                bool alreadyHasTitle = profile.titles.Any(t =>
+                    t.IsSystemTitle &&
+                    t.titleText.Equals(milestone.titleText, StringComparison.OrdinalIgnoreCase));
+                if (alreadyHasTitle) continue;
+
+                profile.titles.Add(new Title
+                {
+                    titleText = milestone.titleText,
+                    givenBy = "Chateau",
+                    grantedTime = DateTime.UtcNow,
+                });
+                earnedTitles.Add(milestone.titleText);
             }
 
             return earnedTitles;

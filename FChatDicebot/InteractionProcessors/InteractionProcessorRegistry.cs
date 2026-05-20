@@ -56,6 +56,11 @@ namespace FChatDicebot.InteractionProcessors
             RegisterProcessor(new MilkProcessor());
             RegisterProcessor(new PaymentGiveProcessor());
             RegisterProcessor(new PaymentReceiveProcessor());
+            // ClimaxforProcessor backs both !climaxfor and !climax — same instance under
+            // two type keys; the typed verb decides who's credited as the climaxer.
+            var climaxfor = new ClimaxforProcessor();
+            RegisterProcessor(climaxfor);
+            RegisterProcessor(ClimaxforProcessor.ClimaxType, climaxfor);
 
             //consequence interactions
             RegisterProcessor(new MonsterizeProcessor());
