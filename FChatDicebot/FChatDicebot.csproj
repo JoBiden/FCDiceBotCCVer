@@ -344,6 +344,7 @@
     <Compile Include="InteractionProcessors\Casual\SpankProcessor.cs" />
     <Compile Include="InteractionProcessors\Commitment\EntitleProcessor.cs" />
     <Compile Include="InteractionProcessors\Commitment\MarkProcessor.cs" />
+    <Compile Include="InteractionProcessors\IdentifierPayload.cs" />
     <Compile Include="InteractionProcessors\IInteractionProcessor.cs" />
     <Compile Include="InteractionProcessors\InteractionProcessorBase.cs" />
     <Compile Include="InteractionProcessors\InteractionProcessorRegistry.cs" />

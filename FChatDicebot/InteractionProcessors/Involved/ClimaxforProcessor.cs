@@ -409,35 +409,31 @@ namespace FChatDicebot.InteractionProcessors.Involved
         // -----------------------------------------------------------------------
         // Identifier payload helpers.
         //
-        // The Interaction model has no dedicated typeKey/daily-count slot, so we use
-        // the identifier field as a "{typeKey}|{dailyCount}" payload. The command-time
-        // shape is the typeKey alone (no pipe); the processor overwrites with the full
-        // composite before GetCompletionMessage runs so the message can render the
-        // right wording for whichever verb the user typed.
+        // Thin façade over the shared <see cref="IdentifierPayload"/> encoder, applying
+        // climax-specific normalization (the head is constrained to either ClimaxforType
+        // or ClimaxType, missing daily count → 1). New processors that need to carry a
+        // per-call number alongside a verb should reuse <see cref="IdentifierPayload"/>
+        // directly rather than recreating this pipe encoder.
         // -----------------------------------------------------------------------
 
         public static string ComposeIdentifier(string typeKey, int dailyCount)
         {
             string safeType = string.IsNullOrEmpty(typeKey) ? ClimaxforType : typeKey;
-            return safeType + "|" + dailyCount.ToString();
+            return IdentifierPayload.Compose(safeType, dailyCount);
         }
 
         public static string ParseTypeFromIdentifier(string identifier)
         {
-            if (string.IsNullOrEmpty(identifier)) return ClimaxforType;
-            int pipe = identifier.IndexOf('|');
-            string raw = pipe < 0 ? identifier : identifier.Substring(0, pipe);
+            string raw = IdentifierPayload.ExtractHead(identifier);
             if (string.Equals(raw, ClimaxType, StringComparison.OrdinalIgnoreCase)) return ClimaxType;
             return ClimaxforType;
         }
 
         public static int ParseDailyCountFromIdentifier(string identifier)
         {
-            if (string.IsNullOrEmpty(identifier)) return 1;
-            int pipe = identifier.IndexOf('|');
-            if (pipe < 0 || pipe >= identifier.Length - 1) return 1;
-            string countPart = identifier.Substring(pipe + 1);
-            return int.TryParse(countPart, out int value) && value > 0 ? value : 1;
+            // Daily count is always positive; non-positive values are treated as missing.
+            if (!IdentifierPayload.TryExtractTail(identifier, out int value) || value <= 0) return 1;
+            return value;
         }
     }
 }

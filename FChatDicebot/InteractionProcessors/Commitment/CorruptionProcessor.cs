@@ -401,32 +401,29 @@ namespace FChatDicebot.InteractionProcessors.Commitment
         // -----------------------------------------------------------------------
         // Identifier payload helpers.
         //
-        // The Interaction model has no per-call magnitude slot, so we piggyback the
-        // identifier field as a compact "{verb}|{magnitude}" payload. The command writes
-        // the *requested* magnitude there; ProcessInteraction overwrites it with the
-        // *applied* magnitude so GetCompletionMessage (called immediately after with the
-        // same in-memory PendingCommand) reports the truthful clamped value.
+        // Thin façade over the shared <see cref="IdentifierPayload"/> encoder, applying
+        // corruption-specific defaults (missing verb → "corrupt", missing or negative
+        // magnitude → 1). New processors that need to carry a per-call number alongside
+        // a verb should reuse <see cref="IdentifierPayload"/> directly rather than
+        // recreating this pipe encoder.
         // -----------------------------------------------------------------------
 
         public static string ComposeIdentifier(string verb, int magnitude)
         {
-            return verb + "|" + magnitude.ToString();
+            return IdentifierPayload.Compose(verb, magnitude);
         }
 
         public static string ParseVerbFromIdentifier(string identifier)
         {
-            if (string.IsNullOrEmpty(identifier)) return CorruptType;
-            int pipe = identifier.IndexOf('|');
-            return pipe < 0 ? identifier : identifier.Substring(0, pipe);
+            return IdentifierPayload.ExtractHead(identifier) ?? CorruptType;
         }
 
         public static int ParseMagnitudeFromIdentifier(string identifier)
         {
-            if (string.IsNullOrEmpty(identifier)) return 1;
-            int pipe = identifier.IndexOf('|');
-            if (pipe < 0 || pipe >= identifier.Length - 1) return 1;
-            string magPart = identifier.Substring(pipe + 1);
-            return int.TryParse(magPart, out int value) && value >= 0 ? value : 1;
+            // Corruption rejects negative magnitudes (direction lives on the verb), so a
+            // stray negative tail collapses back to the default 1.
+            if (!IdentifierPayload.TryExtractTail(identifier, out int value) || value < 0) return 1;
+            return value;
         }
     }
 }
