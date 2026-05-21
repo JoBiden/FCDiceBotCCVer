@@ -52,7 +52,7 @@ namespace FChatDicebot.InteractionProcessors.Consequence
                 string remaining = Utils.GetTimeSpanPrint(timer.timerEnd - DateTime.UtcNow);
                 return ValidationResult.Failure(
                     "You're trying to monsterize " + recipientName + " but they only recently changed to the monster they currently are! "
-                    + "Please respect that 'Commitment' interactions are meant to be just that - a commitment. Wait a little longer before you change their form again. \n\n"
+                    + "Please respect that 'Consequence' interactions are also a Commitment. Wait a little longer before you change their form again. \n\n"
                     + recipientName + " will be available to monsterize in " + remaining);
             }
 
@@ -101,7 +101,7 @@ namespace FChatDicebot.InteractionProcessors.Consequence
             Identifier monsterIdentifier = MonDB.getIdentifier(identifier);
             string monsterText = monsterIdentifier != null ? monsterIdentifier.description : identifier;
 
-            return initiatorProfile.displayName + " is going to transform " + recipientProfile.displayName + " into " + Utils.AnOrA(identifier) + " " + identifier + "! [b]This should not be taken lightly, and can not be done frequently.[/b] Do you !consent to your new form?";
+            return initiatorProfile.displayName + " is going to transform " + recipientProfile.displayName + " into " + Utils.AnOrA(identifier) + " " + identifier + "! [b]This should not be taken lightly, and can not be done frequently. The capabilities of your new body might be referenced in flavor text and !work checks.[/b] Do you !consent to your new form?";
         }
     }
 }
