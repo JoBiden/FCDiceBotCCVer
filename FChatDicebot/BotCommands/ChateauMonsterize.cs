@@ -36,49 +36,46 @@ namespace FChatDicebot.BotCommands
         {
             string recipient = commandController.GetUserNameFromCommandTerms(rawTerms);
             string monsterType = commandController.GetIdentifierFromCommandTerms(rawTerms, "monster");
-            Profile recipientProfile = MonDB.getProfile(recipient);
             Profile initiatorProfile = MonDB.getProfile(characterName);
-            Boolean valid = true;
-            if (recipientProfile == null)
-            {
-                bot.SendPrivateMessage(ChateauInteractionHandler.notFoundText(recipient), characterName);
-                valid = false;
-            } 
-            else if (monsterType == null)
+
+            // Delegate validation to the processor so the command-time check uses the same
+            // rules (profile existence, monster-identifier required, recipient-cooldown
+            // recheck) as the consent-time path. Validation can fail because the recipient
+            // was not found OR because monster-identifier was not supplied — keep the
+            // pre-check on the identifier separately so the typed error wording matches.
+            if (monsterType == null)
             {
                 bot.SendPrivateMessage(ChateauInteractionHandler.typeNotFoundText("monster"), characterName);
-                valid = false;
+                return;
             }
-            else if (recipientProfile.timers.ContainsKey("monsterize")) { 
 
-                if (recipientProfile.timers["monsterize"].timerEnd.CompareTo(DateTime.UtcNow) > 0) //recipient was monsterized too recently
-                {
-                    string tooSoonText = "You're trying to monsterize " + recipientProfile.displayName + " but they only recently changed to the monster they currently are! Please respect that 'Commitment' interactions are meant to be just that - a commitment. Wait a little longer before you change their form again. \n\n"
-                      + recipientProfile.displayName + " will be available to monsterize in " + Utils.GetTimeSpanPrint(recipientProfile.timers["monsterize"].timerEnd - DateTime.UtcNow);
-                    bot.SendPrivateMessage(tooSoonText, characterName);
-                    valid = false;
-                } 
-            }
-            if (valid)
+            var processor = (InteractionProcessors.Consequence.MonsterizeProcessor)
+                InteractionProcessors.InteractionProcessorRegistry.GetProcessor("monsterize");
+            var validation = processor.ValidateInteraction(characterName, recipient, monsterType);
+            if (!validation.IsValid)
             {
-                string message = initiatorProfile.displayName + " is going to transform " + recipientProfile.displayName + " into " + Utils.AnOrA(monsterType) + " " + monsterType + "! [b]This should not be taken lightly, and can not be done frequently.[/b] Do you !consent to your new form?";
-
-                Interaction monsterize = new Interaction();
-                monsterize.initiator = characterName;
-                monsterize.recipient = recipient;
-                monsterize.type = "monsterize";
-                monsterize.identifier = monsterType;
-                monsterize.investmentLevel = "consequence";
-                monsterize.interactionTime = DateTime.UtcNow;
-
-                PendingCommand pendingMonsterize = new PendingCommand();
-                pendingMonsterize.pendingInteraction = monsterize;
-                pendingMonsterize.awaitingConsentFrom = recipient;
-
-                MonDB.addPendingCommand(pendingMonsterize);
-
-                bot.SendMessageInChannel(message, channel);
+                bot.SendPrivateMessage(validation.ErrorMessage, characterName);
+                return;
             }
+
+            Profile recipientProfile = MonDB.getProfile(recipient);
+            string message = initiatorProfile.displayName + " is going to transform " + recipientProfile.displayName + " into " + Utils.AnOrA(monsterType) + " " + monsterType + "! [b]This should not be taken lightly, and can not be done frequently.[/b] Do you !consent to your new form?";
+
+            Interaction monsterize = new Interaction();
+            monsterize.initiator = characterName;
+            monsterize.recipient = recipient;
+            monsterize.type = "monsterize";
+            monsterize.identifier = monsterType;
+            monsterize.investmentLevel = "consequence";
+            monsterize.interactionTime = DateTime.UtcNow;
+
+            PendingCommand pendingMonsterize = new PendingCommand();
+            pendingMonsterize.pendingInteraction = monsterize;
+            pendingMonsterize.awaitingConsentFrom = recipient;
+
+            MonDB.addPendingCommand(pendingMonsterize);
+
+            bot.SendMessageInChannel(message, channel);
         }
     }
 }

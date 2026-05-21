@@ -35,6 +35,13 @@ namespace FChatDicebot.InteractionProcessors.Consequence
             }
         }
 
+        /// <summary>
+        /// Profile-key under which the 1-day re-objectify lock is stored on the recipient.
+        /// Exposed so the command's pre-check and the processor's recheck consult the same
+        /// timer and can't drift.
+        /// </summary>
+        public const string CooldownTimerKey = "objectify";
+
         public override ValidationResult ValidateInteraction(string initiator, string recipient, string identifier)
         {
             var baseValidation = base.ValidateInteraction(initiator, recipient, identifier);
@@ -46,6 +53,22 @@ namespace FChatDicebot.InteractionProcessors.Consequence
             if (string.IsNullOrEmpty(identifier))
             {
                 return ValidationResult.Failure(ChateauInteractionHandler.typeNotFoundText("object"));
+            }
+
+            // Recipient already objectified too recently — rejection lives here (not in
+            // the command) so a stray pending that races past the command-time check
+            // still gets gated at consent time.
+            Profile recipientProfile = Database.GetProfile(recipient);
+            if (recipientProfile?.timers != null
+                && recipientProfile.timers.TryGetValue(CooldownTimerKey, out var timer)
+                && timer.timerEnd > DateTime.UtcNow)
+            {
+                string recipientName = recipientProfile.displayName ?? recipient;
+                return ValidationResult.Failure(
+                    "You're trying to objectify " + recipientName + " but they were recently objectified! "
+                    + "Please respect that 'Commitment' interactions are meant to be just that - a commitment. Wait a little longer for them to recover before you objectify them again. \n\n"
+                    + recipientName + " will be available to objectify no sooner than " + timer.timerEnd
+                    + " (the current time is " + DateTime.UtcNow + ")");
             }
 
             return ValidationResult.Success();

@@ -37,6 +37,50 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
         }
 
         [Fact]
+        public void ValidateInteraction_NoObjectTypeProvided_ReturnsFailure()
+        {
+            new ProfileBuilder().WithUserName("Alice").BuildAndSave(_database);
+            new ProfileBuilder().WithUserName("Bob").BuildAndSave(_database);
+
+            var result = _processor.ValidateInteraction("Alice", "Bob", "");
+
+            Assert.False(result.IsValid);
+        }
+
+        [Fact]
+        public void ValidateInteraction_RecipientOnActiveCooldown_ReturnsFailure()
+        {
+            // The processor's own cooldown gate (relocated from the command) — a stray
+            // pending that races past the command-time check must still be rejected here.
+            new ProfileBuilder().WithUserName("Alice").BuildAndSave(_database);
+            new ProfileBuilder()
+                .WithUserName("Bob")
+                .WithDisplayName("Bob")
+                .WithTimer(ObjectifyProcessor.CooldownTimerKey, DateTime.UtcNow.AddHours(6))
+                .BuildAndSave(_database);
+
+            var result = _processor.ValidateInteraction("Alice", "Bob", "chair");
+
+            Assert.False(result.IsValid);
+            Assert.Contains("objectify", result.ErrorMessage);
+            Assert.Contains("Bob", result.ErrorMessage);
+        }
+
+        [Fact]
+        public void ValidateInteraction_RecipientExpiredCooldown_Allowed()
+        {
+            new ProfileBuilder().WithUserName("Alice").BuildAndSave(_database);
+            new ProfileBuilder()
+                .WithUserName("Bob")
+                .WithTimer(ObjectifyProcessor.CooldownTimerKey, DateTime.UtcNow.AddHours(-2))
+                .BuildAndSave(_database);
+
+            var result = _processor.ValidateInteraction("Alice", "Bob", "chair");
+
+            Assert.True(result.IsValid);
+        }
+
+        [Fact]
         public void ProcessInteraction_SetsObjectType()
         {
             // Arrange
