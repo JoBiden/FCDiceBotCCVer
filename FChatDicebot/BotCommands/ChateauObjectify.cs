@@ -62,7 +62,6 @@ namespace FChatDicebot.BotCommands
             }
 
             Profile recipientProfile = MonDB.getProfile(recipient);
-            string message = initiatorProfile.displayName + " is going to turn " + recipientProfile.displayName + " into some sort of " + objectType + "! [b]This should not be taken lightly, and can not be done frequently.[/b] Do you !consent to becoming an object?";
 
             Interaction objectifyInteraction = new Interaction();
             objectifyInteraction.initiator = characterName;
@@ -78,6 +77,8 @@ namespace FChatDicebot.BotCommands
 
             MonDB.addPendingCommand(pendingObjectify);
 
+            // Delegate consent wording to the processor so it stays in one place.
+            string message = processor.GetConsentWarning(initiatorProfile, recipientProfile, objectType);
             bot.SendMessageInChannel(message, channel);
         }
     }
