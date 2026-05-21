@@ -10,7 +10,7 @@ namespace FChatDicebot.InteractionProcessors.Consequence
     public class EmployProcessor : InteractionProcessorBase
     {
         public override string InteractionType => "employ";
-        public override string InvestmentLevel => "consequence";
+        public override string InvestmentLevel => "commitment";
 
         public EmployProcessor(IChateauDatabase database) : base(database)
         {

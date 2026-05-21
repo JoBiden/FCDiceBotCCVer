@@ -11,7 +11,7 @@ namespace FChatDicebot.InteractionProcessors.Consequence
     public class PlantProcessor : InteractionProcessorBase
     {
         public override string InteractionType => "plant";
-        public override string InvestmentLevel => "consequence";
+        public override string InvestmentLevel => "commitment";
 
         public PlantProcessor(IChateauDatabase database) : base(database)
         {

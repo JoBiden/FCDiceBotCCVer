@@ -31,9 +31,9 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
         }
 
         [Fact]
-        public void InvestmentLevel_ReturnsConsequence()
+        public void InvestmentLevel_ReturnsCommitment()
         {
-            Assert.Equal("consequence", _processor.InvestmentLevel);
+            Assert.Equal("commitment", _processor.InvestmentLevel);
         }
 
         [Fact]

@@ -10,7 +10,7 @@ namespace FChatDicebot.InteractionProcessors.Consequence
     public class ObjectifyProcessor : InteractionProcessorBase
     {
         public override string InteractionType => "objectify";
-        public override string InvestmentLevel => "consequence";
+        public override string InvestmentLevel => "commitment";
 
         public ObjectifyProcessor(IChateauDatabase database) : base(database)
         {

@@ -68,7 +68,7 @@ namespace FChatDicebot.BotCommands
                 monsterize.recipient = recipient;
                 monsterize.type = "monsterize";
                 monsterize.identifier = monsterType;
-                monsterize.investmentLevel = "commitment";
+                monsterize.investmentLevel = "consequence";
                 monsterize.interactionTime = DateTime.UtcNow;
 
                 PendingCommand pendingMonsterize = new PendingCommand();
