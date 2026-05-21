@@ -76,7 +76,7 @@ namespace FChatDicebot.BotCommands
                         //get completion message
                         Profile initProfile = MonDB.getProfile(toConsent.pendingInteraction.initiator);
                         Profile recipProfile = MonDB.getProfile(toConsent.pendingInteraction.recipient);
-                        channelMessage += processor.GetCompletionMessage(initProfile, recipProfile, toConsent.pendingInteraction.identifier);
+                        channelMessage += processor.GetCompletionMessageWithStatusEffects(initProfile, recipProfile, toConsent.pendingInteraction.identifier);
                         channelMessage += CheckRateLimitsAndGetMessage(toConsent.pendingInteraction);
 
                         // Drain any out-of-band private note the processor wants sent to
@@ -116,7 +116,7 @@ namespace FChatDicebot.BotCommands
                     // Get the completion message
                     Profile initProfile = MonDB.getProfile(toConsent.pendingInteraction.initiator);
                     Profile recipProfile = MonDB.getProfile(toConsent.pendingInteraction.recipient);
-                    channelMessage += processor.GetCompletionMessage(initProfile, recipProfile, toConsent.pendingInteraction.identifier);
+                    channelMessage += processor.GetCompletionMessageWithStatusEffects(initProfile, recipProfile, toConsent.pendingInteraction.identifier);
                     channelMessage += CheckRateLimitsAndGetMessage(toConsent.pendingInteraction);
 
                     // Drain any out-of-band private note the processor wants sent to

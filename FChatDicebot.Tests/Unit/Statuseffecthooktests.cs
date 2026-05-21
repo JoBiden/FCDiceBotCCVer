@@ -285,6 +285,74 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
             Assert.True(result.IsValid);
         }
 
+        // -------------------------------------------------------------------
+        // GetCompletionMessageWithStatusEffects wrapper
+        // -------------------------------------------------------------------
+
+        [Fact]
+        public void CompletionWrapper_AppendsCompletionFragments_WithSingleSpace()
+        {
+            StatusEffectRegistry.RegisterContributor(new FakeContributor(completionAppendix: "[aura]"));
+
+            var initiator = new ProfileBuilder().WithUserName("Alice").WithDisplayName("Alice").Build();
+            var recipient = new ProfileBuilder().WithUserName("Bob").WithDisplayName("Bob").Build();
+
+            string result = _processor.GetCompletionMessageWithStatusEffects(initiator, recipient, identifier: "");
+
+            // Base test-processor message ends with "." — fragment should follow on the same line.
+            Assert.EndsWith("test-interacts with Bob. [aura]", result);
+        }
+
+        [Fact]
+        public void CompletionWrapper_EmptyBaseMessage_StaysEmpty_NoLeadingSpace()
+        {
+            // Some processors (e.g. milk's TOCTOU clamp-to-zero path) intentionally suppress
+            // channel output by returning empty from GetCompletionMessage. The wrapper must
+            // honor that — surfacing a stray "[aura]" with no host sentence would be a bug.
+            StatusEffectRegistry.RegisterContributor(new FakeContributor(completionAppendix: "[aura]"));
+
+            var initiator = new ProfileBuilder().WithUserName("Alice").Build();
+            var recipient = new ProfileBuilder().WithUserName("Bob").Build();
+            var suppressing = new SuppressingProcessor(_database);
+
+            string result = suppressing.GetCompletionMessageWithStatusEffects(initiator, recipient, identifier: "");
+
+            Assert.Equal(string.Empty, result);
+        }
+
+        [Fact]
+        public void CompletionWrapper_DefaultSubject_IsRecipient()
+        {
+            // The contributor checks whose userName it was handed and only fires for "Bob".
+            // If the wrapper defaulted to the initiator we'd see an empty result instead.
+            StatusEffectRegistry.RegisterContributor(
+                new UserNameGatedContributor(expectedUserName: "Bob", completionAppendix: "[bob-aura]"));
+
+            var initiator = new ProfileBuilder().WithUserName("Alice").WithDisplayName("Alice").Build();
+            var recipient = new ProfileBuilder().WithUserName("Bob").WithDisplayName("Bob").Build();
+
+            string result = _processor.GetCompletionMessageWithStatusEffects(initiator, recipient, identifier: "");
+
+            Assert.EndsWith("[bob-aura]", result);
+        }
+
+        [Fact]
+        public void CompletionWrapper_OverrideRedirectsToInitiator()
+        {
+            // Subclass override of GetStatusEffectSubject swaps the default recipient
+            // subject for the initiator — verifies the climaxer-style override pattern.
+            StatusEffectRegistry.RegisterContributor(
+                new UserNameGatedContributor(expectedUserName: "Alice", completionAppendix: "[alice-aura]"));
+
+            var initiator = new ProfileBuilder().WithUserName("Alice").WithDisplayName("Alice").Build();
+            var recipient = new ProfileBuilder().WithUserName("Bob").WithDisplayName("Bob").Build();
+            var initiatorSubjectProcessor = new InitiatorSubjectProcessor(_database);
+
+            string result = initiatorSubjectProcessor.GetCompletionMessageWithStatusEffects(initiator, recipient, identifier: "");
+
+            Assert.EndsWith("[alice-aura]", result);
+        }
+
         // ===================================================================
         // Test doubles
         // ===================================================================
@@ -417,6 +485,71 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
                 });
                 return fragments;
             }
+        }
+
+        /// <summary>
+        /// Contributor that fires only when the profile it's handed has a specific userName.
+        /// Used by the wrapper subject-selection tests to assert that the wrapper routed the
+        /// right profile to contributors.
+        /// </summary>
+        private class UserNameGatedContributor : IStatusEffectContributor
+        {
+            private readonly string _expectedUserName;
+            private readonly string _completionAppendix;
+
+            public UserNameGatedContributor(string expectedUserName, string completionAppendix)
+            {
+                _expectedUserName = expectedUserName;
+                _completionAppendix = completionAppendix;
+            }
+
+            public StatusEffectFragments Contribute(
+                Profile profile, StatusEffectCallSite callSite, string interactionType, bool isInitiator)
+            {
+                var fragments = new StatusEffectFragments();
+                if (profile == null || profile.userName != _expectedUserName) return fragments;
+                if (callSite != StatusEffectCallSite.Completion) return fragments;
+                fragments.CompletionAppendix.Add(_completionAppendix);
+                return fragments;
+            }
+        }
+
+        /// <summary>
+        /// Processor whose GetCompletionMessage returns empty — mirrors milk's TOCTOU
+        /// clamp-to-zero path. The wrapper should leave this empty (no leading whitespace,
+        /// no stray fragment).
+        /// </summary>
+        private class SuppressingProcessor : InteractionProcessorBase
+        {
+            public override string InteractionType => "suppressing";
+            public override string InvestmentLevel => "casual";
+
+            public SuppressingProcessor(IChateauDatabase database) : base(database) { }
+
+            public override string ProcessInteraction(PendingCommand command) => InteractionType;
+            public override string GetCompletionMessage(Profile initiatorProfile, Profile recipientProfile, string identifier)
+                => string.Empty;
+        }
+
+        /// <summary>
+        /// Processor that overrides GetStatusEffectSubject to return the initiator. Used to
+        /// verify the climax-style override pattern routes status effects away from the
+        /// default recipient.
+        /// </summary>
+        private class InitiatorSubjectProcessor : InteractionProcessorBase
+        {
+            public override string InteractionType => "initiatorsubject";
+            public override string InvestmentLevel => "casual";
+
+            public InitiatorSubjectProcessor(IChateauDatabase database) : base(database) { }
+
+            public override string ProcessInteraction(PendingCommand command) => InteractionType;
+            public override string GetCompletionMessage(Profile initiatorProfile, Profile recipientProfile, string identifier)
+                => $"{initiatorProfile.displayName} acts on {recipientProfile.displayName}.";
+
+            protected override Profile GetStatusEffectSubject(
+                Profile initiatorProfile, Profile recipientProfile, string identifier)
+                => initiatorProfile;
         }
     }
 }

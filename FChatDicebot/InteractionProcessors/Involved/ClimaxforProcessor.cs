@@ -177,8 +177,10 @@ namespace FChatDicebot.InteractionProcessors.Involved
 
             // Re-read after the count helper wrote so the completion message picks up the
             // freshly-bumped totals (used by some flavor branches that key off counts).
+            // Use the status-effect-wrapped path so a self-climax surfaces the climaxer's
+            // corruption aura / scent layers just like an other-target consent flow does.
             Profile freshInitiator = Database.GetProfile(initiator);
-            return GetCompletionMessage(freshInitiator, freshInitiator, interaction.identifier);
+            return GetCompletionMessageWithStatusEffects(freshInitiator, freshInitiator, interaction.identifier);
         }
 
         public override ValidationResult ValidateInteraction(string initiator, string recipient, string identifier)
@@ -249,31 +251,30 @@ namespace FChatDicebot.InteractionProcessors.Involved
             int dailyCount = ParseDailyCountFromIdentifier(identifier);
             bool isSelf = string.Equals(initiatorProfile.userName, recipientProfile.userName, StringComparison.Ordinal);
 
-            // Climaxer profile is used for corruption flavor and (future) vice-craving
-            // suppression — both should attach to the person actually having the orgasm,
-            // not to whoever typed the command.
-            Profile climaxerProfile = string.Equals(
+            string descriptor = PickFlavorDescriptor(dailyCount);
+            // Status-effect fragments (corruption aura on the climaxer, etc.) are appended
+            // by the base wrapper GetCompletionMessageWithStatusEffects via the climaxer-
+            // aware GetStatusEffectSubject override below.
+            return ComposeOpeningSentence(typeKey, isSelf, initiatorProfile, recipientProfile, descriptor);
+        }
+
+        /// <summary>
+        /// Status-effect fragments for a climax attach to the climaxer (the person
+        /// actually having the orgasm), not whoever typed the command. For <c>!climaxfor</c>
+        /// that's the initiator; for <c>!climax</c> (the inverted reskin) that's the
+        /// recipient. Self-targets resolve to the initiator either way.
+        /// </summary>
+        protected override Profile GetStatusEffectSubject(
+            Profile initiatorProfile, Profile recipientProfile, string identifier)
+        {
+            if (initiatorProfile == null || recipientProfile == null) return recipientProfile;
+            string typeKey = ParseTypeFromIdentifier(identifier);
+            return string.Equals(
                 ResolveClimaxer(typeKey, initiatorProfile.userName, recipientProfile.userName),
                 initiatorProfile.userName,
                 StringComparison.Ordinal)
                 ? initiatorProfile
                 : recipientProfile;
-
-            string descriptor = PickFlavorDescriptor(dailyCount);
-            string sentence = ComposeOpeningSentence(typeKey, isSelf, initiatorProfile, recipientProfile, descriptor);
-
-            // Status-effect contributors (e.g. dose-craving once that lands) decorate the
-            // completion message. Per spec, the climaxer is the relevant profile here:
-            // their corruption supplies the wicked-moan flavor, and their vices are the
-            // ones briefly satisfied by the climax.
-            bool climaxerIsInitiator = ReferenceEquals(climaxerProfile, initiatorProfile);
-            var effects = GetActiveStatusEffects(
-                climaxerProfile,
-                StatusEffectCallSite.Completion,
-                isInitiator: climaxerIsInitiator);
-            sentence = AppendStatusFragments(sentence, effects.CompletionAppendix);
-
-            return sentence;
         }
 
         public override string GetConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)

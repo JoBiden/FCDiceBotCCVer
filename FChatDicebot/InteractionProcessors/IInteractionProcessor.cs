@@ -58,6 +58,14 @@ namespace FChatDicebot.InteractionProcessors
         string GetCompletionMessage(Profile initiatorProfile, Profile recipientProfile, string identifier);
 
         /// <summary>
+        /// Channel-bound entry point: returns <see cref="GetCompletionMessage"/> with any
+        /// active status-effect completion fragments appended. The consent pipeline calls
+        /// this so every interaction surfaces e.g. corruption auras / scent layers
+        /// uniformly without each processor having to wire it in itself.
+        /// </summary>
+        string GetCompletionMessageWithStatusEffects(Profile initiatorProfile, Profile recipientProfile, string identifier);
+
+        /// <summary>
         /// Drain any out-of-band private note the processor wants delivered to the
         /// initiator after <see cref="ProcessInteraction"/> ran (e.g. corrupt/purify's
         /// "your queued interaction landed but daily quota was already spent" notice).
