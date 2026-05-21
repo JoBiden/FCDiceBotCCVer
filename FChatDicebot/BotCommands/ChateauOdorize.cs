@@ -1,5 +1,6 @@
 using System;
 using FChatDicebot.BotCommands.Base;
+using FChatDicebot.InteractionProcessors;
 using FChatDicebot.InteractionProcessors.Consequence;
 using FChatDicebot.Model;
 
@@ -58,10 +59,6 @@ namespace FChatDicebot.BotCommands
                 return;
             }
 
-            string message = initiatorProfile.displayName + " is going to saturate " + recipientProfile.displayName + " with " + scentPhrase + "! "
-                + "[b]This should not be taken lightly, and can not be done frequently.[/b] "
-                + "The scent will follow them into other interactions for some time. Do you !consent to this lingering aroma?";
-
             Interaction odorize = new Interaction
             {
                 initiator = characterName,
@@ -79,6 +76,10 @@ namespace FChatDicebot.BotCommands
             };
 
             MonDB.addPendingCommand(pendingOdorize);
+
+            // Delegate consent wording to the processor so it stays in one place.
+            var processor = InteractionProcessorRegistry.GetProcessor("odorize");
+            string message = processor.GetConsentWarning(initiatorProfile, recipientProfile, scent);
             bot.SendMessageInChannel(message, channel);
         }
     }

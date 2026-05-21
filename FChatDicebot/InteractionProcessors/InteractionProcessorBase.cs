@@ -125,8 +125,57 @@ namespace FChatDicebot.InteractionProcessors
 
         /// <summary>
         /// Get the completion message. Override this to customize the message.
+        ///
+        /// This returns the processor's own message body. Callers in the consent pipeline
+        /// should use <see cref="GetCompletionMessageWithStatusEffects"/> instead, which
+        /// wraps this with the registered status-effect contributors so every interaction
+        /// surfaces e.g. corruption auras and scent layers uniformly. Tests that want to
+        /// pin a processor's bare wording (without contributor fragments) can keep calling
+        /// this directly.
         /// </summary>
         public abstract string GetCompletionMessage(Profile initiatorProfile, Profile recipientProfile, string identifier);
+
+        /// <summary>
+        /// Channel-bound entry point used by <see cref="BotCommands.ChateauConsent"/> when a
+        /// consented interaction lands: composes the processor's own
+        /// <see cref="GetCompletionMessage"/> output and then appends any active
+        /// status-effect completion fragments for the relevant subject profile.
+        ///
+        /// Default subject is the recipient (most interactions act on them, so their auras
+        /// / scents / etc. are the natural ones to surface). Processors where the relevant
+        /// party is someone else — e.g. <see cref="Involved.ClimaxforProcessor"/>, whose
+        /// climaxer can be either side depending on the typed verb — override
+        /// <see cref="GetStatusEffectSubject"/> to redirect.
+        ///
+        /// When the base message is empty (e.g. milk's TOCTOU clamp-to-zero path
+        /// suppresses channel output), status fragments are skipped — appending them would
+        /// leave a stray leading space and surface fragments that no longer have a host
+        /// sentence to attach to.
+        /// </summary>
+        public string GetCompletionMessageWithStatusEffects(
+            Profile initiatorProfile, Profile recipientProfile, string identifier)
+        {
+            string baseMessage = GetCompletionMessage(initiatorProfile, recipientProfile, identifier);
+            if (string.IsNullOrEmpty(baseMessage)) return baseMessage;
+
+            Profile subject = GetStatusEffectSubject(initiatorProfile, recipientProfile, identifier);
+            if (subject == null) return baseMessage;
+
+            bool subjectIsInitiator = ReferenceEquals(subject, initiatorProfile);
+            var effects = GetActiveStatusEffects(subject, StatusEffectCallSite.Completion, subjectIsInitiator);
+            return AppendStatusFragments(baseMessage, effects.CompletionAppendix);
+        }
+
+        /// <summary>
+        /// Returns the profile whose status effects should be surfaced on the completion
+        /// message. Default: the recipient. Override when the interaction's natural
+        /// subject is the initiator (or some other party derived from the identifier).
+        /// </summary>
+        protected virtual Profile GetStatusEffectSubject(
+            Profile initiatorProfile, Profile recipientProfile, string identifier)
+        {
+            return recipientProfile;
+        }
 
         /// <summary>
         /// Basic validation - checks that profiles exist and honors any recipient-blocking

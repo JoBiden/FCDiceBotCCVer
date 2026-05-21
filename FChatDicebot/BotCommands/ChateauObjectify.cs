@@ -35,52 +35,51 @@ namespace FChatDicebot.BotCommands
         public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
         {
             string identifierType = "object";
-            string timerString = "objectify";
             string recipient = commandController.GetUserNameFromCommandTerms(rawTerms);
             string objectType = commandController.GetIdentifierFromCommandTerms(rawTerms, identifierType);
-            Profile recipientProfile = MonDB.getProfile(recipient);
             Profile initiatorProfile = MonDB.getProfile(characterName);
-            Boolean valid = true;
-            if (recipientProfile == null)
-            {
-                bot.SendPrivateMessage(ChateauInteractionHandler.notFoundText(recipient), characterName);
-                valid = false;
-            } 
-            else if (objectType == null)
+
+            // Object-identifier pre-check stays at the command level so its error wording
+            // matches the user-facing "object" type label (the processor's own missing-
+            // identifier failure uses the same text via typeNotFoundText, but the command
+            // checks first to avoid even attempting processor lookup with a missing type).
+            if (objectType == null)
             {
                 bot.SendPrivateMessage(ChateauInteractionHandler.typeNotFoundText(identifierType), characterName);
-                valid = false;
+                return;
             }
-            else if (recipientProfile.timers.ContainsKey(timerString)) { 
 
-                if (recipientProfile.timers[timerString].timerEnd.CompareTo(DateTime.UtcNow) > 0) //recipient was plantified too recently
-                {
-                    string tooSoonText = "You're trying to objectify " + recipientProfile.displayName + " but they were recently objectified! Please respect that 'Commitment' interactions are meant to be just that - a commitment. Wait a little longer for them to recover before you objectify them again. \n\n"
-                      + recipientProfile.displayName + " will be available to objectify no sooner than " + recipientProfile.timers[timerString].timerEnd + " (the current time is " + DateTime.UtcNow + ")";
-                    bot.SendPrivateMessage(tooSoonText, characterName);
-                    valid = false;
-                } 
-            }
-            if (valid)
+            // ObjectifyProcessor's namespace is Consequence (the file lives under
+            // InteractionProcessors/Commitment but the namespace declaration predates
+            // the folder reshuffle) — using the actual declared namespace here.
+            var processor = (InteractionProcessors.Consequence.ObjectifyProcessor)
+                InteractionProcessors.InteractionProcessorRegistry.GetProcessor("objectify");
+            var validation = processor.ValidateInteraction(characterName, recipient, objectType);
+            if (!validation.IsValid)
             {
-                string message = initiatorProfile.displayName + " is going to turn " + recipientProfile.displayName + " into some sort of " + objectType + "! [b]This should not be taken lightly, and can not be done frequently.[/b] Do you !consent to becoming an object?";
-
-                Interaction objectifyInteraction = new Interaction();
-                objectifyInteraction.initiator = characterName;
-                objectifyInteraction.recipient = recipient;
-                objectifyInteraction.type = timerString;
-                objectifyInteraction.identifier = objectType;
-                objectifyInteraction.investmentLevel = "commitment";
-                objectifyInteraction.interactionTime = DateTime.UtcNow;
-
-                PendingCommand pendingObjectify = new PendingCommand();
-                pendingObjectify.pendingInteraction = objectifyInteraction;
-                pendingObjectify.awaitingConsentFrom = recipient;
-
-                MonDB.addPendingCommand(pendingObjectify);
-
-                bot.SendMessageInChannel(message, channel);
+                bot.SendPrivateMessage(validation.ErrorMessage, characterName);
+                return;
             }
+
+            Profile recipientProfile = MonDB.getProfile(recipient);
+
+            Interaction objectifyInteraction = new Interaction();
+            objectifyInteraction.initiator = characterName;
+            objectifyInteraction.recipient = recipient;
+            objectifyInteraction.type = "objectify";
+            objectifyInteraction.identifier = objectType;
+            objectifyInteraction.investmentLevel = "commitment";
+            objectifyInteraction.interactionTime = DateTime.UtcNow;
+
+            PendingCommand pendingObjectify = new PendingCommand();
+            pendingObjectify.pendingInteraction = objectifyInteraction;
+            pendingObjectify.awaitingConsentFrom = recipient;
+
+            MonDB.addPendingCommand(pendingObjectify);
+
+            // Delegate consent wording to the processor so it stays in one place.
+            string message = processor.GetConsentWarning(initiatorProfile, recipientProfile, objectType);
+            bot.SendMessageInChannel(message, channel);
         }
     }
 }

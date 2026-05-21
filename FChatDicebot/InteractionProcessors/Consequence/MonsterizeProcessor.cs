@@ -20,6 +20,13 @@ namespace FChatDicebot.InteractionProcessors.Consequence
         {
         }
 
+        /// <summary>
+        /// Profile-key under which the 7-day re-monsterize lock is stored on the recipient.
+        /// Exposed so the command's pre-check and the processor's recheck consult the same
+        /// timer and can't drift.
+        /// </summary>
+        public const string CooldownTimerKey = "monsterize";
+
         public override ValidationResult ValidateInteraction(string initiator, string recipient, string identifier)
         {
             var baseValidation = base.ValidateInteraction(initiator, recipient, identifier);
@@ -31,6 +38,22 @@ namespace FChatDicebot.InteractionProcessors.Consequence
             if (string.IsNullOrEmpty(identifier))
             {
                 return ValidationResult.Failure(ChateauInteractionHandler.typeNotFoundText("monster"));
+            }
+
+            // Recipient already monsterized too recently — rejection lives here (not in
+            // the command) so a stray pending that races past the command-time check
+            // still gets gated at consent time.
+            Profile recipientProfile = Database.GetProfile(recipient);
+            if (recipientProfile?.timers != null
+                && recipientProfile.timers.TryGetValue(CooldownTimerKey, out var timer)
+                && timer.timerEnd > DateTime.UtcNow)
+            {
+                string recipientName = recipientProfile.displayName ?? recipient;
+                string remaining = Utils.GetTimeSpanPrint(timer.timerEnd - DateTime.UtcNow);
+                return ValidationResult.Failure(
+                    "You're trying to monsterize " + recipientName + " but they only recently changed to the monster they currently are! "
+                    + "Please respect that 'Consequence' interactions are also a Commitment. Wait a little longer before you change their form again. \n\n"
+                    + recipientName + " will be available to monsterize in " + remaining);
             }
 
             return ValidationResult.Success();
@@ -78,7 +101,7 @@ namespace FChatDicebot.InteractionProcessors.Consequence
             Identifier monsterIdentifier = MonDB.getIdentifier(identifier);
             string monsterText = monsterIdentifier != null ? monsterIdentifier.description : identifier;
 
-            return initiatorProfile.displayName + " is going to transform " + recipientProfile.displayName + " into " + Utils.AnOrA(identifier) + " " + identifier + "! [b]This should not be taken lightly, and can not be done frequently.[/b] Do you !consent to your new form?";
+            return initiatorProfile.displayName + " is going to transform " + recipientProfile.displayName + " into " + Utils.AnOrA(identifier) + " " + identifier + "! [b]This should not be taken lightly, and can not be done frequently. The capabilities of your new body might be referenced in flavor text and !work checks.[/b] Do you !consent to your new form?";
         }
     }
 }

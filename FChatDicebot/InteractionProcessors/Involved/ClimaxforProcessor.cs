@@ -177,8 +177,10 @@ namespace FChatDicebot.InteractionProcessors.Involved
 
             // Re-read after the count helper wrote so the completion message picks up the
             // freshly-bumped totals (used by some flavor branches that key off counts).
+            // Use the status-effect-wrapped path so a self-climax surfaces the climaxer's
+            // corruption aura / scent layers just like an other-target consent flow does.
             Profile freshInitiator = Database.GetProfile(initiator);
-            return GetCompletionMessage(freshInitiator, freshInitiator, interaction.identifier);
+            return GetCompletionMessageWithStatusEffects(freshInitiator, freshInitiator, interaction.identifier);
         }
 
         public override ValidationResult ValidateInteraction(string initiator, string recipient, string identifier)
@@ -249,31 +251,30 @@ namespace FChatDicebot.InteractionProcessors.Involved
             int dailyCount = ParseDailyCountFromIdentifier(identifier);
             bool isSelf = string.Equals(initiatorProfile.userName, recipientProfile.userName, StringComparison.Ordinal);
 
-            // Climaxer profile is used for corruption flavor and (future) vice-craving
-            // suppression — both should attach to the person actually having the orgasm,
-            // not to whoever typed the command.
-            Profile climaxerProfile = string.Equals(
+            string descriptor = PickFlavorDescriptor(dailyCount);
+            // Status-effect fragments (corruption aura on the climaxer, etc.) are appended
+            // by the base wrapper GetCompletionMessageWithStatusEffects via the climaxer-
+            // aware GetStatusEffectSubject override below.
+            return ComposeOpeningSentence(typeKey, isSelf, initiatorProfile, recipientProfile, descriptor);
+        }
+
+        /// <summary>
+        /// Status-effect fragments for a climax attach to the climaxer (the person
+        /// actually having the orgasm), not whoever typed the command. For <c>!climaxfor</c>
+        /// that's the initiator; for <c>!climax</c> (the inverted reskin) that's the
+        /// recipient. Self-targets resolve to the initiator either way.
+        /// </summary>
+        protected override Profile GetStatusEffectSubject(
+            Profile initiatorProfile, Profile recipientProfile, string identifier)
+        {
+            if (initiatorProfile == null || recipientProfile == null) return recipientProfile;
+            string typeKey = ParseTypeFromIdentifier(identifier);
+            return string.Equals(
                 ResolveClimaxer(typeKey, initiatorProfile.userName, recipientProfile.userName),
                 initiatorProfile.userName,
                 StringComparison.Ordinal)
                 ? initiatorProfile
                 : recipientProfile;
-
-            string descriptor = PickFlavorDescriptor(dailyCount);
-            string sentence = ComposeOpeningSentence(typeKey, isSelf, initiatorProfile, recipientProfile, descriptor);
-
-            // Status-effect contributors (e.g. dose-craving once that lands) decorate the
-            // completion message. Per spec, the climaxer is the relevant profile here:
-            // their corruption supplies the wicked-moan flavor, and their vices are the
-            // ones briefly satisfied by the climax.
-            bool climaxerIsInitiator = ReferenceEquals(climaxerProfile, initiatorProfile);
-            var effects = GetActiveStatusEffects(
-                climaxerProfile,
-                StatusEffectCallSite.Completion,
-                isInitiator: climaxerIsInitiator);
-            sentence = AppendStatusFragments(sentence, effects.CompletionAppendix);
-
-            return sentence;
         }
 
         public override string GetConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
@@ -409,35 +410,31 @@ namespace FChatDicebot.InteractionProcessors.Involved
         // -----------------------------------------------------------------------
         // Identifier payload helpers.
         //
-        // The Interaction model has no dedicated typeKey/daily-count slot, so we use
-        // the identifier field as a "{typeKey}|{dailyCount}" payload. The command-time
-        // shape is the typeKey alone (no pipe); the processor overwrites with the full
-        // composite before GetCompletionMessage runs so the message can render the
-        // right wording for whichever verb the user typed.
+        // Thin façade over the shared <see cref="IdentifierPayload"/> encoder, applying
+        // climax-specific normalization (the head is constrained to either ClimaxforType
+        // or ClimaxType, missing daily count → 1). New processors that need to carry a
+        // per-call number alongside a verb should reuse <see cref="IdentifierPayload"/>
+        // directly rather than recreating this pipe encoder.
         // -----------------------------------------------------------------------
 
         public static string ComposeIdentifier(string typeKey, int dailyCount)
         {
             string safeType = string.IsNullOrEmpty(typeKey) ? ClimaxforType : typeKey;
-            return safeType + "|" + dailyCount.ToString();
+            return IdentifierPayload.Compose(safeType, dailyCount);
         }
 
         public static string ParseTypeFromIdentifier(string identifier)
         {
-            if (string.IsNullOrEmpty(identifier)) return ClimaxforType;
-            int pipe = identifier.IndexOf('|');
-            string raw = pipe < 0 ? identifier : identifier.Substring(0, pipe);
+            string raw = IdentifierPayload.ExtractHead(identifier);
             if (string.Equals(raw, ClimaxType, StringComparison.OrdinalIgnoreCase)) return ClimaxType;
             return ClimaxforType;
         }
 
         public static int ParseDailyCountFromIdentifier(string identifier)
         {
-            if (string.IsNullOrEmpty(identifier)) return 1;
-            int pipe = identifier.IndexOf('|');
-            if (pipe < 0 || pipe >= identifier.Length - 1) return 1;
-            string countPart = identifier.Substring(pipe + 1);
-            return int.TryParse(countPart, out int value) && value > 0 ? value : 1;
+            // Daily count is always positive; non-positive values are treated as missing.
+            if (!IdentifierPayload.TryExtractTail(identifier, out int value) || value <= 0) return 1;
+            return value;
         }
     }
 }

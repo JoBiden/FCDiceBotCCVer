@@ -10,7 +10,7 @@ namespace FChatDicebot.InteractionProcessors.Consequence
     public class ConsumeProcessor : InteractionProcessorBase
     {
         public override string InteractionType => "consume";
-        public override string InvestmentLevel => "consequence";
+        public override string InvestmentLevel => "commitment";
 
         public ConsumeProcessor(IChateauDatabase database) : base(database)
         {

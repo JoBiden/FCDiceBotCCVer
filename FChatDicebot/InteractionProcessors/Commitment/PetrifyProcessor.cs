@@ -10,7 +10,7 @@ namespace FChatDicebot.InteractionProcessors.Consequence
     public class PetrifyProcessor : InteractionProcessorBase
     {
         public override string InteractionType => "petrify";
-        public override string InvestmentLevel => "consequence";
+        public override string InvestmentLevel => "commitment";
 
         public PetrifyProcessor(IChateauDatabase database) : base(database)
         {

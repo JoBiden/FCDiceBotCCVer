@@ -273,34 +273,30 @@ namespace FChatDicebot.InteractionProcessors.Involved
         // -----------------------------------------------------------------------
         // Identifier payload helpers.
         //
-        // The Interaction model has no dedicated quantity slot. The command writes
-        // just the substance name; the processor overwrites with "substance|qty"
-        // so GetCompletionMessage can read the truthful clamped quantity.
-        // Same pattern as CorruptionProcessor.
+        // Thin façade over the shared <see cref="InteractionProcessors.IdentifierPayload"/>
+        // encoder, applying milk-specific defaults (missing substance → empty string,
+        // missing quantity → -1 sentinel meaning "not yet stamped" — the TOCTOU no-op
+        // path in <see cref="GetCompletionMessage"/> distinguishes a real 0 from this
+        // pre-process shape). New processors that need to carry a per-call number
+        // alongside a substance/verb should reuse <see cref="IdentifierPayload"/>
+        // directly rather than recreating this pipe encoder.
         // -----------------------------------------------------------------------
 
         public static string ComposeIdentifier(string substance, int quantity)
         {
-            return (substance ?? string.Empty) + "|" + quantity.ToString();
+            return IdentifierPayload.Compose(substance, quantity);
         }
 
         public static string ParseSubstanceFromIdentifier(string identifier)
         {
-            if (string.IsNullOrEmpty(identifier)) return string.Empty;
-            int pipe = identifier.IndexOf('|');
-            return pipe < 0 ? identifier : identifier.Substring(0, pipe);
+            return IdentifierPayload.ExtractHead(identifier) ?? string.Empty;
         }
 
         public static int ParseQuantityFromIdentifier(string identifier)
         {
-            // No pipe means the identifier still carries only the substance (the
-            // command-time / pre-process shape), so quantity is unknown — return -1
-            // so callers can distinguish "no quantity recorded" from "quantity zero".
-            if (string.IsNullOrEmpty(identifier)) return -1;
-            int pipe = identifier.IndexOf('|');
-            if (pipe < 0 || pipe >= identifier.Length - 1) return -1;
-            string qtyPart = identifier.Substring(pipe + 1);
-            return int.TryParse(qtyPart, out int value) ? value : -1;
+            // -1 sentinel distinguishes "no quantity recorded" (command-time shape)
+            // from "quantity recorded as 0" (TOCTOU clamp-to-zero path).
+            return IdentifierPayload.ExtractTailOr(identifier, -1);
         }
     }
 }

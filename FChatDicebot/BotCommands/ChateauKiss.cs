@@ -39,26 +39,25 @@ namespace FChatDicebot.BotCommands
             if (recipientProfile == null)
             {
                 bot.SendPrivateMessage(ChateauInteractionHandler.notFoundText(recipient), characterName);
+                return;
             }
-            else
-            {
-                string message = initiatorProfile.displayName + " wants to give you a kiss, " + recipientProfile.displayName + ". Do you !consent to a smooch?";
 
-                Interaction kiss = new Interaction();
-                kiss.initiator = characterName;
-                kiss.recipient = recipient;
-                kiss.type = "kiss";
-                kiss.investmentLevel = "casual";
+            Interaction kiss = new Interaction();
+            kiss.initiator = characterName;
+            kiss.recipient = recipient;
+            kiss.type = "kiss";
+            kiss.investmentLevel = "casual";
 
-                PendingCommand pendingKiss = new PendingCommand();
-                pendingKiss.pendingInteraction = kiss;
-                pendingKiss.awaitingConsentFrom = recipient;
+            PendingCommand pendingKiss = new PendingCommand();
+            pendingKiss.pendingInteraction = kiss;
+            pendingKiss.awaitingConsentFrom = recipient;
 
-                MonDB.addPendingCommand(pendingKiss);
+            MonDB.addPendingCommand(pendingKiss);
 
-                bot.SendMessageInChannel(message, channel);
-            }
-            
+            // Delegate consent wording to the processor so it stays in one place.
+            var processor = InteractionProcessors.InteractionProcessorRegistry.GetProcessor("kiss");
+            string message = processor.GetConsentWarning(initiatorProfile, recipientProfile, "");
+            bot.SendMessageInChannel(message, channel);
         }
     }
 }

@@ -52,8 +52,6 @@ namespace FChatDicebot.BotCommands
             }
             if (valid)
             {
-                string message = initiatorProfile.displayName + " would like to declare that " + recipientProfile.displayName + " is their " + Utils.BondToText(bond, true) + "! [b]This should not be taken lightly, and can not be done frequently.[/b] Do you !consent to this new bond?";
-
                 Interaction bondInteraction = new Interaction();
                 bondInteraction.initiator = characterName;
                 bondInteraction.recipient = recipient;
@@ -68,6 +66,9 @@ namespace FChatDicebot.BotCommands
 
                 MonDB.addPendingCommand(pendingBond);
 
+                // Delegate consent wording to the processor so it stays in one place.
+                var processor = InteractionProcessors.InteractionProcessorRegistry.GetProcessor("bond");
+                string message = processor.GetConsentWarning(initiatorProfile, recipientProfile, bond);
                 bot.SendMessageInChannel(message, channel);
             }
         }
