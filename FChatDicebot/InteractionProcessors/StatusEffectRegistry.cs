@@ -30,6 +30,7 @@ namespace FChatDicebot.InteractionProcessors
             RegisterContributor(new OdorizeStatusContributor(MonDB.GetDatabase()));
             RegisterContributor(new CorruptionStatusContributor());
             RegisterContributor(new BreakStatusContributor());
+            RegisterContributor(new DoseStatusContributor(MonDB.GetDatabase()));
 
             _initialized = true;
         }

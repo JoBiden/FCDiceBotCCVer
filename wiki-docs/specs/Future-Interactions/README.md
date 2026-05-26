@@ -37,7 +37,8 @@ The shipped Tier 0 infra ([Status-Effect-Hook](../Infrastructure/Status-Effect-H
 |------|----------|------------|
 | [Infest-and-Purge](Infest-and-Purge.md) | `!purge` | Status-Effect-Hook, Conversational-Flows (custom parasites only) |
 | [Curse-and-Cleanse](Curse-and-Cleanse.md) | `!cleanse` | Status-Effect-Hook |
-| [Dose-and-Detox](Dose-and-Detox.md) | `!detox` | Status-Effect-Hook |
+
+*(Dose-and-Detox shipped on 2026-05-26 — see [`../Dose-and-Detox.md`](../Dose-and-Detox.md). The shipped feature also added the shared `PurgeCostType` enum + `PurgeCostApplier` that the unshipped reversals above will reuse, with `RandomCurse` currently falling back to a random-break cost until Curse-and-Cleanse ships.)*
 
 ## Conventions all specs assume
 

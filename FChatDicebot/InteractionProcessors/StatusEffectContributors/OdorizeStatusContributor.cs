@@ -27,10 +27,16 @@ namespace FChatDicebot.InteractionProcessors.StatusEffectContributors
             _database = database;
         }
 
+        // Scent layers attach to a specific party (whoever was !odorized). The completion-
+        // time wrapper routes us to that subject via GetStatusEffectSubject; running twice
+        // would double-mention and double-decrement a single layer.
+        public bool SymmetricInvocation => false;
+
         public StatusEffectFragments Contribute(
             Profile profile,
             StatusEffectCallSite callSite,
             string interactionType,
+            string parentIdentifier,
             bool isInitiator)
         {
             var result = new StatusEffectFragments();

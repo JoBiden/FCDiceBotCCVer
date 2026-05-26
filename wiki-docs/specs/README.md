@@ -34,6 +34,7 @@ Design + as-implemented documentation for the Chateau Contract interaction syste
 |------|----------|------------|
 | [Odorize-and-Wash](Odorize-and-Wash.md) | `!wash` (one layer/day) | Status-Effect-Hook |
 | [Break-and-Rest](Break-and-Rest.md) | `!rest` (skip a day's !work to heal one day faster) | Status-Effect-Hook |
+| [Dose-and-Detox](Dose-and-Detox.md) | `!detox` (at a `PurgeCostType` cost) | Status-Effect-Hook (extended), `!climaxfor` (auto-dose hook) |
 
 ## Upcoming features
 

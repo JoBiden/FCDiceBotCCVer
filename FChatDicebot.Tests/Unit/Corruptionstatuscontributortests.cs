@@ -19,7 +19,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
         [Fact]
         public void NullProfile_ReturnsEmpty()
         {
-            var result = _contributor.Contribute(null, StatusEffectCallSite.Completion, "kiss", isInitiator: false);
+            var result = _contributor.Contribute(null, StatusEffectCallSite.Completion, "kiss", parentIdentifier: "", isInitiator: false);
             Assert.Empty(result.ConsentWarnings);
             Assert.Empty(result.CompletionAppendix);
             Assert.Empty(result.Blockers);
@@ -30,7 +30,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
         {
             // Per spec, the corruption descriptor is a completion-time flavor only.
             var bob = ProfileWithCorruption(-50);
-            var result = _contributor.Contribute(bob, StatusEffectCallSite.Consent, "kiss", isInitiator: false);
+            var result = _contributor.Contribute(bob, StatusEffectCallSite.Consent, "kiss", parentIdentifier: "", isInitiator: false);
             Assert.Empty(result.CompletionAppendix);
             Assert.Empty(result.ConsentWarnings);
         }
@@ -41,7 +41,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
             foreach (int corruption in new[] { -9, -1, 0, 1, 9 })
             {
                 var profile = ProfileWithCorruption(corruption);
-                var result = _contributor.Contribute(profile, StatusEffectCallSite.Completion, "kiss", isInitiator: false);
+                var result = _contributor.Contribute(profile, StatusEffectCallSite.Completion, "kiss", parentIdentifier: "", isInitiator: false);
                 Assert.Empty(result.CompletionAppendix);
             }
         }
@@ -67,7 +67,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
 
             var profile = ProfileWithCorruption(corruption);
             profile.displayName = "Bob";
-            var result = _contributor.Contribute(profile, StatusEffectCallSite.Completion, "kiss", isInitiator: false);
+            var result = _contributor.Contribute(profile, StatusEffectCallSite.Completion, "kiss", parentIdentifier: "", isInitiator: false);
             Assert.Single(result.CompletionAppendix);
             Assert.Equal(expectedFragment, result.CompletionAppendix[0]);
         }
@@ -79,7 +79,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
             // contributor stays silent to avoid double-up.
             var bob = ProfileWithCorruption(-50);
             var result = _contributor.Contribute(bob, StatusEffectCallSite.Completion,
-                CorruptionProcessor.CorruptType, isInitiator: false);
+                CorruptionProcessor.CorruptType, parentIdentifier: "", isInitiator: false);
             Assert.Empty(result.CompletionAppendix);
         }
 
@@ -88,7 +88,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
         {
             var bob = ProfileWithCorruption(50);
             var result = _contributor.Contribute(bob, StatusEffectCallSite.Completion,
-                CorruptionProcessor.PurifyType, isInitiator: false);
+                CorruptionProcessor.PurifyType, parentIdentifier: "", isInitiator: false);
             Assert.Empty(result.CompletionAppendix);
         }
 
@@ -99,7 +99,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
             // must not prepend their own.
             var bob = ProfileWithCorruption(-50);
             bob.displayName = "Bob";
-            var result = _contributor.Contribute(bob, StatusEffectCallSite.Completion, "kiss", isInitiator: false);
+            var result = _contributor.Contribute(bob, StatusEffectCallSite.Completion, "kiss", parentIdentifier: "", isInitiator: false);
             Assert.NotEqual(" ", result.CompletionAppendix[0].Substring(0, 1));
         }
 
@@ -110,7 +110,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
             // doesn't parse as an int.
             var profile = new ProfileBuilder().Build();
             profile.characteristics["corruption"] = "not-a-number";
-            var result = _contributor.Contribute(profile, StatusEffectCallSite.Completion, "kiss", isInitiator: false);
+            var result = _contributor.Contribute(profile, StatusEffectCallSite.Completion, "kiss", parentIdentifier: "", isInitiator: false);
             Assert.Empty(result.CompletionAppendix);
         }
 
@@ -118,7 +118,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
         public void MissingCorruptionField_ReturnsEmpty()
         {
             var profile = new ProfileBuilder().Build();
-            var result = _contributor.Contribute(profile, StatusEffectCallSite.Completion, "kiss", isInitiator: false);
+            var result = _contributor.Contribute(profile, StatusEffectCallSite.Completion, "kiss", parentIdentifier: "", isInitiator: false);
             Assert.Empty(result.CompletionAppendix);
         }
 

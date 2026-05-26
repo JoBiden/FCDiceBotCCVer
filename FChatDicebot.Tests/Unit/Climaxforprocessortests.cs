@@ -1,4 +1,5 @@
 using FChatDicebot.Database;
+using FChatDicebot.InteractionProcessors.Consequence;
 using FChatDicebot.InteractionProcessors.Involved;
 using FChatDicebot.Model;
 using FChatDicebot.Tests.Builders;
@@ -530,6 +531,125 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
                     interactionTime = DateTime.UtcNow,
                 },
             };
+        }
+
+        // -------------------------------------------------------------------
+        // Auto-dose integration (climax intensifies cum/pre/seminal on the partner)
+        // -------------------------------------------------------------------
+
+        [Fact]
+        public void ProcessInteraction_Climaxfor_IntensifiesPartnerExistingCumVice()
+        {
+            // Alice climaxes for Bob (Alice is the climaxer). Bob is the partner; if he
+            // already carries a "cum" vice, climax should intensify it by 1.
+            new ProfileBuilder().WithUserName("Alice").WithDisplayName("Alice").BuildAndSave(_database);
+            new ProfileBuilder().WithUserName("Bob").WithDisplayName("Bob").BuildAndSave(_database);
+            var bob = _database.GetProfile("Bob");
+            DoseProcessor.ApplyDose(bob, "cum", "PriorDoser");
+            _database.SetProfile("Bob", bob);
+
+            _processor.ProcessInteraction(BuildPending("Alice", "Bob", ClimaxforProcessor.ClimaxforType));
+
+            var reloaded = _database.GetProfile("Bob");
+            var cum = ViceInstance.LoadAll(reloaded).First(v => v.Vice == "cum");
+            Assert.Equal(2, cum.AddictionLevel);
+        }
+
+        [Fact]
+        public void ProcessInteraction_Climaxfor_DoesNotCreateAbsentVicesOnPartner()
+        {
+            // Bob has no vices at all; a climax should NOT introduce cum/pre/seminal —
+            // intensify-only.
+            new ProfileBuilder().WithUserName("Alice").WithDisplayName("Alice").BuildAndSave(_database);
+            new ProfileBuilder().WithUserName("Bob").WithDisplayName("Bob").BuildAndSave(_database);
+
+            _processor.ProcessInteraction(BuildPending("Alice", "Bob", ClimaxforProcessor.ClimaxforType));
+
+            var reloaded = _database.GetProfile("Bob");
+            Assert.Empty(ViceInstance.LoadAll(reloaded));
+        }
+
+        [Fact]
+        public void ProcessInteraction_Climax_IntensifiesInitiatorAsPartner()
+        {
+            // !climax inverts the role: Alice is the initiator but Bob is the climaxer.
+            // The partner (= non-climaxer) is Alice. Alice's existing "pre" should rise.
+            new ProfileBuilder().WithUserName("Alice").WithDisplayName("Alice").BuildAndSave(_database);
+            new ProfileBuilder().WithUserName("Bob").WithDisplayName("Bob").BuildAndSave(_database);
+            var alice = _database.GetProfile("Alice");
+            DoseProcessor.ApplyDose(alice, "pre", "PriorDoser");
+            _database.SetProfile("Alice", alice);
+
+            _processor.ProcessInteraction(BuildPending("Alice", "Bob", ClimaxforProcessor.ClimaxType));
+
+            var reloaded = _database.GetProfile("Alice");
+            Assert.Equal(2, ViceInstance.LoadAll(reloaded).First(v => v.Vice == "pre").AddictionLevel);
+            // Bob (the climaxer) gets no auto-dose — he was the one climaxing.
+            var bob = _database.GetProfile("Bob");
+            Assert.Empty(ViceInstance.LoadAll(bob));
+        }
+
+        [Fact]
+        public void PerformSelfTarget_IntensifiesClimaxersOwnVices()
+        {
+            // Solo climaxes have no partner — self-target intensifies the climaxer
+            // themselves (no escape from your own essence).
+            new ProfileBuilder().WithUserName("Alice").WithDisplayName("Alice").BuildAndSave(_database);
+            var alice = _database.GetProfile("Alice");
+            DoseProcessor.ApplyDose(alice, "seminal", "PriorDoser");
+            _database.SetProfile("Alice", alice);
+
+            _processor.PerformSelfTarget("Alice", ClimaxforProcessor.ClimaxforType);
+
+            var reloaded = _database.GetProfile("Alice");
+            Assert.Equal(2, ViceInstance.LoadAll(reloaded).First(v => v.Vice == "seminal").AddictionLevel);
+        }
+
+        [Fact]
+        public void PerformSelfTarget_NoExistingVices_DoesNotIntroduceAny()
+        {
+            new ProfileBuilder().WithUserName("Alice").WithDisplayName("Alice").BuildAndSave(_database);
+
+            _processor.PerformSelfTarget("Alice", ClimaxforProcessor.ClimaxforType);
+
+            var reloaded = _database.GetProfile("Alice");
+            Assert.Empty(ViceInstance.LoadAll(reloaded));
+        }
+
+        [Fact]
+        public void ProcessInteraction_AnyIntensification_AppendsAddictionFragmentToCompletion()
+        {
+            // The flavor fragment is built in ProcessInteraction and consumed by
+            // GetCompletionMessage. Verify the channel message includes the sharpening
+            // line when a vice was intensified.
+            new ProfileBuilder().WithUserName("Alice").WithDisplayName("Alice").BuildAndSave(_database);
+            new ProfileBuilder().WithUserName("Bob").WithDisplayName("Bob").BuildAndSave(_database);
+            var bob = _database.GetProfile("Bob");
+            DoseProcessor.ApplyDose(bob, "cum", "PriorDoser");
+            _database.SetProfile("Bob", bob);
+
+            var pending = BuildPending("Alice", "Bob", ClimaxforProcessor.ClimaxforType);
+            _processor.ProcessInteraction(pending);
+            var alice = _database.GetProfile("Alice");
+            var reloadedBob = _database.GetProfile("Bob");
+            string message = _processor.GetCompletionMessage(alice, reloadedBob, pending.pendingInteraction.identifier);
+
+            Assert.Contains("getting more and more hooked on cum", message);
+        }
+
+        [Fact]
+        public void ProcessInteraction_NoIntensification_DoesNotAppendAddictionFragment()
+        {
+            new ProfileBuilder().WithUserName("Alice").WithDisplayName("Alice").BuildAndSave(_database);
+            new ProfileBuilder().WithUserName("Bob").WithDisplayName("Bob").BuildAndSave(_database);
+
+            var pending = BuildPending("Alice", "Bob", ClimaxforProcessor.ClimaxforType);
+            _processor.ProcessInteraction(pending);
+            var alice = _database.GetProfile("Alice");
+            var bob = _database.GetProfile("Bob");
+            string message = _processor.GetCompletionMessage(alice, bob, pending.pendingInteraction.identifier);
+
+            Assert.DoesNotContain("hooked on", message);
         }
     }
 }

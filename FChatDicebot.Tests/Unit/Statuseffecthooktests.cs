@@ -353,6 +353,75 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
             Assert.EndsWith("[alice-aura]", result);
         }
 
+        // -------------------------------------------------------------------
+        // SymmetricInvocation routing + parentIdentifier threading
+        // -------------------------------------------------------------------
+
+        [Fact]
+        public void CompletionWrapper_SymmetricContributor_FiresForBothSidesOnOtherTarget()
+        {
+            // SymmetricInvocation = true contributors (like DoseStatusContributor) should
+            // be invoked once per side on other-target completion. Two distinct
+            // userName-gated contributors (one matches Alice, one matches Bob) ensure both
+            // halves of the symmetric pass land.
+            StatusEffectRegistry.RegisterContributor(
+                new SymmetricGatedContributor(expectedUserName: "Alice", completionAppendix: "[a-side]"));
+            StatusEffectRegistry.RegisterContributor(
+                new SymmetricGatedContributor(expectedUserName: "Bob", completionAppendix: "[b-side]"));
+
+            var initiator = new ProfileBuilder().WithUserName("Alice").WithDisplayName("Alice").Build();
+            var recipient = new ProfileBuilder().WithUserName("Bob").WithDisplayName("Bob").Build();
+
+            string result = _processor.GetCompletionMessageWithStatusEffects(initiator, recipient, identifier: "");
+
+            // Both fragments must appear — order is registration-order so a-side first.
+            Assert.Contains("[a-side]", result);
+            Assert.Contains("[b-side]", result);
+        }
+
+        [Fact]
+        public void CompletionWrapper_SymmetricContributor_SelfTarget_FiresOnceNotTwice()
+        {
+            // Self-target (initiator == recipient by userName) collapses the symmetric
+            // invocation to a single call so the same fragment isn't double-emitted.
+            var counter = new SymmetricCallCounterContributor();
+            StatusEffectRegistry.RegisterContributor(counter);
+
+            var alice = new ProfileBuilder().WithUserName("Alice").WithDisplayName("Alice").Build();
+
+            _processor.GetCompletionMessageWithStatusEffects(alice, alice, identifier: "");
+
+            Assert.Equal(1, counter.CallCount);
+        }
+
+        [Fact]
+        public void CompletionWrapper_ParentIdentifier_IsForwardedToContributors()
+        {
+            var fake = new FakeContributor(completionAppendix: "[noop]");
+            StatusEffectRegistry.RegisterContributor(fake);
+
+            var initiator = new ProfileBuilder().WithUserName("Alice").WithDisplayName("Alice").Build();
+            var recipient = new ProfileBuilder().WithUserName("Bob").WithDisplayName("Bob").Build();
+
+            _processor.GetCompletionMessageWithStatusEffects(initiator, recipient, identifier: "musk");
+
+            Assert.Equal("musk", fake.LastParentIdentifier);
+        }
+
+        [Fact]
+        public void GetActiveStatusEffects_ParentIdentifier_Threaded()
+        {
+            // The protected helper (used by GetConsentWarning / ValidateInteraction and
+            // direct callers like BreakProcessor) must also thread parentIdentifier.
+            var fake = new FakeContributor(consentWarning: "[noop]");
+            StatusEffectRegistry.RegisterContributor(fake);
+            var profile = new ProfileBuilder().Build();
+
+            _processor.CallGetActiveStatusEffects(profile, StatusEffectCallSite.Consent, parentIdentifier: "drug");
+
+            Assert.Equal("drug", fake.LastParentIdentifier);
+        }
+
         // ===================================================================
         // Test doubles
         // ===================================================================
@@ -373,8 +442,8 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
                 => $"{initiatorProfile.displayName} test-interacts with {recipientProfile.displayName}.";
 
             public StatusEffectFragments CallGetActiveStatusEffects(
-                Profile profile, StatusEffectCallSite callSite, bool isInitiator = false)
-                => GetActiveStatusEffects(profile, callSite, isInitiator);
+                Profile profile, StatusEffectCallSite callSite, bool isInitiator = false, string parentIdentifier = null)
+                => GetActiveStatusEffects(profile, callSite, parentIdentifier, isInitiator);
         }
 
         /// <summary>
@@ -386,22 +455,28 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
         {
             private readonly string _consentWarning;
             private readonly string _completionAppendix;
+            private readonly bool _symmetric;
 
             public StatusEffectCallSite LastCallSite;
             public string LastInteractionType;
+            public string LastParentIdentifier;
             public bool LastIsInitiator;
 
-            public FakeContributor(string consentWarning = null, string completionAppendix = null)
+            public FakeContributor(string consentWarning = null, string completionAppendix = null, bool symmetric = false)
             {
                 _consentWarning = consentWarning;
                 _completionAppendix = completionAppendix;
+                _symmetric = symmetric;
             }
 
+            public bool SymmetricInvocation => _symmetric;
+
             public StatusEffectFragments Contribute(
-                Profile profile, StatusEffectCallSite callSite, string interactionType, bool isInitiator)
+                Profile profile, StatusEffectCallSite callSite, string interactionType, string parentIdentifier, bool isInitiator)
             {
                 LastCallSite = callSite;
                 LastInteractionType = interactionType;
+                LastParentIdentifier = parentIdentifier;
                 LastIsInitiator = isInitiator;
 
                 var f = new StatusEffectFragments();
@@ -413,8 +488,10 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
 
         private class ThrowingContributor : IStatusEffectContributor
         {
+            public bool SymmetricInvocation => false;
+
             public StatusEffectFragments Contribute(
-                Profile profile, StatusEffectCallSite callSite, string interactionType, bool isInitiator)
+                Profile profile, StatusEffectCallSite callSite, string interactionType, string parentIdentifier, bool isInitiator)
             {
                 throw new InvalidOperationException("contributor went sideways");
             }
@@ -436,8 +513,10 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
                 _fragment = fragment;
             }
 
+            public bool SymmetricInvocation => false;
+
             public StatusEffectFragments Contribute(
-                Profile profile, StatusEffectCallSite callSite, string interactionType, bool isInitiator)
+                Profile profile, StatusEffectCallSite callSite, string interactionType, string parentIdentifier, bool isInitiator)
             {
                 var fragments = new StatusEffectFragments();
                 if (profile?.characteristics == null) return fragments;
@@ -467,8 +546,10 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
                 _reason = reason;
             }
 
+            public bool SymmetricInvocation => false;
+
             public StatusEffectFragments Contribute(
-                Profile profile, StatusEffectCallSite callSite, string interactionType, bool isInitiator)
+                Profile profile, StatusEffectCallSite callSite, string interactionType, string parentIdentifier, bool isInitiator)
             {
                 var fragments = new StatusEffectFragments();
                 if (!string.Equals(interactionType, _blockedInteractionType, StringComparison.OrdinalIgnoreCase))
@@ -503,14 +584,62 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
                 _completionAppendix = completionAppendix;
             }
 
+            public bool SymmetricInvocation => false;
+
             public StatusEffectFragments Contribute(
-                Profile profile, StatusEffectCallSite callSite, string interactionType, bool isInitiator)
+                Profile profile, StatusEffectCallSite callSite, string interactionType, string parentIdentifier, bool isInitiator)
             {
                 var fragments = new StatusEffectFragments();
                 if (profile == null || profile.userName != _expectedUserName) return fragments;
                 if (callSite != StatusEffectCallSite.Completion) return fragments;
                 fragments.CompletionAppendix.Add(_completionAppendix);
                 return fragments;
+            }
+        }
+
+        /// <summary>
+        /// Symmetric variant of UserNameGatedContributor — emits only when called with a
+        /// matching profile userName, but advertises SymmetricInvocation=true so the
+        /// wrapper invokes it once per side at completion.
+        /// </summary>
+        private class SymmetricGatedContributor : IStatusEffectContributor
+        {
+            private readonly string _expectedUserName;
+            private readonly string _completionAppendix;
+
+            public SymmetricGatedContributor(string expectedUserName, string completionAppendix)
+            {
+                _expectedUserName = expectedUserName;
+                _completionAppendix = completionAppendix;
+            }
+
+            public bool SymmetricInvocation => true;
+
+            public StatusEffectFragments Contribute(
+                Profile profile, StatusEffectCallSite callSite, string interactionType, string parentIdentifier, bool isInitiator)
+            {
+                var f = new StatusEffectFragments();
+                if (profile == null || profile.userName != _expectedUserName) return f;
+                if (callSite != StatusEffectCallSite.Completion) return f;
+                f.CompletionAppendix.Add(_completionAppendix);
+                return f;
+            }
+        }
+
+        /// <summary>
+        /// Symmetric contributor that just counts how many times it's invoked. Used to
+        /// verify the self-target collapse from two calls down to one.
+        /// </summary>
+        private class SymmetricCallCounterContributor : IStatusEffectContributor
+        {
+            public int CallCount;
+            public bool SymmetricInvocation => true;
+
+            public StatusEffectFragments Contribute(
+                Profile profile, StatusEffectCallSite callSite, string interactionType, string parentIdentifier, bool isInitiator)
+            {
+                CallCount++;
+                return new StatusEffectFragments();
             }
         }
 

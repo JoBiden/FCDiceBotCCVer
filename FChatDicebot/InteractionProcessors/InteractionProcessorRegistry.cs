@@ -67,6 +67,7 @@ namespace FChatDicebot.InteractionProcessors
             RegisterProcessor(new RenameProcessor());
             RegisterProcessor(new OdorizeProcessor());
             RegisterProcessor(new BreakProcessor());
+            RegisterProcessor(new DoseProcessor());
 
             _initialized = true;
         }
