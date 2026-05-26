@@ -40,7 +40,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
         public void Contribute_NoBreaks_ReturnsEmpty()
         {
             var profile = new ProfileBuilder().WithUserName("Bob").Build();
-            var result = _contributor.Contribute(profile, StatusEffectCallSite.Completion, "kiss", isInitiator: false);
+            var result = _contributor.Contribute(profile, StatusEffectCallSite.Completion, "kiss", parentIdentifier: "", isInitiator: false);
             Assert.Empty(result.Blockers);
             Assert.Empty(result.CompletionAppendix);
             Assert.Empty(result.ConsentWarnings);
@@ -49,7 +49,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
         [Fact]
         public void Contribute_NullProfile_ReturnsEmpty()
         {
-            var result = _contributor.Contribute(null, StatusEffectCallSite.Completion, "kiss", isInitiator: false);
+            var result = _contributor.Contribute(null, StatusEffectCallSite.Completion, "kiss", parentIdentifier: "", isInitiator: false);
             Assert.Empty(result.Blockers);
         }
 
@@ -57,7 +57,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
         public void Contribute_SelfReferentialBreakType_ReturnsEmpty()
         {
             var profile = MakeProfileWithBreaks("Bob", "mouth");
-            var result = _contributor.Contribute(profile, StatusEffectCallSite.Completion, "break", isInitiator: false);
+            var result = _contributor.Contribute(profile, StatusEffectCallSite.Completion, "break", parentIdentifier: "", isInitiator: false);
             Assert.Empty(result.Blockers);
             Assert.Empty(result.CompletionAppendix);
         }
@@ -78,7 +78,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
         public void Contribute_UntouchedInteraction_EmitsNothing(string untouched)
         {
             var profile = MakeProfileWithBreaks("Bob", "mouth", "body");
-            var result = _contributor.Contribute(profile, StatusEffectCallSite.Completion, untouched, isInitiator: false);
+            var result = _contributor.Contribute(profile, StatusEffectCallSite.Completion, untouched, parentIdentifier: "", isInitiator: false);
             Assert.Empty(result.Blockers);
             Assert.Empty(result.CompletionAppendix);
         }
@@ -106,7 +106,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
         public void Contribute_RecipientBlockingPart_EmitsRecipientBlocker(string interactionType, string brokenPart)
         {
             var profile = MakeProfileWithBreaks("Bob", brokenPart);
-            var result = _contributor.Contribute(profile, StatusEffectCallSite.Consent, interactionType, isInitiator: false);
+            var result = _contributor.Contribute(profile, StatusEffectCallSite.Consent, interactionType, parentIdentifier: "", isInitiator: false);
             Assert.Single(result.Blockers);
             Assert.True(result.Blockers[0].BlocksRecipient);
             Assert.False(result.Blockers[0].BlocksInitiator);
@@ -117,7 +117,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
         public void Contribute_RecipientUnrelatedPart_DoesNotBlock_EmitsPassThrough()
         {
             var profile = MakeProfileWithBreaks("Bob", "wing");
-            var result = _contributor.Contribute(profile, StatusEffectCallSite.Completion, "kiss", isInitiator: false);
+            var result = _contributor.Contribute(profile, StatusEffectCallSite.Completion, "kiss", parentIdentifier: "", isInitiator: false);
             Assert.Empty(result.Blockers);
             // F — pass-through fires for unrelated breaks
             Assert.Single(result.CompletionAppendix);
@@ -139,7 +139,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
         public void Contribute_InitiatorBlockingPart_EmitsInitiatorBlocker(string interactionType, string brokenPart)
         {
             var profile = MakeProfileWithBreaks("Alice", brokenPart);
-            var result = _contributor.Contribute(profile, StatusEffectCallSite.Consent, interactionType, isInitiator: true);
+            var result = _contributor.Contribute(profile, StatusEffectCallSite.Consent, interactionType, parentIdentifier: "", isInitiator: true);
             Assert.Single(result.Blockers);
             Assert.True(result.Blockers[0].BlocksInitiator);
             Assert.False(result.Blockers[0].BlocksRecipient);
@@ -151,7 +151,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
         {
             // Bully blocks the initiator side only. Recipient-side call should not block.
             var profile = MakeProfileWithBreaks("Bob", "torso");
-            var asRecipient = _contributor.Contribute(profile, StatusEffectCallSite.Consent, "bully", isInitiator: false);
+            var asRecipient = _contributor.Contribute(profile, StatusEffectCallSite.Consent, "bully", parentIdentifier: "", isInitiator: false);
             Assert.Empty(asRecipient.Blockers);
         }
 
@@ -160,7 +160,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
         {
             // climaxfor (recipient is climaxer): broken pussy on recipient blocks.
             var profile = MakeProfileWithBreaks("Bob", "pussy");
-            var result = _contributor.Contribute(profile, StatusEffectCallSite.Consent, "climaxfor", isInitiator: false);
+            var result = _contributor.Contribute(profile, StatusEffectCallSite.Consent, "climaxfor", parentIdentifier: "", isInitiator: false);
             Assert.Single(result.Blockers);
             Assert.True(result.Blockers[0].BlocksRecipient);
         }
@@ -171,7 +171,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
             // For climaxfor, the recipient is the climaxer — initiator's broken anatomy is
             // irrelevant.
             var profile = MakeProfileWithBreaks("Alice", "dick");
-            var result = _contributor.Contribute(profile, StatusEffectCallSite.Consent, "climaxfor", isInitiator: true);
+            var result = _contributor.Contribute(profile, StatusEffectCallSite.Consent, "climaxfor", parentIdentifier: "", isInitiator: true);
             Assert.Empty(result.Blockers);
         }
 
@@ -183,7 +183,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
         public void Contribute_Breed_NeverBlocks_EvenWithRelevantBreaks()
         {
             var profile = MakeProfileWithBreaks("Bob", "pussy", "ass");
-            var result = _contributor.Contribute(profile, StatusEffectCallSite.Consent, "breed", isInitiator: false);
+            var result = _contributor.Contribute(profile, StatusEffectCallSite.Consent, "breed", parentIdentifier: "", isInitiator: false);
             Assert.Empty(result.Blockers);
         }
 
@@ -191,7 +191,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
         public void Contribute_Breed_EmitsCustomFlavorAtCompletion()
         {
             var profile = MakeProfileWithBreaks("Bob", "pussy");
-            var result = _contributor.Contribute(profile, StatusEffectCallSite.Completion, "breed", isInitiator: false);
+            var result = _contributor.Contribute(profile, StatusEffectCallSite.Completion, "breed", parentIdentifier: "", isInitiator: false);
             Assert.Single(result.CompletionAppendix);
             Assert.Contains("who knows how", result.CompletionAppendix[0]);
             Assert.Contains("pussy", result.CompletionAppendix[0]);
@@ -202,7 +202,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
         public void Contribute_Breed_MultipleRelevantParts_PluralAgreement()
         {
             var profile = MakeProfileWithBreaks("Bob", "pussy", "ass");
-            var result = _contributor.Contribute(profile, StatusEffectCallSite.Completion, "breed", isInitiator: false);
+            var result = _contributor.Contribute(profile, StatusEffectCallSite.Completion, "breed", parentIdentifier: "", isInitiator: false);
             Assert.Single(result.CompletionAppendix);
             Assert.Contains("they're", result.CompletionAppendix[0]);
         }
@@ -212,7 +212,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
         {
             // wing/mouth are not breed-relevant — no flavor fires.
             var profile = MakeProfileWithBreaks("Bob", "wing", "mouth");
-            var result = _contributor.Contribute(profile, StatusEffectCallSite.Completion, "breed", isInitiator: false);
+            var result = _contributor.Contribute(profile, StatusEffectCallSite.Completion, "breed", parentIdentifier: "", isInitiator: false);
             Assert.Empty(result.CompletionAppendix);
         }
 
@@ -224,7 +224,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
         public void Contribute_NonBlocking_EmitsPassThrough_ListsAllActiveBreaks()
         {
             var profile = MakeProfileWithBreaks("Bob", "wing", "nose");
-            var result = _contributor.Contribute(profile, StatusEffectCallSite.Completion, "kiss", isInitiator: false);
+            var result = _contributor.Contribute(profile, StatusEffectCallSite.Completion, "kiss", parentIdentifier: "", isInitiator: false);
             Assert.Empty(result.Blockers);
             Assert.Single(result.CompletionAppendix);
             Assert.Contains("wing", result.CompletionAppendix[0]);
@@ -236,7 +236,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
         public void Contribute_PassThrough_OnlyAtCompletion()
         {
             var profile = MakeProfileWithBreaks("Bob", "wing");
-            var consent = _contributor.Contribute(profile, StatusEffectCallSite.Consent, "kiss", isInitiator: false);
+            var consent = _contributor.Contribute(profile, StatusEffectCallSite.Consent, "kiss", parentIdentifier: "", isInitiator: false);
             Assert.Empty(consent.CompletionAppendix);
             Assert.Empty(consent.ConsentWarnings);
         }
@@ -247,7 +247,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
             // Initiator-side pass-through is suppressed — F lists the recipient's breaks
             // only.
             var profile = MakeProfileWithBreaks("Alice", "wing");
-            var result = _contributor.Contribute(profile, StatusEffectCallSite.Completion, "kiss", isInitiator: true);
+            var result = _contributor.Contribute(profile, StatusEffectCallSite.Completion, "kiss", parentIdentifier: "", isInitiator: true);
             Assert.Empty(result.CompletionAppendix);
         }
 
@@ -256,7 +256,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
         {
             // Block-replacement is the sole fragment; pass-through doesn't double up.
             var profile = MakeProfileWithBreaks("Bob", "mouth", "wing");
-            var result = _contributor.Contribute(profile, StatusEffectCallSite.Completion, "kiss", isInitiator: false);
+            var result = _contributor.Contribute(profile, StatusEffectCallSite.Completion, "kiss", parentIdentifier: "", isInitiator: false);
             Assert.Single(result.Blockers);
             Assert.Empty(result.CompletionAppendix);
         }

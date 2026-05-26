@@ -18,10 +18,16 @@ namespace FChatDicebot.InteractionProcessors.StatusEffectContributors
     /// </summary>
     public class CorruptionStatusContributor : IStatusEffectContributor
     {
+        // Corruption attaches to the interaction's primary subject (the recipient by
+        // default; the climaxer for climax). Symmetric invocation would surface both
+        // parties' auras on every interaction.
+        public bool SymmetricInvocation => false;
+
         public StatusEffectFragments Contribute(
             Profile profile,
             StatusEffectCallSite callSite,
             string interactionType,
+            string parentIdentifier,
             bool isInitiator)
         {
             var result = new StatusEffectFragments();

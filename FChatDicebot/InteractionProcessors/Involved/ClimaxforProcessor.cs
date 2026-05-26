@@ -1,4 +1,5 @@
 using FChatDicebot.Database;
+using FChatDicebot.InteractionProcessors.Consequence;
 using FChatDicebot.Model;
 using MongoDB.Bson;
 using System;
@@ -39,6 +40,12 @@ namespace FChatDicebot.InteractionProcessors.Involved
         public override string InvestmentLevel => "involved";
 
         private static readonly TimeSpan RateLimit = TimeSpan.FromMinutes(30);
+
+        // Per-call stash for the auto-dose intensification fragment. Set by
+        // ProcessInteraction / PerformSelfTarget if !dose's IntensifyExistingVices touched
+        // anything, drained by GetCompletionMessage. Mirrors the _lastRateLimitMessage
+        // pattern — same-thread, single-interaction-per-call usage; no concurrent guard.
+        private string _lastClimaxDoseFragment = string.Empty;
 
         // Per spec: keep last 30 days of per-day climax entries on the profile. Older
         // entries are dropped on the next write so the map can't grow unbounded.
@@ -151,6 +158,7 @@ namespace FChatDicebot.InteractionProcessors.Involved
         /// </summary>
         public string PerformSelfTarget(string initiator, string typeKey)
         {
+            _lastClimaxDoseFragment = string.Empty;
             Profile initiatorProfile = Database.GetProfile(initiator);
             if (initiatorProfile == null) return string.Empty;
 
@@ -180,6 +188,11 @@ namespace FChatDicebot.InteractionProcessors.Involved
             // Use the status-effect-wrapped path so a self-climax surfaces the climaxer's
             // corruption aura / scent layers just like an other-target consent flow does.
             Profile freshInitiator = Database.GetProfile(initiator);
+
+            // Auto-dose: solo climax targets the climaxer themselves (no partner to dose).
+            // Intensify-only — vices not already present on freshInitiator are not created.
+            ApplyClimaxAutoDose(initiator, freshInitiator);
+
             return GetCompletionMessageWithStatusEffects(freshInitiator, freshInitiator, interaction.identifier);
         }
 
@@ -205,6 +218,7 @@ namespace FChatDicebot.InteractionProcessors.Involved
 
         public override string ProcessInteraction(PendingCommand command)
         {
+            _lastClimaxDoseFragment = string.Empty;
             string initiator = command.pendingInteraction.initiator;
             string recipient = command.pendingInteraction.recipient;
             string typeKey = command.pendingInteraction.type;
@@ -238,9 +252,60 @@ namespace FChatDicebot.InteractionProcessors.Involved
             _lastRateLimitMessage = IncrementDifferentCountsWithRateLimit(
                 initiator, recipient, initiatorLabel, recipientLabel, RateLimit);
 
+            // Auto-dose: the *partner* (non-climaxer) gets a dose of the climaxer's
+            // effluvia. Intensify-only — vices not already present aren't created.
+            string partner = ResolvePartner(typeKey, initiator, recipient);
+            if (!string.IsNullOrEmpty(partner))
+            {
+                Profile partnerProfile = Database.GetProfile(partner);
+                ApplyClimaxAutoDose(partner, partnerProfile);
+            }
+
             Database.DeletePendingCommand(command.Id);
 
             return typeKey;
+        }
+
+        /// <summary>
+        /// Apply the climax auto-dose to <paramref name="targetProfile"/> (the non-climaxer
+        /// in other-target, the climaxer themselves in self-target). Vices not already
+        /// present are not created — climax intensifies existing addictions but doesn't
+        /// introduce them. On any intensification, persist the profile and stash a flavor
+        /// fragment in <see cref="_lastClimaxDoseFragment"/> for the completion message.
+        /// </summary>
+        private void ApplyClimaxAutoDose(string targetUserName, Profile targetProfile)
+        {
+            if (targetProfile == null) return;
+            var intensified = DoseProcessor.IntensifyExistingVices(targetProfile, DoseProcessor.ClimaxDoseVices);
+            if (intensified == null || intensified.Count == 0) return;
+
+            Database.SetProfile(targetUserName, targetProfile);
+
+            string targetName = string.IsNullOrEmpty(targetProfile.displayName)
+                ? targetProfile.userName
+                : targetProfile.displayName;
+            // Render each intensified vice through ViceText so scents read as scent phrases
+            // (e.g. "a scent of seminal") and the lustessence/golden color overrides apply.
+            // DosedBy comes off the live ViceInstance so personal-scent attribution stays
+            // consistent with how !odorize renders the same scent.
+            var vices = ViceInstance.LoadAll(targetProfile);
+            var rendered = new List<string>();
+            foreach (var name in intensified)
+            {
+                ViceInstance vi = vices.Find(v => string.Equals(v.Vice, name, StringComparison.OrdinalIgnoreCase));
+                Identifier id = Database?.GetIdentifier(name);
+                string phrase = ViceText.ViceName(id, name, vi?.DosedBy);
+                rendered.Add(phrase);
+            }
+            _lastClimaxDoseFragment = "..." + targetName + " is getting more and more hooked on " + JoinViceList(rendered) + ".";
+        }
+
+        private static string JoinViceList(List<string> vices)
+        {
+            if (vices == null || vices.Count == 0) return string.Empty;
+            if (vices.Count == 1) return vices[0];
+            if (vices.Count == 2) return vices[0] + " and " + vices[1];
+            return string.Join(", ", vices.GetRange(0, vices.Count - 1)) + ", and " + vices[vices.Count - 1];
         }
 
         public override string GetCompletionMessage(Profile initiatorProfile, Profile recipientProfile, string identifier)
@@ -255,7 +320,18 @@ namespace FChatDicebot.InteractionProcessors.Involved
             // Status-effect fragments (corruption aura on the climaxer, etc.) are appended
             // by the base wrapper GetCompletionMessageWithStatusEffects via the climaxer-
             // aware GetStatusEffectSubject override below.
-            return ComposeOpeningSentence(typeKey, isSelf, initiatorProfile, recipientProfile, descriptor);
+            string opening = ComposeOpeningSentence(typeKey, isSelf, initiatorProfile, recipientProfile, descriptor);
+
+            // Splice in the auto-dose intensification fragment if ProcessInteraction /
+            // PerformSelfTarget set one. Drained on read so a subsequent climax with no
+            // intensification doesn't carry the prior message.
+            if (!string.IsNullOrEmpty(_lastClimaxDoseFragment))
+            {
+                string doseFragment = _lastClimaxDoseFragment;
+                _lastClimaxDoseFragment = string.Empty;
+                opening += " " + doseFragment;
+            }
+            return opening;
         }
 
         /// <summary>

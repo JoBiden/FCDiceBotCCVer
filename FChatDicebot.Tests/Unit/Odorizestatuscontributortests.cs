@@ -33,7 +33,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
         {
             var profile = new ProfileBuilder().WithUserName("Bob").Build();
 
-            var result = _contributor.Contribute(profile, StatusEffectCallSite.Completion, "kiss", isInitiator: false);
+            var result = _contributor.Contribute(profile, StatusEffectCallSite.Completion, "kiss", parentIdentifier: "", isInitiator: false);
 
             Assert.Empty(result.ConsentWarnings);
             Assert.Empty(result.CompletionAppendix);
@@ -43,7 +43,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
         [Fact]
         public void Contribute_NullProfile_ReturnsEmpty()
         {
-            var result = _contributor.Contribute(null, StatusEffectCallSite.Completion, "kiss", isInitiator: false);
+            var result = _contributor.Contribute(null, StatusEffectCallSite.Completion, "kiss", parentIdentifier: "", isInitiator: false);
 
             Assert.Empty(result.ConsentWarnings);
             Assert.Empty(result.CompletionAppendix);
@@ -54,7 +54,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
         {
             var bob = SeedBobWithScent("musk", layers: 3, remainingMentions: 9);
 
-            var result = _contributor.Contribute(bob, StatusEffectCallSite.Consent, "kiss", isInitiator: false);
+            var result = _contributor.Contribute(bob, StatusEffectCallSite.Consent, "kiss", parentIdentifier: "", isInitiator: false);
 
             Assert.Single(result.ConsentWarnings);
             Assert.Empty(result.CompletionAppendix);
@@ -70,7 +70,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
         {
             var bob = SeedBobWithScent("musk", layers: 3, remainingMentions: 9);
 
-            var result = _contributor.Contribute(bob, StatusEffectCallSite.Completion, "kiss", isInitiator: false);
+            var result = _contributor.Contribute(bob, StatusEffectCallSite.Completion, "kiss", parentIdentifier: "", isInitiator: false);
 
             Assert.Single(result.CompletionAppendix);
             Assert.Empty(result.ConsentWarnings);
@@ -138,7 +138,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
             // Mentions 1, 2, 3: Layers stays 5 → "thick" three times, then Layers drops to 4.
             for (int i = 0; i < 3; i++)
             {
-                var r = _contributor.Contribute(bob, StatusEffectCallSite.Completion, "kiss", isInitiator: false);
+                var r = _contributor.Contribute(bob, StatusEffectCallSite.Completion, "kiss", parentIdentifier: "", isInitiator: false);
                 Assert.Contains("thick", r.CompletionAppendix[0]);
             }
 
@@ -148,7 +148,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
             Assert.Equal(12, layers[0].RemainingMentions);
 
             // Mention 4: descriptor uses pre-decrement Layers=4 → "fills the air".
-            var nextTier = _contributor.Contribute(bob, StatusEffectCallSite.Completion, "kiss", isInitiator: false);
+            var nextTier = _contributor.Contribute(bob, StatusEffectCallSite.Completion, "kiss", parentIdentifier: "", isInitiator: false);
             Assert.Contains("fills the air", nextTier.CompletionAppendix[0]);
         }
 
@@ -160,7 +160,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
 
             for (int i = 0; i < 15; i++)
             {
-                var r = _contributor.Contribute(bob, StatusEffectCallSite.Completion, "kiss", isInitiator: false);
+                var r = _contributor.Contribute(bob, StatusEffectCallSite.Completion, "kiss", parentIdentifier: "", isInitiator: false);
                 Assert.Single(r.CompletionAppendix);
                 descriptorsSeen.Add(r.CompletionAppendix[0]);
             }
@@ -173,7 +173,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
             Assert.Equal(3, descriptorsSeen.FindAll(s => s.Contains("lingers faintly")).Count);
 
             // 16th mention: nothing left.
-            var after = _contributor.Contribute(bob, StatusEffectCallSite.Completion, "kiss", isInitiator: false);
+            var after = _contributor.Contribute(bob, StatusEffectCallSite.Completion, "kiss", parentIdentifier: "", isInitiator: false);
             Assert.Empty(after.CompletionAppendix);
 
             // Entry has been removed from the profile.
@@ -186,7 +186,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
         {
             var bob = SeedBobWithScent("musk", layers: 3, remainingMentions: 9);
 
-            var result = _contributor.Contribute(bob, StatusEffectCallSite.Completion, "odorize", isInitiator: false);
+            var result = _contributor.Contribute(bob, StatusEffectCallSite.Completion, "odorize", parentIdentifier: "", isInitiator: false);
 
             // No fragment emitted, no decrement happened.
             Assert.Empty(result.CompletionAppendix);
@@ -202,7 +202,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
                 new ScentLayer { Scent = "musk", Layers = 2, RemainingMentions = 6, AppliedBy = "Alice", LastAppliedAt = DateTime.UtcNow },
                 new ScentLayer { Scent = "ozone", Layers = 1, RemainingMentions = 3, AppliedBy = "Carol", LastAppliedAt = DateTime.UtcNow });
 
-            var result = _contributor.Contribute(bob, StatusEffectCallSite.Completion, "kiss", isInitiator: false);
+            var result = _contributor.Contribute(bob, StatusEffectCallSite.Completion, "kiss", parentIdentifier: "", isInitiator: false);
 
             Assert.Equal(2, result.CompletionAppendix.Count);
 
@@ -222,7 +222,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
             // RemainingMentions=1, Layers=1: one more contribute should remove the entry.
             var bob = SeedBobWithScent("musk", layers: 1, remainingMentions: 1);
 
-            _contributor.Contribute(bob, StatusEffectCallSite.Completion, "kiss", isInitiator: false);
+            _contributor.Contribute(bob, StatusEffectCallSite.Completion, "kiss", parentIdentifier: "", isInitiator: false);
 
             var fresh = _database.GetProfile("Bob");
             Assert.Empty(ScentLayer.LoadAll(fresh));
@@ -234,7 +234,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
             // Corrupt state: RemainingMentions=0 already. Should be removed silently with no fragment.
             var bob = SeedBobWithScent("musk", layers: 2, remainingMentions: 0);
 
-            var result = _contributor.Contribute(bob, StatusEffectCallSite.Completion, "kiss", isInitiator: false);
+            var result = _contributor.Contribute(bob, StatusEffectCallSite.Completion, "kiss", parentIdentifier: "", isInitiator: false);
 
             Assert.Empty(result.CompletionAppendix);
             var fresh = _database.GetProfile("Bob");
@@ -249,7 +249,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
             // Drive three mentions; profile should be persisted to DB each time.
             for (int i = 0; i < 3; i++)
             {
-                _contributor.Contribute(bob, StatusEffectCallSite.Completion, "kiss", isInitiator: false);
+                _contributor.Contribute(bob, StatusEffectCallSite.Completion, "kiss", parentIdentifier: "", isInitiator: false);
             }
 
             // Fetch a brand-new Profile object from the DB and confirm the entry is gone

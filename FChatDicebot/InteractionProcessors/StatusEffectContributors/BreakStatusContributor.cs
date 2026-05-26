@@ -87,10 +87,18 @@ namespace FChatDicebot.InteractionProcessors.StatusEffectContributors
             ["mark"]      = "marking",
         };
 
+        // Breaks attach to a specific party. ValidateInteraction already calls us once
+        // per side for blockers via the single-profile helper; at completion the pass-
+        // through "still sore from earlier" flavor is recipient-only by design, so the
+        // wrapper's subject-routing is correct. Symmetric invocation would double-emit
+        // blockers and surface sore parts on the initiator side.
+        public bool SymmetricInvocation => false;
+
         public StatusEffectFragments Contribute(
             Profile profile,
             StatusEffectCallSite callSite,
             string interactionType,
+            string parentIdentifier,
             bool isInitiator)
         {
             var result = new StatusEffectFragments();

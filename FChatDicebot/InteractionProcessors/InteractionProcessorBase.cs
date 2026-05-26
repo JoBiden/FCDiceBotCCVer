@@ -159,11 +159,77 @@ namespace FChatDicebot.InteractionProcessors
             if (string.IsNullOrEmpty(baseMessage)) return baseMessage;
 
             Profile subject = GetStatusEffectSubject(initiatorProfile, recipientProfile, identifier);
-            if (subject == null) return baseMessage;
-
-            bool subjectIsInitiator = ReferenceEquals(subject, initiatorProfile);
-            var effects = GetActiveStatusEffects(subject, StatusEffectCallSite.Completion, subjectIsInitiator);
+            var effects = AggregateCompletionStatusEffects(
+                initiatorProfile, recipientProfile, subject, identifier);
             return AppendStatusFragments(baseMessage, effects.CompletionAppendix);
+        }
+
+        /// <summary>
+        /// Completion-time aggregator that routes each registered contributor to either the
+        /// interaction's primary <paramref name="subject"/> (for contributors with
+        /// <see cref="IStatusEffectContributor.SymmetricInvocation"/> == false — corruption,
+        /// break) or to both initiator and recipient (for symmetric contributors — dose
+        /// cravings). Self-target collapses to a single invocation per contributor so
+        /// symmetric contributors don't double-emit when the same profile sits on both sides.
+        /// </summary>
+        private StatusEffectFragments AggregateCompletionStatusEffects(
+            Profile initiatorProfile, Profile recipientProfile, Profile subject, string parentIdentifier)
+        {
+            var merged = new StatusEffectFragments();
+            bool isSelfTarget = initiatorProfile != null
+                && recipientProfile != null
+                && (ReferenceEquals(initiatorProfile, recipientProfile)
+                    || string.Equals(initiatorProfile.userName, recipientProfile.userName, StringComparison.Ordinal));
+
+            foreach (var contributor in StatusEffectRegistry.GetAllContributors())
+            {
+                if (contributor.SymmetricInvocation)
+                {
+                    // Symmetric contributors (dose) attend to BOTH parties' state.
+                    InvokeContributor(contributor, recipientProfile, StatusEffectCallSite.Completion,
+                        parentIdentifier, isInitiator: false, into: merged);
+                    if (!isSelfTarget)
+                    {
+                        InvokeContributor(contributor, initiatorProfile, StatusEffectCallSite.Completion,
+                            parentIdentifier, isInitiator: true, into: merged);
+                    }
+                }
+                else
+                {
+                    // Subject-only contributors (corruption, break) attach to one party.
+                    if (subject == null) continue;
+                    bool subjectIsInitiator = ReferenceEquals(subject, initiatorProfile);
+                    InvokeContributor(contributor, subject, StatusEffectCallSite.Completion,
+                        parentIdentifier, isInitiator: subjectIsInitiator, into: merged);
+                }
+            }
+            return merged;
+        }
+
+        /// <summary>
+        /// Single contributor call, with the same exception-swallowing contract as
+        /// <see cref="GetActiveStatusEffects"/> — a misbehaving contributor must not break
+        /// the parent interaction.
+        /// </summary>
+        private void InvokeContributor(
+            IStatusEffectContributor contributor,
+            Profile profile,
+            StatusEffectCallSite callSite,
+            string parentIdentifier,
+            bool isInitiator,
+            StatusEffectFragments into)
+        {
+            if (profile == null) return;
+            StatusEffectFragments contributed;
+            try
+            {
+                contributed = contributor.Contribute(profile, callSite, InteractionType, parentIdentifier ?? string.Empty, isInitiator);
+            }
+            catch (Exception)
+            {
+                return;
+            }
+            into.MergeWith(contributed);
         }
 
         /// <summary>
@@ -203,14 +269,14 @@ namespace FChatDicebot.InteractionProcessors
                 return ValidationResult.Failure(ChateauInteractionHandler.notFoundText(recipient));
             }
 
-            var recipientEffects = GetActiveStatusEffects(recipientProfile, StatusEffectCallSite.Consent, isInitiator: false);
+            var recipientEffects = GetActiveStatusEffects(recipientProfile, StatusEffectCallSite.Consent, identifier, isInitiator: false);
             var recipientBlocker = recipientEffects.Blockers.FirstOrDefault(b => b.BlocksRecipient);
             if (recipientBlocker != null)
             {
                 return ValidationResult.Failure(recipientBlocker.Reason);
             }
 
-            var initiatorEffects = GetActiveStatusEffects(initiatorProfile, StatusEffectCallSite.Consent, isInitiator: true);
+            var initiatorEffects = GetActiveStatusEffects(initiatorProfile, StatusEffectCallSite.Consent, identifier, isInitiator: true);
             var initiatorBlocker = initiatorEffects.Blockers.FirstOrDefault(b => b.BlocksInitiator);
             if (initiatorBlocker != null)
             {
@@ -231,7 +297,7 @@ namespace FChatDicebot.InteractionProcessors
         public virtual string GetConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
             string baseWarning = $"{initiatorProfile.displayName} wants to {InteractionType} with {recipientProfile.displayName}. Do you !consent?";
-            var effects = GetActiveStatusEffects(recipientProfile, StatusEffectCallSite.Consent, isInitiator: false);
+            var effects = GetActiveStatusEffects(recipientProfile, StatusEffectCallSite.Consent, identifier, isInitiator: false);
             return AppendStatusFragments(baseWarning, effects.ConsentWarnings);
         }
 
@@ -265,23 +331,29 @@ namespace FChatDicebot.InteractionProcessors
         /// </summary>
         /// <param name="profile">Initiator or recipient profile to inspect.</param>
         /// <param name="callSite">Which lifecycle phase is asking.</param>
+        /// <param name="parentIdentifier">The parent interaction's identifier (e.g. the
+        /// substance for <c>!feed</c>, the scent for <c>!odorize</c>). Forwarded to
+        /// contributors so they can decide whether the parent satisfies one of their
+        /// state entries (dose vice cravings, for example).</param>
         /// <param name="isInitiator">True if <paramref name="profile"/> is the initiator of
         /// the parent interaction. Defaults to false (recipient) to match the most common
         /// call shape.</param>
         protected StatusEffectFragments GetActiveStatusEffects(
             Profile profile,
             StatusEffectCallSite callSite,
+            string parentIdentifier = null,
             bool isInitiator = false)
         {
             var merged = new StatusEffectFragments();
             if (profile == null) return merged;
 
+            string safeIdentifier = parentIdentifier ?? string.Empty;
             foreach (var contributor in StatusEffectRegistry.GetAllContributors())
             {
                 StatusEffectFragments contributed;
                 try
                 {
-                    contributed = contributor.Contribute(profile, callSite, InteractionType, isInitiator);
+                    contributed = contributor.Contribute(profile, callSite, InteractionType, safeIdentifier, isInitiator);
                 }
                 catch (Exception)
                 {

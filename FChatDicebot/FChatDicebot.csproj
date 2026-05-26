@@ -203,6 +203,8 @@
     <Compile Include="BotCommands\ChateauWash.cs" />
     <Compile Include="BotCommands\ChateauBreak.cs" />
     <Compile Include="BotCommands\ChateauRest.cs" />
+    <Compile Include="BotCommands\ChateauDose.cs" />
+    <Compile Include="BotCommands\ChateauDetox.cs" />
     <Compile Include="BotCommands\ChateauCorrupt.cs" />
     <Compile Include="BotCommands\ChateauPurify.cs" />
     <Compile Include="BotCommands\ChateauRename.cs" />
@@ -361,11 +363,17 @@
     <Compile Include="InteractionProcessors\Consequence\MonsterizeProcessor.cs" />
     <Compile Include="InteractionProcessors\Consequence\OdorizeProcessor.cs" />
     <Compile Include="InteractionProcessors\Consequence\BreakProcessor.cs" />
+    <Compile Include="InteractionProcessors\Consequence\DoseProcessor.cs" />
     <Compile Include="InteractionProcessors\StatusEffectContributors\OdorizeStatusContributor.cs" />
     <Compile Include="InteractionProcessors\StatusEffectContributors\BreakStatusContributor.cs" />
+    <Compile Include="InteractionProcessors\StatusEffectContributors\DoseStatusContributor.cs" />
+    <Compile Include="InteractionProcessors\PurgeCostType.cs" />
+    <Compile Include="InteractionProcessors\PurgeCostApplier.cs" />
     <Compile Include="Model\ScentLayer.cs" />
     <Compile Include="Model\BreakInstance.cs" />
     <Compile Include="Model\ScentText.cs" />
+    <Compile Include="Model\ViceInstance.cs" />
+    <Compile Include="Model\ViceText.cs" />
     <Compile Include="InteractionProcessors\Commitment\PetrifyProcessor.cs" />
     <Compile Include="InteractionProcessors\Commitment\PlantProcessor.cs" />
     <Compile Include="InteractionProcessors\Commitment\ObjectifyProcessor.cs" />
