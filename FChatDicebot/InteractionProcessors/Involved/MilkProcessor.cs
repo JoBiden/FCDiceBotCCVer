@@ -139,7 +139,61 @@ namespace FChatDicebot.InteractionProcessors.Involved
                 return ValidationResult.Failure(PairLockMessage(recipientDisplay));
             }
 
+            // Break gating by substance → bodypart map. BreakStatusContributor doesn't see
+            // the substance, so the check lives here. (See Break-and-Rest spec, section B.)
+            var milkBreakBlock = CheckBreakBlockForSubstance(recipient, substance);
+            if (milkBreakBlock != null) return ValidationResult.Failure(milkBreakBlock);
+
             return ValidationResult.Success();
+        }
+
+        /// <summary>
+        /// Maps a substance to the recipient's bodyparts that produce it, then checks the
+        /// recipient's active breaks against that set. Returns the block message when a
+        /// relevant part is broken; null otherwise (no break, or substance unmapped).
+        /// </summary>
+        private string CheckBreakBlockForSubstance(string recipient, string substance)
+        {
+            HashSet<string> relevantParts = BodypartsForSubstance(substance);
+            if (relevantParts == null) return null;
+
+            Profile recipientProfile = Database.GetProfile(recipient);
+            if (recipientProfile == null) return null;
+
+            var breaks = BreakInstance.LoadAllWithTick(recipientProfile);
+            var brokenAndRelevant = breaks.Where(b => relevantParts.Contains(b.Part))
+                                          .Select(b => b.Part)
+                                          .ToList();
+            if (brokenAndRelevant.Count == 0) return null;
+
+            string recipientDisplay = string.IsNullOrEmpty(recipientProfile.displayName)
+                ? recipient
+                : recipientProfile.displayName;
+            string parts = brokenAndRelevant.Count == 1
+                ? brokenAndRelevant[0]
+                : (brokenAndRelevant.Count == 2
+                    ? brokenAndRelevant[0] + " and " + brokenAndRelevant[1]
+                    : string.Join(", ", brokenAndRelevant.GetRange(0, brokenAndRelevant.Count - 1)) + ", and " + brokenAndRelevant[brokenAndRelevant.Count - 1]);
+            string verbToBe = brokenAndRelevant.Count == 1 ? "is" : "are";
+            return recipientDisplay + "'s " + parts + " " + verbToBe + " too broken for milking.";
+        }
+
+        private static HashSet<string> BodypartsForSubstance(string substance)
+        {
+            if (string.IsNullOrEmpty(substance)) return null;
+            switch (substance.ToLowerInvariant())
+            {
+                case "milk":
+                    return new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "breast" };
+                case "saliva":
+                    return new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "mouth", "tongue" };
+                case "golden":
+                case "pre":
+                case "cum":
+                    return new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "dick", "ball", "pussy" };
+                default:
+                    return null;
+            }
         }
 
         public override string ProcessInteraction(PendingCommand command)

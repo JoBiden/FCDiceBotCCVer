@@ -33,6 +33,7 @@ Design + as-implemented documentation for the Chateau Contract interaction syste
 | Spec | Reversal | Depends on |
 |------|----------|------------|
 | [Odorize-and-Wash](Odorize-and-Wash.md) | `!wash` (one layer/day) | Status-Effect-Hook |
+| [Break-and-Rest](Break-and-Rest.md) | `!rest` (skip a day's !work to heal one day faster) | Status-Effect-Hook |
 
 ## Upcoming features
 

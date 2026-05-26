@@ -178,10 +178,15 @@ namespace FChatDicebot.InteractionProcessors
         }
 
         /// <summary>
-        /// Basic validation - checks that profiles exist and honors any recipient-blocking
-        /// status effects (e.g. a !break on the relevant body part). Override to add
-        /// interaction-specific validation; overrides that still want status-effect gating
-        /// should call <see cref="GetActiveStatusEffects"/> themselves.
+        /// Basic validation - checks that profiles exist and honors any recipient- or
+        /// initiator-blocking status effects (e.g. a !break on the relevant body part).
+        /// Override to add interaction-specific validation; overrides that still want
+        /// status-effect gating should call <see cref="GetActiveStatusEffects"/> themselves.
+        ///
+        /// Recipient blockers are checked first (preserves prior behavior); initiator
+        /// blockers second, since they only matter for interactions where the initiator's
+        /// anatomy is in play (climax, bully). Contributors that only ever block the
+        /// recipient remain unaffected.
         /// </summary>
         public virtual ValidationResult ValidateInteraction(string initiator, string recipient, string identifier)
         {
@@ -203,6 +208,13 @@ namespace FChatDicebot.InteractionProcessors
             if (recipientBlocker != null)
             {
                 return ValidationResult.Failure(recipientBlocker.Reason);
+            }
+
+            var initiatorEffects = GetActiveStatusEffects(initiatorProfile, StatusEffectCallSite.Consent, isInitiator: true);
+            var initiatorBlocker = initiatorEffects.Blockers.FirstOrDefault(b => b.BlocksInitiator);
+            if (initiatorBlocker != null)
+            {
+                return ValidationResult.Failure(initiatorBlocker.Reason);
             }
 
             return ValidationResult.Success();
