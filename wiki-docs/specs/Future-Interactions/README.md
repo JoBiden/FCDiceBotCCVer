@@ -25,9 +25,7 @@ The shipped Tier 0 infra ([Status-Effect-Hook](../Infrastructure/Status-Effect-H
 
 ### Tier 1 — Involved interactions
 
-| Spec | Reversal | Depends on |
-|------|----------|------------|
-| [Climaxfor](Climaxfor.md) | — | Status-Effect-Hook (reads !dose state) |
+*(All currently-designed Involved specs have shipped. See [`specs/README.md`](../README.md) for the as-implemented docs.)*
 
 ### Tier 2 — Commitment interactions
 
@@ -39,7 +37,6 @@ The shipped Tier 0 infra ([Status-Effect-Hook](../Infrastructure/Status-Effect-H
 |------|----------|------------|
 | [Infest-and-Purge](Infest-and-Purge.md) | `!purge` | Status-Effect-Hook, Conversational-Flows (custom parasites only) |
 | [Curse-and-Cleanse](Curse-and-Cleanse.md) | `!cleanse` | Status-Effect-Hook |
-| [Break-and-Rest](Break-and-Rest.md) | `!rest` | Status-Effect-Hook |
 | [Dose-and-Detox](Dose-and-Detox.md) | `!detox` | Status-Effect-Hook |
 
 ## Conventions all specs assume

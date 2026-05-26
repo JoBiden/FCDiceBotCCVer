@@ -78,7 +78,60 @@ namespace FChatDicebot.InteractionProcessors.Commitment
                 return ValidationResult.Failure(ChateauInteractionHandler.typeNotFoundText("training"));
             }
 
+            // Break gating by training type → required bodyparts. Training is bilateral —
+            // both parties practice together — so a broken required part on *either* side
+            // blocks the session.
+            HashSet<string> requiredParts = RequiredPartsForTraining(identifier);
+            if (requiredParts != null)
+            {
+                var initiatorBlock = BlockForBrokenRequiredParts(initiator, requiredParts, identifier);
+                if (initiatorBlock != null) return ValidationResult.Failure(initiatorBlock);
+
+                var recipientBlock = BlockForBrokenRequiredParts(recipient, requiredParts, identifier);
+                if (recipientBlock != null) return ValidationResult.Failure(recipientBlock);
+            }
+
             return ValidationResult.Success();
+        }
+
+        private string BlockForBrokenRequiredParts(string userName, HashSet<string> requiredParts, string trainingType)
+        {
+            Profile profile = Database.GetProfile(userName);
+            if (profile == null) return null;
+
+            var breaks = BreakInstance.LoadAllWithTick(profile);
+            var brokenAndRequired = breaks.Where(b => requiredParts.Contains(b.Part))
+                                          .Select(b => b.Part)
+                                          .ToList();
+            if (brokenAndRequired.Count == 0) return null;
+
+            string displayName = string.IsNullOrEmpty(profile.displayName) ? userName : profile.displayName;
+            string parts = brokenAndRequired.Count == 1
+                ? brokenAndRequired[0]
+                : (brokenAndRequired.Count == 2
+                    ? brokenAndRequired[0] + " and " + brokenAndRequired[1]
+                    : string.Join(", ", brokenAndRequired.GetRange(0, brokenAndRequired.Count - 1)) + ", and " + brokenAndRequired[brokenAndRequired.Count - 1]);
+            string verbToBe = brokenAndRequired.Count == 1 ? "is" : "are";
+            return displayName + "'s " + parts + " " + verbToBe + " too broken for " + trainingType + " training.";
+        }
+
+        public static HashSet<string> RequiredPartsForTraining(string trainingType)
+        {
+            if (string.IsNullOrEmpty(trainingType)) return null;
+            switch (trainingType.ToLowerInvariant())
+            {
+                case "corset":      return new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "breast", "torso" };
+                case "heel":        return new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "foot" };
+                case "anal":        return new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "ass" };
+                case "deepthroat":  return new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "mouth", "tongue" };
+                case "ponygirl":    return new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "body", "foot", "leg", "ass" };
+                case "mathematics": return new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "mind" };
+                case "magic":       return new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "mind" };
+                case "flight":      return new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "wing" };
+                case "instrument":  return new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "hand" };
+                case "dance":       return new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "foot", "leg" };
+                default:            return null;  // obedience and any future training with no anatomy requirement
+            }
         }
 
         public override string ProcessInteraction(PendingCommand command)

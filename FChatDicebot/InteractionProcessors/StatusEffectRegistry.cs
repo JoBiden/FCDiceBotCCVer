@@ -29,6 +29,7 @@ namespace FChatDicebot.InteractionProcessors
             // Contributors are added here as their feature lands.
             RegisterContributor(new OdorizeStatusContributor(MonDB.GetDatabase()));
             RegisterContributor(new CorruptionStatusContributor());
+            RegisterContributor(new BreakStatusContributor());
 
             _initialized = true;
         }

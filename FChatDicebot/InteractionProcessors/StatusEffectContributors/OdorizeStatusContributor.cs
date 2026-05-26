@@ -44,6 +44,18 @@ namespace FChatDicebot.InteractionProcessors.StatusEffectContributors
                 return result;
             }
 
+            // Nose-suppression: if this profile has a broken nose, they can't smell —
+            // suppress their scent contribution entirely (no fragment, no mention-tick).
+            // Per Break-and-Rest spec section D.
+            var activeBreaks = BreakInstance.LoadAllWithTick(profile);
+            foreach (var entry in activeBreaks)
+            {
+                if (string.Equals(entry.Part, "nose", System.StringComparison.OrdinalIgnoreCase))
+                {
+                    return result;
+                }
+            }
+
             List<ScentLayer> layers = ScentLayer.LoadAll(profile);
             if (layers.Count == 0) return result;
 

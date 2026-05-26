@@ -58,6 +58,21 @@ namespace FChatDicebot.InteractionProcessors.Involved
                 return ValidationResult.Failure(ChateauInteractionHandler.typeNotFoundText("bodypart"));
             }
 
+            // Break gating: if the targeted bodypart is broken on the recipient, refuse.
+            // BreakStatusContributor's signature can't see the targeted bodypart, so this
+            // dynamic-target check lives here in the processor.
+            Profile recipientProfile = Database.GetProfile(recipient);
+            var recipientBreaks = BreakInstance.LoadAllWithTick(recipientProfile);
+            foreach (var entry in recipientBreaks)
+            {
+                if (string.Equals(entry.Part, identifier, StringComparison.OrdinalIgnoreCase))
+                {
+                    string recipientName = string.IsNullOrEmpty(recipientProfile?.displayName) ? recipient : recipientProfile.displayName;
+                    return ValidationResult.Failure(
+                        recipientName + "'s " + identifier + " is too broken for a golden shower.");
+                }
+            }
+
             return ValidationResult.Success();
         }
 
