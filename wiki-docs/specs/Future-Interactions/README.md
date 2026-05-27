@@ -10,35 +10,15 @@ Specs are removed from this folder once they ship — the as-implemented docs li
 - **Adding a new feature:** copy any feature spec as a template. Mandatory sections: Investment level, Command syntax, Validation, Processor logic, Persistence shape, Reversal, Status-effect contribution (or "none"), Tests, Assumptions.
 - **Background reading first:** [Interaction-System.md](../../Interaction-System.md), [Development-Guide.md](../../Development-Guide.md).
 
-## Implementation order (dependency-respecting)
+## Status
 
-Infrastructure must land before the features that depend on it. Within each tier, features are independent and can be done in any order.
+As of 2026-05-27, **every currently-planned interaction has shipped**. The only remaining design docs in this folder are shelved infrastructure that no active feature depends on:
 
-### Tier 0 — Infrastructure (do these first)
+| Spec | Status |
+|------|--------|
+| [NPC-System](Infrastructure/NPC-System.md) | **Shelved.** Breed-and-Birth shipped without it and degrades gracefully (un-named offspring records). Pick this back up if a future feature needs persistent, named NPCs. |
 
-| Spec | Required by |
-|------|-------------|
-| [Conversational-Flows](Infrastructure/Conversational-Flows.md) | Infest (custom-parasite definition only) |
-| [NPC-System](Infrastructure/NPC-System.md) *(low priority — Breed degrades gracefully without this)* | Breed (full naming behavior) |
-
-The shipped Tier 0 infra ([Status-Effect-Hook](../Infrastructure/Status-Effect-Hook.md) and the milk-inventory/bottle-currency portion of [Currency-and-Milk-Inventory](../Infrastructure/Currency-and-Milk-Inventory.md)) lives one level up in `specs/Infrastructure/`.
-
-### Tier 1 — Involved interactions
-
-*(All currently-designed Involved specs have shipped. See [`specs/README.md`](../README.md) for the as-implemented docs.)*
-
-### Tier 2 — Commitment interactions
-
-*(All currently-designed Commitment specs have shipped. See [`specs/README.md`](../README.md) for the as-implemented docs.)*
-
-### Tier 3 — Consequence interactions
-
-| Spec | Reversal | Depends on |
-|------|----------|------------|
-| [Infest-and-Purge](Infest-and-Purge.md) | `!purge` | Status-Effect-Hook, Conversational-Flows (custom parasites only) |
-| [Curse-and-Cleanse](Curse-and-Cleanse.md) | `!cleanse` | Status-Effect-Hook |
-
-*(Dose-and-Detox shipped on 2026-05-26 — see [`../Dose-and-Detox.md`](../Dose-and-Detox.md). The shipped feature also added the shared `PurgeCostType` enum + `PurgeCostApplier` that the unshipped reversals above will reuse, with `RandomCurse` currently falling back to a random-break cost until Curse-and-Cleanse ships.)*
+The shipped Tier 0 infra ([Status-Effect-Hook](../Infrastructure/Status-Effect-Hook.md) and the milk-inventory/bottle-currency portion of [Currency-and-Milk-Inventory](../Infrastructure/Currency-and-Milk-Inventory.md)) lives one level up in `specs/Infrastructure/`. The shared `PurgeCostType` / `PurgeCostApplier` infra now lives inside [Dose-and-Detox](../Dose-and-Detox.md) and is reused by `!detox`, `!purge`, and `!cleanse`.
 
 ## Conventions all specs assume
 

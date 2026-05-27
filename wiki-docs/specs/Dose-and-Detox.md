@@ -142,7 +142,7 @@ Implementation lives in `ClimaxforProcessor.ProcessInteraction` (and the self-ta
 
 ### `PurgeCostType` enum (new shared infra)
 
-Introduced here, intended for reuse by the future [Infest-and-Purge](Future-Interactions/Infest-and-Purge.md) and [Curse-and-Cleanse](Future-Interactions/Curse-and-Cleanse.md) specs. Lives at `FChatDicebot/InteractionProcessors/PurgeCostType.cs`.
+Introduced here and since reused by [Infest-and-Purge](Infest-and-Purge.md) and [Curse-and-Cleanse](Curse-and-Cleanse.md) (both shipped 2026-05-26). Lives at `FChatDicebot/InteractionProcessors/PurgeCostType.cs`.
 
 ```csharp
 public enum PurgeCostType
