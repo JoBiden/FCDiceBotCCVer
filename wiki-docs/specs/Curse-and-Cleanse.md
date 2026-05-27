@@ -1,10 +1,11 @@
 # `!curse` + `!cleanse`
 
-Apply a consequential curse to the recipient. Curses fall into three buckets and are reversed by `!cleanse` at a cost.
+Apply a consequential curse to the recipient. Curses fall into buckets and are reversed by `!cleanse` at a cost.
 
+**Status:** Implemented (2026-05-26).
 **Investment level:** Consequence
 **Reversal:** `!cleanse` (with cost).
-**Depends on:** [Status-Effect-Hook](../Infrastructure/Status-Effect-Hook.md)
+**Depends on:** [Status-Effect-Hook](Infrastructure/Status-Effect-Hook.md), [Dose-and-Detox](Dose-and-Detox.md) (reuses the `PurgeCostType` / `PurgeCostApplier` infra).
 
 ## Bucket taxonomy
 
@@ -160,19 +161,34 @@ Out of v1 scope unless the user requests it. Pattern: same conversational flow a
 - Restrictor flags hardcoded to known job-type tags. The duties catalog needs `sex_related`, `service_related`, `religious` boolean fields. **Confirm:** the duty catalog can carry these tags.
 - `frigid` blocks casual interactions despite the spec's "casual interactions skip status effects" rule. Disabler curses are the *one* exception — they're reasons-to-not-do-the-thing-at-all, not flavor. Implementation: `Status-Effect-Hook` validation blockers fire on all consent-driven interactions, regardless of investment level.
 
-## Files to create/modify
+## Differences from the original spec
 
-- `FChatDicebot/Model/Curse.cs` *(new)*
-- `FChatDicebot/Model/CurseInstance.cs` *(new)*
-- `FChatDicebot/InteractionProcessors/Consequence/CurseProcessor.cs` *(new)*
-- `FChatDicebot/BotCommands/Curse.cs` *(new)*
-- `FChatDicebot/BotCommands/Cleanse.cs` *(new)*
-- `FChatDicebot/InteractionProcessors/StatusEffectContributors/CurseStatusContributor.cs` *(new)*
-- `FChatDicebot/Database/IChateauDatabase.cs` *(modify — Curse accessors)*
-- `FChatDicebot/InteractionProcessors/InteractionProcessorRegistry.cs` *(modify — register)*
-- `FChatDicebot/InteractionProcessors/StatusEffectRegistry.cs` *(modify — register)*
-- Seed data file: `FChatDicebot/Data/curses.starter.json` *(new — loaded into MongoDB on first run)*
-- `FChatDicebot.Tests/Unit/CurseProcessorTests.cs` *(new)*
-- `FChatDicebot.Tests/Unit/CurseStatusContributorTests.cs` *(new)*
-- `FChatDicebot.Tests/Unit/CleanseCommandTests.cs` *(new)*
-- `FChatDicebot.Tests/Unit/CurseCatalogTests.cs` *(new)*
+The original design landed in its broad strokes (buckets, per-curse `CleanseCost`, status-effect contributor) but diverged in several places, all approved during implementation:
+
+- **No new `Curses` MongoDB collection and no `curses.starter.json` seed file.** Curses are identifiers in the existing `Identifiers` collection tagged `categories: ["curse"]`. The per-curse spec (bucket, blocked interactions, modifier template, cleanse cost) lives in a static `CurseProcessor.CatalogMap` — same colocation pattern as `InfestProcessor.CostMap`. Adding a curse means a row in `IdentifiersSnapshot.json` plus an entry in `CatalogMap`.
+- **Restrictor bucket dropped.** Spec called for `sex-addicted` / `caffeine-addicted` / `pious` curses that gated `!work` / `!volunteer` to jobs flagged `sex_related` / `service_related` / `religious`. The duty catalog never grew those tags. The Restrictor concept was replaced by a single `poverty` Disabler whose effect lives directly in `ChateauWork` / `ChateauVolunteer` (zeros the currency reward) rather than in the status-effect contributor.
+- **`BlockSide` enum** (`Initiator` / `Recipient` / `Both`) added to `CurseSpec.BlockedInteractions`. The spec assumed all blockers fire wherever the cursed party stands; the as-shipped design lets each curse pick which side of a given interaction is blocked (e.g. `greed` blocks paying out but not receiving; `chastity` blocks the climaxer slot specifically).
+- **No `RandomCurse` cleanse cost** in any shipped catalog entry — would create a cleanse-spiral. `PurgeCostApplier` still supports the enum value (used by `!purge`), it's just never chosen as a `CleanseCost` here.
+- **Specific shipped curses differ from spec table.** Shipped catalog:
+  - *Disablers:* `meekness`, `chastity`, `cooties`, `costume`, `poverty`, `laziness`, `hunger`, `greed`, `antisocial`.
+  - *Modifiers:* `mooing`, `tsundere`, `blushing`, `horny`, `bimbo`, `vibrating`.
+- **`!curse` skips the status-effect block check for itself.** Being already-cursed shouldn't prevent a *new* curse — `ValidateInteraction` bypasses the base-class block-check for the parent `!curse` to avoid disabler curses (or modifier flavor noise) interfering with the consent-warning route.
+- **Cooldown is per-(initiator, recipient, curseName) on the initiator's timers.** Spec said "7-day cooldown" without specifying axis. As-shipped: a caster can spread different curses to different victims freely but can't re-apply the same `(target, curse)` tuple for a week — matches `InfestProcessor` / `OdorizeProcessor` / `DoseProcessor`.
+
+## Files (as-shipped)
+
+**New:**
+- [`FChatDicebot/Model/CurseInstance.cs`](../../FChatDicebot/Model/CurseInstance.cs)
+- [`FChatDicebot/InteractionProcessors/Consequence/CurseProcessor.cs`](../../FChatDicebot/InteractionProcessors/Consequence/CurseProcessor.cs) — owns the static `CatalogMap` source-of-truth for every curse's bucket, blockers, modifier template, and cleanse cost.
+- [`FChatDicebot/InteractionProcessors/StatusEffectContributors/CurseStatusContributor.cs`](../../FChatDicebot/InteractionProcessors/StatusEffectContributors/CurseStatusContributor.cs)
+- [`FChatDicebot/BotCommands/ChateauCurse.cs`](../../FChatDicebot/BotCommands/ChateauCurse.cs)
+- [`FChatDicebot/BotCommands/ChateauCleanse.cs`](../../FChatDicebot/BotCommands/ChateauCleanse.cs)
+- [`FChatDicebot.Tests/Unit/Curseprocessortests.cs`](../../FChatDicebot.Tests/Unit/Curseprocessortests.cs)
+- [`FChatDicebot.Tests/Unit/Cursestatuscontributortests.cs`](../../FChatDicebot.Tests/Unit/Cursestatuscontributortests.cs)
+- [`FChatDicebot.Tests/Unit/Chateaucleansetests.cs`](../../FChatDicebot.Tests/Unit/Chateaucleansetests.cs)
+
+**Modify:**
+- [`FChatDicebot/InteractionProcessors/InteractionProcessorRegistry.cs`](../../FChatDicebot/InteractionProcessors/InteractionProcessorRegistry.cs) — registers `CurseProcessor`.
+- [`FChatDicebot/InteractionProcessors/StatusEffectRegistry.cs`](../../FChatDicebot/InteractionProcessors/StatusEffectRegistry.cs) — registers `CurseStatusContributor`.
+- [`FChatDicebot/BotCommands/ChateauWork.cs`](../../FChatDicebot/BotCommands/ChateauWork.cs) / [`ChateauVolunteer.cs`](../../FChatDicebot/BotCommands/ChateauVolunteer.cs) — `poverty` curse zeros currency rewards.
+- `IdentifiersSnapshot.json` — adds curse identifiers under `categories:["curse"]`.
