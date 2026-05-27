@@ -4784,5 +4784,95 @@
       "beast",
       "mount"
     ]
+  },
+  {
+    "_id": { "$oid": "6486c000000000000000c001" },
+    "type": "meekness",
+    "description": "A curse that makes one too meek to !bully anyone.",
+    "categories": [ "curse" ]
+  },
+  {
+    "_id": { "$oid": "6486c000000000000000c002" },
+    "type": "chastity",
+    "description": "A curse that prevents one from achieving !climax.",
+    "categories": [ "curse" ]
+  },
+  {
+    "_id": { "$oid": "6486c000000000000000c003" },
+    "type": "cooties",
+    "description": "Eww, cooties! No one will !kiss, !cuddle, or !handhold someone with cooties.",
+    "categories": [ "curse" ]
+  },
+  {
+    "_id": { "$oid": "6486c000000000000000c004" },
+    "type": "costume",
+    "description": "A curse that locks someone in costume, no matter how much they want to !dressup as something else. Will apply a random outfit if they are not wearing one at time of cursing.",
+    "categories": [ "curse" ]
+  },
+  {
+    "_id": { "$oid": "6486c000000000000000c005" },
+    "type": "poverty",
+    "description": "A curse that ensures no matter how hard one tries, their !work and !volunteer efforts will yield no currency.",
+    "categories": [ "curse" ]
+  },
+  {
+    "_id": { "$oid": "6486c000000000000000c006" },
+    "type": "laziness",
+    "description": "A curse that makes it impossible to gather the energy necessary to !train.",
+    "categories": [ "curse" ]
+  },
+  {
+    "_id": { "$oid": "6486c000000000000000c007" },
+    "type": "hunger",
+    "description": "A curse that prevents one from enjoying food, no matter who tries to !feed them.",
+    "categories": [ "curse" ]
+  },
+  {
+    "_id": { "$oid": "6486c000000000000000c008" },
+    "type": "greed",
+    "description": "A curse that makes one unable to bear the thought of giving anyone their fair !pay",
+    "categories": [ "curse" ]
+  },
+  {
+    "_id": { "$oid": "6486c000000000000000c009" },
+    "type": "antisocial",
+    "description": "A curse that makes it difficult to form a meaningful !bond",
+    "categories": [ "curse" ]
+  },
+  {
+    "_id": { "$oid": "6486c000000000000000c00a" },
+    "type": "mooing",
+    "description": "A curse that will leave everyone wondering whether you're really a cow.",
+    "categories": [ "curse" ]
+  },
+  {
+    "_id": { "$oid": "6486c000000000000000c00b" },
+    "type": "tsundere",
+    "description": "It's not like I made this curse just for you, I just had an extra one laying around, ok?!?!",
+    "categories": [ "curse" ]
+  },
+  {
+    "_id": { "$oid": "6486c000000000000000c00c" },
+    "type": "blushing",
+    "description": "curses you... [i]blush[/i]",
+    "categories": [ "curse" ]
+  },
+  {
+    "_id": { "$oid": "6486c000000000000000c00d" },
+    "type": "horny",
+    "description": "Be honest, it's not the curse making you horny, is it?",
+    "categories": [ "curse" ]
+  },
+  {
+    "_id": { "$oid": "6486c000000000000000c00e" },
+    "type": "bimbo",
+    "description": "This curse, like... umm... yeah!",
+    "categories": [ "curse" ]
+  },
+  {
+    "_id": { "$oid": "6486c000000000000000c00f" },
+    "type": "vibrating",
+    "description": "Everyone is buzzzing about this curse.",
+    "categories": [ "curse" ]
   }
 ]

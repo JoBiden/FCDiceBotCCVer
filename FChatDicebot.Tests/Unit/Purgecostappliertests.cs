@@ -1,5 +1,6 @@
 using FChatDicebot.Database;
 using FChatDicebot.InteractionProcessors;
+using FChatDicebot.InteractionProcessors.Consequence;
 using FChatDicebot.Model;
 using FChatDicebot.Tests.Builders;
 using FChatDicebot.Tests.Fixtures;
@@ -11,10 +12,10 @@ using Xunit;
 namespace FChatDicebot.Tests.Unit.InteractionProcessors
 {
     /// <summary>
-    /// Tests for PurgeCostApplier — the shared cost engine used by !detox now and the
-    /// future !purge / !cleanse. Each cost type has its own happy-path test, plus the
-    /// fallback cases (RandomCurse degrading to RandomBreak, LostTrainingPoint degrading
-    /// to MissedWork when the caller has no trained skills).
+    /// Tests for PurgeCostApplier — the shared cost engine used by !detox / !purge /
+    /// !cleanse. Each cost type has its own happy-path test, plus the fallback cases
+    /// (LostTrainingPoint degrading to MissedWork when the caller has no trained skills,
+    /// RandomCurse degrading to MissedWork when every curse is already on them).
     /// </summary>
     [Collection("Database")]
     public class PurgeCostApplierTests : IDisposable
@@ -73,22 +74,63 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
         }
 
         [Fact]
-        public void Apply_RandomCurse_DegradesToRandomBreak_WithWitchFraming()
+        public void Apply_RandomCurse_AppliesACurseFromTheCatalog()
         {
-            // Curse-and-Cleanse hasn't shipped — RandomCurse must not silently no-op. The
-            // applier degrades to a random-break cost wrapped in the user-picked "witch"
-            // narrative so the substitution reads as in-universe flavor rather than a TODO.
-            // When the curse system lands, swap this branch for the real curse and the
-            // assertion should track the new wording.
+            // Curse-and-Cleanse has shipped — RandomCurse now applies a real curse from
+            // CurseProcessor.CatalogMap that the caller doesn't already carry.
             var bob = MakeBob();
 
             var result = PurgeCostApplier.Apply(_database, bob, PurgeCostType.RandomCurse, new Random(1));
 
             Assert.True(result.Applied);
             Assert.Contains("ask a witch for help", result.Description);
-            Assert.Contains("a broken arm", result.Description); // catalog has only "arm"
             var reloaded = _database.GetProfile("Bob");
-            Assert.Single(BreakInstance.LoadAllWithTick(reloaded));
+            var curses = CurseInstance.LoadAll(reloaded);
+            Assert.Single(curses);
+            Assert.True(CurseProcessor.CatalogMap.ContainsKey(curses[0].Curse));
+            Assert.Equal("a passing witch", curses[0].AppliedBy);
+        }
+
+        [Fact]
+        public void Apply_RandomCurse_SkipsCursesAlreadyCarried()
+        {
+            // Already-carried curses must not be re-picked; the applier filters them out.
+            var bob = MakeBob();
+            // Seed bob with every curse but one.
+            string holdOut = "vibrating";
+            foreach (var name in CurseProcessor.CatalogMap.Keys)
+            {
+                if (name == holdOut) continue;
+                CurseProcessor.ApplyCurse(bob, name, "previously");
+            }
+            _database.SetProfile("Bob", bob);
+
+            var result = PurgeCostApplier.Apply(_database, bob, PurgeCostType.RandomCurse, new Random(1));
+
+            Assert.True(result.Applied);
+            var reloaded = _database.GetProfile("Bob");
+            var curses = CurseInstance.LoadAll(reloaded);
+            // The hold-out curse must have been the pick — every other slot was full.
+            Assert.Contains(curses, c => c.Curse == holdOut);
+        }
+
+        [Fact]
+        public void Apply_RandomCurse_AllCursesCarried_DegradesToMissedWork()
+        {
+            var bob = MakeBob();
+            foreach (var name in CurseProcessor.CatalogMap.Keys)
+            {
+                CurseProcessor.ApplyCurse(bob, name, "previously");
+            }
+            _database.SetProfile("Bob", bob);
+
+            var result = PurgeCostApplier.Apply(_database, bob, PurgeCostType.RandomCurse, new Random(1));
+
+            Assert.True(result.Applied);
+            var reloaded = _database.GetProfile("Bob");
+            Assert.True(reloaded.timers.ContainsKey("work"));
+            // Curse list is unchanged — no new curse, and no curse was removed.
+            Assert.Equal(CurseProcessor.CatalogMap.Count, CurseInstance.LoadAll(reloaded).Count);
         }
 
         [Fact]

@@ -71,6 +71,11 @@ namespace FChatDicebot.BotCommands
                             totalWeight += rewardEntry.Value.weight;
                         }
                         int randomWeightPick = random.Next(0, totalWeight);
+                        // Poverty curse: the rolled reward is shown for transparency, but no
+                        // currency is actually credited. Timer/job experience still apply
+                        // (the day's effort is still spent). See CurseProcessor.CatalogMap.
+                        bool hasPovertyCurse = CurseInstance.LoadAll(userProfile)
+                            .Any(c => string.Equals(c.Curse, "poverty", StringComparison.OrdinalIgnoreCase));
                         foreach (KeyValuePair<string, Reward> rewardEntry in chosenResult.rewardList)
                         {
                             randomWeightPick -= rewardEntry.Value.weight;
@@ -78,14 +83,21 @@ namespace FChatDicebot.BotCommands
                             {
                                 //grant this reward
                                 int rewardAmount = random.Next(rewardEntry.Value.min, rewardEntry.Value.max + 1); //+1 because upper bound is exclusive
-                                message += "You received [b]" + rewardAmount + " " + rewardEntry.Value.currency + "[/b]!\n";
-                                if (userProfile.currencies.ContainsKey(rewardEntry.Value.currency))
+                                if (hasPovertyCurse)
                                 {
-                                    userProfile.currencies[rewardEntry.Value.currency] += rewardAmount;
+                                    message += "You would have received [b]" + rewardAmount + " " + rewardEntry.Value.currency + "[/b], but your poverty curse makes it vanish in a poof of smoke before you can claim it.\n";
                                 }
                                 else
                                 {
-                                    userProfile.currencies.Add(rewardEntry.Value.currency, rewardAmount);
+                                    message += "You received [b]" + rewardAmount + " " + rewardEntry.Value.currency + "[/b]!\n";
+                                    if (userProfile.currencies.ContainsKey(rewardEntry.Value.currency))
+                                    {
+                                        userProfile.currencies[rewardEntry.Value.currency] += rewardAmount;
+                                    }
+                                    else
+                                    {
+                                        userProfile.currencies.Add(rewardEntry.Value.currency, rewardAmount);
+                                    }
                                 }
                                 break;
                             }
