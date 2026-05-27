@@ -62,6 +62,13 @@ namespace FChatDicebot.Database
             return null;
         }
 
+        public List<Profile> GetAllProfiles()
+        {
+            var collection = Database.GetCollection<BsonDocument>("RegisteredProfiles");
+            var documents = collection.Find(Builders<BsonDocument>.Filter.Empty).ToList();
+            return documents.Select(doc => BsonSerializer.Deserialize<Profile>(doc)).ToList();
+        }
+
         public void SetProfile(string userName, Profile newProfile)
         {
             var collection = Database.GetCollection<Profile>("RegisteredProfiles");
@@ -612,6 +619,12 @@ namespace FChatDicebot.Database
             var collection = Database.GetCollection<MonsterStats>("MonsterStats");
             var filter = Builders<MonsterStats>.Filter.Eq(s => s.Id, key);
             return collection.Find(filter).FirstOrDefault();
+        }
+
+        public List<MonsterStats> GetAllMonsterStats()
+        {
+            var collection = Database.GetCollection<MonsterStats>("MonsterStats");
+            return collection.Find(Builders<MonsterStats>.Filter.Empty).ToList();
         }
 
         public void IncrementMonsterStats(string key, int pregnancyDelta, int offspringDelta)

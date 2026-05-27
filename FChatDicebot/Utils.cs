@@ -604,6 +604,44 @@ namespace FChatDicebot
             }
         }
 
+        public static string JobToPlural(string job)
+        {
+            // Plurals only need explicit overrides where naive -s/-es fails. The Default
+            // path below mirrors JobToText for any job not listed here and adds an 's'.
+            Dictionary<string, string> pluralOverrides = new Dictionary<string, string>
+                    {
+                        { "armcandy", "Pieces of Arm Candy" },
+                        { "bartender", "Bartenders" },
+                        { "bathassistant", "Bath Assistants" },
+                        { "beasthandler", "Beast Handlers" },
+                        { "bitch", "Bitches" },
+                        { "boss", "Bosses" },
+                        { "broodmother", "Broodmothers" },
+                        { "cocksucker", "Cock Suckers" },
+                        { "cumfactory", "Cum Factories" },
+                        { "cuntlicker", "Cunt Lickers" },
+                        { "fucktoy", "Fuck Toys" },
+                        { "lapwarmer", "Lap Warmers" },
+                        { "livestock", "Livestock" },
+                        { "manabattery", "Mana Batteries" },
+                        { "physicaltrainer", "Physical Trainers" },
+                        { "secretary", "Secretaries" },
+                        { "walkingdildo", "Walking Dildos" },
+                    };
+            if (pluralOverrides.ContainsKey(job))
+            {
+                return pluralOverrides[job];
+            }
+            string singular = JobToText(job);
+            // JobToText returns the "Purveyor of New Professions [spoiler]..." string when
+            // the job isn't in the catalog. Detect that and pluralize the friendlier prefix.
+            if (singular.StartsWith("Purveyor of New Professions"))
+            {
+                return singular;
+            }
+            return singular + "s";
+        }
+
         public static string GetUserNameFromFullInputs(string [] inputs)
         {
             string partial = GetFullStringOfInputs(inputs);

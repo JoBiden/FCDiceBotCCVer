@@ -14,6 +14,12 @@ Design + as-implemented documentation for the Chateau Contract interaction syste
 | [Status-Effect-Hook](Infrastructure/Status-Effect-Hook.md) | `IStatusEffectContributor` + registry + base-class helpers | Corrupt/Purify, Odorize/Wash, future status interactions |
 | [Currency-and-Milk-Inventory](Infrastructure/Currency-and-Milk-Inventory.md) | `MilkBottle` model, `Profile.milkInventory`, `ChateauCurrency` constants, `!sell` command, bottle side-currency | Milk |
 
+### Reporting
+
+| Spec | Adds |
+|------|------|
+| [Statistics-and-Dossier](Statistics-and-Dossier.md) | `!statistics` + 6 drill-down commands (`!populations`, `!flora`, `!birthrates`, `!parasites`, `!payroll`, `!economics`), expanded `!dossier` blocks, `JobToPlural` helper, purge-interaction logging |
+
 ### Involved
 
 | Spec | Reversal | Depends on |
