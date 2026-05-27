@@ -1,25 +1,17 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using FChatDicebot.BotCommands.Base;
-using FChatDicebot.SavedData;
-using Newtonsoft.Json;
-using FChatDicebot.DiceFunctions;
 
 namespace FChatDicebot.BotCommands
 {
-    public class ChateauList : ChatBotCommand
+    public class ChateauIdentifiersAlias : ChatBotCommand
     {
-        public ChateauList()
+        public ChateauIdentifiersAlias()
         {
-            Name = "list";
+            Name = "identifiers";
             Aliases = new string[] { };
             Category = "General";
             ShortDescription = "Alias for !category";
             LongDescription = "Shorthand for the !category command. Lists all available identifiers for a given category. See !help category for full details.";
-            Usage = "!list {category}";
+            Usage = "!identifiers {category}";
             RelatedCommands = new string[] { "category", "identifier", "whatis" };
             CooldownDuration = null;
             CooldownAppliesTo = null;

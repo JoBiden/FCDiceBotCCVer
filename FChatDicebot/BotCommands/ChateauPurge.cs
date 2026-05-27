@@ -23,7 +23,7 @@ namespace FChatDicebot.BotCommands
         {
             Name = "purge";
             Aliases = new string[] { };
-            Category = "General";
+            Category = "Recovery";
             ShortDescription = "Purge a parasite from your body, at a cost (unless caught early).";
             LongDescription = "Remove one of your active parasites. Each parasite has a specific cost of removal, which could be missing a day of work, losing training prowess, exhausting a body part (see !break and !rest), or suffering a curse. Look at the details for a specific parasite with !whatis {parasite} to see what that cost is specifically.";
             Usage = "!purge\n!purge {parasite}";

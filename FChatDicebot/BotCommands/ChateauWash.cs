@@ -19,7 +19,7 @@ namespace FChatDicebot.BotCommands
         {
             Name = "wash";
             Aliases = new string[] { };
-            Category = "General";
+            Category = "Recovery";
             ShortDescription = "Wash off one layer of a scent applied to you";
             LongDescription = "Wash off a single layer of one scent currently saturating you. Only your own scents can be washed off, and only once per Chateau day. If no scent is specified, the most-saturated scent (highest layer count) is targeted. Specify a scent to wash that one instead.";
             Usage = "!wash\n!wash {scent}";

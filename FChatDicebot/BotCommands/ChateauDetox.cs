@@ -22,7 +22,7 @@ namespace FChatDicebot.BotCommands
         {
             Name = "detox";
             Aliases = new string[] { };
-            Category = "General";
+            Category = "Recovery";
             ShortDescription = "Liberate yourself from an addiction, but at what cost?";
             LongDescription = "Suffer the cost of withdrawal in order to end your addiction to a vice. This cost might be a missed day of work, a broken body part, loss of training prowess, or a curse, decided at random.";
             Usage = "!detox\n!detox {vice}";

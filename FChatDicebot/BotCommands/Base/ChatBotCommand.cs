@@ -11,7 +11,7 @@ namespace FChatDicebot.BotCommands.Base
     {
         public string Name;
         public string[] Aliases;
-        public string Category; // "casual", "involved", "commitment", "consequence", "general", "admin"
+        public string Category; // "casual", "involved", "commitment", "consequence", "recovery", "general", "admin"
         public string ShortDescription; // One-liner for list views
         public string LongDescription; // Detailed explanation with examples/notes
         public string Usage; // Syntax format

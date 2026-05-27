@@ -15,7 +15,7 @@ namespace FChatDicebot.BotCommands
             ShortDescription = "Train with another resident in a skill";
             LongDescription = "Train with a partner in a special technique or skill. You can always train to level 10, but to get to new heights, you'll need to train with someone more skilled than you or close to your skill level (no more than 10 levels lower). Cooldowns are per pair - you can train with any individual once per day, but can train with as many people as you like.";
             Usage = "!train [noparse][user]NameInUserTag[/user][/noparse] {training}";
-            RelatedCommands = new string[] { "consent", "dossier", "work", "identifiers" };
+            RelatedCommands = new string[] { "consent", "dossier", "work", "category" };
             CooldownDuration = "1 Day";
             CooldownAppliesTo = "both";
             IdentifierCategory = "training";
