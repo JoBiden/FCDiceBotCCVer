@@ -5,6 +5,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
+// CurseProcessor catalog is referenced for the RandomCurse application path.
+
 namespace FChatDicebot.InteractionProcessors
 {
     /// <summary>
@@ -59,19 +61,7 @@ namespace FChatDicebot.InteractionProcessors
                 case PurgeCostType.LostTrainingPoint:
                     return ApplyLostTrainingPoint(database, callerProfile, rng);
                 case PurgeCostType.RandomCurse:
-                    // Curse-and-Cleanse hasn't shipped — fall back to a random break so the
-                    // cost is never silently skipped. When the curse system lands, replace
-                    // this branch with the real curse application; until then we wrap the
-                    // break-cost noun phrase in the "witch" framing the user picked.
-                    var pick = PickAndApplyRandomBreak(database, callerProfile, rng);
-                    if (pick == null) return ApplyMissedWork(database, callerProfile);
-                    string daysWordW = pick.Days == 1 ? "day" : "days";
-                    return new PurgeCostResult
-                    {
-                        Applied = true,
-                        Description = "They had to ask a witch for help though, and the cost was a broken "
-                            + pick.Part + " for " + pick.Days + " " + daysWordW + ".",
-                    };
+                    return ApplyRandomCurse(database, callerProfile, rng);
                 default:
                     return new PurgeCostResult { Applied = false, Description = string.Empty };
             }
@@ -89,7 +79,7 @@ namespace FChatDicebot.InteractionProcessors
             return new PurgeCostResult
             {
                 Applied = true,
-                Description = "Withdrawals leave them too unwell to !work for the rest of the day.",
+                Description = "Side effects leave them too unwell to !work for the rest of the day.",
             };
         }
 
@@ -136,6 +126,43 @@ namespace FChatDicebot.InteractionProcessors
         {
             public string Part;
             public int Days;
+        }
+
+        /// <summary>
+        /// Pick a random curse from <see cref="CurseProcessor.CatalogMap"/> that the
+        /// caller doesn't already carry, apply it, and persist. If every curse is already
+        /// present (or the catalog is empty), fall back to MissedWork so the cost still
+        /// bites.
+        /// </summary>
+        private static PurgeCostResult ApplyRandomCurse(IChateauDatabase database, Profile callerProfile, Random rng)
+        {
+            var alreadyCarried = new HashSet<string>(
+                CurseInstance.LoadAll(callerProfile).Select(c => c.Curse ?? string.Empty),
+                StringComparer.OrdinalIgnoreCase);
+
+            var candidates = CurseProcessor.CatalogMap.Keys
+                .Where(name => !alreadyCarried.Contains(name))
+                .ToList();
+
+            if (candidates.Count == 0)
+            {
+                return ApplyMissedWork(database, callerProfile);
+            }
+
+            string picked = candidates[rng.Next(candidates.Count)];
+            CurseProcessor.ApplyCurse(callerProfile, picked, "a passing witch");
+
+            if (database != null && !string.IsNullOrEmpty(callerProfile.userName))
+            {
+                database.SetProfile(callerProfile.userName, callerProfile);
+            }
+
+            return new PurgeCostResult
+            {
+                Applied = true,
+                Description = "They had to ask a witch for help though, and were left with a new [b]"
+                    + picked + "[/b] curse for their trouble.",
+            };
         }
 
         private static PurgeCostResult ApplyLostTrainingPoint(IChateauDatabase database, Profile callerProfile, Random rng)
