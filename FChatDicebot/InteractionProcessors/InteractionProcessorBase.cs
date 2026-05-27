@@ -161,7 +161,41 @@ namespace FChatDicebot.InteractionProcessors
             Profile subject = GetStatusEffectSubject(initiatorProfile, recipientProfile, identifier);
             var effects = AggregateCompletionStatusEffects(
                 initiatorProfile, recipientProfile, subject, identifier);
-            return AppendStatusFragments(baseMessage, effects.CompletionAppendix);
+            var postEffectFragments = RunPostInteractionEffects(
+                initiatorProfile, recipientProfile, identifier);
+
+            string withStatusFragments = AppendStatusFragments(baseMessage, effects.CompletionAppendix);
+            return AppendStatusFragments(withStatusFragments, postEffectFragments);
+        }
+
+        /// <summary>
+        /// Walk <see cref="PostInteractionEffectRegistry"/> after the parent interaction has
+        /// been processed, letting each effect inspect both profiles, mutate them, and emit
+        /// completion-time fragments. A misbehaving effect must not break the parent
+        /// interaction — exceptions are swallowed, same contract as
+        /// <see cref="GetActiveStatusEffects"/>.
+        /// </summary>
+        private List<string> RunPostInteractionEffects(
+            Profile initiatorProfile, Profile recipientProfile, string parentIdentifier)
+        {
+            var fragments = new List<string>();
+            string safeIdentifier = parentIdentifier ?? string.Empty;
+            foreach (var effect in PostInteractionEffectRegistry.GetAllEffects())
+            {
+                List<string> produced;
+                try
+                {
+                    produced = effect.OnInteractionCompleted(
+                        initiatorProfile, recipientProfile,
+                        InteractionType, InvestmentLevel, safeIdentifier, Database);
+                }
+                catch (Exception)
+                {
+                    continue;
+                }
+                if (produced != null) fragments.AddRange(produced);
+            }
+            return fragments;
         }
 
         /// <summary>
