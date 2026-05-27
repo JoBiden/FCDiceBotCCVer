@@ -51,15 +51,20 @@ namespace FChatDicebot.BotCommands
             }
 
             // Original general help display
-            List<string> generalCommands = new List<string>() 
+            List<string> generalCommands = new List<string>()
             {
                 "!dossier [sub]!profile[/sub] ",
                 "!work [sub]!w[/sub]",
                 "!volunteer [sub]!v[/sub]",
                 "!bank",
                 "!titles",
+                "!settitle",
                 "!category [sub]!list[/sub] ",
                 "!identifier [sub]!whatis[/sub]",
+                "!pledges",
+                "!abandonpledge",
+                "!sell",
+                "!statues",
                 "!joinchateau",
                 "!modmessage",
                 "!setmark",
@@ -68,10 +73,20 @@ namespace FChatDicebot.BotCommands
                 "!uptime"
             };
 
+            List<string> recoveryCommands = new List<string>()
+            {
+                "!cleanse",
+                "!detox",
+                "!purge",
+                "!rest",
+                "!wash"
+            };
+
             List<string> roomCommands = new List<string>()
             {
                 "!consent [sub]!c[/sub] ",
-                "!pledge"
+                "!pledge",
+                "!fulfill"
             };
 
             List<string> casualCommands = new List<string>()
@@ -88,7 +103,10 @@ namespace FChatDicebot.BotCommands
                 "!dressup",
                 "!feed",
                 "!golden",
-                "!pay"
+                "!pay",
+                "!milk",
+                "!climax",
+                "!climaxfor"
             };
 
             List<string> commitmentCommands = new List<string>()
@@ -100,17 +118,28 @@ namespace FChatDicebot.BotCommands
                 "!mark",
                 "!employ",
                 "!bond",
-                "!entitle"
+                "!entitle",
+                "!corrupt",
+                "!purify",
+                "!breed",
+                "!birth",
+                "!train"
             };
 
             List<string> consequenceCommands = new List<string>()
             {
                 "!rename",
-                "!monsterize"
+                "!monsterize",
+                "!curse",
+                "!infest",
+                "!dose",
+                "!odorize",
+                "!break"
             };
-            string messageText = "These are all of the commands native to the [user]Chateau Contract[/user] bot, as of [b]November 30th 2025.[/b] For detailed description of their use, please see the [user]Chateau Contract[/user] profile or use !help [command] Commands in subtext are alternate names of the same command - all documentation will be for the first listed names.\n\n" +
+            string messageText = "These are all of the commands native to the [user]Chateau Contract[/user] bot, as of [b]May 27th 2026.[/b] For detailed description of their use, please see the [user]Chateau Contract[/user] profile or use !help [command] Commands in subtext are alternate names of the same command - all documentation will be for the first listed names.\n\n" +
                     "[u]Does not require channel[/u]\n" +
-                    Utils.sortedListDisplayText(generalCommands) + "\n\n" +         
+                    Utils.sortedListDisplayText(generalCommands) + "\n" +
+                    "[i]Recovery Commands:[/i] " + Utils.sortedListDisplayText(recoveryCommands) + "\n\n" +
                     "[u]Requires channel[/u]\n" +
                     Utils.sortedListDisplayText(roomCommands) + "\n" +
                     "[i]Casual Interactions:[/i] " + Utils.sortedListDisplayText(casualCommands) + "\n" +
@@ -170,6 +199,9 @@ namespace FChatDicebot.BotCommands
                         break;
                     case "Consequence Interaction":
                         sb.AppendLine("[color=red]Consequence Interaction[/color]");
+                        break;
+                    case "Recovery":
+                        sb.AppendLine("[color=blue]Recovery[/color]");
                         break;
                     case "General":
                         sb.AppendLine("General");

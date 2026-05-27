@@ -15,12 +15,12 @@ namespace FChatDicebot.BotCommands
     {
         public ChateauIdentifiers()
         {
-            Name = "identifiers";
-            Aliases = new string[] { "list" };
+            Name = "category";
+            Aliases = new string[] { "list", "identifiers" };
             Category = "General";
             ShortDescription = "List all identifiers in a category";
             LongDescription = "Display all available identifiers for a specific category (location, monster, object, plant etc.) an interaction might require, or subcategory (aquatic, bird, groundfloor, etc) that helps narrow your options. If used without a provided category, will list all available categories and subcategories. Knowledge is power!";
-            Usage = "!identifiers {category}\nor\n!identifiers";
+            Usage = "!category {category}\nor\n!category";
             RelatedCommands = new string[] { "identifier", "whatis", "volunteer" };
             CooldownDuration = null;
             CooldownAppliesTo = null;

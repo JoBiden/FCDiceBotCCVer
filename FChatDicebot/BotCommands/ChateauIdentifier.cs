@@ -22,7 +22,7 @@ namespace FChatDicebot.BotCommands
             ShortDescription = "Get information about a specific identifier";
             LongDescription = "Look up detailed information about a specific identifier (bodypart, substance, species, etc.). Shows the description and categories for that identifier.";
             Usage = "!identifier {identifier}\nor\n!whatis {identifier}";
-            RelatedCommands = new string[] { "identifiers", "list" };
+            RelatedCommands = new string[] { "category", "list" };
             CooldownDuration = null;
             CooldownAppliesTo = null;
             IdentifierCategory = null;

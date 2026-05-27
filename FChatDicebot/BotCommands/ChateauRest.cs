@@ -24,7 +24,7 @@ namespace FChatDicebot.BotCommands
         {
             Name = "rest";
             Aliases = new string[] { };
-            Category = "General";
+            Category = "Recovery";
             ShortDescription = "Skip today's !work to recover broken body parts one day faster";
             LongDescription = "Recover broken body parts by one day, in exchange for skipping today's !work. With no argument, all of your broken parts are improved. With a bodypart argument, only that break is affected. !rest can only be used once per Chateau day, and only if you haven't already worked that day.";
             Usage = "!rest\n!rest {bodypart}";

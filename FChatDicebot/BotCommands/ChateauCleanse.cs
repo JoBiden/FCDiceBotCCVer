@@ -22,7 +22,7 @@ namespace FChatDicebot.BotCommands
         {
             Name = "cleanse";
             Aliases = new string[] { };
-            Category = "General";
+            Category = "Recovery";
             ShortDescription = "Cleanse a curse, at a cost.";
             LongDescription = "Remove a curse placed upon you. Each curse has a specific cost of removal, which could be missing a day of work, exhausting a body part (see !break and !rest), or losing training prowess. Look at the details for a specific curse with !whatis {curse} to see what that cost is specifically.";
             Usage = "!cleanse\n!cleanse {curse}";
