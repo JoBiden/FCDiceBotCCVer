@@ -14,6 +14,7 @@ namespace FChatDicebot.Database
         // Profile Operations
         string RegisterUserChateau(string userName);
         Profile GetProfile(string userName);
+        List<Profile> GetAllProfiles();
         void SetProfile(string userName, Profile newProfile);
         void IncrementCount(string userName, string countLabel);
         void DecrementCount(string userName, string countLabel);
@@ -72,6 +73,7 @@ namespace FChatDicebot.Database
 
         // Monster Stats Operations (global aggregate counts for breed/birth)
         MonsterStats GetMonsterStats(string key);
+        List<MonsterStats> GetAllMonsterStats();
         void IncrementMonsterStats(string key, int pregnancyDelta, int offspringDelta);
 
         // Mod Message Operations

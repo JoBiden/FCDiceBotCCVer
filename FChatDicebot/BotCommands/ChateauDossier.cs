@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using FChatDicebot.BotCommands.Base;
+using FChatDicebot.BotCommands.Support;
 using FChatDicebot.Database;
 using FChatDicebot.SavedData;
 using Newtonsoft.Json;
@@ -18,7 +19,10 @@ namespace FChatDicebot.BotCommands
     {
         private readonly IChateauDatabase _database;
 
-        // Static readonly dictionaries for count display names and specialist text
+        // Static readonly dictionaries for count display names and specialist text.
+        // CountDisplayNames covers individual count keys rendered as a single row each.
+        // Extends to give/take splits for non-casual interactions per the give/take split
+        // brief — keys here are sourced from each processor's IncrementCount labels.
         private static readonly Dictionary<string, string> CountDisplayNames = new Dictionary<string, string>
         {
             { "kiss", "Kisses Shared" },
@@ -28,7 +32,23 @@ namespace FChatDicebot.BotCommands
             { "spanktake", "Spanks Taken" },
             { "spankgive", "Spanks Delivered" },
             { "bullygive", "Big Bullies" },
-            { "bullytake", "Boolied" }
+            { "bullytake", "Boolied" },
+            { "climaxtake", "Orgasms" },
+            { "breaktake", "Bodyparts Exhausted" },
+            { "cursetake", "Curses Endured" },
+            { "dressuptake", "Costume Changes" },
+            { "goldentake", "Golden Showers" },
+            { "paymentGivegive", "Personal Payments" }
+        };
+
+        // SummedCountDisplay aggregates multiple count keys (e.g. give+take) under one
+        // header. The display label is the dictionary key; the inner list is the count
+        // labels to sum. Used for symmetric concepts the user wants surfaced as a single
+        // "Shared" line rather than two split rows.
+        private static readonly Dictionary<string, string[]> SummedCountDisplay = new Dictionary<string, string[]>
+        {
+            { "Marks Shared", new string[] { "markgive", "marktake" } },
+            { "Meals Shared", new string[] { "feedgive", "feedtake" } }
         };
 
         private static readonly Dictionary<string, string> CasualCountSpecialistText = new Dictionary<string, string>
@@ -164,9 +184,20 @@ namespace FChatDicebot.BotCommands
             // Build all sections
             string header = BuildNameTitleSpecialties(profile, targetUser);
             string jobSection = BuildJobSection(profile);
+            string activeCurses = BuildActiveCursesSection(profile);
+            string activeParasites = BuildActiveParasitesSection(profile);
+            string activeBreaks = BuildActiveBreaksSection(profile);
+            string activeOdorizes = BuildActiveOdorizesSection(profile);
             string casualSection = BuildCasualInteractionsSection(profile);
+            string interactionCountsSection = BuildInteractionCountsSection(profile);
             string marksSection = BuildMarksSection(profile);
             string bondsSection = BuildBondsSection(profile);
+            string siredSection = BuildSiredSection(targetUser);
+            string birthedSection = BuildBirthedSection(profile);
+            string plantedSection = BuildPersonallyPlantedSection(targetUser);
+            string employsSection = BuildCurrentlyEmploysSection(targetUser);
+            string titlesEarnedSection = BuildTitlesEarnedSection(profile);
+            string abundantCurrencySection = BuildMostAbundantCurrencySection(profile);
             string experienceSection = BuildJobExperienceSection(profile);
             string lastReportedSection = BuildLastReportedSection(targetUser);
             string lastSeenSection = BuildLastSeenSection(targetUser);
@@ -174,10 +205,21 @@ namespace FChatDicebot.BotCommands
             // Assemble the full dossier
             sb.Append(header);
             sb.Append(jobSection);
+            sb.Append(activeCurses);
+            sb.Append(activeParasites);
+            sb.Append(activeBreaks);
+            sb.Append(activeOdorizes);
             sb.Append("\n");
             sb.Append(casualSection);
+            sb.Append(interactionCountsSection);
             sb.Append(marksSection);
             sb.Append(bondsSection);
+            sb.Append(siredSection);
+            sb.Append(birthedSection);
+            sb.Append(plantedSection);
+            sb.Append(employsSection);
+            sb.Append(titlesEarnedSection);
+            sb.Append(abundantCurrencySection);
             sb.Append(experienceSection);
             sb.Append("\n");
             sb.Append(lastReportedSection);
@@ -201,14 +243,14 @@ namespace FChatDicebot.BotCommands
             StringBuilder sb = new StringBuilder();
             sb.Append("[b][u]");
             sb.Append(profile.displayName);
-            sb.Append(" the ");
 
-            // Add monster type if present
-            if (profile.characteristics.ContainsKey("monster"))
-            {
-                sb.Append(Utils.Capitalize(profile.characteristics["monster"]));
-                sb.Append("; ");
-            }
+            // Compose the header parts in order: optional monster, optional specialist titles.
+            // Each part is appended through deferred separators so we never trail "; " or
+            // "the " when a downstream part is empty (fixes the rendering bug where a profile
+            // with a monster but no specialties showed "{name} the {Monster}; ").
+            string monsterPart = profile.characteristics.ContainsKey("monster")
+                ? Utils.Capitalize(profile.characteristics["monster"])
+                : null;
 
             // Gather specialist titles from all categories
             List<string> specialistTitles = new List<string>();
@@ -239,7 +281,22 @@ namespace FChatDicebot.BotCommands
                 specialistTitles.Add(consequenceSpecialist);
             }
 
-            // Format specialist titles with proper grammar
+            // Render: "{name} the {monster}; {specialty1} and {specialty2} Specialist"
+            // Each portion is added only when populated; separators glue exactly the parts
+            // present so no trailing "; " or stray "the " can appear.
+            bool anyAfterName = !string.IsNullOrEmpty(monsterPart) || specialistTitles.Count > 0;
+            if (anyAfterName)
+            {
+                sb.Append(" the ");
+            }
+            if (!string.IsNullOrEmpty(monsterPart))
+            {
+                sb.Append(monsterPart);
+                if (specialistTitles.Count > 0)
+                {
+                    sb.Append("; ");
+                }
+            }
             if (specialistTitles.Count > 0)
             {
                 for (int i = 0; i < specialistTitles.Count; i++)
@@ -266,7 +323,7 @@ namespace FChatDicebot.BotCommands
             string displayedTitles = Utils.GetDisplayedTitlesText(profile);
             if (!string.IsNullOrEmpty(displayedTitles))
             {
-                if (specialistTitles.Count > 0)
+                if (anyAfterName)
                 {
                     sb.AppendLine("");
                 }
@@ -311,6 +368,226 @@ namespace FChatDicebot.BotCommands
         }
 
         /// <summary>
+        /// One line per active curse, with the curser's display name. Empty when the
+        /// curses list is empty.
+        /// </summary>
+        private string BuildActiveCursesSection(Profile profile)
+        {
+            var curses = CurseInstance.LoadAll(profile);
+            if (curses.Count == 0) return string.Empty;
+            StringBuilder sb = new StringBuilder();
+            sb.Append("[b]Active Curses:[/b]");
+            foreach (var curse in curses)
+            {
+                string applierName = string.IsNullOrEmpty(curse.AppliedBy) ? "someone" : ResolveDisplayName(curse.AppliedBy);
+                sb.Append("\n[u]").Append(Utils.Capitalize(curse.Curse ?? string.Empty)).Append(":[/u] from ").Append(applierName);
+            }
+            sb.Append('\n');
+            return sb.ToString();
+        }
+
+        /// <summary>
+        /// One line per active parasite. Grace-window indicator is shown for spread cases
+        /// still inside the free-!purge window so the carrier can see at a glance that an
+        /// early purge would cost nothing.
+        /// </summary>
+        private string BuildActiveParasitesSection(Profile profile)
+        {
+            var parasites = ParasiteInstance.LoadAll(profile);
+            if (parasites.Count == 0) return string.Empty;
+            StringBuilder sb = new StringBuilder();
+            sb.Append("[b]Active Parasites:[/b]");
+            foreach (var p in parasites)
+            {
+                string infesterName = string.IsNullOrEmpty(p.InfestedBy) ? "an unknown source" : ResolveDisplayName(p.InfestedBy);
+                sb.Append("\n[u]").Append(ScentText.Capitalize(ParasiteText.ParasiteName(p.Parasite))).Append(":[/u] from ").Append(infesterName);
+                if (p.SpreadFromContact && DateTime.UtcNow < p.GraceUntil)
+                {
+                    sb.Append(" (still within !purge grace window)");
+                }
+            }
+            sb.Append('\n');
+            return sb.ToString();
+        }
+
+        /// <summary>
+        /// One line per broken bodypart, with days remaining (using BreakInstance.Severity
+        /// which lazy-decrements via LoadAllWithTick — but the lazy tick mutates state, so
+        /// the dossier intentionally uses the non-mutating LoadAll for read-only inspection).
+        /// </summary>
+        private string BuildActiveBreaksSection(Profile profile)
+        {
+            var breaks = BreakInstance.LoadAll(profile);
+            if (breaks.Count == 0) return string.Empty;
+            StringBuilder sb = new StringBuilder();
+            sb.Append("[b]Active Breaks:[/b]");
+            foreach (var b in breaks)
+            {
+                sb.Append("\n[u]").Append(Utils.BodypartToText(b.Part ?? string.Empty)).Append(":[/u] ")
+                  .Append(b.Severity).Append(b.Severity == 1 ? " day remaining" : " days remaining");
+            }
+            sb.Append('\n');
+            return sb.ToString();
+        }
+
+        /// <summary>
+        /// One line per active scent layer (from !odorize), showing layer count.
+        /// </summary>
+        private string BuildActiveOdorizesSection(Profile profile)
+        {
+            var scents = ScentLayer.LoadAll(profile);
+            if (scents.Count == 0) return string.Empty;
+            StringBuilder sb = new StringBuilder();
+            sb.Append("[b]Active Scents:[/b]");
+            foreach (var s in scents)
+            {
+                sb.Append("\n[u]").Append(Utils.Capitalize(s.Scent ?? string.Empty)).Append(":[/u] ")
+                  .Append(s.Layers).Append(s.Layers == 1 ? " layer" : " layers");
+            }
+            sb.Append('\n');
+            return sb.ToString();
+        }
+
+        /// <summary>
+        /// Per-monster lifetime sired count, parsed from every other carrier's
+        /// <c>lists["offspring"]</c> entries (filtered by the "(parent: ...)" stamp).
+        /// </summary>
+        private string BuildSiredSection(string targetUser)
+        {
+            var sired = Support.ChateauStatisticsSupport.SiredByMonsterType(_database.GetAllProfiles(), targetUser);
+            return BuildPerMonsterBlock("Sired", sired);
+        }
+
+        /// <summary>
+        /// Per-monster lifetime birthed count, parsed from the user's own
+        /// <c>lists["offspring"]</c> entries.
+        /// </summary>
+        private string BuildBirthedSection(Profile profile)
+        {
+            var birthed = Support.ChateauStatisticsSupport.BirthedByMonsterType(profile);
+            return BuildPerMonsterBlock("Birthed", birthed);
+        }
+
+        /// <summary>
+        /// Per-plant lifetime "planted by this user" count. Counts !plant interactions where
+        /// the user was the initiator.
+        /// </summary>
+        private string BuildPersonallyPlantedSection(string targetUser)
+        {
+            List<Interaction> myPlants = _database.GetInteractionsByInitiator(targetUser);
+            if (myPlants == null) return string.Empty;
+            Dictionary<string, int> byPlant = new Dictionary<string, int>();
+            foreach (var i in myPlants)
+            {
+                if (!string.Equals(i.type, "plant", StringComparison.OrdinalIgnoreCase)) continue;
+                string plant = (i.identifier ?? string.Empty).ToLowerInvariant();
+                if (string.IsNullOrEmpty(plant)) continue;
+                if (!byPlant.ContainsKey(plant)) byPlant[plant] = 0;
+                byPlant[plant]++;
+            }
+            if (byPlant.Count == 0) return string.Empty;
+            StringBuilder sb = new StringBuilder();
+            sb.Append("[b]Has personally planted:[/b]");
+            foreach (var kv in byPlant.OrderByDescending(kv => kv.Value).ThenBy(kv => kv.Key))
+            {
+                string label = kv.Value == 1 ? Utils.Capitalize(kv.Key) : Utils.Capitalize(kv.Key) + "s";
+                sb.Append("\n[u]").Append(label).Append(":[/u] ").Append(kv.Value);
+            }
+            sb.Append('\n');
+            return sb.ToString();
+        }
+
+        /// <summary>
+        /// Per-job current headcount for residents this user employs. Scans all profiles for
+        /// <c>characteristics["employer"]</c> matching the target's userName.
+        /// </summary>
+        private string BuildCurrentlyEmploysSection(string targetUser)
+        {
+            var allProfiles = _database.GetAllProfiles();
+            Dictionary<string, int> byJob = new Dictionary<string, int>();
+            foreach (var p in allProfiles)
+            {
+                if (p?.characteristics == null) continue;
+                if (!p.characteristics.ContainsKey("employer")) continue;
+                if (!string.Equals(p.characteristics["employer"], targetUser, StringComparison.OrdinalIgnoreCase)) continue;
+                if (!p.characteristics.ContainsKey("job")) continue;
+                if (string.Equals(p.userName, targetUser, StringComparison.OrdinalIgnoreCase)) continue; // skip self
+                string job = (p.characteristics["job"] ?? string.Empty).ToLowerInvariant();
+                if (string.IsNullOrEmpty(job)) continue;
+                if (!byJob.ContainsKey(job)) byJob[job] = 0;
+                byJob[job]++;
+            }
+            if (byJob.Count == 0) return string.Empty;
+            StringBuilder sb = new StringBuilder();
+            sb.Append("[b]Currently employs:[/b]");
+            foreach (var entry in byJob.OrderByDescending(kv => kv.Value).ThenBy(kv => kv.Key))
+            {
+                string label = entry.Value == 1 ? Utils.JobToText(entry.Key) : Utils.JobToPlural(entry.Key);
+                sb.Append("\n[u]").Append(label).Append(":[/u] ").Append(entry.Value);
+            }
+            sb.Append('\n');
+            return sb.ToString();
+        }
+
+        /// <summary>
+        /// Single-line total title count. Includes both user-bestowed (!entitle) and
+        /// system-conferred (<c>givenBy == "Chateau"</c>) titles.
+        /// </summary>
+        private string BuildTitlesEarnedSection(Profile profile)
+        {
+            int count = profile.titles?.Count ?? 0;
+            if (count <= 0) return string.Empty;
+            return "[b]Titles earned:[/b] " + count + "\n";
+        }
+
+        /// <summary>
+        /// Single-line wealthiest currency tally. Picks the currency the resident has the
+        /// most of by raw count — currencies don't weigh against each other in this system,
+        /// so 5 lustessence beats 4 gold.
+        /// </summary>
+        private string BuildMostAbundantCurrencySection(Profile profile)
+        {
+            if (profile.currencies == null || profile.currencies.Count == 0) return string.Empty;
+            var positive = profile.currencies.Where(kv => kv.Value > 0).ToList();
+            if (positive.Count == 0) return string.Empty;
+            int max = positive.Max(kv => kv.Value);
+            var top = positive.Where(kv => kv.Value == max).Select(kv => kv.Key).OrderBy(k => k).ToList();
+            string currencyText = string.Join("/", top);
+            return "[b]Most abundant currency:[/b] " + max + " " + currencyText + "\n";
+        }
+
+        /// <summary>
+        /// Shared block layout for the Sired / Birthed / similar per-monster sections.
+        /// Mirrors the Bonds section style — header on its own line, then "Type: count"
+        /// rows.
+        /// </summary>
+        private string BuildPerMonsterBlock(string label, Dictionary<string, int> counts)
+        {
+            if (counts == null || counts.Count == 0) return string.Empty;
+            StringBuilder sb = new StringBuilder();
+            sb.Append("[b]").Append(label).Append(":[/b]");
+            foreach (var entry in counts.OrderByDescending(kv => kv.Value).ThenBy(kv => kv.Key))
+            {
+                if (entry.Value <= 0) continue;
+                string monster = entry.Value == 1 ? Utils.Capitalize(entry.Key) : Utils.Capitalize(entry.Key) + "s";
+                sb.Append("\n[u]").Append(monster).Append(":[/u] ").Append(entry.Value);
+            }
+            sb.Append('\n');
+            return sb.ToString();
+        }
+
+        /// <summary>
+        /// Look up a userName's displayName, falling back to the userName itself when the
+        /// referenced profile no longer exists (or never existed).
+        /// </summary>
+        private string ResolveDisplayName(string userName)
+        {
+            if (string.IsNullOrEmpty(userName)) return userName;
+            Profile profile = _database.GetProfile(userName);
+            return profile != null && !string.IsNullOrEmpty(profile.displayName) ? profile.displayName : userName;
+        }
+
+        /// <summary>
         /// Builds the casual interactions section (kisses, cuddles, etc.)
         /// </summary>
         private string BuildCasualInteractionsSection(Profile profile)
@@ -351,6 +628,53 @@ namespace FChatDicebot.BotCommands
             }
 
             sb.Append("\n");
+            return sb.ToString();
+        }
+
+        /// <summary>
+        /// Builds the non-casual interaction counts row — give/take splits for non-casual
+        /// counters (climax/break/curse/dressup/golden/payment) plus summed entries for
+        /// concepts the user wants surfaced as a single "Shared" line (marks, meals).
+        /// </summary>
+        private string BuildInteractionCountsSection(Profile profile)
+        {
+            if (profile.counts == null || profile.counts.Count == 0) return string.Empty;
+
+            // Individual non-casual rows: CountDisplayNames entries that aren't the casual
+            // ones (those land in BuildCasualInteractionsSection above).
+            Dictionary<string, int> individual = new Dictionary<string, int>();
+            foreach (var count in profile.counts)
+            {
+                if (!CountDisplayNames.ContainsKey(count.Key)) continue;
+                if (CasualCountSpecialistText.ContainsKey(count.Key)) continue;
+                if (count.Value > 0) individual[count.Key] = count.Value;
+            }
+
+            // Summed rows: aggregate give+take pairs under one display label.
+            Dictionary<string, int> summed = new Dictionary<string, int>();
+            foreach (var pair in SummedCountDisplay)
+            {
+                int total = 0;
+                foreach (var key in pair.Value)
+                {
+                    if (profile.counts.ContainsKey(key)) total += profile.counts[key];
+                }
+                if (total > 0) summed[pair.Key] = total;
+            }
+
+            if (individual.Count == 0 && summed.Count == 0) return string.Empty;
+
+            StringBuilder sb = new StringBuilder();
+            sb.Append("[b]Notable counts:[/b] ");
+            foreach (var entry in summed)
+            {
+                sb.Append("[u]").Append(entry.Key).Append(":[/u] ").Append(entry.Value).Append("   ");
+            }
+            foreach (var entry in individual.OrderBy(kv => CountDisplayNames[kv.Key]))
+            {
+                sb.Append("[u]").Append(CountDisplayNames[entry.Key]).Append(":[/u] ").Append(entry.Value).Append("   ");
+            }
+            sb.Append('\n');
             return sb.ToString();
         }
 

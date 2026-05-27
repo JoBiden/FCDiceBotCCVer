@@ -80,6 +80,16 @@ namespace FChatDicebot
             return GetDatabase().GetProfile(userName);
         }
 
+        internal static List<Profile> getAllProfiles()
+        {
+            return GetDatabase().GetAllProfiles();
+        }
+
+        internal static List<MonsterStats> getAllMonsterStats()
+        {
+            return GetDatabase().GetAllMonsterStats();
+        }
+
         internal static void setInteraction(Interaction editedInteraction)
         {
             GetDatabase().SetInteraction(editedInteraction);

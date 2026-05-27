@@ -187,6 +187,14 @@
     <Compile Include="BotCommands\ChateauObjectify.cs" />
     <Compile Include="BotCommands\ChateauPlant.cs" />
     <Compile Include="BotCommands\ChateauStatues.cs" />
+    <Compile Include="BotCommands\ChateauStatistics.cs" />
+    <Compile Include="BotCommands\ChateauPopulations.cs" />
+    <Compile Include="BotCommands\ChateauFlora.cs" />
+    <Compile Include="BotCommands\ChateauBirthrates.cs" />
+    <Compile Include="BotCommands\ChateauParasites.cs" />
+    <Compile Include="BotCommands\ChateauPayroll.cs" />
+    <Compile Include="BotCommands\ChateauEconomics.cs" />
+    <Compile Include="BotCommands\Support\ChateauStatisticsSupport.cs" />
     <Compile Include="BotCommands\ChateauIdentifiers.cs" />
     <Compile Include="BotCommands\ChateauIdentifier.cs" />
     <Compile Include="BotCommands\ChateauHandhold.cs" />

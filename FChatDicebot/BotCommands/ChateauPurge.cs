@@ -19,6 +19,10 @@ namespace FChatDicebot.BotCommands
     /// </summary>
     public class ChateauPurge : ChatBotCommand
     {
+        // Interaction type stamped on logged !purge events. Lifetime purge totals (e.g.
+        // !statistics, !parasites) count these.
+        public const string PurgeType = "purge";
+
         public ChateauPurge()
         {
             Name = "purge";
@@ -130,6 +134,19 @@ namespace FChatDicebot.BotCommands
             parasites.Remove(target);
             ParasiteInstance.SaveAll(caller, parasites);
             database.SetProfile(characterName, caller);
+
+            // Log the purge so lifetime stats can count it (per-parasite "ever purged").
+            // Self-targeted: initiator and recipient are both the caller, matching the
+            // !purge precedent that it has no consent flow and no channel announcement.
+            database.AddInteraction(new Interaction
+            {
+                initiator = characterName,
+                recipient = characterName,
+                type = PurgeType,
+                identifier = parasiteName,
+                investmentLevel = "consequence",
+                interactionTime = DateTime.UtcNow
+            });
 
             // Detox precedent: purge outcomes are private to the caller — nobody else
             // needs to see who's being eaten from the inside by withdrawal.
