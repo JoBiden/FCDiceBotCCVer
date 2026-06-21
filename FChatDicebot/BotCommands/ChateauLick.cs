@@ -1,0 +1,63 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using FChatDicebot.BotCommands.Base;
+using FChatDicebot.SavedData;
+using Newtonsoft.Json;
+using FChatDicebot.DiceFunctions;
+using FChatDicebot.Model;
+
+namespace FChatDicebot.BotCommands
+{
+    public class ChateauLick : ChatBotCommand
+    {
+        public ChateauLick()
+        {
+            Name = "lick";
+            Aliases = new string[] { };
+            Category = "Casual Interaction";
+            ShortDescription = "Give another resident a lick";
+            LongDescription = "Give another character a lick once they !consent. Grooming, tasting, or just being a menace — it's all fair game in the Chateau.";
+            Usage = "!lick [noparse][user]NameInUserTag[/user][/noparse]";
+            RelatedCommands = new string[] { "boobhat", "kiss", "consent", "dossier" };
+            CooldownDuration = "30 minutes (but can still interact without incrementing count)";
+            CooldownAppliesTo = "both initiator and recipient";
+            IdentifierCategory = null;
+            RequireBotAdmin = false;
+            RequireChannelAdmin = false;
+            RequireChannel = true;
+            LockCategory = CommandLockCategory.NONE;
+        }
+
+        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
+        {
+            string recipient = commandController.GetUserNameFromCommandTerms(rawTerms);
+            Profile recipientProfile = MonDB.getProfile(recipient);
+            Profile initiatorProfile = MonDB.getProfile(characterName);
+            if (recipientProfile == null)
+            {
+                bot.SendPrivateMessage(ChateauInteractionHandler.notFoundText(recipient), characterName);
+            }
+            else
+            {
+                string message = initiatorProfile.displayName + " wants to give " + recipientProfile.displayName + " a lick. Do you !consent to being lapped at?";
+
+                Interaction lick = new Interaction();
+                lick.initiator = characterName;
+                lick.recipient = recipient;
+                lick.type = "lick";
+                lick.investmentLevel = "casual";
+
+                PendingCommand pendingLick = new PendingCommand();
+                pendingLick.pendingInteraction = lick;
+                pendingLick.awaitingConsentFrom = recipient;
+
+                MonDB.addPendingCommand(pendingLick);
+
+                bot.SendMessageInChannel(message, channel);
+            }
+        }
+    }
+}

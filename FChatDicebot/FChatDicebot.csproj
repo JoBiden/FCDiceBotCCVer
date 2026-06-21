@@ -201,6 +201,10 @@
     <Compile Include="BotCommands\ChateauCuddle.cs" />
     <Compile Include="BotCommands\ChateauKiss.cs" />
     <Compile Include="BotCommands\ChateauBully.cs" />
+    <Compile Include="BotCommands\ChateauBoobhat.cs" />
+    <Compile Include="BotCommands\ChateauLick.cs" />
+    <Compile Include="BotCommands\ChateauLap.cs" />
+    <Compile Include="BotCommands\ChateauSit.cs" />
     <Compile Include="BotCommands\ChateauAbandonPledge.cs" />
     <Compile Include="BotCommands\ChateauFulfill.cs" />
     <Compile Include="BotCommands\ChateauPledge.cs" />
@@ -353,10 +357,14 @@
     <Compile Include="Database\Chateaudatabase.cs" />
     <Compile Include="Database\Ichateaudatabase.cs" />
     <Compile Include="InteractionCountMigration.cs" />
+    <Compile Include="InteractionProcessors\Casual\BoobhatProcessor.cs" />
     <Compile Include="InteractionProcessors\Casual\BullyProcessor.cs" />
     <Compile Include="InteractionProcessors\Casual\CuddleProcessor.cs" />
     <Compile Include="InteractionProcessors\Casual\HandholdProcessor.cs" />
     <Compile Include="InteractionProcessors\Casual\KissProcessor.cs" />
+    <Compile Include="InteractionProcessors\Casual\LapsitCommandSupport.cs" />
+    <Compile Include="InteractionProcessors\Casual\LapsitProcessor.cs" />
+    <Compile Include="InteractionProcessors\Casual\LickProcessor.cs" />
     <Compile Include="InteractionProcessors\Casual\SpankProcessor.cs" />
     <Compile Include="InteractionProcessors\Commitment\EntitleProcessor.cs" />
     <Compile Include="InteractionProcessors\Commitment\MarkProcessor.cs" />

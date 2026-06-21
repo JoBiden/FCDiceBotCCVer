@@ -214,6 +214,12 @@ namespace FChatDicebot.BotCommands
                 case "handhold": return ("handhold", "handhold");
                 case "spank": return ("spankgive", "spanktake");
                 case "bully": return ("bullygive", "bullytake");
+                case "boobhat": return ("boobhatgive", "boobhattake");
+                case "lick": return ("lickgive", "licktake");
+                // lapsit: !lap → initiator is the lap (lapsittake), recipient sits (lapsitgive)
+                case "lap": return ("lapsittake", "lapsitgive");
+                // !sit → initiator sits (lapsitgive), recipient is the lap (lapsittake)
+                case "sit": return ("lapsitgive", "lapsittake");
                 case "feed": return ("feedgive", "feedtake");
                 case "golden": return ("goldengive", "goldentake");
                 case "dressup": return ("dressupgive", "dressuptake");
