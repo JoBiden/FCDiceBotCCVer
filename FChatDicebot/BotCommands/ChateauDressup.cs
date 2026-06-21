@@ -17,7 +17,7 @@ namespace FChatDicebot.BotCommands
         public ChateauDressup()
         {
             Name = "dressup";
-            Aliases = new string[] { };
+            Aliases = new string[] { "dress" };
             Category = "Involved Interaction";
             ShortDescription = "Dress another resident, or yourself, in specific attire";
             LongDescription = "Dress someone up in specific attire. The recipient must !consent for their outfit to actually change. Some jobs might have unique outcomes only available based on your attire!";

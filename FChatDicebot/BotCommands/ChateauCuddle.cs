@@ -16,7 +16,7 @@ namespace FChatDicebot.BotCommands
         public ChateauCuddle()
         {
             Name = "cuddle";
-            Aliases = new string[] { };
+            Aliases = new string[] { "hug" };
             Category = "Casual Interaction";
             ShortDescription = "Cuddle with another resident";
             LongDescription = "Cuddle with another character as soon as they !consent. Whether it's spooning or a warm embrace, this is a favorite past time of Chateau residents.";

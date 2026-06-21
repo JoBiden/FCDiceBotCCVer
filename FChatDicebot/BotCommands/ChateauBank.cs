@@ -18,7 +18,7 @@ namespace FChatDicebot.BotCommands
         public ChateauBank()
         {
             Name = "bank";
-            Aliases = new string[] { };
+            Aliases = new string[] { "balance", "money" };
             Category = "General";
             ShortDescription = "See what currencies you or another resident have accumulated";
             LongDescription = "View the currencies stored in the Chateau's vault for yourself or another resident. Currencies don't have any inherent value beyond the worth other residents place in it.";

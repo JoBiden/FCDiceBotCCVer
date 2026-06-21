@@ -16,7 +16,7 @@ namespace FChatDicebot.BotCommands
         public ChateauConsent()
         {
             Name = "consent";
-            Aliases = new string[] { "c" };
+            Aliases = new string[] { "c", "accept" };
             Category = "General";
             ShortDescription = "Consent to a pending interaction";
             LongDescription = "Give your consent to a pending interaction request from another character. When someone requests an interaction with you, you must !consent for it to actually happen and be recorded.\n\nPending requests expire after 10 minutes. If more than one interaction is awaiting your consent, you will be messaged a numbered list of the interactions, and can choose which interaction to consent to, or '!consent all' to consent to every interaction awaiting your consent.";
