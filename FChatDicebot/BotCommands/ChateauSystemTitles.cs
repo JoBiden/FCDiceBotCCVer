@@ -109,7 +109,49 @@ namespace FChatDicebot
                 ("bullytake", 50, "Victim"),
                 ("bullytake", 100, "Asking For It"),
                 ("bullytake", 500, "Bully Bait"),
-                
+
+                // Lapsit - giving (the sitter, on top)
+                ("lapsitgive", 1, "Will Sit On You"),
+                ("lapsitgive", 10, "Supported"),
+                ("lapsitgive", 50, "S is for Sitter"),
+                ("lapsitgive", 100, "Lap Pet"),
+                ("lapsitgive", 500, "Disciple of Rin"),
+
+                // Lapsit - taking (the lap, on bottom)
+                ("lapsittake", 1, "Lap"),
+                ("lapsittake", 10, "Supportive"),
+                ("lapsittake", 50, "Chair"),
+                ("lapsittake", 100, "Comfy"),
+                ("lapsittake", 500, "Throne"),
+
+                // Boobhat - giving (the chest providing the hat)
+                ("boobhatgive", 1, "Boo(b)"),
+                ("boobhatgive", 10, "Good Hat"),
+                ("boobhatgive", 50, "Umbrella"),
+                ("boobhatgive", 100, "Speaks With Their Chest"),
+                ("boobhatgive", 500, "Heavy is the Crown"),
+
+                // Boobhat - taking (the head wearing the hat)
+                ("boobhattake", 1, "Guess Who?"),
+                ("boobhattake", 10, "Nice Hat"),
+                ("boobhattake", 50, "Boobrest"),
+                ("boobhattake", 100, "Didn't Skip Neck Day"),
+                ("boobhattake", 500, "Heavy is the Head"),
+
+                // Lick - giving (the licker)
+                ("lickgive", 1, ":P"),
+                ("lickgive", 10, "Mlem"),
+                ("lickgive", 50, "Talented Tongue"),
+                ("lickgive", 100, "Licksalot"),
+                ("lickgive", 500, "Got to the Center of the Tootsie Pop"),
+
+                // Lick - taking (the licked)
+                ("licktake", 1, "Licked"),
+                ("licktake", 10, "Tasty"),
+                ("licktake", 50, "Salt Lick"),
+                ("licktake", 100, "Spit Shined"),
+                ("licktake", 500, "Tootsie Pop"),
+
                 // INVOLVED INTERACTION titles
 
                 // Milking - giving

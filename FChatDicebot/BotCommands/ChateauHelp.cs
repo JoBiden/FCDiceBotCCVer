@@ -102,7 +102,11 @@ namespace FChatDicebot.BotCommands
                 "!handhold",
                 "!cuddle [sub]!hug[/sub]",
                 "!spank",
-                "!bully"
+                "!bully",
+                "!boobhat",
+                "!lick",
+                "!lap",
+                "!sit"
             };
 
             List<string> involvedCommands = new List<string>()

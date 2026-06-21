@@ -31,6 +31,13 @@ namespace FChatDicebot.InteractionProcessors
             RegisterProcessor(new HandholdProcessor());
             RegisterProcessor(new SpankProcessor());
             RegisterProcessor(new BullyProcessor());
+            RegisterProcessor(new BoobhatProcessor());
+            RegisterProcessor(new LickProcessor());
+            // LapsitProcessor backs both !lap and !sit — same instance under two type keys
+            // so each verb routes to the shared give/take logic.
+            var lapsit = new LapsitProcessor();
+            RegisterProcessor(lapsit);
+            RegisterProcessor(LapsitProcessor.SitType, lapsit);
 
             //commitment interactions
             RegisterProcessor(new MarkProcessor());

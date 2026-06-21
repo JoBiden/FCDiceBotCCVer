@@ -1,0 +1,63 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using FChatDicebot.BotCommands.Base;
+using FChatDicebot.SavedData;
+using Newtonsoft.Json;
+using FChatDicebot.DiceFunctions;
+using FChatDicebot.Model;
+
+namespace FChatDicebot.BotCommands
+{
+    public class ChateauBoobhat : ChatBotCommand
+    {
+        public ChateauBoobhat()
+        {
+            Name = "boobhat";
+            Aliases = new string[] { };
+            Category = "Casual Interaction";
+            ShortDescription = "Wear another resident as... well, wear them";
+            LongDescription = "Rest your chest atop another resident's head like a hat, as soon as they !consent. A Chateau classic for the well-endowed and the easily-shaded alike.";
+            Usage = "!boobhat [noparse][user]NameInUserTag[/user][/noparse]";
+            RelatedCommands = new string[] { "lick", "cuddle", "consent", "dossier" };
+            CooldownDuration = "30 minutes (but can still interact without incrementing count)";
+            CooldownAppliesTo = "both initiator and recipient";
+            IdentifierCategory = null;
+            RequireBotAdmin = false;
+            RequireChannelAdmin = false;
+            RequireChannel = true;
+            LockCategory = CommandLockCategory.NONE;
+        }
+
+        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
+        {
+            string recipient = commandController.GetUserNameFromCommandTerms(rawTerms);
+            Profile recipientProfile = MonDB.getProfile(recipient);
+            Profile initiatorProfile = MonDB.getProfile(characterName);
+            if (recipientProfile == null)
+            {
+                bot.SendPrivateMessage(ChateauInteractionHandler.notFoundText(recipient), characterName);
+            }
+            else
+            {
+                string message = initiatorProfile.displayName + " wants to rest their chest atop " + recipientProfile.displayName + ". Do you !consent to the temporary headwear?";
+
+                Interaction boobhat = new Interaction();
+                boobhat.initiator = characterName;
+                boobhat.recipient = recipient;
+                boobhat.type = "boobhat";
+                boobhat.investmentLevel = "casual";
+
+                PendingCommand pendingBoobhat = new PendingCommand();
+                pendingBoobhat.pendingInteraction = boobhat;
+                pendingBoobhat.awaitingConsentFrom = recipient;
+
+                MonDB.addPendingCommand(pendingBoobhat);
+
+                bot.SendMessageInChannel(message, channel);
+            }
+        }
+    }
+}

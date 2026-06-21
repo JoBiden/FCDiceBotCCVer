@@ -33,6 +33,12 @@ namespace FChatDicebot.BotCommands
             { "spankgive", "Spanks Delivered" },
             { "bullygive", "Big Bullies" },
             { "bullytake", "Boolied" },
+            { "boobhatgive", "Boobhats Given" },
+            { "boobhattake", "Boobhats Worn" },
+            { "lickgive", "Licks Given" },
+            { "licktake", "Licks Received" },
+            { "lapsitgive", "Laps Sat On" },
+            { "lapsittake", "Sitters Supported" },
             { "climaxtake", "Orgasms" },
             { "breaktake", "Bodyparts Exhausted" },
             { "cursetake", "Curses Endured" },
@@ -59,7 +65,13 @@ namespace FChatDicebot.BotCommands
             { "spanktake", "Spankbaiting" },
             { "spankgive", "Spanking" },
             { "bullygive", "Bullying" },
-            { "bullytake", "Bullybaiting" }
+            { "bullytake", "Bullybaiting" },
+            { "boobhatgive", "Boobhat" },
+            { "boobhattake", "Boob Wearing" },
+            { "lickgive", "Licking" },
+            { "licktake", "Living Lollipop" },
+            { "lapsitgive", "Lap Sitting" },
+            { "lapsittake", "Lap Providing" }
         };
 
         private static readonly Dictionary<string, string> InvolvedSpecialistText = new Dictionary<string, string>
