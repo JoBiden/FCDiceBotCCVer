@@ -131,7 +131,7 @@ namespace FChatDicebot.BotCommands
         {
             _database = database;
             Name = "dossier";
-            Aliases = new string[] { "profile" };
+            Aliases = new string[] { "profile", "bio" };
             Category = "General";
             ShortDescription = "View a character's dossier, a public facing document summarizing their interactions in the Chateau";
             LongDescription = "View a detailed dossier for yourself or another character. If no character name is provided, shows your own dossier. The dossier shows:\n- Display name, titles, specializations (most performed interaction of each category)\n- Current job and employer\n- Casual interaction counts (kisses, cuddles, etc.)\n- Marks on their body\n- Bonds\n- Full job experience\n- Recent interactions\n";

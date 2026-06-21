@@ -12,7 +12,7 @@ namespace FChatDicebot.BotCommands
         public ChateauHelp()
         {
             Name = "help";
-            Aliases = new string[] { };
+            Aliases = new string[] { "commands" };
             Category = "General";
             ShortDescription = "Get help about bot commands";
             LongDescription = "View general help for all commands, or get detailed help for a specific command.\n\nWithout arguments: Shows a categorized list of all available commands.\nWith a command name: Shows detailed help for that specific command including usage, cooldown, and related commands.";
@@ -53,10 +53,10 @@ namespace FChatDicebot.BotCommands
             // Original general help display
             List<string> generalCommands = new List<string>()
             {
-                "!dossier [sub]!profile[/sub] ",
+                "!dossier [sub]!profile, !bio[/sub] ",
                 "!work [sub]!w[/sub]",
                 "!volunteer [sub]!v[/sub]",
-                "!bank",
+                "!bank [sub]!balance, !money[/sub]",
                 "!titles",
                 "!settitle",
                 "!category [sub]!list[/sub] ",
@@ -75,7 +75,7 @@ namespace FChatDicebot.BotCommands
                 "!joinchateau",
                 "!modmessage",
                 "!setmark",
-                "!help",
+                "!help [sub]!commands[/sub]",
                 "!botinfo",
                 "!uptime"
             };
@@ -91,7 +91,7 @@ namespace FChatDicebot.BotCommands
 
             List<string> roomCommands = new List<string>()
             {
-                "!consent [sub]!c[/sub] ",
+                "!consent [sub]!c, !accept[/sub] ",
                 "!pledge",
                 "!fulfill"
             };
@@ -100,14 +100,14 @@ namespace FChatDicebot.BotCommands
             {
                 "!kiss",
                 "!handhold",
-                "!cuddle",
+                "!cuddle [sub]!hug[/sub]",
                 "!spank",
                 "!bully"
             };
 
             List<string> involvedCommands = new List<string>()
             {
-                "!dressup",
+                "!dressup [sub]!dress[/sub]",
                 "!feed",
                 "!golden",
                 "!pay",
@@ -123,7 +123,7 @@ namespace FChatDicebot.BotCommands
                 "!objectify",
                 "!consume",
                 "!mark",
-                "!employ",
+                "!employ [sub]!hire[/sub]",
                 "!bond",
                 "!entitle",
                 "!corrupt",
@@ -143,7 +143,7 @@ namespace FChatDicebot.BotCommands
                 "!odorize",
                 "!break"
             };
-            string messageText = "These are all of the commands native to the [user]Chateau Contract[/user] bot, as of [b]May 27th 2026.[/b] For detailed description of their use, please see the [user]Chateau Contract[/user] profile or use !help [command] Commands in subtext are alternate names of the same command - all documentation will be for the first listed names.\n\n" +
+            string messageText = "These are all of the commands native to the [user]Chateau Contract[/user] bot, as of [b]June 21st 2026.[/b] For detailed description of their use, please see the [user]Chateau Contract[/user] profile or use !help [command] Commands in subtext are alternate names of the same command - all documentation will be for the first listed names.\n\n" +
                     "[u]Does not require channel[/u]\n" +
                     Utils.sortedListDisplayText(generalCommands) + "\n" +
                     "[i]Recovery Commands:[/i] " + Utils.sortedListDisplayText(recoveryCommands) + "\n\n" +

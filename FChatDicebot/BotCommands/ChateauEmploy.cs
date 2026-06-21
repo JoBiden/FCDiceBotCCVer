@@ -17,7 +17,7 @@ namespace FChatDicebot.BotCommands
         public ChateauEmploy()
         {
             Name = "employ";
-            Aliases = new string[] { };
+            Aliases = new string[] { "hire" };
             Category = "Commitment Interaction";
             ShortDescription = "Employ yourself or another resident to do jobs for the Chateau";
             LongDescription = "Employ yourself or another resident to do jobs for the Chateau. Once employed, residents can use !work once a day to earn currency and job experience. On top of working their primary job, residents can also !volunteer once a day to explore other careers.";
