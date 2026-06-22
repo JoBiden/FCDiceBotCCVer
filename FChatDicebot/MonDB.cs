@@ -253,5 +253,15 @@ namespace FChatDicebot
         {
             GetDatabase().DeletePledge(pledgeId);
         }
+
+        internal static void addFeedback(FeedbackEntry entry)
+        {
+            GetDatabase().AddFeedback(entry);
+        }
+
+        internal static List<FeedbackEntry> getRecentFeedback(int count)
+        {
+            return GetDatabase().GetRecentFeedback(count);
+        }
     }
 }

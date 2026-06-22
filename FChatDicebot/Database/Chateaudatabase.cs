@@ -737,6 +737,24 @@ namespace FChatDicebot.Database
             collection.DeleteOne(filter);
         }
 
+        // Feedback Operations
+        public void AddFeedback(FeedbackEntry entry)
+        {
+            var collection = Database.GetCollection<BsonDocument>("Feedback");
+            collection.InsertOne(entry.ToBsonDocument());
+        }
+
+        public List<FeedbackEntry> GetRecentFeedback(int count)
+        {
+            var collection = Database.GetCollection<BsonDocument>("Feedback");
+            var documents = collection.Find(Builders<BsonDocument>.Filter.Empty)
+                .Sort(Builders<BsonDocument>.Sort.Descending("submittedAt"))
+                .Limit(count)
+                .ToList();
+
+            return documents.Select(doc => BsonSerializer.Deserialize<FeedbackEntry>(doc)).ToList();
+        }
+
         // Database Management
         public void ClearDatabase()
         {

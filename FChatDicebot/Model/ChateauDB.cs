@@ -238,4 +238,18 @@ namespace FChatDicebot.Model
         // Helper to check if this pledge is active
         public bool IsActive => status == "active";
     }
+
+    public class FeedbackEntry
+    {
+        [BsonId]
+        [BsonRepresentation(BsonType.ObjectId)]
+        public ObjectId Id { get; set; }
+        public string submitterUserName { get; set; }    // login name (survives renames)
+        public string submitterDisplayName { get; set; } // snapshot at submit time
+        public string category { get; set; }             // "general" | "bug" | "idea" | "other"
+        public string text { get; set; }
+        [BsonIgnoreIfNull]
+        public string sourceChannel { get; set; }        // channel name, or null if PM
+        public DateTime submittedAt { get; set; }
+    }
 }

@@ -44,6 +44,12 @@ Design + as-implemented documentation for the Chateau Contract interaction syste
 | [Infest-and-Purge](Infest-and-Purge.md) | `!purge` (free during 24h spread-grace, otherwise at a `PurgeCostType` cost) | Status-Effect-Hook, Dose-and-Detox (`PurgeCostType` infra). Adds new `IPostInteractionEffect` hook. |
 | [Curse-and-Cleanse](Curse-and-Cleanse.md) | `!cleanse` (at a per-curse `PurgeCostType` cost) | Status-Effect-Hook, Dose-and-Detox (`PurgeCostType` infra) |
 
+### Social
+
+| Spec | Adds |
+|------|------|
+| [Feedback](Feedback.md) | `!feedback` (+ `!suggestion` alias) to submit an idea or bug report into a new `Feedback` collection, plus admin-only `!feedbacklist` to read recent submissions. |
+
 ## Upcoming features
 
 See [`Future-Interactions/README.md`](Future-Interactions/README.md) for the design specs of features that haven't shipped yet, organized by tier and dependency.

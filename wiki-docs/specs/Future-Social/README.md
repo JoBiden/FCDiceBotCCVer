@@ -8,7 +8,6 @@ Self-contained design specs for **upcoming** Chateau Contract community, relatio
 
 | Spec | Adds |
 |------|------|
-| [Feedback](Feedback.md) | `!feedback` (+ `!suggestion` alias) for residents to submit an idea or bug report into a new `Feedback` collection, plus an admin-only `!feedbacklist` to read recent submissions. (B9) |
 | [Bond-Tree](Bond-Tree.md) | `!bondtree` and `!familytree`, read-only commands that walk the bond graph and render everyone connected to a resident within N degrees of separation. (B10) |
 | [Random-Events](Random-Events.md) | An ambient event system: the bot periodically fires a random event into opted-in channels; residents join with the new `!random` command (with an optional anti-snipe argument) for a chance at currency, titles, training, corruption/purity, curses, or flavor. (B12) |
 
