@@ -76,6 +76,10 @@ namespace FChatDicebot.BotCommands
                         // (the day's effort is still spent). See CurseProcessor.CatalogMap.
                         bool hasPovertyCurse = CurseInstance.LoadAll(userProfile)
                             .Any(c => string.Equals(c.Curse, "poverty", StringComparison.OrdinalIgnoreCase));
+                        // Capture the rolled reward so the employer kickback can be computed from it
+                        // after the loop, independently of the worker's own poverty curse (B6.3).
+                        int grantedRewardAmount = 0;
+                        string grantedRewardCurrency = null;
                         foreach (KeyValuePair<string, Reward> rewardEntry in chosenResult.rewardList)
                         {
                             randomWeightPick -= rewardEntry.Value.weight;
@@ -83,6 +87,8 @@ namespace FChatDicebot.BotCommands
                             {
                                 //grant this reward
                                 int rewardAmount = random.Next(rewardEntry.Value.min, rewardEntry.Value.max + 1); //+1 because upper bound is exclusive
+                                grantedRewardAmount = rewardAmount;
+                                grantedRewardCurrency = rewardEntry.Value.currency;
                                 if (hasPovertyCurse)
                                 {
                                     message += "You would have received [b]" + rewardAmount + " " + rewardEntry.Value.currency + "[/b], but your poverty curse makes it vanish in a poof of smoke before you can claim it.\n";
@@ -123,6 +129,34 @@ namespace FChatDicebot.BotCommands
                         }
                         MonDB.removePendingDuty(dutyInProgress.Id);
                         MonDB.setProfile(characterName, userProfile);
+
+                        // MANOR employer kickback: when a worker employed by someone else completes a
+                        // duty, their employer earns a bonus on top of (and without reducing) the
+                        // worker's reward. Computed from the rolled amount independently of the
+                        // worker's poverty curse — only the cursed party is impacted (B6.3). The
+                        // employer is never push-notified (TOS); they discover it via !business.
+                        if (grantedRewardAmount > 0
+                            && userProfile.characteristics.ContainsKey("employer")
+                            && userProfile.characteristics["employer"] != characterName)
+                        {
+                            string employerUserName = userProfile.characteristics["employer"];
+                            Profile employerProfile = MonDB.getProfile(employerUserName);
+                            if (employerProfile != null)
+                            {
+                                string employerDisplayName = MonDB.getDisplayName(employerUserName);
+                                if (string.IsNullOrEmpty(employerDisplayName))
+                                    employerDisplayName = employerUserName;
+
+                                string kickbackLine = ApplyEmployerKickback(characterName, employerProfile,
+                                    employerDisplayName, grantedRewardAmount, grantedRewardCurrency);
+                                if (!string.IsNullOrEmpty(kickbackLine))
+                                {
+                                    MonDB.setProfile(employerUserName, employerProfile);
+                                    message += kickbackLine;
+                                }
+                            }
+                        }
+
                         // Check for system title achievements after work completion
                         string titleNotification = ChateauSystemTitles.CheckAndGrantTitles(characterName);
                         if (!string.IsNullOrEmpty(titleNotification))
@@ -231,6 +265,64 @@ namespace FChatDicebot.BotCommands
                 }
                 return false;
             }
+        }
+
+        /// <summary>
+        /// The MANOR kickback an employer earns from a worker's rolled reward: a flat 25%,
+        /// floored, with a minimum of 1 whenever the roll was positive, and 0 otherwise.
+        /// Pure — extracted so the rounding rules can be unit-tested without a work session.
+        /// </summary>
+        public static int EmployerCut(int rewardAmount)
+        {
+            return rewardAmount > 0
+                ? Math.Max(1, (int)Math.Floor(rewardAmount * 0.25))
+                : 0;
+        }
+
+        /// <summary>
+        /// Applies the employer kickback to <paramref name="employerProfile"/> (wallet + the
+        /// employeeEarnings ledger) and returns the worker-facing line to append to the work
+        /// PM, or an empty string when no kickback is paid. Pays nothing — no credit, no ledger
+        /// entry, and no worker-facing line — when the cut rounds to 0 or the employer carries
+        /// their own poverty curse (we neither pay it nor leak the employer's curse to the
+        /// worker). The caller is responsible for the eligibility checks that need DB access
+        /// (employer key present, employed by someone other than self, employer profile exists)
+        /// and for persisting the mutated employer profile when a non-empty line is returned.
+        /// </summary>
+        public static string ApplyEmployerKickback(string workerUserName, Profile employerProfile,
+            string employerDisplayName, int rewardAmount, string currency)
+        {
+            int cut = EmployerCut(rewardAmount);
+            if (cut <= 0)
+                return string.Empty;
+
+            // The employer's own poverty curse voids their cut entirely.
+            bool employerHasPovertyCurse = CurseInstance.LoadAll(employerProfile)
+                .Any(c => string.Equals(c.Curse, "poverty", StringComparison.OrdinalIgnoreCase));
+            if (employerHasPovertyCurse)
+                return string.Empty;
+
+            // Credit the employer's wallet (add the currency key if absent).
+            if (employerProfile.currencies == null)
+                employerProfile.currencies = new Dictionary<string, int>();
+            if (employerProfile.currencies.ContainsKey(currency))
+                employerProfile.currencies[currency] += cut;
+            else
+                employerProfile.currencies.Add(currency, cut);
+
+            // Increment the per-employee, per-currency ledger.
+            if (employerProfile.employeeEarnings == null)
+                employerProfile.employeeEarnings = new Dictionary<string, Dictionary<string, int>>();
+            if (!employerProfile.employeeEarnings.ContainsKey(workerUserName))
+                employerProfile.employeeEarnings[workerUserName] = new Dictionary<string, int>();
+            Dictionary<string, int> ledger = employerProfile.employeeEarnings[workerUserName];
+            if (ledger.ContainsKey(currency))
+                ledger[currency] += cut;
+            else
+                ledger.Add(currency, cut);
+
+            return "Your employer " + employerDisplayName + " also gets [b]" + cut + " " + currency +
+                "[/b] for your diligent work, courtesy of the Chateau MANOR.\n";
         }
     }
 }

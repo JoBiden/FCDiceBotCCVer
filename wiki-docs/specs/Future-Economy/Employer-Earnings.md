@@ -1,6 +1,7 @@
 # Employer Earnings — `!work` kickback + `!business`
 
-**Status:** Proposed (design-complete, owner-reviewed 2026-06-21).
+**Status:** ✅ Shipped 2026-06-22. `!work` kickback hook + `!business` command + `Profile.employeeEarnings` landed; final user-facing strings owner-approved (see below). A one-time historic backfill is provided at [`scripts/backfill-employee-earnings.js`](../../../scripts/backfill-employee-earnings.js).
+**Status (original):** Proposed (design-complete, owner-reviewed 2026-06-21).
 **Feature-Requests source:** "if someone is !employed by another (not themselves), give their employer some currency when the employee works… should also include some sort of command for employers to see how much employees have earned them" (B6).
 
 > The sibling request B8 ("in-system flow to walk users through creating a !work duty") was **resolved out-of-band** — there is now a short tutorial paragraph on the Chateau Contract profile, also reachable via `!modmessage duty`, and no in-bot builder will be implemented. It is intentionally not specced here.
@@ -162,10 +163,16 @@ No DB-layer (`Chateaudatabase.cs` / `Ichateaudatabase.cs`) changes — `employee
 - **B6.4** Ledger broken down by **both employee and currency**, summable to totals at display; lifetime cumulative; persists across employment changes.
 - **B6.5** View command is **`!business`**, self-only, per-employee × per-currency with totals.
 
+## Resolved on ship (owner, 2026-06-22)
+
+- **Worker-facing kickback line** — owner-approved as specced: "Your employer {employer} also gets [b]{N} {currency}[/b] for your diligent work, courtesy of the Chateau MANOR."
+- **`!business` empty-state** — owner-approved as specced.
+- **`!business` long help text** — owner-finalized to: "View the profits you've earned from the hard work of your employees, broken down by employee and by currency. You earn approximately 25% of what your employee makes, on top of what they would make if self employed."
+- **`!volunteer` exclusion** — confirmed (work-only).
+- **Historic backfill** — `scripts/backfill-employee-earnings.js` estimates pre-launch earnings from `jobExperience[currentJob]` × an average-roll model read from the `Duties` collection (assumes no job changes, all current-job experience was while employed, and average rolls). `DRY_RUN` defaults on; idempotent; run once at deploy.
+
 ## Open items
 
-- **Worker-facing kickback line** and **`!business` strings** are first drafts pending owner wording approval (house rule: surface every changed user-facing string before declaring done).
-- **`!volunteer` exclusion** decided by default (work-only) — override if volunteer income should also kick back.
 - **Admin-queryable `!business [user]`** left out of v1 — add if wanted.
 - Possible later **employer-milestone titles** (e.g. lifetime currency earned from employees) — not in scope.
 

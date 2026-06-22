@@ -72,6 +72,7 @@ namespace FChatDicebot.BotCommands
                 "!parasites",
                 "!payroll",
                 "!economics",
+                "!business",
                 "!joinchateau",
                 "!modmessage",
                 "!feedback [sub]!suggestion[/sub]",
@@ -148,7 +149,7 @@ namespace FChatDicebot.BotCommands
                 "!odorize",
                 "!break"
             };
-            string messageText = "These are all of the commands native to the [user]Chateau Contract[/user] bot, as of [b]June 21st 2026.[/b] For detailed description of their use, please see the [user]Chateau Contract[/user] profile or use !help [command] Commands in subtext are alternate names of the same command - all documentation will be for the first listed names.\n\n" +
+            string messageText = "These are all of the commands native to the [user]Chateau Contract[/user] bot, as of [b]June 22nd 2026.[/b] For detailed description of their use, please see the [user]Chateau Contract[/user] profile or use !help [command] Commands in subtext are alternate names of the same command - all documentation will be for the first listed names.\n\n" +
                     "[u]Does not require channel[/u]\n" +
                     Utils.sortedListDisplayText(generalCommands) + "\n" +
                     "[i]Recovery Commands:[/i] " + Utils.sortedListDisplayText(recoveryCommands) + "\n\n" +
