@@ -295,8 +295,11 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
             // The chastity Identifier description must surface inside the warning.
             Assert.Contains("achieving !climax", consent);
             Assert.Contains("missing a day of work", consent);
-            // Mirrors the standard Consequence-tier warning phrasing.
-            Assert.Contains("should not be taken lightly, and can not be done frequently", consent);
+            // Mirrors the standard Consequence-tier warning, now stating the real per-curse
+            // cooldown and a recipient-framed cleanse note.
+            Assert.Contains("This should not be taken lightly.", consent);
+            Assert.Contains("can only afflict you with a given curse once per week", consent);
+            Assert.Contains("you'll need to !cleanse", consent);
             Assert.Contains("Do you !consent", consent);
         }
 

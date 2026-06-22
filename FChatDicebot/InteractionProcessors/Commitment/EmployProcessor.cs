@@ -74,12 +74,23 @@ namespace FChatDicebot.InteractionProcessors.Consequence
             return initiatorProfile.displayName + " has given " + recipientProfile.displayName + " the esteemed position of " + Utils.JobToText(identifier) + "! Enjoy your new job everytime you !work (and don't forget you can still !volunteer to see what other jobs are like.)";
         }
 
+        public override CooldownSpec CooldownRule => Cooldown;
+
+        public static readonly CooldownSpec Cooldown = new CooldownSpec
+        {
+            Kind = CooldownKind.Cooldown,
+            Binds = CooldownBinds.Recipient,
+            PeriodDays = 1
+        };
+
         public override string GetConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
-            Identifier jobIdentifier = MonDB.getIdentifier(identifier);
-            string jobText = jobIdentifier != null ? jobIdentifier.description : identifier;
+            string seriousness = ConsentWarningText.Block(
+                ConsentWarningText.FrequencyRecipient("employed", Cooldown.PeriodDays));
 
-            return initiatorProfile.displayName + " graciously offers to employ " + recipientProfile.displayName + " at the Chateau as their " + Utils.JobToText(identifier) + "! [b]This should not be taken lightly, and can not be done frequently.[/b] Do you !consent to this new career path?";
+            return initiatorProfile.displayName + " graciously offers to employ " + recipientProfile.displayName
+                + " at the Chateau as their " + Utils.JobToText(identifier) + "! " + seriousness
+                + " Do you !consent to this new career path?";
         }
     }
 }

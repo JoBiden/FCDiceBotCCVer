@@ -69,10 +69,25 @@ namespace FChatDicebot.InteractionProcessors.Consequence
             return initiatorProfile.displayName + " has made it known that " + recipientProfile.displayName + " is to be known as " + newName + " henceforth! All occurences of their name in our records will be changed to reflect their new identity.";
         }
 
+        public override CooldownSpec CooldownRule => Cooldown;
+
+        public static readonly CooldownSpec Cooldown = new CooldownSpec
+        {
+            Kind = CooldownKind.Cooldown,
+            Binds = CooldownBinds.Recipient,
+            PeriodDays = 7
+        };
+
         public override string GetConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
             string newName = identifier;
-            return initiatorProfile.displayName + " intends for " + recipientProfile.displayName + " to be known as " + newName + " from now on. [b]This should not be taken lightly, and can not be done frequently. The new name will show almost every time the Chateau mentions you.[/b] Do you !consent to this life-changing occasion?";
+            string seriousness = ConsentWarningText.Block(
+                ConsentWarningText.FrequencyRecipient("renamed", Cooldown.PeriodDays),
+                "The new name will show almost every time the Chateau mentions you.");
+
+            return initiatorProfile.displayName + " intends for " + recipientProfile.displayName
+                + " to be known as " + newName + " from now on. " + seriousness
+                + " Do you !consent to this life-changing occasion?";
         }
     }
 }

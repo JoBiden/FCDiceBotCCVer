@@ -13,6 +13,15 @@ namespace FChatDicebot.InteractionProcessors.Consequence
         public override string InteractionType => "bond";
         public override string InvestmentLevel => "commitment";
 
+        public override CooldownSpec CooldownRule => Cooldown;
+
+        public static readonly CooldownSpec Cooldown = new CooldownSpec
+        {
+            Kind = CooldownKind.Cooldown,
+            Binds = CooldownBinds.Both,
+            PeriodDays = 1
+        };
+
         public BondProcessor(IChateauDatabase database) : base(database)
         {
         }
@@ -100,10 +109,14 @@ namespace FChatDicebot.InteractionProcessors.Consequence
 
         public override string GetConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
-            Identifier bondIdentifier = MonDB.getIdentifier(identifier);
-            string bondText = bondIdentifier != null ? bondIdentifier.description : identifier;
+            // A bond puts a global cooldown on BOTH parties (not a per-pair limit), so the
+            // recipient-framed clause speaks to the act of declaring a bond at all.
+            string seriousness = ConsentWarningText.Block(
+                "You can only declare a bond once per " + ConsentWarningText.PeriodWord(Cooldown.PeriodDays) + ".");
 
-            return initiatorProfile.displayName + " would like to declare that " + recipientProfile.displayName + " is their " + Utils.BondToText(identifier, true) + "! [b]This should not be taken lightly, and can not be done frequently.[/b] Do you !consent to this new bond?";
+            return initiatorProfile.displayName + " would like to declare that " + recipientProfile.displayName
+                + " is their " + Utils.BondToText(identifier, true) + "! " + seriousness
+                + " Do you !consent to this new bond?";
         }
     }
 }

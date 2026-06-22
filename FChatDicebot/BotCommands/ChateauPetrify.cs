@@ -63,7 +63,9 @@ namespace FChatDicebot.BotCommands
             }
             if (valid)
             {
-                string message = initiatorProfile.displayName + " is going to petrify " + recipientProfile.displayName + " " + Utils.LocationToText(location, initiatorProfile.displayName, recipientProfile.displayName) + "! [b]This should not be taken lightly, and can not be done frequently.[/b] Do you !consent to becoming still as a statue?";
+                // Delegate consent wording to the processor so it stays in one place.
+                var processor = InteractionProcessors.InteractionProcessorRegistry.GetProcessor("petrify");
+                string message = processor.GetConsentWarning(initiatorProfile, recipientProfile, location);
 
                 Interaction petrify = new Interaction();
                 petrify.initiator = characterName;

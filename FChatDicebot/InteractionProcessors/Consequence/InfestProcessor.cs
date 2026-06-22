@@ -243,19 +243,30 @@ namespace FChatDicebot.InteractionProcessors.Consequence
                 + "Enjoy your future as a host, and see if you can help it spread~";
         }
 
+        public override CooldownSpec CooldownRule => Cooldown;
+
+        public static readonly CooldownSpec Cooldown = new CooldownSpec
+        {
+            Kind = CooldownKind.Cooldown,
+            Binds = CooldownBinds.Initiator,
+            PeriodDays = 7,
+            Scope = "parasite"
+        };
+
         public override string GetConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
             string costPhrase = CostPhrase(PurgeCostFor(identifier));
             int graceHours = (int)SpreadGracePeriod.TotalHours;
             string parasiteWithArticle = ParasiteText.ParasiteNameWithArticle(identifier);
 
+            string seriousness = ConsentWarningText.Block(
+                ConsentWarningText.FrequencyPerAxis(initiatorProfile.displayName, "infest you with a given parasite", Cooldown.PeriodDays),
+                "This parasite has a chance to spread to anyone you have a non-casual interaction with, "
+                    + "and signs of your infection might be noticeable in any interaction. "
+                    + "You can !purge at the cost of " + costPhrase + ", "
+                    + "with a " + graceHours + "-hour grace period during which !purge has no cost.");
             string baseWarning = initiatorProfile.displayName + " wants to infest "
-                + recipientProfile.displayName + " with " + parasiteWithArticle + "! "
-                + "[b]This should not be taken lightly, and can not be done frequently. "
-                + "This parasite has a chance to spread to anyone you have a non-casual interaction with, "
-                + "and signs of your infection might be noticeable in any interaction. "
-                + "You can !purge at the cost of " + costPhrase + ", "
-                + "with a " + graceHours + "-hour grace period during which !purge has no cost.[/b] "
+                + recipientProfile.displayName + " with " + parasiteWithArticle + "! " + seriousness + " "
                 + "Do you !consent to being made into a new host?";
             var effects = GetActiveStatusEffects(recipientProfile, StatusEffectCallSite.Consent, identifier, isInitiator: false);
             return AppendStatusFragments(baseWarning, effects.ConsentWarnings);

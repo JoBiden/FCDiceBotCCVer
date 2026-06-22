@@ -545,6 +545,65 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
             Assert.Contains("increasing their purity by 5", warning);
         }
 
+        [Fact]
+        public void GetConsentWarning_Corrupt_DisclosesVisibilityAndQuotaRule()
+        {
+            // B3 + shape-D: corrupting direction discloses corruption visibility and states
+            // the per-day magnitude quota by the initiator's display name.
+            SeedPair();
+            var alice = _database.GetProfile("Alice");
+            var bob = _database.GetProfile("Bob");
+
+            string warning = _processor.GetConsentWarning(alice, bob, CorruptionProcessor.ComposeIdentifier("corrupt", 3));
+
+            Assert.Contains("Corruption will be visible in most interactions, and in anything milked from you.", warning);
+            Assert.Contains("Alice can only corrupt you by 10 per day.", warning);
+            Assert.DoesNotContain("Purity will be visible", warning);
+        }
+
+        [Fact]
+        public void GetConsentWarning_Purify_DisclosesPurityVisibility()
+        {
+            // Direction-adaptive: a purifying action speaks of purity, not corruption.
+            SeedPair();
+            var alice = _database.GetProfile("Alice");
+            var bob = _database.GetProfile("Bob");
+
+            string warning = _processor.GetConsentWarning(alice, bob, CorruptionProcessor.ComposeIdentifier("purify", 3));
+
+            Assert.Contains("Purity will be visible in most interactions, and in anything milked from you.", warning);
+            Assert.Contains("Alice can only purify you by 10 per day.", warning);
+            Assert.DoesNotContain("Corruption will be visible", warning);
+        }
+
+        [Fact]
+        public void GetConsentWarning_NoQuotaSpentToday_OmitsConsumedClause()
+        {
+            // Consumed clause is suppressed when nothing has been spent yet.
+            SeedPair();
+            var alice = _database.GetProfile("Alice");
+            var bob = _database.GetProfile("Bob");
+
+            string warning = _processor.GetConsentWarning(alice, bob, CorruptionProcessor.ComposeIdentifier("corrupt", 3));
+
+            Assert.DoesNotContain("has already", warning);
+        }
+
+        [Fact]
+        public void GetConsentWarning_QuotaPartlySpentToday_ShowsConsumedClause()
+        {
+            // When the initiator has already spent some of today's budget against this
+            // recipient, the prompt names how much.
+            SeedPair();
+            var alice = _database.GetProfile("Alice");
+            var bob = _database.GetProfile("Bob");
+            CorruptionProcessor.RecordUsedQuota(alice, bob.userName, DateTime.UtcNow.Date, 2);
+
+            string warning = _processor.GetConsentWarning(alice, bob, CorruptionProcessor.ComposeIdentifier("corrupt", 3));
+
+            Assert.Contains("Alice has already corrupted you by 2 today.", warning);
+        }
+
         // -------------------------------------------------------------------
         // LevelChange direction resolver
         // -------------------------------------------------------------------

@@ -56,16 +56,10 @@ namespace FChatDicebot.BotCommands
                 return;
             }
 
-            int existingPregnancies = recipientProfile.pregnancies != null ? recipientProfile.pregnancies.Count : 0;
-            string pregnancyCountText = existingPregnancies > 0
-                ? " (" + recipientProfile.displayName + " is already carrying " + existingPregnancies + " other "
-                    + (existingPregnancies == 1 ? "pregnancy" : "pregnancies") + ".)"
-                : string.Empty;
-
-            string message = initiatorProfile.displayName + " wants to breed " + recipientProfile.displayName
-                + " with new " + monster + " life! [b]This should not be taken lightly, and can not be done frequently.[/b]"
-                + pregnancyCountText
-                + " Do you !consent to being bred?";
+            // Delegate consent wording (including the existing-pregnancy note) to the processor
+            // so it stays in one place.
+            var processor = InteractionProcessors.InteractionProcessorRegistry.GetProcessor("breed");
+            string message = processor.GetConsentWarning(initiatorProfile, recipientProfile, monster);
 
             Interaction breedInteraction = new Interaction
             {

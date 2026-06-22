@@ -275,6 +275,9 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
             Assert.Contains("Bob", warning);
             Assert.Contains("[b]", warning);
             Assert.Contains("not be taken lightly", warning);
+            // Bond's cooldown binds both parties globally, so the clause is not per-pair.
+            Assert.Contains("You can only declare a bond once per day.", warning);
+            Assert.DoesNotContain("between the two of you", warning);
             Assert.Contains("!consent", warning);
         }
 

@@ -103,11 +103,22 @@ namespace FChatDicebot.InteractionProcessors.Commitment
             return $"{initiatorProfile.displayName} emblazons their mark upon {recipientProfile.displayName}'s {bodypartText}. Wear it with pride~ {mark}";
         }
 
+        public override CooldownSpec CooldownRule => Cooldown;
+
+        public static readonly CooldownSpec Cooldown = new CooldownSpec
+        {
+            Kind = CooldownKind.Cooldown,
+            Binds = CooldownBinds.Recipient,
+            PeriodDays = 1
+        };
+
         public override string GetConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
             string bodypartText = Utils.BodypartToText(identifier);
-            
-            return $"{initiatorProfile.displayName} is going to mark {recipientProfile.displayName} on their {bodypartText}! [b]This should not be taken lightly, and can not be done frequently.[/b] Do you !consent to receiving their mark?";
+            string seriousness = ConsentWarningText.Block(
+                ConsentWarningText.FrequencyRecipient("marked", Cooldown.PeriodDays));
+
+            return $"{initiatorProfile.displayName} is going to mark {recipientProfile.displayName} on their {bodypartText}! {seriousness} Do you !consent to receiving their mark?";
         }
     }
 }

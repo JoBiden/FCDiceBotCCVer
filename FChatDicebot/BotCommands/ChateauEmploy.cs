@@ -52,7 +52,9 @@ namespace FChatDicebot.BotCommands
             }
             if (valid)
             {
-                string message = initiatorProfile.displayName + " graciously offers to employ " + recipientProfile.displayName + " at the Chateau as their " + Utils.JobToText(job) + "! [b]This should not be taken lightly, and can not be done frequently.[/b] Do you !consent to this new career path?";
+                // Delegate consent wording to the processor so it stays in one place.
+                var processor = InteractionProcessors.InteractionProcessorRegistry.GetProcessor("employ");
+                string message = processor.GetConsentWarning(initiatorProfile, recipientProfile, job);
 
                 Interaction employInteraction = new Interaction();
                 employInteraction.initiator = characterName;

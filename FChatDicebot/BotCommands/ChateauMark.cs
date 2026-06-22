@@ -57,7 +57,9 @@ namespace FChatDicebot.BotCommands
             }
             if (valid)
             {
-                string message = initiatorProfile.displayName + " is going to mark " + recipientProfile.displayName + " on their " + Utils.BodypartToText(bodypart) + "! [b]This should not be taken lightly, and can not be done frequently.[/b] Do you !consent to receiving their mark?";
+                // Delegate consent wording to the processor so it stays in one place.
+                var processor = InteractionProcessors.InteractionProcessorRegistry.GetProcessor("mark");
+                string message = processor.GetConsentWarning(initiatorProfile, recipientProfile, bodypart);
 
                 Interaction markInteraction = new Interaction();
                 markInteraction.initiator = characterName;

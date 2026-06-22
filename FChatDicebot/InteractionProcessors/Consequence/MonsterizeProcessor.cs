@@ -96,12 +96,24 @@ namespace FChatDicebot.InteractionProcessors.Consequence
             return initiatorProfile.displayName + " has bolstered monsterkind by turning " + recipientProfile.displayName + " into " + identifier + "! We welcome all monsters to our Chateau, no matter what your origins. Enjoy your new life as " + identifier + "~";
         }
 
+        public override CooldownSpec CooldownRule => Cooldown;
+
+        public static readonly CooldownSpec Cooldown = new CooldownSpec
+        {
+            Kind = CooldownKind.Cooldown,
+            Binds = CooldownBinds.Recipient,
+            PeriodDays = 7
+        };
+
         public override string GetConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
-            Identifier monsterIdentifier = MonDB.getIdentifier(identifier);
-            string monsterText = monsterIdentifier != null ? monsterIdentifier.description : identifier;
+            string seriousness = ConsentWarningText.Block(
+                ConsentWarningText.FrequencyRecipient("monsterized", Cooldown.PeriodDays),
+                "The capabilities of your new body might be referenced in flavor text and !work checks.");
 
-            return initiatorProfile.displayName + " is going to transform " + recipientProfile.displayName + " into " + Utils.AnOrA(identifier) + " " + identifier + "! [b]This should not be taken lightly, and can not be done frequently. The capabilities of your new body might be referenced in flavor text and !work checks.[/b] Do you !consent to your new form?";
+            return initiatorProfile.displayName + " is going to transform " + recipientProfile.displayName
+                + " into " + Utils.AnOrA(identifier) + " " + identifier + "! " + seriousness
+                + " Do you !consent to your new form?";
         }
     }
 }

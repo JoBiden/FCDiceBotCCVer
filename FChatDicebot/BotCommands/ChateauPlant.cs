@@ -63,7 +63,9 @@ namespace FChatDicebot.BotCommands
             }
             if (valid)
             {
-                string message = initiatorProfile.displayName + " is going to turn " + recipientProfile.displayName + " into a " + plant + "! [b]This should not be taken lightly, and can not be done frequently.[/b] Do you !consent to becoming plantlife?";
+                // Delegate consent wording to the processor so it stays in one place.
+                var processor = InteractionProcessors.InteractionProcessorRegistry.GetProcessor("plant");
+                string message = processor.GetConsentWarning(initiatorProfile, recipientProfile, plant);
 
                 Interaction plantInteraction = new Interaction();
                 plantInteraction.initiator = characterName;
