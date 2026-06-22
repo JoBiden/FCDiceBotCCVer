@@ -71,12 +71,23 @@ namespace FChatDicebot.InteractionProcessors.Consequence
             return initiatorProfile.displayName + " has grown the garden by turning " + recipientProfile.displayName + " into " + identifier + "! They might stay planted for quite awhile... surely the gardeners will take good care of them.";
         }
 
+        public override CooldownSpec CooldownRule => Cooldown;
+
+        public static readonly CooldownSpec Cooldown = new CooldownSpec
+        {
+            Kind = CooldownKind.Cooldown,
+            Binds = CooldownBinds.Recipient,
+            PeriodDays = 1
+        };
+
         public override string GetConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
-            Identifier plantIdentifier = MonDB.getIdentifier(identifier);
-            string plantText = plantIdentifier != null ? plantIdentifier.description : identifier;
+            string seriousness = ConsentWarningText.Block(
+                ConsentWarningText.FrequencyRecipient("planted", Cooldown.PeriodDays));
 
-            return initiatorProfile.displayName + " is going to turn " + recipientProfile.displayName + " into a " + identifier + "! [b]This should not be taken lightly, and can not be done frequently.[/b] Do you !consent to becoming plantlife?";
+            return initiatorProfile.displayName + " is going to turn " + recipientProfile.displayName
+                + " into a " + identifier + "! " + seriousness
+                + " Do you !consent to becoming plantlife?";
         }
     }
 }

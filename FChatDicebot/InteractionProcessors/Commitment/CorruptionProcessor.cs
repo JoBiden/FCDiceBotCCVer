@@ -254,6 +254,16 @@ namespace FChatDicebot.InteractionProcessors.Commitment
                 + change.ActionPast + " by " + appliedMagnitude + ", " + DescribeCurrentLevel(newCorruption) + ".";
         }
 
+        public override CooldownSpec CooldownRule => Cooldown;
+
+        public static readonly CooldownSpec Cooldown = new CooldownSpec
+        {
+            Kind = CooldownKind.MagnitudeQuota,
+            Binds = CooldownBinds.Initiator,
+            PeriodDays = 1,
+            QuotaMagnitude = DailyMagnitudeLimit
+        };
+
         public override string GetConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
             string verb = ParseVerbFromIdentifier(identifier);
@@ -272,9 +282,24 @@ namespace FChatDicebot.InteractionProcessors.Commitment
             bool isSelf = string.Equals(initiatorProfile?.userName, recipientProfile?.userName, StringComparison.Ordinal);
             string target = isSelf ? "themself" : (recipientProfile?.displayName ?? "you");
 
+            // B3: disclose that the recipient's corruption/purity surfaces elsewhere. The
+            // direction is taken from the effective verb (the movement currently in play),
+            // not the projected end-state side.
+            string visibilityClause = sign < 0
+                ? "Corruption will be visible in most interactions, and in anything milked from you."
+                : "Purity will be visible in most interactions, and in anything milked from you.";
+
+            // Shape D: a per-day magnitude quota, so the prompt states the rule and (when the
+            // initiator has already spent some of today's budget against this recipient) how
+            // much has been used so far.
+            int usedToday = GetUsedQuota(initiatorProfile, recipientProfile?.userName, DateTime.UtcNow.Date);
+            string quotaClause = ConsentWarningText.FrequencyQuota(subject, verb, Cooldown.QuotaMagnitude, Cooldown.PeriodDays);
+            string consumedClause = ConsentWarningText.ConsumedClause(subject, PastTense(verb), usedToday);
+
+            string seriousness = ConsentWarningText.Block(visibilityClause, quotaClause, consumedClause);
+
             return subject + " wants to " + verb + " " + target + ", " + change.ActionPresent + " their "
-                + change.Side + " by " + requestedMagnitude + "! "
-                + "[b]This should not be taken lightly, and can not be done frequently.[/b] "
+                + change.Side + " by " + requestedMagnitude + "! " + seriousness + " "
                 + "Do you !consent to being " + PastTense(verb) + "?";
         }
 

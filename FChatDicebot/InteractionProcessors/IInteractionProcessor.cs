@@ -20,6 +20,13 @@ namespace FChatDicebot.InteractionProcessors
         /// </summary>
         string InvestmentLevel { get; }
 
+        /// <summary>
+        /// Structured rate-limit description, or null when the interaction carries no warned
+        /// cooldown. Single source of truth for both the consent-warning frequency clause and
+        /// the derived help / <c>!whatis</c> cooldown strings. See <see cref="CooldownSpec"/>.
+        /// </summary>
+        CooldownSpec CooldownRule { get; }
+
         string GetInteractionVerb(VerbTense tense);
         string GetInteractionVerb(VerbTense tense, bool isPlural);
 

@@ -209,6 +209,15 @@ namespace FChatDicebot.InteractionProcessors.Commitment
                 + recipientProfile.displayName + " will carry the pregnancy until they're ready to !birth their young.";
         }
 
+        public override CooldownSpec CooldownRule => Cooldown;
+
+        public static readonly CooldownSpec Cooldown = new CooldownSpec
+        {
+            Kind = CooldownKind.Cooldown,
+            Binds = CooldownBinds.Both,
+            PeriodDays = 1
+        };
+
         public override string GetConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
             int existingPregnancies = recipientProfile.pregnancies != null ? recipientProfile.pregnancies.Count : 0;
@@ -217,8 +226,11 @@ namespace FChatDicebot.InteractionProcessors.Commitment
                     + (existingPregnancies == 1 ? "pregnancy" : "pregnancies") + ".)"
                 : string.Empty;
 
+            string seriousness = ConsentWarningText.Block(
+                ConsentWarningText.FrequencyBoth("breed", Cooldown.PeriodDays));
+
             return initiatorProfile.displayName + " wants to breed " + recipientProfile.displayName
-                + " with new " + identifier + " life! [b]This should not be taken lightly, and can not be done frequently.[/b]"
+                + " with new " + identifier + " life! " + seriousness
                 + pregnancyCountText
                 + " Do you !consent to being bred?";
         }

@@ -140,12 +140,25 @@ namespace FChatDicebot.InteractionProcessors.Consequence
                 + recipientProfile.displayName + " may !wash once per day to scrub off a single layer.";
         }
 
+        public override CooldownSpec CooldownRule => Cooldown;
+
+        public static readonly CooldownSpec Cooldown = new CooldownSpec
+        {
+            Kind = CooldownKind.Cooldown,
+            Binds = CooldownBinds.Initiator,
+            PeriodDays = 7,
+            Scope = "scent"
+        };
+
         public override string GetConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
             string phrase = ScentText.ScentPhrase(Database.GetIdentifier(identifier), identifier, initiatorProfile.displayName);
+            string seriousness = ConsentWarningText.Block(
+                ConsentWarningText.FrequencyPerAxis(initiatorProfile.displayName, "saturate you with a given scent", Cooldown.PeriodDays),
+                "The scent will linger on you through several interactions before it fades. "
+                    + "You may !wash once per day to scrub off a single layer.");
             return initiatorProfile.displayName + " is going to saturate " + recipientProfile.displayName + " with " + phrase + "! "
-                + "[b]This should not be taken lightly, and can not be done frequently.[/b] "
-                + "The scent will follow them into other interactions for some time. Do you !consent to this lingering aroma?";
+                + seriousness + " Do you !consent to this lingering aroma?";
         }
     }
 }

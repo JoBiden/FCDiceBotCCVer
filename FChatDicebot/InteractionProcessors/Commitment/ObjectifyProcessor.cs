@@ -108,9 +108,23 @@ namespace FChatDicebot.InteractionProcessors.Consequence
             return initiatorProfile.displayName + " has made " + recipientProfile.displayName + " into some sort of " + identifier + "! Who knows what's in store for them, but they'll be stuck with their fate for quite awhile...";
         }
 
+        public override CooldownSpec CooldownRule => Cooldown;
+
+        public static readonly CooldownSpec Cooldown = new CooldownSpec
+        {
+            Kind = CooldownKind.Cooldown,
+            Binds = CooldownBinds.Recipient,
+            PeriodDays = 1
+        };
+
         public override string GetConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
-            return initiatorProfile.displayName + " is going to turn " + recipientProfile.displayName + " into some sort of " + identifier + "! [b]This should not be taken lightly, and can not be done frequently.[/b] Do you !consent to becoming an object?";
+            string seriousness = ConsentWarningText.Block(
+                ConsentWarningText.FrequencyRecipient("objectified", Cooldown.PeriodDays));
+
+            return initiatorProfile.displayName + " is going to turn " + recipientProfile.displayName
+                + " into some sort of " + identifier + "! " + seriousness
+                + " Do you !consent to becoming an object?";
         }
     }
 }

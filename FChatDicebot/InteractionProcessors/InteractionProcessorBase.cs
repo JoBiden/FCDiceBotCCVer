@@ -98,6 +98,13 @@ namespace FChatDicebot.InteractionProcessors
         public abstract string InteractionType { get; }
         public abstract string InvestmentLevel { get; }
 
+        /// <summary>
+        /// Structured rate-limit description, or null when the interaction carries no warned
+        /// cooldown. Warned processors override this to return their static spec; the help
+        /// layer reads it so the cooldown strings can't drift from the consent warning.
+        /// </summary>
+        public virtual CooldownSpec CooldownRule => null;
+
         public string GetAndClearRateLimitMessage()
         {
             string msg = _lastRateLimitMessage;

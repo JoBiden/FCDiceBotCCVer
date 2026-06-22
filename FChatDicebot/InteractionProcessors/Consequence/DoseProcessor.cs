@@ -205,14 +205,25 @@ namespace FChatDicebot.InteractionProcessors.Consequence
                 + level + "/" + MaxAddictionLevel + ")[/sub]";
         }
 
+        public override CooldownSpec CooldownRule => Cooldown;
+
+        public static readonly CooldownSpec Cooldown = new CooldownSpec
+        {
+            Kind = CooldownKind.Cooldown,
+            Binds = CooldownBinds.Initiator,
+            PeriodDays = 7,
+            Scope = "vice"
+        };
+
         public override string GetConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
             string vicePhrase = ViceText.ViceName(Database?.GetIdentifier(identifier), identifier, initiatorProfile?.displayName);
+            string seriousness = ConsentWarningText.Block(
+                ConsentWarningText.FrequencyPerAxis(initiatorProfile.displayName, "dose you with a given vice", Cooldown.PeriodDays),
+                "Addictive cravings can show up in any interaction until you !detox at a hefty cost. "
+                    + "Everyone will know when you're satisfying an addictive craving.");
             string baseWarning = initiatorProfile.displayName + " wants to dose " + recipientProfile.displayName
-                + " with " + vicePhrase + "! "
-                + "[b]This should not be taken lightly, and can not be done frequently. "
-                + "Addictive cravings can show up in any interaction until you !detox at a hefty cost. "
-                + "Everyone will know when you're satisfying an addictive craving.[/b] "
+                + " with " + vicePhrase + "! " + seriousness + " "
                 + "Do you !consent?";
             var effects = GetActiveStatusEffects(recipientProfile, StatusEffectCallSite.Consent, identifier, isInitiator: false);
             return AppendStatusFragments(baseWarning, effects.ConsentWarnings);

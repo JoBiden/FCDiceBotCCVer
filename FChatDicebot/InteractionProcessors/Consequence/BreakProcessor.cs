@@ -186,6 +186,16 @@ namespace FChatDicebot.InteractionProcessors.Consequence
         /// <see cref="ComposeConsentText"/> directly with the actual requested days and
         /// clamp direction so the player sees the real duration before saying !consent.
         /// </summary>
+        public override CooldownSpec CooldownRule => Cooldown;
+
+        public static readonly CooldownSpec Cooldown = new CooldownSpec
+        {
+            Kind = CooldownKind.Cooldown,
+            Binds = CooldownBinds.Initiator,
+            PeriodDays = 7,
+            Scope = "bodypart"
+        };
+
         public override string GetConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
             string baseWarning = ComposeConsentText(initiatorProfile.displayName, recipientProfile.displayName, identifier, DefaultDays, ClampDirection.None);
@@ -202,11 +212,12 @@ namespace FChatDicebot.InteractionProcessors.Consequence
         {
             string daysWord = days == 1 ? "day" : "days";
             string blockedVerbs = BlockedVerbListForPart(part);
+            string seriousness = ConsentWarningText.Block(
+                ConsentWarningText.FrequencyPerAxis(initiatorName, "break a given part of you", Cooldown.PeriodDays),
+                "While broken, your sore " + part + " will keep you from " + blockedVerbs
+                    + ", and might be noticed during other interactions as well.");
             string warning = initiatorName + " is going to break " + recipientName + "'s " + part
-                + " for " + days + " " + daysWord + "! "
-                + "[b]This should not be taken lightly, and can not be done frequently. "
-                + "While broken, " + recipientName + "'s sore " + part + " will prevent them from "
-                + blockedVerbs + ", and might be noticed during other interactions as well.[/b] Do you !consent?";
+                + " for " + days + " " + daysWord + "! " + seriousness + " Do you !consent?";
 
             if (clamp == ClampDirection.Min)
             {

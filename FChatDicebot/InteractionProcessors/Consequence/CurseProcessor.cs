@@ -418,6 +418,16 @@ namespace FChatDicebot.InteractionProcessors.Consequence
                 + "Surely nothing ill will come of this.";
         }
 
+        public override CooldownSpec CooldownRule => Cooldown;
+
+        public static readonly CooldownSpec Cooldown = new CooldownSpec
+        {
+            Kind = CooldownKind.Cooldown,
+            Binds = CooldownBinds.Initiator,
+            PeriodDays = 7,
+            Scope = "curse"
+        };
+
         public override string GetConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
             string casterName = string.IsNullOrEmpty(initiatorProfile?.displayName)
@@ -443,12 +453,12 @@ namespace FChatDicebot.InteractionProcessors.Consequence
                 cleanseCostPhrase = CleanseCostPhrase(spec.CleanseCost);
             }
 
+            string seriousness = ConsentWarningText.Block(
+                ConsentWarningText.FrequencyPerAxis(casterName, "afflict you with a given curse", Cooldown.PeriodDays),
+                "To remove this curse, you'll need to !cleanse at the cost of " + cleanseCostPhrase + ".");
             string baseWarning = casterName + " wants to curse " + subjectName
                 + " with [b]" + identifier + "[/b]! "
-                + effectDescription + " "
-                + "[b]This should not be taken lightly, and can not be done frequently. "
-                + "To remove this curse, the recipient will need to !cleanse at the cost of "
-                + cleanseCostPhrase + ".[/b] "
+                + effectDescription + " " + seriousness + " "
                 + "Do you !consent to this curse?";
 
             var effects = GetActiveStatusEffects(recipientProfile, StatusEffectCallSite.Consent, identifier, isInitiator: false);

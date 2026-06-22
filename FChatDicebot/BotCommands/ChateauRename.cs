@@ -67,7 +67,9 @@ namespace FChatDicebot.BotCommands
             }
             if (valid)
             {
-                string message = initiatorProfile.displayName + " intends for " + recipientProfile.displayName + " to be known as " + newName + " from now on. [b]This should not be taken lightly, and can not be done frequently. The new name will show almost every time the Chateau mentions you.[/b] Do you !consent to this life-changing occasion?";
+                // Delegate consent wording to the processor so it stays in one place.
+                var processor = InteractionProcessors.InteractionProcessorRegistry.GetProcessor("rename");
+                string message = processor.GetConsentWarning(initiatorProfile, recipientProfile, newName);
 
                 Interaction rename = new Interaction();
                 rename.initiator = characterName;

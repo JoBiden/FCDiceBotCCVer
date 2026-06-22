@@ -84,9 +84,23 @@ namespace FChatDicebot.InteractionProcessors.Consequence
             return initiatorProfile.displayName + " has petrified " + recipientProfile.displayName + " " + Utils.LocationToText(identifier, initiatorProfile.userName, recipientProfile.userName) + "! They might be stuck there for quite awhile... hopefully visitors enjoy the pose they're stuck in.";
         }
 
+        public override CooldownSpec CooldownRule => Cooldown;
+
+        public static readonly CooldownSpec Cooldown = new CooldownSpec
+        {
+            Kind = CooldownKind.Cooldown,
+            Binds = CooldownBinds.Recipient,
+            PeriodDays = 7
+        };
+
         public override string GetConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
-            return initiatorProfile.displayName + " is going to petrify " + recipientProfile.displayName + " " + Utils.LocationToText(identifier, initiatorProfile.displayName, recipientProfile.displayName) + "! [b]This should not be taken lightly, and can not be done frequently.[/b] Do you !consent to becoming still as a statue?";
+            string seriousness = ConsentWarningText.Block(
+                ConsentWarningText.FrequencyRecipient("petrified", Cooldown.PeriodDays));
+
+            return initiatorProfile.displayName + " is going to petrify " + recipientProfile.displayName + " "
+                + Utils.LocationToText(identifier, initiatorProfile.displayName, recipientProfile.displayName) + "! " + seriousness
+                + " Do you !consent to becoming still as a statue?";
         }
     }
 }

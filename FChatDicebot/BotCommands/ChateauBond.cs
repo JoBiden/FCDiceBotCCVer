@@ -50,6 +50,24 @@ namespace FChatDicebot.BotCommands
                 bot.SendPrivateMessage(ChateauInteractionHandler.typeNotFoundText(identifierType), characterName);
                 valid = false;
             }
+            // A bond drops a 1-day "bond" cooldown on BOTH parties, so neither can declare
+            // another bond until it lapses. Enforce it at command time for immediate feedback.
+            else if (initiatorProfile.timers.ContainsKey("bond")
+                && initiatorProfile.timers["bond"].timerEnd.CompareTo(DateTime.UtcNow) > 0)
+            {
+                string tooSoonText = "You've declared a bond too recently! Please respect that 'Commitment' interactions are meant to be meaningful, and not spammed. You'll be able to declare another bond in "
+                    + Utils.GetTimeSpanPrint(initiatorProfile.timers["bond"].timerEnd - DateTime.UtcNow);
+                bot.SendPrivateMessage(tooSoonText, characterName);
+                valid = false;
+            }
+            else if (recipientProfile.timers.ContainsKey("bond")
+                && recipientProfile.timers["bond"].timerEnd.CompareTo(DateTime.UtcNow) > 0)
+            {
+                string tooSoonText = "You're trying to bond with " + recipientProfile.displayName + " but they declared a bond too recently! Please respect that 'Commitment' interactions are meant to be meaningful, and not spammed. They'll be able to take part in another bond in "
+                    + Utils.GetTimeSpanPrint(recipientProfile.timers["bond"].timerEnd - DateTime.UtcNow);
+                bot.SendPrivateMessage(tooSoonText, characterName);
+                valid = false;
+            }
             if (valid)
             {
                 Interaction bondInteraction = new Interaction();

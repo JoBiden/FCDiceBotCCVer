@@ -263,15 +263,29 @@ namespace FChatDicebot.BotCommands
                 }
             }
 
-            // Cooldown information
-            if (!string.IsNullOrEmpty(cmd.CooldownDuration))
+            // Cooldown information. Prefer the structured CooldownSpec on the interaction's
+            // processor (single source of truth) so this line can't drift from the consent
+            // warning; fall back to the command's free-text fields for system commands and
+            // aliases that have no processor of their own.
+            string cooldownDuration = cmd.CooldownDuration;
+            string cooldownAppliesTo = cmd.CooldownAppliesTo;
+            if (!string.IsNullOrEmpty(cmd.Name))
+            {
+                var cooldownRule = InteractionProcessors.InteractionProcessorRegistry.GetProcessor(cmd.Name)?.CooldownRule;
+                if (cooldownRule != null)
+                {
+                    cooldownDuration = cooldownRule.FormatDuration();
+                    cooldownAppliesTo = cooldownRule.FormatAppliesTo();
+                }
+            }
+            if (!string.IsNullOrEmpty(cooldownDuration))
             {
                 sb.Append("[u]Cooldown:[/u] ");
-                sb.Append(cmd.CooldownDuration);
-                if (!string.IsNullOrEmpty(cmd.CooldownAppliesTo))
+                sb.Append(cooldownDuration);
+                if (!string.IsNullOrEmpty(cooldownAppliesTo))
                 {
                     sb.Append(" (applies to ");
-                    sb.Append(cmd.CooldownAppliesTo);
+                    sb.Append(cooldownAppliesTo);
                     sb.Append(")");
                 }
                 if (cmd.Category == "Casual Interaction")

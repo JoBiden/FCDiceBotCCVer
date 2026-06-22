@@ -49,9 +49,22 @@ namespace FChatDicebot.InteractionProcessors.Consequence
             return initiatorProfile.displayName + " consumes " + recipientProfile.displayName + ", and they were never heard from again... or at least, it will be quite some time before they manage to escape, reform, or otherwise recover their strength.";
         }
 
+        public override CooldownSpec CooldownRule => Cooldown;
+
+        public static readonly CooldownSpec Cooldown = new CooldownSpec
+        {
+            Kind = CooldownKind.Cooldown,
+            Binds = CooldownBinds.Recipient,
+            PeriodDays = 1
+        };
+
         public override string GetConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
-            return initiatorProfile.displayName + " is going to consume " + recipientProfile.displayName + "! [b]This should not be taken lightly, and can not be done frequently.[/b] Do you !consent to being consumed, devoured, or otherwise feasted upon?";
+            string seriousness = ConsentWarningText.Block(
+                ConsentWarningText.FrequencyRecipient("consumed", Cooldown.PeriodDays));
+
+            return initiatorProfile.displayName + " is going to consume " + recipientProfile.displayName + "! " + seriousness
+                + " Do you !consent to being consumed, devoured, or otherwise feasted upon?";
         }
     }
 }
