@@ -54,6 +54,8 @@ namespace FChatDicebot.BotCommands
             List<string> generalCommands = new List<string>()
             {
                 "!dossier [sub]!profile, !bio[/sub] ",
+                "!bondtree",
+                "!familytree",
                 "!work [sub]!w[/sub]",
                 "!volunteer [sub]!v[/sub]",
                 "!bank [sub]!balance, !money[/sub]",
