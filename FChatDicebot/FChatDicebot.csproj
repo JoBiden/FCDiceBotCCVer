@@ -195,6 +195,9 @@
     <Compile Include="BotCommands\ChateauPayroll.cs" />
     <Compile Include="BotCommands\ChateauEconomics.cs" />
     <Compile Include="BotCommands\Support\ChateauStatisticsSupport.cs" />
+    <Compile Include="BotCommands\Support\BondTreeSupport.cs" />
+    <Compile Include="BotCommands\ChateauBondtree.cs" />
+    <Compile Include="BotCommands\ChateauFamilytree.cs" />
     <Compile Include="BotCommands\ChateauIdentifiers.cs" />
     <Compile Include="BotCommands\ChateauIdentifier.cs" />
     <Compile Include="BotCommands\ChateauHandhold.cs" />
