@@ -15,8 +15,8 @@ namespace FChatDicebot.BotCommands
             Name = "lap";
             Aliases = new string[] { };
             Category = "Casual Interaction";
-            ShortDescription = "Offer your lap to another resident";
-            LongDescription = "Pull another resident onto your lap once they !consent. You're the foundation — they get the comfy seat. Pairs with !sit, where you're the one taking a seat instead.";
+            ShortDescription = "Pull another resident onto your lap";
+            LongDescription = "Pull another resident onto your lap once they !consent. If you'd rather be the one taking a seat, try !sit.";
             Usage = "!lap [noparse][user]NameInUserTag[/user][/noparse]";
             RelatedCommands = new string[] { "sit", "cuddle", "consent", "dossier" };
             CooldownDuration = "30 minutes (but can still interact without incrementing count)";

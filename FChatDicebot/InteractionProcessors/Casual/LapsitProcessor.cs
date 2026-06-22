@@ -2,6 +2,7 @@ using FChatDicebot.Database;
 using FChatDicebot.Model;
 using System;
 using System.Collections.Generic;
+using System.Runtime.Remoting.Messaging;
 
 namespace FChatDicebot.InteractionProcessors.Casual
 {
@@ -127,6 +128,11 @@ namespace FChatDicebot.InteractionProcessors.Casual
             {
                 // !lap: the initiator is the lap and pulls the recipient onto it.
                 opener = $"{initiatorProfile.displayName} pulls {recipientProfile.displayName} onto their lap.";
+            }
+            // Special handling for Queen Contract and The Corrupted Rin
+            if (lapsitGiver == "The Corrupted Rin" && (recipientProfile.userName == "Queen Contract" || initiatorProfile.userName == "Queen Contract"))
+            {
+                descriptor += " [eicon]rin_lap[/eicon]";
             }
 
             return $"{opener} {descriptor}";

@@ -19,7 +19,7 @@ namespace FChatDicebot.BotCommands
             Aliases = new string[] { };
             Category = "Casual Interaction";
             ShortDescription = "Give another resident a lick";
-            LongDescription = "Give another character a lick once they !consent. Grooming, tasting, or just being a menace — it's all fair game in the Chateau.";
+            LongDescription = "Give another resident a lick once they !consent. Whether to groom, or taste, one of the Queen's favorite acts to receive.";
             Usage = "!lick [noparse][user]NameInUserTag[/user][/noparse]";
             RelatedCommands = new string[] { "boobhat", "kiss", "consent", "dossier" };
             CooldownDuration = "30 minutes (but can still interact without incrementing count)";

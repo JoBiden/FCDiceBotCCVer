@@ -1,4 +1,4 @@
-﻿using FChatDicebot.Model;
+using FChatDicebot.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -143,14 +143,14 @@ namespace FChatDicebot
                 ("lickgive", 10, "Mlem"),
                 ("lickgive", 50, "Talented Tongue"),
                 ("lickgive", 100, "Licksalot"),
-                ("lickgive", 500, "Got to the Center of the Tootsie Pop"),
+                ("lickgive", 500, "Got to the Center"),
 
                 // Lick - taking (the licked)
                 ("licktake", 1, "Licked"),
                 ("licktake", 10, "Tasty"),
                 ("licktake", 50, "Salt Lick"),
                 ("licktake", 100, "Spit Shined"),
-                ("licktake", 500, "Tootsie Pop"),
+                ("licktake", 500, "Lollipop"),
 
                 // INVOLVED INTERACTION titles
 

@@ -18,8 +18,8 @@ namespace FChatDicebot.BotCommands
             Name = "boobhat";
             Aliases = new string[] { };
             Category = "Casual Interaction";
-            ShortDescription = "Wear another resident as... well, wear them";
-            LongDescription = "Rest your chest atop another resident's head like a hat, as soon as they !consent. A Chateau classic for the well-endowed and the easily-shaded alike.";
+            ShortDescription = "Put your chest on another resident's head";
+            LongDescription = "Rest your chest atop another resident's head like a hat, as soon as they !consent. Intended for those with a proper set of boobs, but no one is stopping you from doing it with your pecs instead.";
             Usage = "!boobhat [noparse][user]NameInUserTag[/user][/noparse]";
             RelatedCommands = new string[] { "lick", "cuddle", "consent", "dossier" };
             CooldownDuration = "30 minutes (but can still interact without incrementing count)";

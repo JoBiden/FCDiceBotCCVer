@@ -68,6 +68,11 @@ namespace FChatDicebot.InteractionProcessors.Casual
                 .Replace("{lickgiver}", initiatorProfile.displayName)
                 .Replace("{licktaker}", recipientProfile.displayName);
 
+            if (initiatorProfile.userName == "Queen Contract")
+            {
+                descriptor += "[eicon]qctongue[/eicon]";
+            }
+
             return $"{initiatorProfile.displayName} gives {recipientProfile.displayName} a slow lick. {descriptor}";
         }
 
