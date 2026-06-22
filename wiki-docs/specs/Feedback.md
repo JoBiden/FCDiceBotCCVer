@@ -1,7 +1,18 @@
 # Feedback — `!feedback` / `!suggestion` + admin `!feedbacklist`
 
-**Status:** Proposed (design-complete, owner-reviewed 2026-06-21).
+**Status:** Implemented. (design owner-reviewed 2026-06-21; shipped 2026-06-22)
 **Feature-Requests source:** "!feedback (alias !suggestion) to submit an idea or report a bug" (B9).
+
+---
+
+## Differences from the original spec
+
+The feature shipped as designed, with these as-built notes:
+
+- **Category tagging kept.** The optional leading `bug`/`idea`/`other` keyword was retained (the spec OK'd dropping it if parsing got fiddly; it didn't). Implemented as a pure, unit-tested `ChateauFeedback.ParseFeedback(rawTerms)` returning `(category, text)`.
+- **Test fixture is a real test DB, not an in-memory double.** [Testdatabasefixture.cs](../../FChatDicebot.Tests/Fixtures/Testdatabasefixture.cs) wraps a live `ChateauDatabase` against the test connection string (the Pledges precedent), so `AddFeedback`/`GetRecentFeedback` are exercised end-to-end. The fixture's `Reset()` just adds `Feedback` to the cleared collections.
+- **Owner-reviewed wording (2026-06-22):** empty-submission hint is *"Be sure you actually include your feedback! Usage: !feedback <your idea or bug report>"*; the `!feedback` long-description references the **mods** (not "staff"). The success acknowledgement is unchanged from the spec.
+- **`!feedbacklist`** renders one block per entry (`{relative} ago — {name} ({category}): {text}`) and truncates with a note before the 4096-char cap; default 10, max 50.
 
 ---
 
@@ -15,7 +26,7 @@ This is **not** an interaction (no consent, investment level, status hook, or re
 
 ## The `!feedback` command (submission)
 
-New `ChatBotCommand`: [ChateauFeedback.cs](../../../FChatDicebot/BotCommands/ChateauFeedback.cs) under `BotCommands/`.
+New `ChatBotCommand`: [ChateauFeedback.cs](../../FChatDicebot/BotCommands/ChateauFeedback.cs) under `BotCommands/`.
 
 | Field | Value |
 |-------|-------|
@@ -29,7 +40,7 @@ New `ChatBotCommand`: [ChateauFeedback.cs](../../../FChatDicebot/BotCommands/Cha
 | `RequireChannel` | `false` (works in channel or PM) |
 | `RequireBotAdmin` / `RequireChannelAdmin` | `false` / `false` |
 
-**`!suggestion` alias** = its own delegating class [ChateauSuggestion.cs](../../../FChatDicebot/BotCommands/ChateauSuggestion.cs), `Name="suggestion"`, whose `Run` calls `new ChateauFeedback().Run(...)` (the [ChateauW.cs](../../../FChatDicebot/BotCommands/ChateauW.cs) pattern — the `Aliases` array does **not** route; see the [cluster README](README.md#cluster-wide-implementation-note-aliases-are-separate-command-classes)).
+**`!suggestion` alias** = its own delegating class [ChateauSuggestion.cs](../../FChatDicebot/BotCommands/ChateauSuggestion.cs), `Name="suggestion"`, whose `Run` calls `new ChateauFeedback().Run(...)` (the [ChateauW.cs](../../FChatDicebot/BotCommands/ChateauW.cs) pattern — the `Aliases` array does **not** route; see the [cluster README](Future-Social/README.md#cluster-wide-implementation-note-aliases-are-separate-command-classes)).
 
 **Optional leading category (B9.2).** If the first term is one of a small known set (`bug`, `idea`, `other` — extend freely), strip it and store it as `category`; otherwise `category = "general"` and the whole message is the text. Keep this trivial: a single first-token check. **If it complicates parsing in practice, drop it entirely** and store every submission as `general` — the owner has explicitly OK'd dropping the category rather than fighting the parser.
 
@@ -40,9 +51,9 @@ New `ChatBotCommand`: [ChateauFeedback.cs](../../../FChatDicebot/BotCommands/Cha
 
 **On success:**
 1. Build a `FeedbackEntry` (see Persistence) — submitter `userName` + `displayName`, `category`, `text`, the `sourceChannel` (the channel name, or `null`/empty when sent by PM), and `submittedAt = DateTime.UtcNow`.
-2. `Database.AddFeedback(entry)` (InsertOne — the [Pledges](../../../FChatDicebot/Database/Chateaudatabase.cs) write precedent).
+2. `Database.AddFeedback(entry)` (InsertOne — the [Pledges](../../FChatDicebot/Database/Chateaudatabase.cs) write precedent).
 3. Set the 5-minute cooldown timer and save the profile.
-4. Acknowledge. Mirror [ModMessage.cs](../../../FChatDicebot/BotCommands/ModMessage.cs)'s reply routing: reply in-channel if it came from a channel, else PM. Only the acknowledgement is emitted — never echo the submitted text publicly.
+4. Acknowledge. Mirror [ModMessage.cs](../../FChatDicebot/BotCommands/ModMessage.cs)'s reply routing: reply in-channel if it came from a channel, else PM. Only the acknowledgement is emitted — never echo the submitted text publicly.
 
 > **For owner wording review — acknowledgement (owner-supplied, final):**
 > `Thank you for your feedback! A mod might reach out to you with further inquiry, and we'll do our best to let you know how we used your feedback, one way or the other.`
@@ -51,7 +62,7 @@ New `ChatBotCommand`: [ChateauFeedback.cs](../../../FChatDicebot/BotCommands/Cha
 
 ## The `!feedbacklist` command (admin read)
 
-New `ChatBotCommand`: [ChateauFeedbackList.cs](../../../FChatDicebot/BotCommands/ChateauFeedbackList.cs). A dedicated admin command (rather than overloading `!feedback`) so there is **no ambiguity** between "submit the word 'list' as feedback" and "list feedback."
+New `ChatBotCommand`: [ChateauFeedbackList.cs](../../FChatDicebot/BotCommands/ChateauFeedbackList.cs). A dedicated admin command (rather than overloading `!feedback`) so there is **no ambiguity** between "submit the word 'list' as feedback" and "list feedback."
 
 | Field | Value |
 |-------|-------|
@@ -71,7 +82,7 @@ Built around a static `BuildFeedbackList(List<FeedbackEntry>)` helper for unit t
 
 ## Persistence shape
 
-New model `FeedbackEntry` (in [ChateauDB.cs](../../../FChatDicebot/Model/ChateauDB.cs), alongside `Pledge`):
+New model `FeedbackEntry` (in [ChateauDB.cs](../../FChatDicebot/Model/ChateauDB.cs), alongside `Pledge`):
 
 ```csharp
 public class FeedbackEntry
@@ -94,7 +105,7 @@ Stored in a new **`Feedback`** Mongo collection. Unlike B6, this **does** touch 
 - `Ichateaudatabase.cs`: `void AddFeedback(FeedbackEntry entry);` and `List<FeedbackEntry> GetRecentFeedback(int count);`
 - `Chateaudatabase.cs`: implement both against `Database.GetCollection<BsonDocument>("Feedback")` — `AddFeedback` = `InsertOne(entry.ToBsonDocument())` (Pledges pattern); `GetRecentFeedback` = `Find(empty).SortByDescending(submittedAt).Limit(count)` deserialized to `FeedbackEntry`.
 - `MonDB.cs`: thin static pass-throughs (`addFeedback` / `getRecentFeedback`) matching the existing `MonDB` wrapper style.
-- Test double [Testdatabasefixture.cs](../../../FChatDicebot.Tests/Fixtures/Testdatabasefixture.cs) gains an in-memory `Feedback` list + the two methods.
+- Test double [Testdatabasefixture.cs](../../FChatDicebot.Tests/Fixtures/Testdatabasefixture.cs) gains an in-memory `Feedback` list + the two methods.
 
 ---
 

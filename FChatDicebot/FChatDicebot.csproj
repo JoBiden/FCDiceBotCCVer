@@ -204,6 +204,9 @@
     <Compile Include="BotCommands\ChateauBoobhat.cs" />
     <Compile Include="BotCommands\ChateauLick.cs" />
     <Compile Include="BotCommands\ChateauLap.cs" />
+    <Compile Include="BotCommands\ChateauFeedback.cs" />
+    <Compile Include="BotCommands\ChateauSuggestion.cs" />
+    <Compile Include="BotCommands\ChateauFeedbackList.cs" />
     <Compile Include="BotCommands\ChateauSit.cs" />
     <Compile Include="BotCommands\ChateauAbandonPledge.cs" />
     <Compile Include="BotCommands\ChateauFulfill.cs" />

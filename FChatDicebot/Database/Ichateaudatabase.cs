@@ -88,6 +88,10 @@ namespace FChatDicebot.Database
         void UpdatePledge(Pledge pledge);
         void DeletePledge(ObjectId pledgeId);
 
+        // Feedback Operations
+        void AddFeedback(FeedbackEntry entry);
+        List<FeedbackEntry> GetRecentFeedback(int count);
+
         // Database Management
         void ClearDatabase();
         void ClearCollection(string collectionName);

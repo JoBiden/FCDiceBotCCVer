@@ -74,6 +74,7 @@ namespace FChatDicebot.BotCommands
                 "!economics",
                 "!joinchateau",
                 "!modmessage",
+                "!feedback [sub]!suggestion[/sub]",
                 "!setmark",
                 "!help [sub]!commands[/sub]",
                 "!botinfo",
@@ -166,7 +167,8 @@ namespace FChatDicebot.BotCommands
             if(Utils.IsCharacterAdmin(bot.AccountSettings.AdminCharacters, command.characterName))
             {
                 messageText += "\n[b]Admin only Commands [/b](no channel req)\n" +
-                    "!namechange [noparse][user]old profile in user tag[/user][/noparse] \"new profile in quotes\" - updates the database to reflect a user who has changed their Flist username. CaSe SeNsItIvE \n";
+                    "!namechange [noparse][user]old profile in user tag[/user][/noparse] \"new profile in quotes\" - updates the database to reflect a user who has changed their Flist username. CaSe SeNsItIvE \n" +
+                    "!feedbacklist [count] - view recent !feedback / !suggestion submissions (newest first) \n";
             }
 
             if (commandController.MessageCameFromChannel(channel))
