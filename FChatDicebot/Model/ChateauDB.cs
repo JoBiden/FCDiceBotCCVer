@@ -52,6 +52,17 @@ namespace FChatDicebot.Model
         // descriptor selection. Old entries are pruned on write (keep last 30 days).
         [BsonIgnoreIfNull]
         public Dictionary<string, int> dailyClimaxCounts { get; set; } = new Dictionary<string, int>();
+
+        // Lifetime MANOR kickbacks this profile has earned as an EMPLOYER, keyed by
+        // employee userName -> currency -> cumulative amount. Written by !work when an
+        // employee (employed by someone other than themselves) completes a duty; read
+        // by !business. Persists across employment changes (it is history), so a former
+        // employee's entry survives if they later change jobs or bosses. Display names
+        // are resolved at render time from the userName key. Lifetime cumulative; never
+        // decremented or reset in v1.
+        [BsonIgnoreIfNull]
+        public Dictionary<string, Dictionary<string, int>> employeeEarnings { get; set; }
+            = new Dictionary<string, Dictionary<string, int>>();
     }
 
     public class Pregnancy

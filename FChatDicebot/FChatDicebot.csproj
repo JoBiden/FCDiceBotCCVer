@@ -163,6 +163,7 @@
     <Compile Include="BotCommands\ChateauBirth.cs" />
     <Compile Include="BotCommands\ChateauAdminRename.cs" />
     <Compile Include="BotCommands\ChateauBank.cs" />
+    <Compile Include="BotCommands\ChateauBusiness.cs" />
     <Compile Include="BotCommands\ChateauPay.cs" />
     <Compile Include="BotCommands\ChateauSetTitle.cs" />
     <Compile Include="BotCommands\ChateauSystemTitles.cs" />

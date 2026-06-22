@@ -108,6 +108,24 @@ namespace FChatDicebot.Tests.Builders
         }
 
         /// <summary>
+        /// Record a MANOR kickback this profile has earned (as an employer) from a given
+        /// employee in a given currency, mirroring how !work increments employeeEarnings.
+        /// </summary>
+        public ProfileBuilder WithEmployeeEarnings(string employeeUserName, string currency, int amount)
+        {
+            if (_profile.employeeEarnings == null)
+            {
+                _profile.employeeEarnings = new Dictionary<string, Dictionary<string, int>>();
+            }
+            if (!_profile.employeeEarnings.ContainsKey(employeeUserName))
+            {
+                _profile.employeeEarnings[employeeUserName] = new Dictionary<string, int>();
+            }
+            _profile.employeeEarnings[employeeUserName][currency] = amount;
+            return this;
+        }
+
+        /// <summary>
         /// Returns the built profile without saving to database.
         /// Useful for testing validation logic.
         /// </summary>
@@ -139,6 +157,7 @@ namespace FChatDicebot.Tests.Builders
             registeredProfile.milkInventory = _profile.milkInventory;
             registeredProfile.trainings = _profile.trainings;
             registeredProfile.dailyClimaxCounts = _profile.dailyClimaxCounts;
+            registeredProfile.employeeEarnings = _profile.employeeEarnings;
 
             // Now save with the correct _id
             database.SetProfile(_profile.userName, registeredProfile);
