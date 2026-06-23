@@ -115,6 +115,21 @@ namespace FChatDicebot
             return GetDatabase().GetPendingCommands(userName);
         }
 
+        internal static List<PendingCommand> getPendingByGroupId(string groupId)
+        {
+            return GetDatabase().GetPendingCommandsByGroupId(groupId);
+        }
+
+        internal static List<PendingCommand> getPendingByInitiator(string initiator)
+        {
+            return GetDatabase().GetPendingCommandsByInitiator(initiator);
+        }
+
+        internal static void updatePendingCommand(PendingCommand updated)
+        {
+            GetDatabase().UpdatePendingCommand(updated);
+        }
+
         internal static List<Duty> getDutiesByJob(string job)
         {
             return GetDatabase().GetDutiesByJob(job);

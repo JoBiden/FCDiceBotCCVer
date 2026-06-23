@@ -2,6 +2,7 @@
 using FChatDicebot.Model;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace FChatDicebot.InteractionProcessors.Casual
 {
@@ -14,6 +15,19 @@ namespace FChatDicebot.InteractionProcessors.Casual
         public override string InvestmentLevel => "casual";
 
         private static readonly TimeSpan RateLimit = TimeSpan.FromMinutes(30);
+
+        // Directional group model: initiator +R bullygive, each recipient +1 bullytake.
+        public override GroupSpec GroupSpec => GroupSpec.Directional("bullygive", "bullytake");
+
+        private static readonly List<string> BullyDescriptors = new List<string>
+        {
+            "boolies them into submission!",
+            "shows them whose boss!",
+            "applies excessive force to their victim!",
+            "spins them right round!",
+            "establishes the pecking order!",
+            "instills fear..."
+        };
 
         /// <summary>
         /// Constructor for dependency injection (for testing)
@@ -64,18 +78,16 @@ namespace FChatDicebot.InteractionProcessors.Casual
 
         public override string GetCompletionMessage(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
-            var random = new Random();
-            var bullyDescriptors = new List<string>
-            {
-                "boolies them into submission!",
-                "shows them whose boss!",
-                "applies excessive force to their victim!",
-                "spins them right round!",
-                "establishes the pecking order!",
-                "instills fear..."
-            };
+            return $"{initiatorProfile.displayName} takes {recipientProfile.displayName} by the collar and {GetRandomDescriptor(BullyDescriptors)}";
+        }
 
-            return $"{initiatorProfile.displayName} takes {recipientProfile.displayName} by the collar and {GetRandomDescriptor(bullyDescriptors)}";
+        public override string GetGroupCompletionMessage(Profile initiatorProfile, IReadOnlyList<Profile> consentersInOrder, string identifier)
+        {
+            if (consentersInOrder.Count == 1)
+                return GetCompletionMessage(initiatorProfile, consentersInOrder[0], identifier);
+
+            string names = JoinNamesSerial(consentersInOrder.Select(p => p.displayName).ToList());
+            return $"{initiatorProfile.displayName} rounds up {names} and {GetRandomDescriptor(BullyDescriptors)}";
         }
 
         public override string GetConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)

@@ -343,6 +343,50 @@ namespace FChatDicebot
             return null;
         }
 
+        /// <summary>
+        /// Multi-target counterpart of <see cref="GetUserNameFromCommandTerms"/>: returns every
+        /// <c>[user]…[/user]</c> tag in the command, in order, deduplicated (case-insensitive)
+        /// while preserving first-seen order. Used by the casual group commands so
+        /// <c>!cuddle A B C</c> can spin up one shared moment. Never returns null — an empty
+        /// list means no user tags were present.
+        /// </summary>
+        public List<string> GetUserNamesFromCommandTerms(string[] terms)
+        {
+            var names = new List<string>();
+            if (terms == null)
+                return names;
+
+            bool isName = false;
+            string userName = "";
+            foreach (string term in terms)
+            {
+                if (isName)
+                {
+                    userName += " " + term;
+                }
+
+                if (term.StartsWith("[user]"))
+                {
+                    isName = true;
+                    userName = term;
+                }
+
+                if (term.EndsWith("[/user]"))
+                {
+                    isName = false;
+                    userName = userName.Remove(0, 6);
+                    userName = userName.Remove(userName.Length - 7);
+                    Utils.SanitizeInput(userName);
+                    if (!string.IsNullOrWhiteSpace(userName) &&
+                        !names.Any(n => string.Equals(n, userName, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        names.Add(userName);
+                    }
+                }
+            }
+            return names;
+        }
+
         public string GetEIconFromCommandTerms(string[] terms)
         {
             bool isEIcon = false;

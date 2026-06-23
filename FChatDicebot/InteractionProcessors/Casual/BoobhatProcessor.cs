@@ -2,6 +2,7 @@ using FChatDicebot.Database;
 using FChatDicebot.Model;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace FChatDicebot.InteractionProcessors.Casual
 {
@@ -17,6 +18,18 @@ namespace FChatDicebot.InteractionProcessors.Casual
         public override string InvestmentLevel => "casual";
 
         private static readonly TimeSpan RateLimit = TimeSpan.FromMinutes(30);
+
+        // Directional group model: initiator +R boobhatgive, each recipient +1 boobhattake.
+        public override GroupSpec GroupSpec => GroupSpec.Directional("boobhatgive", "boobhattake");
+
+        private static readonly List<string> BoobhatDescriptors = new List<string>
+        {
+            "Nice hat!",
+            "How heavy are they?",
+            "Can you still see?",
+            "Soft, warm...",
+            "How forward!"
+        };
 
         /// <summary>
         /// Constructor for dependency injection (for testing)
@@ -53,17 +66,16 @@ namespace FChatDicebot.InteractionProcessors.Casual
 
         public override string GetCompletionMessage(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
-            // Owner-provided descriptors.
-            var boobhatDescriptors = new List<string>
-            {
-                "Nice hat!",
-                "How heavy are they?",
-                "Can you still see?",
-                "Soft, warm...",
-                "How forward!"
-            };
+            return $"{initiatorProfile.displayName} lets the full weight of their chest fall onto {recipientProfile.displayName}. {GetRandomDescriptor(BoobhatDescriptors)}";
+        }
 
-            return $"{initiatorProfile.displayName} lets the full weight of their chest fall onto {recipientProfile.displayName}. {GetRandomDescriptor(boobhatDescriptors)}";
+        public override string GetGroupCompletionMessage(Profile initiatorProfile, IReadOnlyList<Profile> consentersInOrder, string identifier)
+        {
+            if (consentersInOrder.Count == 1)
+                return GetCompletionMessage(initiatorProfile, consentersInOrder[0], identifier);
+
+            string names = JoinNamesSerial(consentersInOrder.Select(p => p.displayName).ToList());
+            return $"{initiatorProfile.displayName} rests their chest atop {names}, one comfy hat at a time. {GetRandomDescriptor(BoobhatDescriptors)}";
         }
 
         public override string GetConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)

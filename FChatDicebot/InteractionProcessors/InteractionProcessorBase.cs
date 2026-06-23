@@ -485,5 +485,155 @@ namespace FChatDicebot.InteractionProcessors
             Database.IncrementCount(initiator, initiatorLabel);
             Database.IncrementCount(recipient, recipientLabel);
         }
+
+        // ====================================================================
+        // Group interaction support (B4). Only casual processors opt in by
+        // overriding GroupSpec; everything below is a no-op for the rest.
+        // ====================================================================
+
+        /// <summary>
+        /// Declares how this interaction credits counts when resolved as a multi-person
+        /// "moment". Null means the interaction is not group-capable (non-casuals), in which
+        /// case multi-target commands fall back to independent 1:1 fan-out.
+        /// </summary>
+        public virtual GroupSpec GroupSpec => null;
+
+        /// <summary>True when this interaction supports the hybrid group flow.</summary>
+        public bool SupportsGroup => GroupSpec != null;
+
+        /// <summary>Rate-limit window applied to group count increments (all casuals: 30m).</summary>
+        protected virtual TimeSpan GroupRateLimit => TimeSpan.FromMinutes(30);
+
+        /// <summary>
+        /// Apply the group count math for a resolved moment over the consenting recipients,
+        /// in consent order. Default handles symmetric and directional models; lapsit
+        /// overrides for its per-position rule. Returns a "[sub]…clerks were busy…[/sub]"
+        /// note naming any participant whose increment was rate-limited (or empty).
+        ///
+        /// The database is threaded in by the resolver rather than using the processor's own
+        /// bound <see cref="Database"/>: registry instances bind to the live MonDB, so passing
+        /// the caller's database keeps counting on the same store as the rest of resolution
+        /// (and lets the resolver be unit-tested against the test database).
+        /// </summary>
+        public virtual string ApplyGroupCounts(IChateauDatabase database, string initiator, IReadOnlyList<string> consentersInOrder, string identifier)
+        {
+            var spec = GroupSpec;
+            if (spec == null) return string.Empty;
+
+            int recipientCount = consentersInOrder.Count; // R
+            int participantCount = recipientCount + 1;     // M = R + 1
+            var limited = new List<string>();
+
+            if (spec.Kind == GroupCountKind.Symmetric)
+            {
+                // +1 per other participant → +(M-1) each.
+                ApplyGroupIncrement(database, initiator, spec.SymmetricKey, participantCount - 1, limited);
+                foreach (var c in consentersInOrder)
+                    ApplyGroupIncrement(database, c, spec.SymmetricKey, participantCount - 1, limited);
+            }
+            else if (spec.Kind == GroupCountKind.Directional)
+            {
+                ApplyGroupIncrement(database, initiator, spec.GiveKey, recipientCount, limited);
+                foreach (var c in consentersInOrder)
+                    ApplyGroupIncrement(database, c, spec.TakeKey, 1, limited);
+            }
+            // Lapsit handles its own counts in an override.
+
+            return BuildGroupRateLimitNote(limited);
+        }
+
+        /// <summary>
+        /// Apply a single rate-limited +N increment for a group participant against the given
+        /// database. A non-positive amount (e.g. the lap at position 0 has +0 lapsitgive) is a
+        /// silent no-op — no timer is armed and no rate-limit note is produced. Participants
+        /// whose increment is suppressed by their cooldown are collected (by display name).
+        /// </summary>
+        protected void ApplyGroupIncrement(IChateauDatabase database, string user, string countKey, int amount, List<string> limitedDisplayNames)
+        {
+            if (amount <= 0) return;
+            bool applied = database.ChangeCountByWithRateLimit(user, countKey, amount, GroupRateLimit);
+            if (!applied)
+            {
+                string displayName = database.GetDisplayName(user) ?? user;
+                if (!limitedDisplayNames.Contains(displayName))
+                    limitedDisplayNames.Add(displayName);
+            }
+        }
+
+        /// <summary>
+        /// Build the rate-limit sub-note for a resolved group, naming whichever participants'
+        /// dossiers were too busy to record. Empty when nobody was limited.
+        /// </summary>
+        protected string BuildGroupRateLimitNote(List<string> limitedDisplayNames)
+        {
+            if (limitedDisplayNames == null || limitedDisplayNames.Count == 0) return string.Empty;
+            string names = JoinNamesSerial(limitedDisplayNames);
+            string dossierWord = limitedDisplayNames.Count > 1 ? "dossiers" : "dossier";
+            return $"\n\n[sub]Looks like that didn't make it into {names}'s {dossierWord} though... The clerks were probably still busy processing their last {InteractionType}.[/sub]";
+        }
+
+        /// <summary>
+        /// Combined completion message for a resolved group moment, over the consenting
+        /// recipients in consent order. A single consenter degenerates to the 1:1 message.
+        /// Casual processors override this for their own flavor; the fallback just lists
+        /// everyone. (Casual interactions carry no status-effect contributors, so unlike the
+        /// 1:1 path this is not wrapped with status fragments.)
+        /// </summary>
+        public virtual string GetGroupCompletionMessage(Profile initiatorProfile, IReadOnlyList<Profile> consentersInOrder, string identifier)
+        {
+            if (consentersInOrder.Count == 1)
+                return GetCompletionMessage(initiatorProfile, consentersInOrder[0], identifier);
+
+            var names = new List<string> { initiatorProfile.displayName };
+            names.AddRange(consentersInOrder.Select(p => p.displayName));
+            return $"{JoinNamesSerial(names)} share a {InteractionType} moment together.";
+        }
+
+        /// <summary>
+        /// Directional group sentence helper: "Initiator {verbPresent} A, B, and C. {descriptor}".
+        /// </summary>
+        protected string BuildDirectionalGroupMessage(string initiatorDisplayName, IReadOnlyList<Profile> consenters, string verbPresent, string descriptor)
+        {
+            string names = JoinNamesSerial(consenters.Select(p => p.displayName).ToList());
+            string message = $"{initiatorDisplayName} {verbPresent} {names}.";
+            if (!string.IsNullOrEmpty(descriptor)) message += " " + descriptor;
+            return message;
+        }
+
+        /// <summary>
+        /// Symmetric group sentence helper: "A, B, and C {predicate}. {descriptor}" with the
+        /// initiator listed first.
+        /// </summary>
+        protected string BuildSymmetricGroupMessage(Profile initiatorProfile, IReadOnlyList<Profile> consenters, string predicate, string descriptor)
+        {
+            var names = new List<string> { initiatorProfile.displayName };
+            names.AddRange(consenters.Select(p => p.displayName));
+            string message = $"{JoinNamesSerial(names)} {predicate}.";
+            if (!string.IsNullOrEmpty(descriptor)) message += " " + descriptor;
+            return message;
+        }
+
+        /// <summary>
+        /// Group consent announcement shown when a multi-target casual command is invoked.
+        /// Default reads "{initiator} wants to {verb} A, B, and C. Each of you, do you
+        /// !consent?". Processors with awkward infinitives (lapsit) override.
+        /// </summary>
+        public virtual string GetGroupConsentWarning(Profile initiatorProfile, IReadOnlyList<Profile> recipients, string identifier)
+        {
+            string names = JoinNamesSerial(recipients.Select(p => p.displayName).ToList());
+            string verb = GetInteractionVerb(VerbTense.Infinitive);
+            return $"{initiatorProfile.displayName} wants to {verb} {names}. Do you each !consent? (or !no)";
+        }
+
+        /// <summary>
+        /// Serial-comma name join: "A" / "A and B" / "A, B, and C".
+        /// </summary>
+        public static string JoinNamesSerial(IReadOnlyList<string> names)
+        {
+            if (names == null || names.Count == 0) return string.Empty;
+            if (names.Count == 1) return names[0];
+            if (names.Count == 2) return names[0] + " and " + names[1];
+            return string.Join(", ", names.Take(names.Count - 1)) + ", and " + names[names.Count - 1];
+        }
     }
 }

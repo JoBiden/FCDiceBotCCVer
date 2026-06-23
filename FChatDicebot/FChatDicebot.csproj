@@ -197,6 +197,7 @@
     <Compile Include="BotCommands\ChateauEconomics.cs" />
     <Compile Include="BotCommands\Support\ChateauStatisticsSupport.cs" />
     <Compile Include="BotCommands\Support\BondTreeSupport.cs" />
+    <Compile Include="BotCommands\Support\CasualGroupCommandSupport.cs" />
     <Compile Include="BotCommands\ChateauBondtree.cs" />
     <Compile Include="BotCommands\ChateauFamilytree.cs" />
     <Compile Include="BotCommands\ChateauIdentifiers.cs" />
@@ -240,6 +241,14 @@
     <Compile Include="BotCommands\CombinedCommands\GetRandomPotion.cs" />
     <Compile Include="BotCommands\GeneratePotionInfo.cs" />
     <Compile Include="BotCommands\ChateauConsent.cs" />
+    <Compile Include="BotCommands\ChateauNo.cs" />
+    <Compile Include="BotCommands\ChateauRefuse.cs" />
+    <Compile Include="BotCommands\ChateauDecline.cs" />
+    <Compile Include="BotCommands\ChateauOops.cs" />
+    <Compile Include="BotCommands\ChateauO.cs" />
+    <Compile Include="BotCommands\ChateauWithdraw.cs" />
+    <Compile Include="BotCommands\ChateauCancel.cs" />
+    <Compile Include="BotCommands\Support\LifecycleTargeting.cs" />
     <Compile Include="BotCommands\ModMessage.cs" />
     <Compile Include="BotCommands\CombinedCommands\MoveChips.cs" />
     <Compile Include="BotCommands\DeletePotion.cs" />
@@ -377,6 +386,8 @@
     <Compile Include="InteractionProcessors\Commitment\MarkProcessor.cs" />
     <Compile Include="InteractionProcessors\CooldownSpec.cs" />
     <Compile Include="InteractionProcessors\ConsentWarningText.cs" />
+    <Compile Include="InteractionProcessors\GroupSpec.cs" />
+    <Compile Include="InteractionProcessors\GroupInteractionResolver.cs" />
     <Compile Include="InteractionProcessors\IdentifierPayload.cs" />
     <Compile Include="InteractionProcessors\IInteractionProcessor.cs" />
     <Compile Include="InteractionProcessors\InteractionProcessorBase.cs" />

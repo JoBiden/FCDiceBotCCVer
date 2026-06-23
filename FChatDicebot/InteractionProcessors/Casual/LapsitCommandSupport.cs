@@ -1,3 +1,4 @@
+using FChatDicebot.BotCommands.Support;
 using FChatDicebot.Model;
 
 namespace FChatDicebot.InteractionProcessors.Casual
@@ -15,6 +16,15 @@ namespace FChatDicebot.InteractionProcessors.Casual
     {
         public static void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string characterName, string channel, string typedVerb)
         {
+            // Multi-target → lap stack. Type and identifier both carry the typed verb so the
+            // group resolver can credit per-position counts and render the right opener.
+            var groupTargets = commandController.GetUserNamesFromCommandTerms(rawTerms);
+            if (groupTargets.Count > 1)
+            {
+                CasualGroupCommandSupport.Run(bot, characterName, channel, typedVerb, groupTargets, typedVerb);
+                return;
+            }
+
             string recipient = commandController.GetUserNameFromCommandTerms(rawTerms);
             Profile recipientProfile = MonDB.getProfile(recipient);
             Profile initiatorProfile = MonDB.getProfile(characterName);

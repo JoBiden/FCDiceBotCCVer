@@ -96,6 +96,8 @@ namespace FChatDicebot.BotCommands
             List<string> roomCommands = new List<string>()
             {
                 "!consent [sub]!c, !accept[/sub] ",
+                "!no [sub]!refuse, !decline[/sub]",
+                "!oops [sub]!o, !withdraw, !cancel[/sub]",
                 "!pledge",
                 "!fulfill"
             };

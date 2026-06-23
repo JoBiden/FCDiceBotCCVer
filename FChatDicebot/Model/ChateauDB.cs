@@ -132,10 +132,37 @@ namespace FChatDicebot.Model
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
         public ObjectId Id { get; set; }
-        public Interaction pendingInteraction { get; set; } 
-        public string awaitingConsentFrom { get; set; } 
+        public Interaction pendingInteraction { get; set; }
+        public string awaitingConsentFrom { get; set; }
         public DateTime startTime { get; set; } = DateTime.UtcNow;
 
+        // --- Group interaction fields (B4) ---
+        // For an ordinary 1:1 pending these stay null/default and the consent flow ignores
+        // them entirely (it processes the moment the single recipient consents). A
+        // multi-target casual command instead mints one shared groupId across every
+        // recipient's seat; each seat is consented individually but the shared "moment"
+        // only resolves once no Pending seat remains. [BsonIgnoreIfNull] keeps the field
+        // off legacy 1:1 documents so no migration is needed.
+
+        // Shared id linking every seat of one group invocation. Null/empty for 1:1.
+        [BsonIgnoreIfNull]
+        public string groupId { get; set; }
+
+        // PendingConsent / Consented. Only meaningful for group seats; a 1:1 pending never
+        // transitions (it is processed-then-deleted on consent). Default keeps legacy docs
+        // and 1:1 seats in the "still waiting" state.
+        public string consentState { get; set; } = PendingConsentState;
+
+        // Order in which this seat consented (1,2,3…); 0 until consented / for 1:1. Drives
+        // lapsit stack ordering and the serial-comma name order in the combined message.
+        [BsonIgnoreIfDefault]
+        public int consentedOrder { get; set; }
+
+        public const string PendingConsentState = "Pending";
+        public const string ConsentedState = "Consented";
+
+        public bool IsGroupSeat => !string.IsNullOrEmpty(groupId);
+        public bool HasConsented => consentState == ConsentedState;
     }
 
     public class Command
