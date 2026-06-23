@@ -18,8 +18,8 @@ namespace FChatDicebot.BotCommands
             Name = "kiss";
             Aliases = new string[] { };
             Category = "Casual Interaction";
-            ShortDescription = "Give another resident a kiss";
-            LongDescription = "Give another resident a kiss, as soon as they !consent. This is a sweet, affectionate gesture often used as a greeting.";
+            ShortDescription = "Give another resident (or residents) a kiss";
+            LongDescription = "Give another resident (or residents) a kiss, as soon as they !consent. This is a sweet, affectionate gesture often used as a greeting.";
             Usage = "!kiss [noparse][user]NameInUserTag[/user][/noparse]";
             RelatedCommands = new string[] { "cuddle", "handhold", "consent", "dossier" };
             CooldownDuration = "30 Minutes";
@@ -33,6 +33,13 @@ namespace FChatDicebot.BotCommands
 
         public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
         {
+            var groupTargets = commandController.GetUserNamesFromCommandTerms(rawTerms);
+            if (groupTargets.Count > 1)
+            {
+                Support.CasualGroupCommandSupport.Run(bot, characterName, channel, "kiss", groupTargets);
+                return;
+            }
+
             string recipient = commandController.GetUserNameFromCommandTerms(rawTerms);
             Profile recipientProfile = MonDB.getProfile(recipient);
             Profile initiatorProfile = MonDB.getProfile(characterName);

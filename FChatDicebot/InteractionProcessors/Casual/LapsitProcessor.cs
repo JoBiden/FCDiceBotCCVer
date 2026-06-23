@@ -2,7 +2,7 @@ using FChatDicebot.Database;
 using FChatDicebot.Model;
 using System;
 using System.Collections.Generic;
-using System.Runtime.Remoting.Messaging;
+using System.Linq;
 
 namespace FChatDicebot.InteractionProcessors.Casual
 {
@@ -32,6 +32,20 @@ namespace FChatDicebot.InteractionProcessors.Casual
         public override string InvestmentLevel => "casual";
 
         private static readonly TimeSpan RateLimit = TimeSpan.FromMinutes(30);
+
+        // Lapsit is group-capable with the special per-position rule; the lap stack is
+        // assembled and credited in the group overrides below.
+        public override GroupSpec GroupSpec => GroupSpec.LapStack();
+
+        // Owner-provided descriptors (shared by !lap and !sit, 1:1 and group).
+        private static readonly List<string> LapsitDescriptors = new List<string>
+        {
+            "Does it count as a stack if it's only two?",
+            "Lap! Lap! Lap!",
+            "We have normal chairs too, in case you didn't know...",
+            "That means {lapsitgiver} is on top, literally.",
+            "Always nice to have some support."
+        };
 
         /// <summary>
         /// Constructor for dependency injection (for testing)
@@ -100,17 +114,7 @@ namespace FChatDicebot.InteractionProcessors.Casual
                 ? initiatorProfile.displayName
                 : recipientProfile.displayName;
 
-            // Owner-provided descriptors (shared by !lap and !sit).
-            var lapsitDescriptors = new List<string>
-            {
-                "Does it count as a stack if it's only two?",
-                "Lap! Lap! Lap!",
-                "We have normal chairs too, in case you didn't know...",
-                "That means {lapsitgiver} is on top, literally.",
-                "Always nice to have some support."
-            };
-
-            string descriptor = GetRandomDescriptor(lapsitDescriptors)
+            string descriptor = GetRandomDescriptor(LapsitDescriptors)
                 .Replace("{lapsitgiver}", lapsitGiver);
 
             string opener;
@@ -145,6 +149,123 @@ namespace FChatDicebot.InteractionProcessors.Casual
                 return initiatorProfile.displayName + " wants to sit on " + recipientProfile.displayName + "'s lap. Do you !consent to being their seat?";
             }
             return initiatorProfile.displayName + " wants to pull " + recipientProfile.displayName + " onto their lap. Do you !consent to taking a seat?";
+        }
+
+        public override string GetGroupConsentWarning(Profile initiatorProfile, IReadOnlyList<Profile> recipients, string identifier)
+        {
+            string names = JoinNamesSerial(recipients.Select(p => p.displayName).ToList());
+            if (InitiatorIsSitter(identifier))
+            {
+                // !sit: the first to consent becomes the bottom; the rest pile on above.
+                return initiatorProfile.displayName + " wants to start a lap stack with " + names + ". The first to !consent gets to be under " + initiatorProfile.displayName + "!";
+            }
+            return initiatorProfile.displayName + " starts a lap stack, looking to pull " + names + " onto their lap one at a time. Do you each !consent to taking a seat?";
+        }
+
+        /// <summary>
+        /// Per-position lapsit counts over the consented stack (B7.12). Position k (0 = bottom)
+        /// gets +(M-1-k) lapsittake (people sitting on them) and +k lapsitgive (people they're
+        /// sitting on). The verb on <paramref name="identifier"/> decides who claims the
+        /// bottom; see <see cref="BuildStack{T}"/>.
+        /// </summary>
+        public override string ApplyGroupCounts(IChateauDatabase database, string initiator, IReadOnlyList<string> consentersInOrder, string identifier)
+        {
+            var stack = BuildStack(identifier, initiator, consentersInOrder); // bottom -> top
+            int stackSize = stack.Count; // M
+            var limited = new List<string>();
+
+            for (int position = 0; position < stackSize; position++)
+            {
+                ApplyGroupIncrement(database, stack[position], "lapsittake", stackSize - 1 - position, limited);
+                ApplyGroupIncrement(database, stack[position], "lapsitgive", position, limited);
+            }
+
+            return BuildGroupRateLimitNote(limited);
+        }
+
+        public override string GetGroupCompletionMessage(Profile initiatorProfile, IReadOnlyList<Profile> consentersInOrder, string identifier)
+        {
+            bool initiatorIsSitter = InitiatorIsSitter(identifier);
+            var stack = BuildStack(identifier, initiatorProfile, consentersInOrder); // bottom -> top
+            int stackSize = stack.Count; // M
+
+            // Opener forms the bottom pair (positions 0 and 1).
+            string opener;
+            if (initiatorIsSitter)
+            {
+                // !sit: the initiator sits on whoever claimed the bottom (stack[0]).
+                var sitOpeners = new List<string>
+                {
+                    $"{initiatorProfile.displayName} uses {stack[0].displayName} as a comfy lap to sit on.",
+                    $"{initiatorProfile.displayName} pulls themselves onto {stack[0].displayName}'s lap."
+                };
+                opener = GetRandomDescriptor(sitOpeners);
+            }
+            else
+            {
+                // !lap: the initiator is the bottom and pulls the first sitter (stack[1]) on.
+                opener = $"{initiatorProfile.displayName} pulls {stack[1].displayName} onto their lap.";
+            }
+
+            string message = opener;
+
+            // Group extension (stack >= 3): each person above the opening pair, in stack order.
+            if (stackSize >= 3)
+            {
+                var above = stack.Skip(2).Select(p => p.displayName).ToList();
+                string tail = " Then " + above[0] + " takes a seat";
+                for (int i = 1; i < above.Count; i++)
+                {
+                    tail += ", then " + above[i];
+                }
+                tail += $", forming a lap stack {stackSize} people tall!";
+                message += tail;
+            }
+
+            // {lapsitgiver} = the topmost sitter (the most lapsitgive), i.e. the top of stack.
+            string topmost = stack[stackSize - 1].displayName;
+            string descriptor = GetRandomDescriptor(LapsitDescriptors).Replace("{lapsitgiver}", topmost);
+
+            // Special handling for Queen Contract and The Corrupted Rin.
+            if (topmost == "The Corrupted Rin" && stack.Any(p => p.userName == "Queen Contract"))
+            {
+                descriptor += " [eicon]rin_lap[/eicon]";
+            }
+
+            return $"{message} {descriptor}";
+        }
+
+        /// <summary>
+        /// Assemble the lap stack bottom -> top from the typed verb and the consenters in
+        /// consent order. <c>!lap</c>: initiator is the bottom, consenters stack above in
+        /// order. <c>!sit</c>: the first consenter claims the open bottom, the initiator sits
+        /// at position 1, remaining consenters stack above in order.
+        /// </summary>
+        private static List<T> BuildStack<T>(string verb, T initiator, IReadOnlyList<T> consentersInOrder)
+        {
+            var stack = new List<T>();
+            if (InitiatorIsSitter(verb))
+            {
+                if (consentersInOrder.Count > 0)
+                {
+                    stack.Add(consentersInOrder[0]);  // bottom
+                    stack.Add(initiator);             // position 1
+                    for (int i = 1; i < consentersInOrder.Count; i++)
+                        stack.Add(consentersInOrder[i]);
+                }
+                else
+                {
+                    // No consenters (shouldn't resolve) — fall back to initiator alone.
+                    stack.Add(initiator);
+                }
+            }
+            else
+            {
+                stack.Add(initiator); // bottom
+                foreach (var consenter in consentersInOrder)
+                    stack.Add(consenter);
+            }
+            return stack;
         }
     }
 }

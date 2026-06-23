@@ -2,6 +2,7 @@ using FChatDicebot.Database;
 using FChatDicebot.Model;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace FChatDicebot.InteractionProcessors.Casual
 {
@@ -14,6 +15,9 @@ namespace FChatDicebot.InteractionProcessors.Casual
         public override string InvestmentLevel => "casual";
         //consideration: Make this a variable that mods can set per interaction type?
         private static readonly TimeSpan RateLimit = TimeSpan.FromMinutes(30);
+
+        // Symmetric group model: every participant gets +(M-1) "cuddle".
+        public override GroupSpec GroupSpec => GroupSpec.Symmetric("cuddle");
 
         /// <summary>
         /// Constructor for dependency injection (for testing)
@@ -59,16 +63,16 @@ namespace FChatDicebot.InteractionProcessors.Casual
 
         public override string GetCompletionMessage(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
-            var cuddleDescriptors = new List<string> 
-            { 
-                "Cute.", 
-                "That's kind of lewd...", 
-                "So salatious.", 
-                "Hot!", 
-                "Looks cozy!", 
-                "Is there room for one more?", 
-                $"{initiatorProfile.displayName} is definitely the big spoon.", 
-                $"{recipientProfile.displayName} is definitely the little spoon." 
+            var cuddleDescriptors = new List<string>
+            {
+                "Cute.",
+                "That's kind of lewd...",
+                "So salatious.",
+                "Hot!",
+                "Looks cozy!",
+                "Is there room for one more?",
+                $"{initiatorProfile.displayName} is definitely the big spoon.",
+                $"{recipientProfile.displayName} is definitely the little spoon."
             };
 
             string message = $"{initiatorProfile.displayName} and {recipientProfile.displayName} cuddle up together. {GetRandomDescriptor(cuddleDescriptors)}";
@@ -84,6 +88,40 @@ namespace FChatDicebot.InteractionProcessors.Casual
                 {
                     message += " [eicon]qchug[/eicon]";
                 }
+            }
+
+            return message;
+        }
+
+        public override string GetGroupCompletionMessage(Profile initiatorProfile, IReadOnlyList<Profile> consentersInOrder, string identifier)
+        {
+            if (consentersInOrder.Count == 1)
+                return GetCompletionMessage(initiatorProfile, consentersInOrder[0], identifier);
+
+            // The big/little-spoon descriptors don't make sense for a pile, so the group
+            // pool drops them and adds a couple of cuddle-puddle-flavored lines instead.
+            var groupDescriptors = new List<string>
+            {
+                "Cute.",
+                "That's kind of lewd...",
+                "So salatious.",
+                "Hot!",
+                "Looks cozy!",
+                "Is there room for one more?",
+                "A proper cuddle puddle!",
+                "Everyone's invited."
+            };
+
+            string message = BuildSymmetricGroupMessage(
+                initiatorProfile, consentersInOrder, "cuddle up together", GetRandomDescriptor(groupDescriptors));
+
+            bool anyQueen = initiatorProfile.userName == "Queen Contract"
+                || consentersInOrder.Any(p => p.userName == "Queen Contract");
+            bool anyRin = initiatorProfile.userName == "The Corrupted Rin"
+                || consentersInOrder.Any(p => p.userName == "The Corrupted Rin");
+            if (anyQueen)
+            {
+                message += anyRin ? " [eicon]rin_lap[/eicon]" : " [eicon]qchug[/eicon]";
             }
 
             return message;

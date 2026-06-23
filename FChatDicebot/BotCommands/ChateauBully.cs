@@ -18,7 +18,7 @@ namespace FChatDicebot.BotCommands
             Name = "bully";
             Aliases = new string[] { };
             Category = "Casual Interaction";
-            ShortDescription = "Bully another resident";
+            ShortDescription = "Bully another resident (or residents)";
             LongDescription = "Bully someone in a playful way. They must !consent and thus admit that they deserve a bit of bullying. Note that the Chateau does not condone actual bullying in any way shape or form.";
             Usage = "!bully [noparse][user]NameInUserTag[/user][/noparse]";
             RelatedCommands = new string[] { "spank", "consent", "dossier" };
@@ -33,6 +33,13 @@ namespace FChatDicebot.BotCommands
 
         public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
         {
+            var groupTargets = commandController.GetUserNamesFromCommandTerms(rawTerms);
+            if (groupTargets.Count > 1)
+            {
+                Support.CasualGroupCommandSupport.Run(bot, characterName, channel, "bully", groupTargets);
+                return;
+            }
+
             string recipient = commandController.GetUserNameFromCommandTerms(rawTerms);
             Profile recipientProfile = MonDB.getProfile(recipient);
             Profile initiatorProfile = MonDB.getProfile(characterName);

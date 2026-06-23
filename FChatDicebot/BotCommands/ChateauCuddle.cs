@@ -18,7 +18,7 @@ namespace FChatDicebot.BotCommands
             Name = "cuddle";
             Aliases = new string[] { "hug" };
             Category = "Casual Interaction";
-            ShortDescription = "Cuddle with another resident";
+            ShortDescription = "Cuddle with another resident (or residents)";
             LongDescription = "Cuddle with another character as soon as they !consent. Whether it's spooning or a warm embrace, this is a favorite past time of Chateau residents.";
             Usage = "!cuddle [noparse][user]NameInUserTag[/user][/noparse]";
             RelatedCommands = new string[] { "kiss", "handhold", "consent", "dossier" };
@@ -33,6 +33,13 @@ namespace FChatDicebot.BotCommands
 
         public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
         {
+            var groupTargets = commandController.GetUserNamesFromCommandTerms(rawTerms);
+            if (groupTargets.Count > 1)
+            {
+                Support.CasualGroupCommandSupport.Run(bot, characterName, channel, "cuddle", groupTargets);
+                return;
+            }
+
             string recipient = commandController.GetUserNameFromCommandTerms(rawTerms);
             Profile recipientProfile = MonDB.getProfile(recipient);
             Profile initiatorProfile = MonDB.getProfile(characterName);

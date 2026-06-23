@@ -20,6 +20,7 @@ namespace FChatDicebot.Database
         void DecrementCount(string userName, string countLabel);
         void ChangeCount(string userName, string countLabel, int changeAmount);
         bool IncrementCountWithRateLimit(string userName, string countLabel, TimeSpan rateLimitDuration);
+        bool ChangeCountByWithRateLimit(string userName, string countLabel, int changeAmount, TimeSpan rateLimitDuration);
         bool IsCountRateLimited(string userName, string countLabel);
         void SetCharacteristic(string userName, string characteristicLabel, string characteristicValue);
         void AddToList(string userName, string listLabel, string listValue);
@@ -47,9 +48,12 @@ namespace FChatDicebot.Database
 
         // Pending Command Operations
         void AddPendingCommand(PendingCommand toAdd);
+        void UpdatePendingCommand(PendingCommand updated);
         PendingCommand GetPendingCommand(ObjectId commandId);
         PendingCommand GetPendingCommandAwaitingConsent(string awaitingConsentFrom);
         List<PendingCommand> GetPendingCommands(string awaitingConsentFrom);
+        List<PendingCommand> GetPendingCommandsByGroupId(string groupId);
+        List<PendingCommand> GetPendingCommandsByInitiator(string initiator);
         void DeletePendingCommand(ObjectId commandId);
 
         // Duty Operations

@@ -2,6 +2,7 @@ using FChatDicebot.Database;
 using FChatDicebot.Model;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace FChatDicebot.InteractionProcessors.Casual
 {
@@ -11,6 +12,19 @@ namespace FChatDicebot.InteractionProcessors.Casual
         public override string InvestmentLevel => "casual";
         //consideration: Make this a variable that mods can set per interaction type?
         private static readonly TimeSpan RateLimit = TimeSpan.FromMinutes(30);
+
+        // Symmetric group model: every participant gets +(M-1) "handhold".
+        public override GroupSpec GroupSpec => GroupSpec.Symmetric("handhold");
+
+        private static readonly List<string> HandholdDescriptors = new List<string>
+        {
+            "Cute.",
+            "That's kind of lewd...",
+            "So salatious.",
+            "Hot!",
+            "When's the wedding?",
+            "The forbidden act, out in the open..."
+        };
 
         /// <summary>
         /// Constructor for dependency injection (for testing)
@@ -53,17 +67,17 @@ namespace FChatDicebot.InteractionProcessors.Casual
 
         public override string GetCompletionMessage(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
-            var handholdDescriptors = new List<string> 
-            { 
-                "Cute.", 
-                "That's kind of lewd...", 
-                "So salatious.", 
-                "Hot!", 
-                "When's the wedding?", 
-                "The forbidden act, out in the open..."
-            };
+            return $"Ooh, {initiatorProfile.displayName} and {recipientProfile.displayName} hold hands! {GetRandomDescriptor(HandholdDescriptors)}";
+        }
 
-            return $"Ooh, {initiatorProfile.displayName} and {recipientProfile.displayName} hold hands! {GetRandomDescriptor(handholdDescriptors)}";
+        public override string GetGroupCompletionMessage(Profile initiatorProfile, IReadOnlyList<Profile> consentersInOrder, string identifier)
+        {
+            if (consentersInOrder.Count == 1)
+                return GetCompletionMessage(initiatorProfile, consentersInOrder[0], identifier);
+
+            var names = new List<string> { initiatorProfile.displayName };
+            names.AddRange(consentersInOrder.Select(p => p.displayName));
+            return $"Ooh, {JoinNamesSerial(names)} hold hands in a chain! {GetRandomDescriptor(HandholdDescriptors)}";
         }
 
         public override string GetConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)

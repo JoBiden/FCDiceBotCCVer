@@ -150,6 +150,51 @@ namespace FChatDicebot.Database
             return true;
         }
 
+        public bool ChangeCountByWithRateLimit(string userName, string countLabel, int changeAmount, TimeSpan rateLimitDuration)
+        {
+            // +N variant of IncrementCountWithRateLimit used by group resolution: one
+            // rate-limit check per (participant, key); if not limited apply the full
+            // changeAmount and arm the timer, otherwise apply nothing and report false so
+            // the caller can surface the "clerks were busy" sub-note for that participant.
+            var collection = Database.GetCollection<Profile>("RegisteredProfiles");
+            var filter = Builders<Profile>.Filter.Eq("userName", userName);
+            var profile = collection.Find(filter).FirstOrDefault();
+
+            if (profile == null) return false;
+
+            string timerKey = $"ratelimit_{countLabel}";
+
+            if (profile.timers != null && profile.timers.ContainsKey(timerKey))
+            {
+                if (DateTime.UtcNow < profile.timers[timerKey].timerEnd)
+                {
+                    // Still on cooldown, don't apply anything.
+                    return false;
+                }
+            }
+
+            if (profile.counts.ContainsKey(countLabel))
+            {
+                profile.counts[countLabel] += changeAmount;
+            }
+            else
+            {
+                profile.counts.Add(countLabel, changeAmount);
+            }
+
+            CoolDown rateLimitTimer = new CoolDown();
+            rateLimitTimer.timerEnd = DateTime.UtcNow.Add(rateLimitDuration);
+            if (profile.timers == null)
+            {
+                profile.timers = new Dictionary<string, CoolDown>();
+            }
+            profile.timers[timerKey] = rateLimitTimer;
+
+            collection.ReplaceOne(filter, profile);
+
+            return true;
+        }
+
         public bool IsCountRateLimited(string userName, string countLabel)
         {
             Profile profile = GetProfile(userName);
@@ -397,6 +442,13 @@ namespace FChatDicebot.Database
             collection.InsertOne(toAdd.ToBsonDocument());
         }
 
+        public void UpdatePendingCommand(PendingCommand updated)
+        {
+            var collection = Database.GetCollection<BsonDocument>("PendingCommands");
+            var filter = Builders<BsonDocument>.Filter.Eq("_id", updated.Id);
+            collection.ReplaceOne(filter, updated.ToBsonDocument());
+        }
+
         public PendingCommand GetPendingCommand(ObjectId commandId)
         {
             var collection = Database.GetCollection<BsonDocument>("PendingCommands");
@@ -408,6 +460,27 @@ namespace FChatDicebot.Database
                 return BsonSerializer.Deserialize<PendingCommand>(document);
             }
             return null;
+        }
+
+        public List<PendingCommand> GetPendingCommandsByGroupId(string groupId)
+        {
+            var collection = Database.GetCollection<BsonDocument>("PendingCommands");
+            var filter = Builders<BsonDocument>.Filter.Eq("groupId", groupId);
+            var documents = collection.Find(filter).ToList();
+
+            return documents.Select(doc => BsonSerializer.Deserialize<PendingCommand>(doc)).ToList();
+        }
+
+        public List<PendingCommand> GetPendingCommandsByInitiator(string initiator)
+        {
+            // The initiator lives on the nested interaction document, so the filter has to
+            // reach through pendingInteraction.initiator. Used by !withdraw and by group
+            // resolution to recover every seat the initiator has out.
+            var collection = Database.GetCollection<BsonDocument>("PendingCommands");
+            var filter = Builders<BsonDocument>.Filter.Eq("pendingInteraction.initiator", initiator);
+            var documents = collection.Find(filter).ToList();
+
+            return documents.Select(doc => BsonSerializer.Deserialize<PendingCommand>(doc)).ToList();
         }
 
         public PendingCommand GetPendingCommandAwaitingConsent(string awaitingConsentFrom)

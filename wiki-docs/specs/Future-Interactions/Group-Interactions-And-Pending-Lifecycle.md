@@ -1,6 +1,6 @@
 # Group Interactions, Pending Lifecycle, and New Casuals
 
-**Status:** Proposed (design-complete, owner-reviewed 2026-06-20). Final user-facing descriptor strings still pending owner wording review per the standing rule.
+**Status:** Shipped 2026-06-22 (B4 group system, B5 lifecycle + `!consent <name>`, the lapsit lap-stack). The new casuals (B7) had already shipped 1:1 on 2026-06-21. Build green, 15 new tests. The lifecycle verbs were renamed at owner request to dodge the `!w`/`!work` clash: recipient-side is **`!no`** (aliases `!refuse`, `!decline`), initiator-side is **`!oops`** (aliases `!o`, `!withdraw`, `!cancel`). Out of scope, as designed: the tall-stack *height* titles (owner design TODO).
 
 This spec covers the "Interactions" cluster from [Feature-Requests.md](../../Feature-Requests.md):
 

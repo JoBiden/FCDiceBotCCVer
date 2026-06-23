@@ -1,5 +1,6 @@
 using FChatDicebot.Model;
 using System;
+using System.Collections.Generic;
 using static FChatDicebot.InteractionProcessors.InteractionProcessorBase;
 
 namespace FChatDicebot.InteractionProcessors
@@ -81,6 +82,24 @@ namespace FChatDicebot.InteractionProcessors
         /// a private message.
         /// </summary>
         string GetAndClearInitiatorPrivateMessage();
+
+        // --- Group interaction support (B4). Non-group-capable processors return a null
+        // GroupSpec; the other members are only invoked once a group has been resolved. ---
+
+        /// <summary>Group count model, or null when the interaction isn't group-capable.</summary>
+        GroupSpec GroupSpec { get; }
+
+        /// <summary>True when this interaction supports the hybrid group flow (casuals).</summary>
+        bool SupportsGroup { get; }
+
+        /// <summary>Apply group counts over the consenting recipients (in consent order).</summary>
+        string ApplyGroupCounts(Database.IChateauDatabase database, string initiator, IReadOnlyList<string> consentersInOrder, string identifier);
+
+        /// <summary>Combined completion message for a resolved group moment.</summary>
+        string GetGroupCompletionMessage(Profile initiatorProfile, IReadOnlyList<Profile> consentersInOrder, string identifier);
+
+        /// <summary>Channel announcement shown when a multi-target casual command is invoked.</summary>
+        string GetGroupConsentWarning(Profile initiatorProfile, IReadOnlyList<Profile> recipients, string identifier);
     }
 
     /// <summary>

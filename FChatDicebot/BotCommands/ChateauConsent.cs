@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -19,9 +19,9 @@ namespace FChatDicebot.BotCommands
             Aliases = new string[] { "c", "accept" };
             Category = "General";
             ShortDescription = "Consent to a pending interaction";
-            LongDescription = "Give your consent to a pending interaction request from another character. When someone requests an interaction with you, you must !consent for it to actually happen and be recorded.\n\nPending requests expire after 10 minutes. If more than one interaction is awaiting your consent, you will be messaged a numbered list of the interactions, and can choose which interaction to consent to, or '!consent all' to consent to every interaction awaiting your consent.";
-            Usage = "!consent\nor\n!consent all\nor\n!consent {number}\nor\n!c\nor\n!c all\nor\n!c {number}";
-            RelatedCommands = new string[] { "kiss", "cuddle", "bully" };
+            LongDescription = "Give your consent to a pending interaction request from another character. When someone requests an interaction with you, you must !consent for it to actually happen and be recorded.\n\nPending requests expire after 10 minutes. If more than one interaction is awaiting your consent, you will be messaged a numbered list of the interactions, and can choose which interaction to consent to, '!consent {name}' to consent to a specific person's request, or '!consent all' to consent to every interaction awaiting your consent.\n\nIf the request is a group interaction, it resolves once everyone has either consented or declined (or the 10-minute timer runs out).";
+            Usage = "!consent\nor\n!consent all\nor\n!consent {number}\nor\n!consent {name}\nor\n!c\nor\n!c all\nor\n!c {number}";
+            RelatedCommands = new string[] { "kiss", "cuddle", "bully", "no" };
             CooldownDuration = null;
             CooldownAppliesTo = null;
             IdentifierCategory = null;
@@ -33,123 +33,104 @@ namespace FChatDicebot.BotCommands
 
         public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
         {
-            List<PendingCommand> pendingList = MonDB.getPending(characterName);
-            int numToConsent = Utils.GetNumberFromInputs(terms);
-            string firstTerm = terms.FirstOrDefault();
-            string recipientDisplayName = string.Empty;
-            string initiatorDisplayName = string.Empty;
+            var database = MonDB.GetDatabase();
+            int pendingMinutesKeep = InteractionProcessors.GroupInteractionResolver.PendingMinutesKeep;
+            int maxNoSpoilerLength = 500;
             string privateMessage = string.Empty;
             string channelMessage = string.Empty;
-            int maxNoSpoilerLength = 500;
-            int pendingMinutesKeep = 10;
-            bool all = false;
-            foreach (PendingCommand pendingCommand in pendingList)
+
+            // Sweep expired pendings awaiting this character. A group seat that expires can
+            // let its group resolve with whoever else consented, so remember those groupIds.
+            var touchedGroups = new HashSet<string>();
+            foreach (PendingCommand pendingCommand in MonDB.getPending(characterName))
             {
-                if (pendingCommand.startTime.CompareTo(DateTime.UtcNow.AddMinutes(-pendingMinutesKeep)) < 0) //it has been more than the allotted time to keep the pending Interaction
+                if (pendingCommand.startTime.CompareTo(DateTime.UtcNow.AddMinutes(-pendingMinutesKeep)) < 0)
                 {
+                    if (pendingCommand.IsGroupSeat) touchedGroups.Add(pendingCommand.groupId);
                     MonDB.removePendingInteraction(pendingCommand.Id);
                 }
             }
-            pendingList = MonDB.getPending(characterName);
 
-            if (firstTerm != null)
-            {
-                if (firstTerm == "all"){
-                    all = true;
-                }
-            }
+            List<PendingCommand> pendingList = MonDB.getPending(characterName);
+            string firstTerm = terms.FirstOrDefault();
+            int numToConsent = Utils.GetNumberFromInputs(terms);
+            bool all = firstTerm == "all";
+
+            // Resolve the seats this !consent acts on, per the bare / all / # / <name> grammar.
+            List<PendingCommand> toActOn = new List<PendingCommand>();
             if (pendingList.Count == 0)
             {
                 privateMessage = "No one is awaiting your consent. Maybe you can make the first move?~";
             }
-            else if ((pendingList.Count == 1) || all)
+            else if (all)
             {
-                foreach (PendingCommand toConsent in pendingList)
-                {
-                    // Try new processor system first
-                    var processor = InteractionProcessors.InteractionProcessorRegistry.GetProcessor(toConsent.pendingInteraction.type);
-                    if (processor != null)
-                    {
-                        // Process the interaction (saves to DB, updates profiles)
-                        processor.ProcessInteraction(toConsent);
-
-                        //get completion message
-                        Profile initProfile = MonDB.getProfile(toConsent.pendingInteraction.initiator);
-                        Profile recipProfile = MonDB.getProfile(toConsent.pendingInteraction.recipient);
-                        channelMessage += processor.GetCompletionMessageWithStatusEffects(initProfile, recipProfile, toConsent.pendingInteraction.identifier);
-                        channelMessage += CheckRateLimitsAndGetMessage(toConsent.pendingInteraction);
-
-                        // Drain any out-of-band private note the processor wants sent to
-                        // the initiator (e.g. corrupt/purify's TOCTOU exhaustion notice).
-                        string initiatorPrivate = processor.GetAndClearInitiatorPrivateMessage();
-                        if (!string.IsNullOrEmpty(initiatorPrivate))
-                        {
-                            bot.SendPrivateMessage(initiatorPrivate, toConsent.pendingInteraction.initiator);
-                        }
-                    }
-                    else
-                    {
-                        // Fallback for non-migrated interactions
-                        ChateauInteractionHandler.addInteraction(toConsent);
-                        //channelMessage += getInteractionMessage(toConsent.pendingInteraction.type, toConsent.pendingInteraction.identifier, toConsent.pendingInteraction.initiator, toConsent.pendingInteraction.recipient);
-                        channelMessage += CheckRateLimitsAndGetMessage(toConsent.pendingInteraction);
-                    }
-
-                    channelMessage = CheckAchievementsAndAppendToMessage(channelMessage, toConsent.pendingInteraction.initiator);
-                    channelMessage = CheckAchievementsAndAppendToMessage(channelMessage, toConsent.pendingInteraction.recipient);
-                }
-                if (channelMessage.Length > maxNoSpoilerLength)
-                {
-                    channelMessage = "Consent is such a wonderful thing~ This was a long one though, so the details are in the spoiler below. \n[spoiler]" + channelMessage + "[/spoiler]";
-                }
-            } 
-            else if ((numToConsent >= 0) && (numToConsent <= pendingList.Count))
+                toActOn.AddRange(pendingList);
+            }
+            else if (numToConsent >= 1 && numToConsent <= pendingList.Count)
             {
-                PendingCommand toConsent = pendingList.ElementAt(numToConsent - 1);
-                // Try new processor system first
-                var processor = InteractionProcessors.InteractionProcessorRegistry.GetProcessor(toConsent.pendingInteraction.type);
-                if (processor != null)
+                toActOn.Add(pendingList.ElementAt(numToConsent - 1));
+            }
+            else
+            {
+                PendingCommand named = FindSeatByInitiator(commandController, rawTerms, terms, pendingList);
+                if (named != null)
                 {
-                    // Process the interaction (saves to DB, updates profiles)
-                    processor.ProcessInteraction(toConsent);
-
-                    // Get the completion message
-                    Profile initProfile = MonDB.getProfile(toConsent.pendingInteraction.initiator);
-                    Profile recipProfile = MonDB.getProfile(toConsent.pendingInteraction.recipient);
-                    channelMessage += processor.GetCompletionMessageWithStatusEffects(initProfile, recipProfile, toConsent.pendingInteraction.identifier);
-                    channelMessage += CheckRateLimitsAndGetMessage(toConsent.pendingInteraction);
-
-                    // Drain any out-of-band private note the processor wants sent to
-                    // the initiator (e.g. corrupt/purify's TOCTOU exhaustion notice).
-                    string initiatorPrivate = processor.GetAndClearInitiatorPrivateMessage();
-                    if (!string.IsNullOrEmpty(initiatorPrivate))
-                    {
-                        bot.SendPrivateMessage(initiatorPrivate, toConsent.pendingInteraction.initiator);
-                    }
+                    toActOn.Add(named);
+                }
+                else if (pendingList.Count == 1)
+                {
+                    toActOn.Add(pendingList[0]);
                 }
                 else
                 {
-                    // Fallback for non-migrated interactions
-                    ChateauInteractionHandler.addInteraction(toConsent);
-                    //channelMessage += getInteractionMessage(toConsent.pendingInteraction.type, toConsent.pendingInteraction.identifier, toConsent.pendingInteraction.initiator, toConsent.pendingInteraction.recipient);
-                    channelMessage += CheckRateLimitsAndGetMessage(toConsent.pendingInteraction);
+                    privateMessage = "Use '!consent #' to consent to the correct interaction. You have the following interactions awaiting your consent:";
+                    int n = 1;
+                    foreach (PendingCommand seat in pendingList)
+                    {
+                        privateMessage += "\n" + n + ": [b]" + seat.pendingInteraction.type + "[/b] initiated by [user]" + seat.pendingInteraction.initiator + "[/user]";
+                        if (seat.IsGroupSeat) privateMessage += " (group)";
+                        n++;
+                    }
+                    channelMessage = "There's multiple people awaiting your consent, " + characterName + ". Either '!consent all', or refer to the list we just messaged you.";
                 }
-                channelMessage = CheckAchievementsAndAppendToMessage(channelMessage, toConsent.pendingInteraction.initiator);
-                channelMessage = CheckAchievementsAndAppendToMessage(channelMessage, toConsent.pendingInteraction.recipient);
             }
 
-            else
+            // Group seats defer (mark consented; resolve when the last seat clears); 1:1 seats
+            // process immediately as before.
+            foreach (PendingCommand seat in toActOn)
             {
-                privateMessage = "Use '!consent #' to consent to the correct interaction. You have the following interactions awaiting your consent:";
-                int n = 1;
-                foreach(PendingCommand toConsent in pendingList)
+                if (seat.IsGroupSeat)
                 {
-                    privateMessage += "\n" + n + ": [b]" + toConsent.pendingInteraction.type + "[/b] initiated by [user]" + toConsent.pendingInteraction.initiator + "[/user]";
-                    n++;
+                    InteractionProcessors.GroupInteractionResolver.MarkSeatConsented(database, seat);
+                    touchedGroups.Add(seat.groupId);
                 }
-                channelMessage = "There's multiple people awaiting your consent, " + characterName + ". Either '!consent all', or refer to the list we just messaged you.";
-               
+                else
+                {
+                    channelMessage += ProcessOneToOneSeat(bot, seat);
+                }
             }
+
+            // Fire any group whose last Pending seat just cleared.
+            foreach (string groupId in touchedGroups)
+            {
+                var resolution = InteractionProcessors.GroupInteractionResolver.CheckAndResolve(database, groupId);
+                if (resolution.Resolved && !string.IsNullOrEmpty(resolution.ChannelMessage))
+                {
+                    string groupMessage = resolution.ChannelMessage;
+                    foreach (string participant in resolution.Participants)
+                    {
+                        groupMessage = CheckAchievementsAndAppendToMessage(groupMessage, participant);
+                    }
+                    if (!string.IsNullOrEmpty(channelMessage)) channelMessage += "\n\n";
+                    channelMessage += groupMessage;
+                }
+            }
+
+            if (channelMessage.Length > maxNoSpoilerLength)
+            {
+                channelMessage = "Consent is such a wonderful thing~ This was a long one though, so the details are in the spoiler below. \n[spoiler]" + channelMessage + "[/spoiler]";
+            }
+
             if (channelMessage != string.Empty)
             {
                 bot.SendMessageInChannel(channelMessage, channel);
@@ -158,20 +139,78 @@ namespace FChatDicebot.BotCommands
             {
                 bot.SendPrivateMessage(privateMessage, characterName);
             }
+        }
 
-            string CheckAchievementsAndAppendToMessage(string message, string profile)
+        /// <summary>
+        /// Process one ordinary (non-group) 1:1 seat exactly as legacy !consent did: run the
+        /// processor, build the completion + rate-limit text, route any initiator-private note,
+        /// and append title notifications for both parties. Returns the channel fragment.
+        /// </summary>
+        private string ProcessOneToOneSeat(BotMain bot, PendingCommand toConsent)
+        {
+            string channelMessage = string.Empty;
+            var processor = InteractionProcessors.InteractionProcessorRegistry.GetProcessor(toConsent.pendingInteraction.type);
+            if (processor != null)
             {
-                // Check for system title achievements
-                string titlesText = ChateauSystemTitles.CheckAndGrantTitles(profile);
+                // Process the interaction (saves to DB, updates profiles)
+                processor.ProcessInteraction(toConsent);
 
-                // Append title notifications to the message
-                if (!string.IsNullOrEmpty(titlesText))
+                Profile initProfile = MonDB.getProfile(toConsent.pendingInteraction.initiator);
+                Profile recipProfile = MonDB.getProfile(toConsent.pendingInteraction.recipient);
+                channelMessage += processor.GetCompletionMessageWithStatusEffects(initProfile, recipProfile, toConsent.pendingInteraction.identifier);
+                channelMessage += CheckRateLimitsAndGetMessage(toConsent.pendingInteraction);
+
+                // Drain any out-of-band private note the processor wants sent to the
+                // initiator (e.g. corrupt/purify's TOCTOU exhaustion notice).
+                string initiatorPrivate = processor.GetAndClearInitiatorPrivateMessage();
+                if (!string.IsNullOrEmpty(initiatorPrivate))
                 {
-                    message += titlesText;
+                    bot.SendPrivateMessage(initiatorPrivate, toConsent.pendingInteraction.initiator);
                 }
-
-                return message;
             }
+            else
+            {
+                // Fallback for non-migrated interactions
+                ChateauInteractionHandler.addInteraction(toConsent);
+                channelMessage += CheckRateLimitsAndGetMessage(toConsent.pendingInteraction);
+            }
+
+            channelMessage = CheckAchievementsAndAppendToMessage(channelMessage, toConsent.pendingInteraction.initiator);
+            channelMessage = CheckAchievementsAndAppendToMessage(channelMessage, toConsent.pendingInteraction.recipient);
+            return channelMessage;
+        }
+
+        /// <summary>
+        /// By-name targeting (B5.8): match a pending whose initiator equals the typed name —
+        /// either an explicit [user] tag or the first plain word. Returns null when no name was
+        /// supplied or none matches, so the caller can fall back to bare/list behavior.
+        /// </summary>
+        private PendingCommand FindSeatByInitiator(BotCommandController commandController, string[] rawTerms, string[] terms, List<PendingCommand> pendingList)
+        {
+            string tagged = commandController.GetUserNameFromCommandTerms(rawTerms);
+            string candidate = !string.IsNullOrEmpty(tagged) ? tagged : terms.FirstOrDefault();
+            if (string.IsNullOrEmpty(candidate)) return null;
+            if (string.Equals(candidate, "all", StringComparison.OrdinalIgnoreCase)) return null;
+            int ignored;
+            if (int.TryParse(candidate, out ignored)) return null;
+
+            return pendingList.FirstOrDefault(p =>
+                string.Equals(p.pendingInteraction.initiator, candidate, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(MonDB.getDisplayName(p.pendingInteraction.initiator) ?? string.Empty, candidate, StringComparison.OrdinalIgnoreCase));
+        }
+
+        private string CheckAchievementsAndAppendToMessage(string message, string profile)
+        {
+            // Check for system title achievements
+            string titlesText = ChateauSystemTitles.CheckAndGrantTitles(profile);
+
+            // Append title notifications to the message
+            if (!string.IsNullOrEmpty(titlesText))
+            {
+                message += titlesText;
+            }
+
+            return message;
         }
 
         private string CheckRateLimitsAndGetMessage(Interaction interaction)
