@@ -117,10 +117,19 @@ namespace FChatDicebot.BotCommands
                 if (resolution.Resolved && !string.IsNullOrEmpty(resolution.ChannelMessage))
                 {
                     string groupMessage = resolution.ChannelMessage;
+
+                    // One consolidated "Title Time!" banner for the whole moment, grouped by
+                    // title. Fold each participant's lifetime-count title wins (granted now that
+                    // the group counts have been applied) in with the group-achievement titles
+                    // (by resolved size / lap-stack position) already granted during resolution.
+                    var allTitleGrants = new List<InteractionProcessors.GroupTitleGrant>(resolution.GroupTitleGrants);
                     foreach (string participant in resolution.Participants)
                     {
-                        groupMessage = CheckAchievementsAndAppendToMessage(groupMessage, participant);
+                        var countGrant = ChateauSystemTitles.CheckAndGrantCountTitles(participant);
+                        if (countGrant != null) allTitleGrants.Add(countGrant);
                     }
+                    groupMessage += ChateauSystemTitles.FormatGroupTitleNotification(allTitleGrants);
+
                     if (!string.IsNullOrEmpty(channelMessage)) channelMessage += "\n\n";
                     channelMessage += groupMessage;
                 }

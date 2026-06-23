@@ -183,6 +183,30 @@ namespace FChatDicebot.InteractionProcessors.Casual
             return BuildGroupRateLimitNote(limited);
         }
 
+        /// <summary>
+        /// Per-position lapsit titles: each participant earns "below" titles for the number of
+        /// people stacked under them and "above" titles for the number stacked over them, so a
+        /// mid-stack rider can earn both. Mirrors the per-position count split in
+        /// <see cref="ApplyGroupCounts"/>; the verb on <paramref name="identifier"/> decides who
+        /// claims the bottom (see <see cref="BuildStack{T}"/>).
+        /// </summary>
+        public override List<GroupTitleGrant> GrantGroupTitles(IChateauDatabase database, string initiator, IReadOnlyList<string> consentersInOrder, string identifier)
+        {
+            var grants = new List<GroupTitleGrant>();
+            var stack = BuildStack(identifier, initiator, consentersInOrder); // bottom -> top
+            int stackSize = stack.Count; // M
+
+            for (int position = 0; position < stackSize; position++)
+            {
+                int othersBelow = position;
+                int othersAbove = stackSize - 1 - position;
+                var titles = ChateauSystemTitles.GetLapsitPositionTitles(othersBelow, othersAbove);
+                AddTitleGrant(database, stack[position], titles, grants);
+            }
+
+            return grants;
+        }
+
         public override string GetGroupCompletionMessage(Profile initiatorProfile, IReadOnlyList<Profile> consentersInOrder, string identifier)
         {
             bool initiatorIsSitter = InitiatorIsSitter(identifier);

@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace FChatDicebot.InteractionProcessors
 {
     /// <summary>
@@ -55,5 +57,18 @@ namespace FChatDicebot.InteractionProcessors
         {
             return new GroupSpec { Kind = GroupCountKind.Lapsit };
         }
+    }
+
+    /// <summary>
+    /// One participant's freshly-granted group-achievement titles from a resolved moment,
+    /// returned by <c>InteractionProcessorBase.GrantGroupTitles</c>. Titles the participant
+    /// already held are omitted, so an empty <see cref="NewTitles"/> means there's nothing new
+    /// to announce. The command layer turns each non-empty grant into a "Title Time!" banner.
+    /// </summary>
+    public class GroupTitleGrant
+    {
+        public string UserName { get; set; }
+        public string DisplayName { get; set; }
+        public List<string> NewTitles { get; set; } = new List<string>();
     }
 }

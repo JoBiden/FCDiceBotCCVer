@@ -19,8 +19,24 @@ namespace FChatDicebot
         /// <returns>Notification text for earned titles, or empty string</returns>
         public static string CheckAndGrantTitles(string userName)
         {
+            var grant = CheckAndGrantCountTitles(userName);
+            if (grant == null) return string.Empty;
+            return FormatTitleNotification(grant.DisplayName, grant.NewTitles);
+        }
+
+        /// <summary>
+        /// Grant any newly-earned count / daily-climax titles for the user and return them as a
+        /// <see cref="InteractionProcessors.GroupTitleGrant"/> (display name + the new title
+        /// texts), or null if none were earned. This lets the group-resolution path fold a
+        /// participant's count-title wins into the same consolidated "Title Time!" banner as the
+        /// group-achievement titles, instead of emitting a separate per-person banner.
+        /// <see cref="CheckAndGrantTitles"/> wraps this for the 1:1 / single-actor callers that
+        /// just want the formatted string.
+        /// </summary>
+        public static InteractionProcessors.GroupTitleGrant CheckAndGrantCountTitles(string userName)
+        {
             Profile profile = MonDB.getProfile(userName);
-            if (profile == null) return string.Empty;
+            if (profile == null) return null;
 
             List<string> newTitles = new List<string>();
 
@@ -33,17 +49,17 @@ namespace FChatDicebot
             // newTitles.AddRange(CheckEmploymentTitles(profile));
             // newTitles.AddRange(CheckTransformationTitles(profile));
 
-            // Grant any new titles
-            if (newTitles.Count > 0)
+            if (newTitles.Count == 0) return null;
+
+            // Save profile with new titles.
+            MonDB.setProfile(userName, profile);
+
+            return new InteractionProcessors.GroupTitleGrant
             {
-                // Save profile with new titles
-                MonDB.setProfile(userName, profile);
-
-                // Build notification message
-                return FormatTitleNotification(profile.displayName, newTitles);
-            }
-
-            return string.Empty;
+                UserName = userName,
+                DisplayName = profile.displayName,
+                NewTitles = newTitles,
+            };
         }
 
         /// <summary>
@@ -312,7 +328,9 @@ namespace FChatDicebot
 
                 // Objectifying - giving
                 ("objectifygive", 1, "Objectifier"),
-                ("objectifygive", 3, "Hat Trick"),
+                // "Hat Trick" moved to the boobhat group-size titles; the objectify tier-3
+                // title is now "Toy Maker" (see GetGroupSizeTitles below).
+                ("objectifygive", 3, "Toy Maker"),
                 ("objectifygive", 5, "Deanimator"),
                 ("objectifygive", 10, "Collector"),
 
@@ -546,10 +564,150 @@ namespace FChatDicebot
             return earnedTitles;
         }
 
+        // ====================================================================
+        // Group-achievement titles. Unlike the lifetime-count milestones above,
+        // these are awarded once at a group interaction's resolution, based on
+        // the size of the resolved group (or, for lapsit, a participant's stack
+        // position). Thresholds are cumulative: a resolved group of a given size
+        // grants every tier at or below it. The grant path lives in
+        // InteractionProcessorBase.GrantGroupTitles / LapsitProcessor; these
+        // tables and lookups are the single source of truth for the text.
+        // ====================================================================
+
         /// <summary>
-        /// Format the notification message for newly earned titles
+        /// Group-size titles keyed by the processor's InteractionType. Each tier is
+        /// (minGroupSize, title) where group size counts every participant including the
+        /// initiator. Symmetric interactions (kiss / cuddle / handhold) award these to every
+        /// participant; directional one-way ones (spank / bully / lick / boobhat) award them
+        /// to the initiator only. Boobhat's "Hat Trick" is the former objectifygive tier-3
+        /// title, reassigned here.
         /// </summary>
-        private static string FormatTitleNotification(string displayName, List<string> titles)
+        private static readonly Dictionary<string, (int size, string title)[]> GroupSizeTitleTables =
+            new Dictionary<string, (int size, string title)[]>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["kiss"] = new[]
+                {
+                    (3, "Kiss Kiss"),
+                    (5, "Kisstacular"),
+                    (7, "Kissimanjaro"),
+                    (9, "Kisspocalypse"),
+                    (11, "Spartakiss"),
+                },
+                ["handhold"] = new[]
+                {
+                    (3, "Triangle"),
+                    (5, "Pentagon"),
+                    (7, "Septagon"),
+                    (9, "Nonagon"),
+                    (11, "Undecagon"),
+                },
+                ["cuddle"] = new[]
+                {
+                    (3, "Cuddle Puddle"),
+                    (5, "Cuddle Pond"),
+                    (7, "Cuddle Lake"),
+                    (9, "Cuddle Sea"),
+                    (11, "Cuddle Ocean"),
+                },
+                ["spank"] = new[]
+                {
+                    (3, "Echo"),
+                    (5, "Thunder Storm"),
+                    (8, "Seven Spanks"),
+                    (11, "Strike!"),
+                },
+                ["bully"] = new[]
+                {
+                    (3, "Intimidating"),
+                    (5, "Hazing"),
+                    (7, "Demands Respect"),
+                    (9, "Unbullyvable"),
+                    (11, "Decibully"),
+                },
+                ["lick"] = new[]
+                {
+                    (3, "Free Sample"),
+                    (5, "Indecisive"),
+                    (7, "Can Tie A Knot In A Cherry Stem"),
+                    (9, "Tongue In Chic"),
+                    (11, "Lick A Ton"),
+                },
+                ["boobhat"] = new[]
+                {
+                    (4, "Hat Trick"),
+                    (7, "Mad Hatter"),
+                    (11, "Capping"),
+                },
+            };
+
+        /// <summary>
+        /// Lapsit "below" titles: earned for the number of people stacked underneath a
+        /// participant (their stack position). Cumulative, like the size tables.
+        /// </summary>
+        private static readonly (int othersBelow, string title)[] LapsitBelowTitles = new[]
+        {
+            (2, "Elevated"),
+            (4, "Laps All The Way Down"),
+            (6, "Can See Their House From Here"),
+            (8, "King Of The World"),
+            (10, "Lap of Babel"),
+        };
+
+        /// <summary>
+        /// Lapsit "above" titles: earned for the number of people stacked on top of a
+        /// participant. Cumulative. A mid-stack participant can earn both below and above.
+        /// </summary>
+        private static readonly (int othersAbove, string title)[] LapsitAboveTitles = new[]
+        {
+            (2, "Shortstacked"),
+            (5, "Buried"),
+            (10, "Foundational"),
+        };
+
+        /// <summary>
+        /// Title texts earned by participating in a resolved group of the given size for the
+        /// given interaction type — every cumulative tier at or below <paramref name="groupSize"/>,
+        /// in ascending order. Empty when the type has no group titles or the group is below
+        /// the first threshold. Pure lookup; does not touch the database.
+        /// </summary>
+        public static IReadOnlyList<string> GetGroupSizeTitles(string interactionType, int groupSize)
+        {
+            var earned = new List<string>();
+            if (string.IsNullOrEmpty(interactionType)) return earned;
+            if (!GroupSizeTitleTables.TryGetValue(interactionType, out var tiers)) return earned;
+
+            foreach (var tier in tiers)
+            {
+                if (groupSize >= tier.size) earned.Add(tier.title);
+            }
+            return earned;
+        }
+
+        /// <summary>
+        /// Title texts earned by a single lap-stack position: cumulative "below" titles for the
+        /// number of people stacked under this participant, then cumulative "above" titles for
+        /// the number stacked over them. A mid-stack participant can earn both. Pure lookup.
+        /// </summary>
+        public static IReadOnlyList<string> GetLapsitPositionTitles(int othersBelow, int othersAbove)
+        {
+            var earned = new List<string>();
+            foreach (var tier in LapsitBelowTitles)
+            {
+                if (othersBelow >= tier.othersBelow) earned.Add(tier.title);
+            }
+            foreach (var tier in LapsitAboveTitles)
+            {
+                if (othersAbove >= tier.othersAbove) earned.Add(tier.title);
+            }
+            return earned;
+        }
+
+        /// <summary>
+        /// Format the notification message for newly earned titles. Public so the group
+        /// resolution path (which grants by size / lap-stack position rather than lifetime
+        /// counts) can surface the same "Title Time!" banner for its awards.
+        /// </summary>
+        public static string FormatTitleNotification(string displayName, List<string> titles)
         {
             if (titles.Count == 0) return string.Empty;
 
@@ -569,6 +727,52 @@ namespace FChatDicebot
                 message = message.TrimEnd('\n');
             }
 
+            message += "\n[sub]View all your titles with !titles[/sub]";
+
+            return message;
+        }
+
+        /// <summary>
+        /// Consolidate a resolved group's title grants into a single "Title Time!" banner: one
+        /// line per distinct newly-earned title, naming everyone who earned it with a serial-comma
+        /// list ("Alice" / "Alice and Bob" / "Alice, Bob, and Carol"). Titles are listed in
+        /// first-earned order across <paramref name="grants"/>; names within a title keep grant
+        /// order. Returns empty string when nobody earned anything new. Grants may mix
+        /// group-achievement titles and (folded in by the caller) lifetime-count titles — a
+        /// participant can appear in several grant entries; grouping by title merges them.
+        /// </summary>
+        public static string FormatGroupTitleNotification(IReadOnlyList<InteractionProcessors.GroupTitleGrant> grants)
+        {
+            if (grants == null) return string.Empty;
+
+            // Invert to title -> earners, preserving first-appearance order for both.
+            var orderedTitles = new List<string>();
+            var earnersByTitle = new Dictionary<string, List<string>>();
+            foreach (var grant in grants)
+            {
+                if (grant?.NewTitles == null) continue;
+                foreach (string title in grant.NewTitles)
+                {
+                    if (!earnersByTitle.TryGetValue(title, out var earners))
+                    {
+                        earners = new List<string>();
+                        earnersByTitle[title] = earners;
+                        orderedTitles.Add(title);
+                    }
+                    // Defensive: a title shouldn't be earned twice by the same name, but guard.
+                    if (!earners.Contains(grant.DisplayName)) earners.Add(grant.DisplayName);
+                }
+            }
+
+            if (orderedTitles.Count == 0) return string.Empty;
+
+            string message = "\n\n[b][color=purple]═══ Title Time! ═══[/color][/b]\n";
+            foreach (string title in orderedTitles)
+            {
+                string names = InteractionProcessors.InteractionProcessorBase.JoinNamesSerial(earnersByTitle[title]);
+                message += $"{names} earned the title [b]·{title}·[/b]!\n";
+            }
+            message = message.TrimEnd('\n');
             message += "\n[sub]View all your titles with !titles[/sub]";
 
             return message;
