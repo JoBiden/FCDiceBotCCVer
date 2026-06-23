@@ -543,6 +543,84 @@ namespace FChatDicebot.InteractionProcessors
         }
 
         /// <summary>
+        /// Grant group-achievement titles for a resolved moment and return, per participant,
+        /// the titles that were newly added. Default model:
+        ///   - Symmetric (kiss / cuddle / handhold): every participant earns the interaction's
+        ///     size titles — participating is enough.
+        ///   - Directional one-way (spank / bully / lick / boobhat): only the initiator earns
+        ///     them — they're the one doing it.
+        /// Lapsit overrides this for its per-position rule; non-group interactions grant
+        /// nothing. Size is M = recipients + 1 (the initiator), counting everyone.
+        ///
+        /// Mirrors <see cref="ApplyGroupCounts"/>: the database is threaded in by the resolver
+        /// so granting hits the same store the rest of resolution uses (and stays unit-testable).
+        /// </summary>
+        public virtual List<GroupTitleGrant> GrantGroupTitles(IChateauDatabase database, string initiator, IReadOnlyList<string> consentersInOrder, string identifier)
+        {
+            var grants = new List<GroupTitleGrant>();
+            var spec = GroupSpec;
+            if (spec == null) return grants;
+
+            int participantCount = consentersInOrder.Count + 1; // M
+            var sizeTitles = ChateauSystemTitles.GetGroupSizeTitles(InteractionType, participantCount);
+            if (sizeTitles.Count == 0) return grants;
+
+            if (spec.Kind == GroupCountKind.Symmetric)
+            {
+                AddTitleGrant(database, initiator, sizeTitles, grants);
+                foreach (var consenter in consentersInOrder)
+                    AddTitleGrant(database, consenter, sizeTitles, grants);
+            }
+            else if (spec.Kind == GroupCountKind.Directional)
+            {
+                // One-way interaction: only the initiator is credited with the moment's size.
+                AddTitleGrant(database, initiator, sizeTitles, grants);
+            }
+            // Lapsit (per-position) is handled in an override.
+
+            return grants;
+        }
+
+        /// <summary>
+        /// Grant the given achievement title texts to a user through the supplied database,
+        /// skipping any already held, and append a <see cref="GroupTitleGrant"/> to
+        /// <paramref name="grants"/> only when at least one title was actually new. Shared by
+        /// the base group-title path and the lapsit per-position override.
+        /// </summary>
+        protected void AddTitleGrant(IChateauDatabase database, string userName, IReadOnlyList<string> titleTexts, List<GroupTitleGrant> grants)
+        {
+            if (titleTexts == null || titleTexts.Count == 0) return;
+            Profile profile = database.GetProfile(userName);
+            if (profile == null) return;
+            if (profile.titles == null) profile.titles = new List<Title>();
+
+            var newlyGranted = new List<string>();
+            foreach (var titleText in titleTexts)
+            {
+                bool alreadyHas = profile.titles.Any(t =>
+                    t.IsSystemTitle && t.titleText.Equals(titleText, StringComparison.OrdinalIgnoreCase));
+                if (alreadyHas) continue;
+
+                profile.titles.Add(new Title
+                {
+                    titleText = titleText,
+                    givenBy = "Chateau",
+                    grantedTime = DateTime.UtcNow,
+                });
+                newlyGranted.Add(titleText);
+            }
+
+            if (newlyGranted.Count == 0) return;
+            database.SetProfile(userName, profile);
+            grants.Add(new GroupTitleGrant
+            {
+                UserName = userName,
+                DisplayName = profile.displayName,
+                NewTitles = newlyGranted,
+            });
+        }
+
+        /// <summary>
         /// Apply a single rate-limited +N increment for a group participant against the given
         /// database. A non-positive amount (e.g. the lap at position 0 has +0 lapsitgive) is a
         /// silent no-op — no timer is armed and no rate-limit note is produced. Participants

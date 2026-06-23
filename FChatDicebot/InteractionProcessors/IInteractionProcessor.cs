@@ -95,6 +95,12 @@ namespace FChatDicebot.InteractionProcessors
         /// <summary>Apply group counts over the consenting recipients (in consent order).</summary>
         string ApplyGroupCounts(Database.IChateauDatabase database, string initiator, IReadOnlyList<string> consentersInOrder, string identifier);
 
+        /// <summary>
+        /// Grant group-achievement titles (by resolved size, or lap-stack position) and return
+        /// the newly-granted titles per participant so the command layer can announce them.
+        /// </summary>
+        List<GroupTitleGrant> GrantGroupTitles(Database.IChateauDatabase database, string initiator, IReadOnlyList<string> consentersInOrder, string identifier);
+
         /// <summary>Combined completion message for a resolved group moment.</summary>
         string GetGroupCompletionMessage(Profile initiatorProfile, IReadOnlyList<Profile> consentersInOrder, string identifier);
 

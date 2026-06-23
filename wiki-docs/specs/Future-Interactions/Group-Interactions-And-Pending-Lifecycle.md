@@ -1,6 +1,6 @@
 # Group Interactions, Pending Lifecycle, and New Casuals
 
-**Status:** Shipped 2026-06-22 (B4 group system, B5 lifecycle + `!consent <name>`, the lapsit lap-stack). The new casuals (B7) had already shipped 1:1 on 2026-06-21. Build green, 15 new tests. The lifecycle verbs were renamed at owner request to dodge the `!w`/`!work` clash: recipient-side is **`!no`** (aliases `!refuse`, `!decline`), initiator-side is **`!oops`** (aliases `!o`, `!withdraw`, `!cancel`). Out of scope, as designed: the tall-stack *height* titles (owner design TODO).
+**Status:** Shipped 2026-06-22 (B4 group system, B5 lifecycle + `!consent <name>`, the lapsit lap-stack). The new casuals (B7) had already shipped 1:1 on 2026-06-21. Build green, 15 new tests. The lifecycle verbs were renamed at owner request to dodge the `!w`/`!work` clash: recipient-side is **`!no`** (aliases `!refuse`, `!decline`), initiator-side is **`!oops`** (aliases `!o`, `!withdraw`, `!cancel`). **Group-achievement titles shipped 2026-06-22** (a follow-up): size-based titles for the group-capable casuals and the lapsit per-position "height" titles, owner-provided — see [Group-achievement titles](#group-achievement-titles-by-resolved-size--lap-stack-position) below.
 
 This spec covers the "Interactions" cluster from [Feature-Requests.md](../../Feature-Requests.md):
 
@@ -172,7 +172,7 @@ First consenter Bob claims the bottom. Stack bottom→top: Bob(0), Initiator(1),
 
 Example — `!lap Bob Carol David Erwin`, all consent: *"Alice pulls Bob onto their lap. Then Carol takes a seat, then David, then Erwin, forming a lap stack 5 people tall!"* + descriptor.
 
-**Tall-stack height titles (new title type, separate from the lifetime count ladders below):** award titles for participating in a tall stack at a given height — measured as **X above the floor** (position from the bottom) and/or **Y below the highest person** (position from the top). These gate on a single stack's size/position rather than lifetime counts (closer in spirit to the daily-climax titles than the count ladders). Specific heights and title wording **TBD** (owner).
+**Lap-stack height titles** award titles for a participant's position in a resolved stack — by how many others sit **below** them and how many sit **above** them. These gate on a single stack's size/position rather than lifetime counts, so they live outside the count ladders. **Shipped** with the rest of the group-achievement titles — see [Group-achievement titles](#group-achievement-titles-by-resolved-size--lap-stack-position).
 
 ### Dossier, specialist text, and counts
 
@@ -195,7 +195,42 @@ lickgive:    1 :P                10 Mlem                50 Talented Tongue   100
 licktake:    1 Licked            10 Tasty               50 Salt Lick         100 Spit Shined                500 Tootsie Pop
 ```
 
-Add all to the `interactionMilestones` table in [ChateauSystemTitles.cs:64](../../../FChatDicebot/BotCommands/ChateauSystemTitles.cs). (The tall-stack *height* titles above are a separate, still-TBD title type.)
+Add all to the `interactionMilestones` table in [ChateauSystemTitles.cs:64](../../../FChatDicebot/BotCommands/ChateauSystemTitles.cs). (The lap-stack *height* titles above are a separate title type — see the next section.)
+
+### Group-achievement titles (by resolved size / lap-stack position)
+
+**Shipped 2026-06-22 (follow-up).** A second, event-driven title type, distinct from the lifetime-count ladders above: awarded once when a *group* moment resolves, based on the size of the resolved group (or, for lapsit, a participant's stack position). Thresholds are **cumulative** — a resolved group of a given size grants every tier at or below it, the same way the count ladders backfill. Group size **M counts every participant including the initiator** (so a 3-person group = initiator + 2 recipients).
+
+Who is credited:
+
+- **Symmetric** (`kiss` / `cuddle` / `handhold`): **every participant** earns the size titles — participating is enough.
+- **Directional one-way** (`spank` / `bully` / `lick` / `boobhat`): **only the initiator** earns them.
+- **Lapsit:** **per position** — each participant earns "below" titles for the number of people stacked under them and "above" titles for the number over them, so a mid-stack rider can earn both.
+
+Size titles (M = participants incl. self), owner-provided:
+
+```
+kiss      3 Kiss Kiss   5 Kisstacular   7 Kissimanjaro   9 Kisspocalypse   11 Spartakiss
+handhold  3 Triangle    5 Pentagon      7 Septagon       9 Nonagon         11 Undecagon
+cuddle    3 Cuddle Puddle  5 Cuddle Pond  7 Cuddle Lake   9 Cuddle Sea      11 Cuddle Ocean
+spank     3 Echo        5 Thunder Storm  8 Seven Spanks   11 Strike!
+bully     3 Intimidating  5 Hazing       7 Demands Respect  9 Unbullyvable  11 Decibully
+lick      3 Free Sample  5 Indecisive   7 Can Tie A Knot In A Cherry Stem  9 Tongue In Chic  11 Lick A Ton
+boobhat   4 Hat Trick    7 Mad Hatter   11 Capping
+```
+
+Lapsit per-position titles, owner-provided:
+
+```
+others below:  2 Elevated   4 Laps All The Way Down   6 Can See Their House From Here   8 King Of The World   10 Lap of Babel
+others above:  2 Shortstacked   5 Buried   10 Foundational
+```
+
+`boobhat`'s **Hat Trick** is the former `objectifygive` tier-3 title, **renamed to "Toy Maker"** there (the lone holder had earned it both ways, so no migration was needed).
+
+**Implementation.** Tables + cumulative lookups live in [ChateauSystemTitles.cs](../../../FChatDicebot/BotCommands/ChateauSystemTitles.cs) (`GetGroupSizeTitles`, `GetLapsitPositionTitles`). Granting mirrors the count math: `InteractionProcessorBase.GrantGroupTitles` (symmetric/directional) and a `LapsitProcessor` override (per-position) persist through the injected database and return per-participant newly-granted titles; `GroupInteractionResolver` calls them during resolution and exposes the grants on `GroupResolutionResult.GroupTitleGrants`.
+
+**One consolidated banner.** A group moment surfaces a *single* "Title Time!" notification, **grouped by title**: each newly-earned title is listed once with everyone who earned it in a serial-comma name list ("Alice, Bob, and Carol earned the title ·Cuddle Puddle·!"). `ChateauConsent` folds in each participant's lifetime-count title wins (via `ChateauSystemTitles.CheckAndGrantCountTitles`, which now returns the same `GroupTitleGrant` shape) alongside the group-achievement grants, then renders them through `ChateauSystemTitles.FormatGroupTitleNotification`. The 1:1 consent path keeps its per-person banner.
 
 ### Descriptors (owner-provided)
 
@@ -253,7 +288,7 @@ Random completion descriptors per the casual pattern. Tokens: `{lapsitgiver}` = 
 
 ## Open items (confirm/decide at build time)
 
-1. **Tall-stack height titles** (design TODO, owner) — title set for stack height/position ("X above the floor" / "Y below the highest"); specific heights and wording TBD.
+1. ~~**Tall-stack height titles** (design TODO, owner)~~ — **Resolved/shipped 2026-06-22.** Owner provided the heights and wording; shipped as part of the broader [group-achievement titles](#group-achievement-titles-by-resolved-size--lap-stack-position) (size-based titles for every group-capable casual, plus the lapsit per-position "below"/"above" ladders).
 2. **No background scheduler** for timeout-fire of partially-consented groups — accept lazy resolution (see Implementation note) or build a timer.
 3. **Group state storage** — duplicate shared params on each seat vs. one small group record. Either is fine; pick whichever is cleaner against the existing DB layer.
 4. **`!r` / `!w` alias availability** — verify before wiring (part of the alias audit).

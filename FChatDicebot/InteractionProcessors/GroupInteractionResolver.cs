@@ -113,6 +113,12 @@ namespace FChatDicebot.InteractionProcessors
             // Counts (processor owns the symmetric / directional / lapsit math + the +N helper).
             string rateLimitNote = processor.ApplyGroupCounts(database, initiator, consenterNames, identifier);
 
+            // Group-achievement titles, by resolved size (symmetric: everyone; directional:
+            // the initiator) or lap-stack position. Granting runs through the injected database
+            // so it stays on the same store and unit-testable; the command layer formats the
+            // per-participant "Title Time!" notifications from the returned grants.
+            result.GroupTitleGrants = processor.GrantGroupTitles(database, initiator, consenterNames, identifier);
+
             // Combined completion message.
             Profile initiatorProfile = database.GetProfile(initiator);
             var consenterProfiles = consenterNames.Select(database.GetProfile).ToList();
@@ -153,5 +159,12 @@ namespace FChatDicebot.InteractionProcessors
 
         /// <summary>Initiator + consenting recipients — for the caller's title checks.</summary>
         public List<string> Participants { get; set; } = new List<string>();
+
+        /// <summary>
+        /// Group-achievement titles granted this resolution (by size / lap-stack position),
+        /// one entry per participant who earned at least one new title. Already persisted to
+        /// the database during resolution; the command layer only formats the notifications.
+        /// </summary>
+        public List<GroupTitleGrant> GroupTitleGrants { get; set; } = new List<GroupTitleGrant>();
     }
 }
