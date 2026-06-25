@@ -97,10 +97,14 @@ namespace FChatDicebot.InteractionProcessors.Consequence
                     Bucket = CurseBucket.Disabler,
                     BlockedInteractions = new Dictionary<string, BlockSide>(StringComparer.OrdinalIgnoreCase)
                     {
-                        // !climax is initiator-climaxer; !climaxfor is recipient-climaxer.
-                        // Either way the climaxer slot is blocked.
-                        ["climax"] = BlockSide.Initiator,
-                        ["climaxfor"] = BlockSide.Recipient,
+                        // chastity blocks the *climaxer* — the person actually being made to
+                        // climax — and never the partner helping. Per ResolveClimaxer the
+                        // climaxer is the recipient of !climax ("you make me climax") and the
+                        // initiator of !climaxfor ("I climax for you"), so each verb blocks the
+                        // opposite side. Validation must pass the typed verb (not the
+                        // processor's single registered type) for this to gate correctly.
+                        ["climax"] = BlockSide.Recipient,
+                        ["climaxfor"] = BlockSide.Initiator,
                     },
                     CleanseCost = PurgeCostType.MissedWork,
                 },

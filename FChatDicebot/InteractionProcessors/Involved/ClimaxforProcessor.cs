@@ -198,19 +198,85 @@ namespace FChatDicebot.InteractionProcessors.Involved
 
         public override ValidationResult ValidateInteraction(string initiator, string recipient, string identifier)
         {
-            // Run the base validation first — gets us profile-existence checks plus any
-            // future status-effect blockers on the recipient.
-            var baseValidation = base.ValidateInteraction(initiator, recipient, identifier);
-            if (!baseValidation.IsValid) return baseValidation;
+            Profile initiatorProfile = Database.GetProfile(initiator);
+            Profile recipientProfile = Database.GetProfile(recipient);
+
+            if (initiatorProfile == null)
+            {
+                return ValidationResult.Failure(ChateauInteractionHandler.notFoundText(initiator));
+            }
+            if (recipientProfile == null)
+            {
+                return ValidationResult.Failure(ChateauInteractionHandler.notFoundText(recipient));
+            }
 
             // Self-target is allowed at the command layer through the PerformSelfTarget
             // shortcut, which never creates a PendingCommand. Reject self-target here as
             // a defensive guard so a stray self-pending can't sneak through and double-
-            // credit climaxtake via the rate-limited consent path.
+            // credit climaxtake via the rate-limited consent path. (Solo climaxes are
+            // status-gated separately via ValidateSelfTarget.)
             if (string.Equals(initiator, recipient, StringComparison.Ordinal))
             {
                 return ValidationResult.Failure(
                     "Self-climax is a shortcut handled at the command layer, not via the consent flow.");
+            }
+
+            // Gate on status-effect blockers against the verb the user actually typed
+            // (parsed from the identifier) rather than the processor's single registered
+            // type — chastity blocks whoever is the climaxer, and which side that is flips
+            // between !climax and !climaxfor.
+            return CheckClimaxStatusBlockers(
+                initiatorProfile, recipientProfile, ParseTypeFromIdentifier(identifier), identifier);
+        }
+
+        /// <summary>
+        /// Validation for the self-target shortcut. <see cref="ValidateInteraction"/> rejects
+        /// self-targets outright (defensive guard for the consent flow), so the command layer
+        /// can't reuse it to gate a solo <c>!climax</c> — yet a solo climax must still honor
+        /// status-effect blockers (e.g. the <c>chastity</c> curse). Without this, the
+        /// self-target branch ran <see cref="PerformSelfTarget"/> unconditionally and a cursed
+        /// resident could climax anyway.
+        ///
+        /// On a self-target the one person is both the initiator and the recipient (and always
+        /// the climaxer), so the shared both-sides check runs against that single profile with
+        /// the typed <paramref name="typeKey"/> — whichever side the verb's chastity block
+        /// keys to, the solo climaxer is on it.
+        /// </summary>
+        public ValidationResult ValidateSelfTarget(string user, string typeKey)
+        {
+            Profile profile = Database.GetProfile(user);
+            if (profile == null)
+            {
+                return ValidationResult.Failure(ChateauInteractionHandler.notFoundText(user));
+            }
+
+            return CheckClimaxStatusBlockers(profile, profile, typeKey, string.Empty);
+        }
+
+        /// <summary>
+        /// Shared status-effect gate for both the other-target consent path and the
+        /// self-target shortcut. Checks recipient-side then initiator-side blockers against
+        /// the typed <paramref name="typeKey"/>. The curse catalog only declares a chastity
+        /// block on the climaxer's side for each verb, so this naturally stops the climaxer
+        /// while leaving a (possibly also-cursed) partner free to help.
+        /// </summary>
+        private ValidationResult CheckClimaxStatusBlockers(
+            Profile initiatorProfile, Profile recipientProfile, string typeKey, string identifier)
+        {
+            var recipientBlocker = GetActiveStatusEffects(
+                    recipientProfile, StatusEffectCallSite.Consent, typeKey, identifier, isInitiator: false)
+                .Blockers.FirstOrDefault(b => b.BlocksRecipient);
+            if (recipientBlocker != null)
+            {
+                return ValidationResult.Failure(recipientBlocker.Reason);
+            }
+
+            var initiatorBlocker = GetActiveStatusEffects(
+                    initiatorProfile, StatusEffectCallSite.Consent, typeKey, identifier, isInitiator: true)
+                .Blockers.FirstOrDefault(b => b.BlocksInitiator);
+            if (initiatorBlocker != null)
+            {
+                return ValidationResult.Failure(initiatorBlocker.Reason);
             }
 
             return ValidationResult.Success();
