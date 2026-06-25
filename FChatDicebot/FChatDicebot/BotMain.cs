@@ -23,7 +23,7 @@ namespace FChatDicebot
         public const bool _debug = false;
         public const bool _returnAllRecievedChatMessagesFromChannels = false;
 
-        public const bool _testVersion = true;
+        public const bool _testVersion = false;
         public const string Version = "1.62b";
         public RunMode RunMode = RunMode.FlistPlusDiscord;// RunMode.FlistPlusDiscord; //RunMode.FlistPlusDiscord;// RunMode.FListOnly;// RunMode.DiscordOnly;
 
