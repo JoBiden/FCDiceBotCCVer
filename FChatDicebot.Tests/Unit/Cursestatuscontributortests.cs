@@ -98,19 +98,35 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
         }
 
         [Fact]
-        public void Contribute_ChastityBlocksBothClimaxVariants()
+        public void Contribute_ChastityBlocksClimaxerSide_PerVerb()
         {
-            // !climax (initiator-climaxer) and !climaxfor (recipient-climaxer).
+            // chastity blocks the climaxer. Per ResolveClimaxer the climaxer is the recipient
+            // of !climax and the initiator of !climaxfor, so each verb blocks the opposite side.
             var alice = BuildAliceWith("chastity");
             var bob = BuildBobWith("chastity");
 
-            var climaxResult = _contributor.Contribute(alice, StatusEffectCallSite.Consent, "climax", "", isInitiator: true);
-            var climaxForResult = _contributor.Contribute(bob, StatusEffectCallSite.Consent, "climaxfor", "", isInitiator: false);
+            var climaxResult = _contributor.Contribute(bob, StatusEffectCallSite.Consent, "climax", "", isInitiator: false);
+            var climaxForResult = _contributor.Contribute(alice, StatusEffectCallSite.Consent, "climaxfor", "", isInitiator: true);
 
             Assert.Single(climaxResult.Blockers);
-            Assert.True(climaxResult.Blockers[0].BlocksInitiator);
+            Assert.True(climaxResult.Blockers[0].BlocksRecipient);
             Assert.Single(climaxForResult.Blockers);
-            Assert.True(climaxForResult.Blockers[0].BlocksRecipient);
+            Assert.True(climaxForResult.Blockers[0].BlocksInitiator);
+        }
+
+        [Fact]
+        public void Contribute_ChastityLeavesPartnerSideFree_PerVerb()
+        {
+            // The partner (non-climaxer) of a climax can still help while cursed: the initiator
+            // of !climax and the recipient of !climaxfor are the partner, not the climaxer.
+            var alice = BuildAliceWith("chastity");
+            var bob = BuildBobWith("chastity");
+
+            var climaxPartner = _contributor.Contribute(alice, StatusEffectCallSite.Consent, "climax", "", isInitiator: true);
+            var climaxForPartner = _contributor.Contribute(bob, StatusEffectCallSite.Consent, "climaxfor", "", isInitiator: false);
+
+            Assert.Empty(climaxPartner.Blockers);
+            Assert.Empty(climaxForPartner.Blockers);
         }
 
         [Fact]

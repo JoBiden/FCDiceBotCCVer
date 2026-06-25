@@ -385,16 +385,37 @@ namespace FChatDicebot.InteractionProcessors
             string parentIdentifier = null,
             bool isInitiator = false)
         {
+            return GetActiveStatusEffects(profile, callSite, InteractionType, parentIdentifier, isInitiator);
+        }
+
+        /// <summary>
+        /// Overload that surfaces contributors against an explicit
+        /// <paramref name="interactionType"/> rather than the processor's own
+        /// <see cref="InteractionType"/> property. Needed by
+        /// <see cref="Involved.ClimaxforProcessor"/>: one processor instance backs both
+        /// <c>!climax</c> and <c>!climaxfor</c>, and the two verbs flip which party is the
+        /// climaxer — so a side-keyed blocker (the <c>chastity</c> curse) must be evaluated
+        /// against the verb the user actually typed, not the single registered type. A null
+        /// or empty override falls back to <see cref="InteractionType"/>.
+        /// </summary>
+        protected StatusEffectFragments GetActiveStatusEffects(
+            Profile profile,
+            StatusEffectCallSite callSite,
+            string interactionType,
+            string parentIdentifier,
+            bool isInitiator)
+        {
             var merged = new StatusEffectFragments();
             if (profile == null) return merged;
 
             string safeIdentifier = parentIdentifier ?? string.Empty;
+            string effectiveType = string.IsNullOrEmpty(interactionType) ? InteractionType : interactionType;
             foreach (var contributor in StatusEffectRegistry.GetAllContributors())
             {
                 StatusEffectFragments contributed;
                 try
                 {
-                    contributed = contributor.Contribute(profile, callSite, InteractionType, safeIdentifier, isInitiator);
+                    contributed = contributor.Contribute(profile, callSite, effectiveType, safeIdentifier, isInitiator);
                 }
                 catch (Exception)
                 {

@@ -146,6 +146,109 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
             Assert.True(result.IsValid);
         }
 
+        [Fact]
+        public void ValidateInteraction_ClimaxforInitiatorChastity_Blocks()
+        {
+            // !climaxfor: the initiator is the climaxer, so the initiator's chastity blocks.
+            var alice = new ProfileBuilder().WithUserName("Alice").WithDisplayName("Alice").BuildAndSave(_database);
+            new ProfileBuilder().WithUserName("Bob").BuildAndSave(_database);
+            CurseProcessor.ApplyCurse(alice, "chastity", "TestSetup");
+            _database.SetProfile("Alice", alice);
+
+            var result = _processor.ValidateInteraction(
+                "Alice", "Bob", ClimaxforProcessor.ComposeIdentifier(ClimaxforProcessor.ClimaxforType, 0));
+
+            Assert.False(result.IsValid);
+            Assert.Contains("chastity", result.ErrorMessage);
+        }
+
+        [Fact]
+        public void ValidateInteraction_ClimaxforRecipientChastity_PartnerStaysFree()
+        {
+            // !climaxfor: the recipient is only the partner, so their chastity must not block.
+            new ProfileBuilder().WithUserName("Alice").BuildAndSave(_database);
+            var bob = new ProfileBuilder().WithUserName("Bob").WithDisplayName("Bob").BuildAndSave(_database);
+            CurseProcessor.ApplyCurse(bob, "chastity", "TestSetup");
+            _database.SetProfile("Bob", bob);
+
+            var result = _processor.ValidateInteraction(
+                "Alice", "Bob", ClimaxforProcessor.ComposeIdentifier(ClimaxforProcessor.ClimaxforType, 0));
+
+            Assert.True(result.IsValid);
+        }
+
+        [Fact]
+        public void ValidateInteraction_ClimaxRecipientChastity_Blocks()
+        {
+            // !climax: the recipient is the climaxer, so the recipient's chastity blocks.
+            new ProfileBuilder().WithUserName("Alice").BuildAndSave(_database);
+            var bob = new ProfileBuilder().WithUserName("Bob").WithDisplayName("Bob").BuildAndSave(_database);
+            CurseProcessor.ApplyCurse(bob, "chastity", "TestSetup");
+            _database.SetProfile("Bob", bob);
+
+            var result = _processor.ValidateInteraction(
+                "Alice", "Bob", ClimaxforProcessor.ComposeIdentifier(ClimaxforProcessor.ClimaxType, 0));
+
+            Assert.False(result.IsValid);
+            Assert.Contains("chastity", result.ErrorMessage);
+        }
+
+        [Fact]
+        public void ValidateInteraction_ClimaxInitiatorChastity_PartnerStaysFree()
+        {
+            // !climax: the initiator is only the partner, so their chastity must not block.
+            var alice = new ProfileBuilder().WithUserName("Alice").WithDisplayName("Alice").BuildAndSave(_database);
+            new ProfileBuilder().WithUserName("Bob").BuildAndSave(_database);
+            CurseProcessor.ApplyCurse(alice, "chastity", "TestSetup");
+            _database.SetProfile("Alice", alice);
+
+            var result = _processor.ValidateInteraction(
+                "Alice", "Bob", ClimaxforProcessor.ComposeIdentifier(ClimaxforProcessor.ClimaxType, 0));
+
+            Assert.True(result.IsValid);
+        }
+
+        // -------------------------------------------------------------------
+        // ValidateSelfTarget
+        // -------------------------------------------------------------------
+
+        [Fact]
+        public void ValidateSelfTarget_NoBlockers_Succeeds()
+        {
+            new ProfileBuilder().WithUserName("Alice").BuildAndSave(_database);
+
+            var result = _processor.ValidateSelfTarget("Alice", ClimaxforProcessor.ClimaxforType);
+
+            Assert.True(result.IsValid);
+        }
+
+        [Fact]
+        public void ValidateSelfTarget_NonExistentUser_Fails()
+        {
+            var result = _processor.ValidateSelfTarget("Ghost", ClimaxforProcessor.ClimaxforType);
+
+            Assert.False(result.IsValid);
+            Assert.Contains("Ghost", result.ErrorMessage);
+        }
+
+        [Theory]
+        [InlineData("climax")]
+        [InlineData("climaxfor")]
+        public void ValidateSelfTarget_ChastityCurse_BlocksBothVerbs(string typeKey)
+        {
+            // Regression: a chastity-cursed resident's solo climax bypassed the consent flow
+            // and auto-resolved before the curse could gate it. The solo climaxer is always
+            // the same person, so chastity must block whichever verb they typed.
+            var alice = new ProfileBuilder().WithUserName("Alice").WithDisplayName("Alice").BuildAndSave(_database);
+            CurseProcessor.ApplyCurse(alice, "chastity", "TestSetup");
+            _database.SetProfile("Alice", alice);
+
+            var result = _processor.ValidateSelfTarget("Alice", typeKey);
+
+            Assert.False(result.IsValid);
+            Assert.Contains("chastity", result.ErrorMessage);
+        }
+
         // -------------------------------------------------------------------
         // PerformSelfTarget
         // -------------------------------------------------------------------

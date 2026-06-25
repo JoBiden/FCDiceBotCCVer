@@ -27,7 +27,7 @@ A new MongoDB collection `Curses`. v1 ships with these starter curses:
 
 | Name | Effect |
 |------|--------|
-| `chastity` | Blocks `!climaxfor` (recipient cannot climax). |
+| `chastity` | Blocks the climaxer of `!climax`/`!climaxfor`, including a solo climax — the cursed resident cannot be made to climax (by themselves or anyone else). They may still help a partner climax. |
 | `mute` | Blocks `!kiss`, `!feed` (recipient mouth-locked at the curse level — distinct from `break:mouth`). |
 | `frigid` | Blocks `!cuddle`, `!handhold`. |
 | `barren` | Blocks `!breed` recipient role. |

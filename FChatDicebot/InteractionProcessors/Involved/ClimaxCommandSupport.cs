@@ -60,6 +60,18 @@ namespace FChatDicebot.InteractionProcessors.Involved
             // handler normally does both).
             if (isSelf)
             {
+                // Self-targets skip the consent flow, but must still honor status-effect
+                // blockers (e.g. the chastity curse) — otherwise a cursed resident's solo
+                // climax would auto-resolve before anything could stop it. ValidateInteraction
+                // can't be reused here (it rejects self-targets), so use the self-target check.
+                // Pass the typed verb so the right side of the chastity block is consulted.
+                var selfValidation = processor.ValidateSelfTarget(characterName, typedVerb);
+                if (!selfValidation.IsValid)
+                {
+                    bot.SendPrivateMessage(selfValidation.ErrorMessage, characterName);
+                    return;
+                }
+
                 string channelMessage = processor.PerformSelfTarget(characterName, typedVerb);
                 if (!string.IsNullOrEmpty(channelMessage))
                 {
@@ -74,10 +86,16 @@ namespace FChatDicebot.InteractionProcessors.Involved
             }
 
             // ----- Other-target: standard consent flow -----------------------
-            // Delegate validation to the processor so the command-time check uses the
-            // same rules as the consent-time recheck (profile existence, status-effect
-            // blockers, future cooldowns).
-            var validation = processor.ValidateInteraction(characterName, recipient, string.Empty);
+            // Pre-process identifier shape is "{typeKey}|0" — the processor overwrites the
+            // count portion with the post-increment daily count once it runs. We seed the
+            // typeKey now so both the verb-aware status-effect gate below and GetConsentWarning
+            // can read which verb was typed (the climaxer side a chastity block applies to
+            // flips between !climax and !climaxfor).
+            string preProcessIdentifier = ClimaxforProcessor.ComposeIdentifier(typedVerb, 0);
+
+            // Delegate validation to the processor (profile existence + status-effect blockers
+            // such as chastity, evaluated against the typed verb).
+            var validation = processor.ValidateInteraction(characterName, recipient, preProcessIdentifier);
             if (!validation.IsValid)
             {
                 bot.SendPrivateMessage(validation.ErrorMessage, characterName);
@@ -93,11 +111,7 @@ namespace FChatDicebot.InteractionProcessors.Involved
                 // Type carries the user-typed verb so ProcessInteraction can pick the
                 // right climaxer (initiator for climaxfor, recipient for climax).
                 type = typedVerb,
-                // Pre-process identifier shape is "{typeKey}|0" — the processor will
-                // overwrite the count portion with the post-increment daily count once
-                // it runs. We seed the typeKey here so GetConsentWarning can render the
-                // right wording even before processing.
-                identifier = ClimaxforProcessor.ComposeIdentifier(typedVerb, 0),
+                identifier = preProcessIdentifier,
                 investmentLevel = "involved",
                 interactionTime = DateTime.UtcNow,
             };
