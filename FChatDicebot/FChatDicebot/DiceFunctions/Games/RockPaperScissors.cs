@@ -1,4 +1,5 @@
-﻿using System;
+﻿using FChatDicebot.Model;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -18,7 +19,7 @@ namespace FChatDicebot.DiceFunctions
 
         public int GetMaxPlayers()
         {
-            return 6;
+            return 12;
         }
 
         public int GetMinPlayers()
@@ -48,17 +49,17 @@ namespace FChatDicebot.DiceFunctions
 
         public string GetGameHelp()
         {
-            string thisGameCommands = "setante #, showplayers, newround, setlives # (player name)" +
-                "(as current player only - send to " + DiceBot.DiceBotCharacter + " in private message): !rock !paper !scissors";
-            string thisGameStartupOptions = "# (sets ante amount), lives# (sets lives amount, 2-4)" +
-                "\nThe default rules are: 1 starting life";
+            string thisGameCommands = "setante #, showplayers, newround, setlives # (player name), setmode (wheel OR group)" +
+                "(as current player only - send to " + DiceBot.DiceBotCharacter + " in private message): !rock !paper !scissors !lizard !spock";
+            string thisGameStartupOptions = "# (sets ante amount), lives:# (sets lives amount to #), lizardspock (activates LizardSpock mode), wheel, group (sets the elimination mode to wheel or group)" +
+                "\nThe default rules are: wheel elimination mode, 1 starting life";
 
             return GameSession.GetGameHelp(GetGameName(), thisGameCommands, thisGameStartupOptions, false, false);
         }
 
         public string GetStartingDisplay()
         {
-            return "[eicon]dbrps1[/eicon][eicon]dbrps2[/eicon]";
+            return FChatDicebot.TextFormat.Emoji("dbrps1") + FChatDicebot.TextFormat.Emoji("dbrps2");
         }
 
         public string GetEndingDisplay()
@@ -91,8 +92,13 @@ namespace FChatDicebot.DiceFunctions
                         fullStatus += string.Join(", ", unfinishedPlayers.Select(a => a.PlayerName)) + " still need to send their plays for this round.";
                     }
                 }
+                string spockMode = session.RockPaperScissorsData.EnableLizardSpock ? ", LizardSpock mode" : "";
+                string eliminationMode = session.RockPaperScissorsData.EliminationMode == RockPaperScissorsEliminationMode.Wheel ? "Wheel elimination mode" : "Group elimination mode";
+                string startingLives = "Starting Lives: " + session.RockPaperScissorsData.StartingLives;
+
+                fullStatus += "\nRules: " + eliminationMode + ", " + startingLives + spockMode;
             }
-            
+
             return fullStatus;
         }
 
@@ -107,29 +113,60 @@ namespace FChatDicebot.DiceFunctions
             {
                 session.RockPaperScissorsData.RulesSet = true;
 
-                if(terms.Contains("lives2"))
+                int startingLives = GetNumberFromTerms(terms, "lives", 1);
+                string livesString = "(starting lives set to " + startingLives + ")";
+                session.RockPaperScissorsData.StartingLives = startingLives;
+
+                RockPaperScissorsEliminationMode eliminationMode = RockPaperScissorsEliminationMode.Wheel;
+                string eliminationString = "(wheel elimination mode)";
+
+                if(terms.Contains("wheel"))
                 {
-                    session.RockPaperScissorsData.StartingLives = 2;
-                    messageString += "(starting lives set to 2)";
+                    eliminationMode = RockPaperScissorsEliminationMode.Wheel;
+                    eliminationString = "(wheel elimination mode)";
                 }
-                else if (terms.Contains("lives3"))
+                else if (terms.Contains("group"))
                 {
-                    session.RockPaperScissorsData.StartingLives = 3;
-                    messageString += "(starting lives set to 3)";
+                    eliminationMode = RockPaperScissorsEliminationMode.Group;
+                    eliminationString = "(group elimination mode)";
                 }
-                else if (terms.Contains("lives4"))
+                session.RockPaperScissorsData.EliminationMode = eliminationMode;
+
+                string lizardSpockString = "";
+                if(terms.Contains("lizardspock"))
                 {
-                    session.RockPaperScissorsData.StartingLives = 4;
-                    messageString += "(starting lives set to 4)";
+                    session.RockPaperScissorsData.EnableLizardSpock = true;
+                    lizardSpockString = " (Lizard and Spock enabled!)";
                 }
-                
+
+                string anteString = "";
                 if(ante > 0)
                 {
-                    messageString += "(ante set to " + ante + ")";
+                    anteString = " (ante set to " + ante + ")";
                 }
+                messageString += livesString + " " + eliminationString + lizardSpockString + anteString;
             }
 
             return true;
+        }
+
+        private int GetNumberFromTerms(string[] terms, string startingText, int defaultNumber)
+        {
+            int returnVal = defaultNumber;
+            foreach (string s in terms)
+            {
+                if (s.StartsWith(startingText))
+                {
+                    string num = s.Replace(":", "").Replace(startingText, "").Trim();
+                    int parsed = -1;
+                    int.TryParse(num, out parsed);
+                    if (parsed > 0 && parsed <= 1000)
+                    {
+                        returnVal = parsed;
+                    }
+                }
+            }
+            return returnVal;
         }
 
         public string PlayerLeftGame(BotMain botMain, GameSession session, string characterName)
@@ -163,12 +200,11 @@ namespace FChatDicebot.DiceFunctions
                     GameSymbol = DiceFunctions.GameSymbol.NONE,
                     Active = true });
             }
+            session.RockPaperScissorsData.CollectedAnte = false;
+            session.State = DiceFunctions.GameState.GameInProgress;
 
             //start the new round , prompt all players for throws
             string newRoundString = StartNewRound(botMain, session);
-
-            session.RockPaperScissorsData.CollectedAnte = false;
-            session.State = DiceFunctions.GameState.GameInProgress;
 
             return outputString + newRoundString;
         }
@@ -191,14 +227,14 @@ namespace FChatDicebot.DiceFunctions
                 }
                 if(player.Active && !player.EliminatedForRound)
                 {
-                    MessagePlayerToSendCommand(botMain, session.ChannelId, player.PlayerName, PlayerWhisperWaitMs);
+                    MessagePlayerToSendCommand(botMain, session, new MessageAddress(session.GetMessageAddress(), player.PlayerName), PlayerWhisperWaitMs);
                 }
             }
-            
+
             string anteString = "";
             if(session.Ante > 0 && !session.RockPaperScissorsData.CollectedAnte)
             {
-                anteString = "\n";
+                session.RockPaperScissorsData.CollectedAnte = true;
                 for (int i = 0; i < session.Players.Count; i++)
                 {
                     if (!string.IsNullOrEmpty(anteString))
@@ -208,36 +244,42 @@ namespace FChatDicebot.DiceFunctions
 
                     string betstring = "";
 
-                    betstring = botMain.DiceBot.BetChips(session.Players[i], session.ChannelId, session.Ante, false);
+                    betstring = botMain.DiceBot.BetChips(new MessageAddress(session.GetMessageAddress(), session.Players[i]), session.Ante, false);
 
                     anteString += betstring;
                 }
             }
-            session.RockPaperScissorsData.CollectedAnte = true;
 
             string botMessage = "[b]" + GetGameName() + "[/b]: A new round has started.\n" + GetPlayerList(session, true) +
                 (string.IsNullOrEmpty(anteString)? "" : "\n" + anteString) + "\n[color=yellow]Ready your throws![/color]\n";
             return botMessage;
         }
 
-        public void MessagePlayerToSendCommand(BotMain botMain, string channel, string character, int msDelay)
+        public void MessagePlayerToSendCommand(BotMain botMain, GameSession session, MessageAddress address, int msDelay)
         {
-            string message = "Send your throw here in private for Rock Paper Scissors in " + channel + " by using !rock !paper or !scissors .";
+            string lizardSpock = session.RockPaperScissorsData.EnableLizardSpock? " !scissors !lizard or !spock" : " or !scissors";
+            string message = "Send your throw here in private for Rock Paper Scissors in " + address.GetChannelKey() + " by using !rock !paper " + lizardSpock + " .";
             if(msDelay > 0)
             {
-                botMain.SendFutureMessage(message, channel, character, false, msDelay);
+                botMain.SendFutureMessage(message, address, false, msDelay);
             }
             else
             {
-                botMain.SendPrivateMessage(message, character);
+                botMain.SendPrivateMessage(message, address);
             }
         }
 
         public void ApplySymbolToPlayer(BotMain botMain, GameSession session, string character, GameSymbol symbol)
         {
-            var player = GetRockPaperScissorsPlayerByName(session, character);
-            player.GameSymbol = symbol;
-            FinishRoundIfAllPlayersHaveEntered(botMain, session);
+            if(session.RockPaperScissorsData != null && session.RockPaperScissorsData.RockPaperScissorsPlayers != null)
+            {
+                var player = GetRockPaperScissorsPlayerByName(session, character);
+                if(player != null)
+                {
+                    player.GameSymbol = symbol;
+                    FinishRoundIfAllPlayersHaveEntered(botMain, session);
+                }
+            }
         }
 
         public static string GetFlavorTextForAttack(System.Random random)
@@ -296,61 +338,72 @@ namespace FChatDicebot.DiceFunctions
 
             foreach(RockPaperScissorsPlayer player in session.RockPaperScissorsData.RockPaperScissorsPlayers)
             {
-                if(!player.EliminatedForRound)
+                if(player.PlayerLives > 0)// !player.EliminatedForRound)
                 {
                     if(!string.IsNullOrEmpty(resultString))
                     {
                         resultString += "\n";
                     }
 
-                    resultString += Utils.GetCharacterUserTags(player.PlayerName) + " " + GetFlavorTextForAttack(botMain.DiceBot.random) + " " + GetThrowString(player.GameSymbol) + "!";
+                    resultString += TextFormat.GetCharacterUserTags(player.PlayerName) + " " + GetFlavorTextForAttack(botMain.DiceBot.random) + " " + GetThrowString(player.GameSymbol) + "!";
                 }
             }
 
             resultString = "[b]Everyone is ready![/b] They [color=yellow]reveal their hands[/color] and...\n" + resultString;
             List<RockPaperScissorsPlayer> playersOut = EliminatePlayers(session);
 
-            resultString += "\n";
-            //print players out
+            //print eliminated players out
             foreach (RockPaperScissorsPlayer player in playersOut)
             {
-                if (!string.IsNullOrEmpty(resultString))
-                {
-                    resultString += "\n";
-                }
+                resultString += "\n";
 
-                resultString += Utils.GetCharacterUserTags(player.PlayerName) + " was [b]eliminated![/b]";
+                resultString += TextFormat.GetCharacterUserTags(player.PlayerName) + " was [b]eliminated![/b]";
             }
             if (playersOut.Count == 0)
-                resultString += "[b]no one[/b] was eliminated...";
+                resultString += "\n[b]no one[/b] was eliminated...";
 
 
-            if (RoundIsComplete(session))
+            //if (RoundIsComplete(session))
+            //{
+            //    if(GameIsComplete(session))
+            //    {
+            //        resultString += "\n" + FinishGame(session, botMain.DiceBot);
+            //    }
+            //    else
+            //    {
+            //        RockPaperScissorsPlayer play = GetRoundWinner(session);
+            //        resultString += "\nThis round is over! " + (play == null? "(not found)" : TextFormat.GetCharacterUserTags(play.PlayerName)) + " wins the round!";
+            //        foreach(RockPaperScissorsPlayer playz in session.RockPaperScissorsData.RockPaperScissorsPlayers)
+            //        {
+            //            playz.EliminatedForRound = false;
+            //        }
+
+            //    }
+            //}
+            //if (!GameIsComplete(session))
+            //{
+            //    ResetGameRound(session);
+            //    resultString += "\n" + StartNewRound(botMain, session);
+            //}
+
+            if (GameIsComplete(session))
             {
-                if(GameIsComplete(session))
-                {
-                    resultString += "\n" + FinishGame(session, botMain.DiceBot);
-                }
-                else
-                {
-                    RockPaperScissorsPlayer play = GetRoundWinner(session);
-                    resultString += "\nThis round is over! " + (play == null? "(not found)" : Utils.GetCharacterUserTags(play.PlayerName)) + " wins the round!";
-                    foreach(RockPaperScissorsPlayer playz in session.RockPaperScissorsData.RockPaperScissorsPlayers)
-                    {
-                        playz.EliminatedForRound = false;
-                    }
-                    
-                }
+                resultString += "\n" + FinishGame(session, botMain.DiceBot);
             }
-
-            if(!GameIsComplete(session))
+            else
             {
+                //RockPaperScissorsPlayer play = GetRoundWinner(session);
+                //resultString += "\nThis round is over! " + (play == null ? "(not found)" : TextFormat.GetCharacterUserTags(play.PlayerName)) + " wins the round!";
+                foreach (RockPaperScissorsPlayer playz in session.RockPaperScissorsData.RockPaperScissorsPlayers)
+                {
+                    playz.EliminatedForRound = false;
+                }
+
                 ResetGameRound(session);
                 resultString += "\n" + StartNewRound(botMain, session);
             }
 
-
-            botMain.SendFutureMessage(resultString, session.ChannelId, null, true, RoundResultWaitMs);
+            botMain.SendFutureMessage(resultString, session.GetMessageAddress(), true, RoundResultWaitMs);
         }
 
         public string GetThrowString(GameSymbol symbol)
@@ -386,16 +439,26 @@ namespace FChatDicebot.DiceFunctions
             return session.RockPaperScissorsData.RockPaperScissorsPlayers.Count(a => a.PlayerLives > 0) <= 1;
         }
 
-        private bool RoundIsComplete(GameSession session)
-        {
-            return session.RockPaperScissorsData.RockPaperScissorsPlayers.Count(a => !a.EliminatedForRound) == 1;
-        }
+        //private bool RoundIsComplete(GameSession session)
+        //{
+        //    return session.RockPaperScissorsData.RockPaperScissorsPlayers.Count(a => !a.EliminatedForRound) == 1;
+        //}
 
-        private RockPaperScissorsPlayer GetRoundWinner(GameSession session)
+        //private RockPaperScissorsPlayer GetRoundWinner(GameSession session)
+        //{
+        //    if (RoundIsComplete(session))
+        //    {
+        //        return session.RockPaperScissorsData.RockPaperScissorsPlayers.FirstOrDefault(a => !a.EliminatedForRound);
+        //    }
+        //    else
+        //        return null;
+        //}
+
+        private RockPaperScissorsPlayer GetGameWinner(GameSession session)
         {
-            if (RoundIsComplete(session))
+            if (GameIsComplete(session))
             {
-                return session.RockPaperScissorsData.RockPaperScissorsPlayers.FirstOrDefault(a => !a.EliminatedForRound);
+                return session.RockPaperScissorsData.RockPaperScissorsPlayers.FirstOrDefault(a => a.PlayerLives > 0);
             }
             else
                 return null;
@@ -404,56 +467,130 @@ namespace FChatDicebot.DiceFunctions
         private List<RockPaperScissorsPlayer> EliminatePlayers(GameSession session)
         {
             List<RockPaperScissorsPlayer> eliminatedPlayers = new List<RockPaperScissorsPlayer>();
-            var viablePlayers = session.RockPaperScissorsData.RockPaperScissorsPlayers.Where(a => a.Active && !a.EliminatedForRound);
 
-            int rockCount = viablePlayers.Count(a => a.GameSymbol == GameSymbol.Rock);
-            int scissorsCount = viablePlayers.Count(a => a.GameSymbol == GameSymbol.Scissors);
-            int paperCount = viablePlayers.Count(a => a.GameSymbol == GameSymbol.Paper);
-            int lizardCount = viablePlayers.Count(a => a.GameSymbol == GameSymbol.Lizard);
-            int spockCount = viablePlayers.Count(a => a.GameSymbol == GameSymbol.Spock);
+            var viablePlayers = session.RockPaperScissorsData.RockPaperScissorsPlayers.Where(a => a.Active && !a.EliminatedForRound).ToList();
 
-            if (rockCount > 0 && paperCount > 0 && scissorsCount == 0) //TODO: add in lizardspock mode
-                //if (rockCount > 0 && paperCount >= 0 && scissorsCount == 0 && lizardCount >= 0 && spockCount == 0)
+            if(session.RockPaperScissorsData.EliminationMode == RockPaperScissorsEliminationMode.Group)
             {
-                //all the rock players lose
-                eliminatedPlayers = session.RockPaperScissorsData.RockPaperScissorsPlayers.Where(a => a.GameSymbol == GameSymbol.Rock).ToList();
-                //eliminatedPlayers.AddRange(session.RockPaperScissorsData.RockPaperScissorsPlayers.Where(a => a.GameSymbol == GameSymbol.Rock).ToList());
+                List<GameSymbol> allAttackingSymbols = viablePlayers.Select(a => a.GameSymbol).ToList();
+
+                //bool rockEliminated = SymbolEliminated(GameSymbol.Rock, allAttackingSymbols);
+                //bool paperEliminated = SymbolEliminated(GameSymbol.Paper, allAttackingSymbols);
+                //bool scissorsEliminated = SymbolEliminated(GameSymbol.Scissors, allAttackingSymbols);
+                //bool lizardEliminated = SymbolEliminated(GameSymbol.Lizard, allAttackingSymbols);
+                //bool spockEliminated = SymbolEliminated(GameSymbol.Spock, allAttackingSymbols);
+
+                //if ((!rockEliminated || !scissorsEliminated || !paperEliminated) ||
+                //    (session.RockPaperScissorsData.EnableLizardSpock && (!lizardEliminated || !spockEliminated) ))
+                //{
+                //    //someone survived: eliminate all the eliminated people
+
+                foreach(RockPaperScissorsPlayer play in viablePlayers)
+                {
+                    bool eliminated = SymbolEliminated(play.GameSymbol, allAttackingSymbols);
+                    if(eliminated)
+                    {
+                        eliminatedPlayers.Add(play);
+                    }
+                }
+                //}
             }
-            if (rockCount > 0 && scissorsCount > 0 && paperCount == 0)
+            else if(session.RockPaperScissorsData.EliminationMode == RockPaperScissorsEliminationMode.Wheel)
             {
-                //all the scissors players lose
-                eliminatedPlayers = session.RockPaperScissorsData.RockPaperScissorsPlayers.Where(a => a.GameSymbol == GameSymbol.Scissors).ToList();
-            }
-            if (rockCount == 0 && scissorsCount > 0 && paperCount > 0)
-            {
-                //all the paperCount players lose
-                eliminatedPlayers = session.RockPaperScissorsData.RockPaperScissorsPlayers.Where(a => a.GameSymbol == GameSymbol.Paper).ToList();
+                //check players one at a time to see what their attack is and then check the next player to see if that player is eliminated
+
+                for(int i = 0; i < viablePlayers.Count; i++)
+                {
+                    RockPaperScissorsPlayer currentPlayer = viablePlayers[i];
+                    int threatenedIndex = i -1;
+                    if (threatenedIndex < 0)
+                        threatenedIndex = viablePlayers.Count - 1;
+
+                    RockPaperScissorsPlayer threateningPlayer = viablePlayers[threatenedIndex];
+
+                    if(SymbolEliminated(currentPlayer.GameSymbol, threateningPlayer.GameSymbol))
+                    {
+                        eliminatedPlayers.Add(currentPlayer);
+                    }
+                }
+                //eliminatedPlayers = viablePlayers.Where(a => a.EliminatedForRound).ToList();
             }
 
-            foreach (RockPaperScissorsPlayer player in eliminatedPlayers)
+            if (eliminatedPlayers.Count == viablePlayers.Count) //if everyone is eliminated, it's a tie and no one is eliminated
             {
-                player.EliminatedForRound = true;
-                player.PlayerLives -= 1;
+                eliminatedPlayers = new List<RockPaperScissorsPlayer>();
+            }
+
+            foreach(RockPaperScissorsPlayer currentPlayer in eliminatedPlayers)
+            {
+                currentPlayer.EliminatedForRound = true;
+                currentPlayer.PlayerLives -= 1;
             }
 
             return eliminatedPlayers;
         }
 
+        private bool SymbolEliminated(GameSymbol vulnerableSymbol, List<GameSymbol> attackingSymbols)
+        {
+            bool eliminated = false;
+            foreach(GameSymbol symbol in attackingSymbols)
+            {
+                if (SymbolEliminated(vulnerableSymbol, symbol))
+                {
+                    eliminated = true;
+                    break;
+                }
+            }
+            return eliminated;
+        }
+
+        private bool SymbolEliminated(GameSymbol vulnerableSymbol, GameSymbol attackingSymbol)
+        {
+            bool eliminated = false;
+            if(vulnerableSymbol == GameSymbol.Paper)
+            {
+                if (attackingSymbol == GameSymbol.Lizard || attackingSymbol == GameSymbol.Scissors)
+                    eliminated = true;
+            }
+            else if (vulnerableSymbol == GameSymbol.Scissors)
+            {
+                if (attackingSymbol == GameSymbol.Spock || attackingSymbol == GameSymbol.Rock)
+                    eliminated = true;
+            }
+            else if (vulnerableSymbol == GameSymbol.Rock)
+            {
+                if (attackingSymbol == GameSymbol.Spock || attackingSymbol == GameSymbol.Paper)
+                    eliminated = true;
+            }
+            else if (vulnerableSymbol == GameSymbol.Lizard)
+            {
+                if (attackingSymbol == GameSymbol.Scissors || attackingSymbol == GameSymbol.Rock)
+                    eliminated = true;
+            }
+            else if (vulnerableSymbol == GameSymbol.Spock)
+            {
+                if (attackingSymbol == GameSymbol.Lizard || attackingSymbol == GameSymbol.Paper)
+                    eliminated = true;
+            }
+
+            return eliminated;
+        }
+
         private string FinishGame(GameSession session, DiceBot diceBot)
         {
             string returnString = "";
-            RockPaperScissorsPlayer winner = GetRoundWinner(session);
+            RockPaperScissorsPlayer winner = GetGameWinner(session);//was GetRoundWinner
             if (winner != null)
-                returnString += "\n[b]Rock Paper Scissors[/b]: The game has finished. " + Utils.GetCharacterUserTags(winner.PlayerName) + " wins!";
+                returnString += "\n[b]Rock Paper Scissors[/b]: The game has finished. " + TextFormat.GetCharacterUserTags(winner.PlayerName) + " wins!";
 
             if (session.Ante > 0)
             {
-                returnString += "\n" + diceBot.ClaimPot(winner.PlayerName, session.ChannelId, 1);
+                returnString += "\n" + diceBot.ClaimPot(new Model.MessageAddress(session.GetMessageAddress(), winner.PlayerName), 1);
             }
 
             session.State = DiceFunctions.GameState.Finished;
 
-            diceBot.RemoveGameSession(session.ChannelId, session.CurrentGame); //auto remove game session here might not be good :: keepsession is ignored
+            diceBot.RemoveGameSession(session.GetMessageAddress(), session.CurrentGame); //auto remove game session here might not be good :: keepsession is ignored
 
             return returnString;
         }
@@ -487,13 +624,13 @@ namespace FChatDicebot.DiceFunctions
             return session.RockPaperScissorsData.RockPaperScissorsPlayers.FirstOrDefault(a => a.PlayerName == name);
         }
 
-        public string IssueGameCommand(DiceBot diceBot, BotMain botMain, string character, string channel, GameSession session, string[] terms, string[] rawTerms)
+        public string IssueGameCommand(DiceBot diceBot, BotMain botMain, MessageAddress address, GameSession session, string[] terms, string[] rawTerms)
         {
             if(session.State != GameState.GameInProgress)
             {
                 return "Game commands for " + GetGameName() + " only work while the game is running.";
             }
-            else if(session.RockPaperScissorsData.RockPaperScissorsPlayers.Count(a => a.PlayerName == character) < 1)
+            else if(session.RockPaperScissorsData.RockPaperScissorsPlayers.Count(a => a.PlayerName == address.character) < 1)
             {
                 return "Game commands for " + GetGameName() + " can only be used by characters who are playing the game.";
             }
@@ -510,6 +647,23 @@ namespace FChatDicebot.DiceFunctions
 
                 returnString = playerList;
             }
+            else if (terms.Contains("setmode"))
+            {
+                if(terms.Contains("wheel"))
+                {
+                    session.RockPaperScissorsData.EliminationMode = RockPaperScissorsEliminationMode.Wheel;
+                    returnString = "Set game mode to wheel.";
+                }
+                else if(terms.Contains("group"))
+                {
+                    session.RockPaperScissorsData.EliminationMode = RockPaperScissorsEliminationMode.Group;
+                    returnString = "Set game mode to group.";
+                }
+                else
+                {
+                    returnString = "Failed: You must specify 'wheel' or 'group' game mode.";
+                }
+            }
             else if (terms.Contains("setlives"))
             {
                 if (terms.Length < 2)
@@ -522,7 +676,7 @@ namespace FChatDicebot.DiceFunctions
                     string playerName = allInputs.Substring(allInputs.IndexOf(' ')).Trim();
                     if (terms.Length == 2)
                     {
-                        playerName = character;
+                        playerName = address.character;
                     }
                     else
                         playerName = playerName.Substring(playerName.IndexOf(' ')).Trim();
@@ -536,7 +690,7 @@ namespace FChatDicebot.DiceFunctions
                     if (relevantPlayer != null)
                     {
                         relevantPlayer.PlayerLives = inputNumber;
-                        returnString = Utils.GetCharacterUserTags(relevantPlayer.PlayerName) + " was set to " + inputNumber + " lives.";
+                        returnString = TextFormat.GetCharacterUserTags(relevantPlayer.PlayerName) + " was set to " + inputNumber + " lives.";
                     }
                     else
                     {
@@ -544,10 +698,7 @@ namespace FChatDicebot.DiceFunctions
                     }
                 }
             }
-            else
-            {
-                returnString = "A command for " + GetGameName() + " was not found.";
-            }
+            else { returnString += "Failed: No such command exists for " + GetGameName(); }
 
             return returnString;
         }
@@ -558,6 +709,8 @@ namespace FChatDicebot.DiceFunctions
         public bool RulesSet;
         public int StartingLives = 1;
         public RockPaperScissorsGamePhase CurrentGamePhase;
+        public RockPaperScissorsEliminationMode EliminationMode = RockPaperScissorsEliminationMode.Wheel;
+        public bool EnableLizardSpock;
         public bool CollectedAnte;
         public List<RockPaperScissorsPlayer> RockPaperScissorsPlayers = new List<RockPaperScissorsPlayer>();
 
@@ -597,5 +750,12 @@ namespace FChatDicebot.DiceFunctions
         Starting,
         WaitingForThrows,
         ShowingResult
+    }
+
+    public enum RockPaperScissorsEliminationMode
+    {
+        NONE,
+        Group,
+        Wheel
     }
 }

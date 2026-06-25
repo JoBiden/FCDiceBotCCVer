@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using FChatDicebot.BotCommands.Base;
 using FChatDicebot.DiceFunctions;
+using FChatDicebot.Model;
 
 namespace FChatDicebot.BotCommands
 {
@@ -19,7 +20,7 @@ namespace FChatDicebot.BotCommands
             LockCategory = CommandLockCategory.ChannelDecks;
         }
 
-        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
+        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, MessageAddress address, UserGeneratedCommand command)
         {
             bool jokers = false;
             int deckCopies = 1;
@@ -41,13 +42,13 @@ namespace FChatDicebot.BotCommands
 
             string customDeckName ="";
             DeckType deckType = commandController.GetDeckTypeFromCommandTerms(terms, out customDeckName);
-            SavedData.ChannelSettings channelSettings = bot.GetChannelSettings(channel);
-            
+            SavedData.ChannelSettings channelSettings = bot.GetChannelSettings(address);
+
             string deckTypeString = Utils.GetDeckTypeStringHidePlaying(deckType, customDeckName);
             string deckMultiplier = deckCopies > 1 ? " (x" + deckCopies + " decks combined)" : "";
 
-            bot.DiceBot.ResetDeck(jokers, deckCopies, channel, channelSettings.CardPrintSetting, deckType, customDeckName);
-            bot.SendMessageInChannel("[i]" + deckTypeString + "Channel deck reset." + deckMultiplier + (jokers ? " (contains jokers)" : "") + "[/i]", channel);
+            bot.DiceBot.ResetDeck(jokers, deckCopies, address, channelSettings.CardPrintSetting, deckType, customDeckName);
+            bot.SendMessageInChannel("[i]" + deckTypeString + "Channel deck reset." + deckMultiplier + (jokers ? " (contains jokers)" : "") + "[/i]", address);
         }
     }
 }

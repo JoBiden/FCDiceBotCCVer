@@ -7,6 +7,7 @@ using FChatDicebot.BotCommands.Base;
 using FChatDicebot.SavedData;
 using Newtonsoft.Json;
 using FChatDicebot.DiceFunctions;
+using FChatDicebot.Model;
 
 namespace FChatDicebot.BotCommands
 {
@@ -21,13 +22,13 @@ namespace FChatDicebot.BotCommands
             LockCategory = CommandLockCategory.SavedTables;
         }
 
-        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
+        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, MessageAddress address, UserGeneratedCommand command)
         {
             ChannelSettings thisChannel = null;
-            if(commandController.MessageCameFromChannel(channel))
-                thisChannel = bot.GetChannelSettings(channel);
+            bool fromChannel = commandController.MessageCameFromChannel(address);
 
-            bool fromChannel = commandController.MessageCameFromChannel(channel);
+            if (fromChannel)
+                thisChannel = bot.GetChannelSettings(address);
 
             if (!fromChannel || (thisChannel != null && thisChannel.AllowTableInfo))
             {
@@ -36,15 +37,24 @@ namespace FChatDicebot.BotCommands
                 SavedRollTable infoTable = Utils.GetTableFromId(bot.SavedTables, tableName);
 
                 string sendMessage = "Table \'" + tableName + "\' not found.";
-                if (infoTable != null)
+
+                if (infoTable == null)
                 {
-                    sendMessage = "Table id [b]" + infoTable.TableId + "[/b] created by [user]" + infoTable.OriginCharacter + "[/user]";
+                    sendMessage += "\n (Rolltable contents not found)";
+                }
+                else if(Utils.GetNsfwError(thisChannel, infoTable.Table, out sendMessage))
+                {
+                    //sendMessage set in error method
+                }
+                else
+                {
+                    sendMessage = "Table id [b]" + infoTable.TableId + "[/b] created by " + TextFormat.GetCharacterUserTags(infoTable.OriginCharacter);
 
                     if (infoTable.Table != null)
                     {
                         string tabledesc = infoTable.Table.Description + "\n";
-                        sendMessage += "\n\n Name: [b]" + infoTable.Table.Name + "[/b]\n " + tabledesc + " Roll Die: d" + infoTable.Table.DieSides + " Roll Bonus: " + infoTable.Table.RollBonus + " Only Show Result Description?: " + infoTable.Table.OnlyShowResultDescription;
-                        
+                        sendMessage += "\n\n Name: [b]" + infoTable.Table.Name + "[/b]\n " + tabledesc + " Roll Die: d" + infoTable.Table.DieSides + " Roll Bonus: " + infoTable.Table.RollBonus + " Only Show Result Description?: " + infoTable.Table.OnlyShowResultDescription + " Nsfw?: " + infoTable.Table.Nsfw;
+
                         //if variables
                         List<List<DiceFunctions.TableRollTrigger>> triggersStart = infoTable.Table.TableEntries.Select(a => a.Triggers).ToList();
                         List<string> variablesFound = new List<string>();
@@ -79,25 +89,21 @@ namespace FChatDicebot.BotCommands
                         sendMessage += "\n" + infoTable.Table.GetTableEntryList();
 
                     }
-                    else
-                    {
-                        sendMessage += "\n (Rolltable contents not found)";
-                    }
                 }
 
                 if (fromChannel)
                 {
-                    bot.SendMessageInChannel(sendMessage, channel);
+                    bot.SendMessageInChannel(sendMessage, address);
                 }
                 else
-                    bot.SendPrivateMessage(sendMessage, characterName);
+                    bot.SendPrivateMessage(sendMessage, address);
             }
             else
             {
                 if(fromChannel)
-                    bot.SendMessageInChannel(Name + " is currently not allowed in this channel under " + Utils.GetCharacterUserTags(DiceBot.DiceBotCharacter) + "'s settings for this channel.", channel);
+                    bot.SendMessageInChannel(Name + " is currently not allowed in this channel under " + TextFormat.GetCharacterUserTags(DiceBot.DiceBotCharacter) + "'s settings for this channel.", address);
             }
-            
+
         }
     }
 }

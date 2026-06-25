@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using FChatDicebot.BotCommands.Base;
 using FChatDicebot.DiceFunctions;
+using FChatDicebot.Model;
 using FChatDicebot.SavedData;
 
 namespace FChatDicebot.BotCommands
@@ -20,19 +21,20 @@ namespace FChatDicebot.BotCommands
             LockCategory = CommandLockCategory.ChannelScores;
         }
 
-        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
+        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, MessageAddress address, UserGeneratedCommand command)
         {
-            CharacterData thisCharacterData = bot.DiceBot.GetCharacterData(characterName, channel);
+            CharacterData thisCharacterData = bot.DiceBot.GetCharacterData(address);
 
             if(thisCharacterData != null)
             {
                 thisCharacterData.LastLuckForecastTime = 0;
                 thisCharacterData.LastSlotsSpin = 0;
                 thisCharacterData.LastWorkedTime = 0;
+                thisCharacterData.LastDungeonDelve = 0;
 
                 commandController.SaveCharacterDataToDisk();
 
-                bot.SendMessageInChannel("[i]Reset luck forecast, slots, work cooldowns for: [/i]" + Utils.GetCharacterUserTags(characterName), channel);
+                bot.SendMessageInChannel("[i]Reset luck forecast, slots, work, dungeondelve cooldowns for: [/i]" + TextFormat.GetCharacterUserTags(address.character), address);
             }
         }
     }

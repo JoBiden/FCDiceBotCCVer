@@ -19,7 +19,7 @@ namespace FChatDicebot.DiceFunctions
 
         ItemCategory GetItemCategory();
 
-        int GetGoldValue();
+        int GetValue();
 
         bool IsHidden();
 

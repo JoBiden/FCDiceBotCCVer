@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using FChatDicebot.BotCommands.Base;
 using FChatDicebot.DiceFunctions;
+using FChatDicebot.Model;
 
 namespace FChatDicebot.BotCommands
 {
@@ -19,14 +20,14 @@ namespace FChatDicebot.BotCommands
             LockCategory = CommandLockCategory.NONE;
         }
 
-        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
+        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, MessageAddress address, UserGeneratedCommand command)
         {
-            Hand characterHand = bot.DiceBot.GetHand(channel, DeckType.Playing, null, characterName);
+            Hand characterHand = bot.DiceBot.GetHand(DeckType.Playing, null, address, null);
             bool dealerHand = false;
             if(terms.Contains("dealer"))
             {
                 dealerHand = true;
-                characterHand = bot.DiceBot.GetHand(channel, DeckType.Playing, null, DiceBot.DealerPlayerAlias);
+                characterHand = bot.DiceBot.GetHand(DeckType.Playing, null, new MessageAddress() { character = DiceBot.DealerPlayerAlias, channel = address.channel, guild = address.guild }, null);
             }
 
             characterHand.Reset();
@@ -70,12 +71,12 @@ namespace FChatDicebot.BotCommands
 
             if(dealerHand)
             {
-                bot.SendMessageInChannel("The dealer's new hand: " + characterHand.Print(false, null), channel);
+                bot.SendMessageInChannel("The dealer's new hand: " + characterHand.Print(false, null), address);
             }
             else
             {
-                bot.SendPrivateMessage("new hand: " + characterHand.Print(false, null), characterName);
-                bot.SendMessageInChannel(Utils.GetCharacterUserTags(characterName) + " new hand: " + characterHand.Print(false, null), channel);
+                bot.SendPrivateMessage("new hand: " + characterHand.Print(false, null), address);
+                bot.SendMessageInChannel(TextFormat.GetCharacterUserTags(address.character) + " new hand: " + characterHand.Print(false, null), address);
             }
         }
     }

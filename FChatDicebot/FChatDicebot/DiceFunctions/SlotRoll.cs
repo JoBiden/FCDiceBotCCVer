@@ -14,7 +14,10 @@ namespace FChatDicebot.DiceFunctions
         public int Match2Winnings;
         public bool WinsJackpot;
         public int AmountAddedToJackpot;
+        public int ScoreAdded;
+        public int Flags;
 
         public string PenaltyMessage;
+        public string GiftMessage;
     }
 }

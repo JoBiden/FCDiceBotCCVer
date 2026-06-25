@@ -1,4 +1,5 @@
-﻿using System;
+﻿using FChatDicebot.Model;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -72,7 +73,7 @@ namespace FChatDicebot.DiceFunctions
 
         public string GetStartingDisplay()
         {
-            return "[eicon]dbmafia1[/eicon][eicon]dbmafia2[/eicon]";
+            return TextFormat.Emoji("dbmafia1") + TextFormat.Emoji("dbmafia2");
         }
 
         public string GetEndingDisplay()
@@ -99,8 +100,8 @@ namespace FChatDicebot.DiceFunctions
                     if(session.QueuedActions != null && session.QueuedActions.Count() > 0)
                     {
                         QueuedAction act = session.QueuedActions.FirstOrDefault(a => a.QueuedActionType == QueuedActionType.AdvanceGamePhase);
-                        double remainingTime = act.TriggerTime - Utils.GetCurrentTimestampSeconds();
-                        fullStatus += "(" + Utils.PrintTimeFromSeconds(remainingTime) + " remaining)";
+                        double remainingTime = act.TriggerTime - DoubleTime.GetCurrentTimestampSeconds();
+                        fullStatus += "(" + DoubleTime.PrintTimeFromSeconds(remainingTime) + " remaining)";
                     }
                 }
                 //if (session.RockPaperScissorsData.CurrentGamePhase == RockPaperScissorsGamePhase.WaitingForThrows)
@@ -197,7 +198,7 @@ namespace FChatDicebot.DiceFunctions
                 {
                     session.MafiaData.MafiaPlayers = session.MafiaData.MafiaPlayers.Where(a => a.PlayerName != characterName).ToList();
 
-                    messageString = Utils.GetCharacterUserTags(characterName) + " was removed from the lobby.";
+                    messageString = TextFormat.GetCharacterUserTags(characterName) + " was removed from the lobby.";
                 }
             }
 
@@ -374,7 +375,8 @@ namespace FChatDicebot.DiceFunctions
                     else
                         playerMessage += "\nThere are no other " + GetFactionPrint(Faction.Mafia) + " Members on your team.";
                 }
-                botMain.SendFutureMessage(playerMessage, session.ChannelId, player.PlayerName, false, 1500 * playerIndex);
+
+                botMain.SendFutureMessage(playerMessage, new MessageAddress(session.GetMessageAddress(), player.PlayerName), false, 1500 * playerIndex);
                 playerIndex++;
             }
 
@@ -382,7 +384,7 @@ namespace FChatDicebot.DiceFunctions
 
             session.State = DiceFunctions.GameState.GameInProgress;
             session.MafiaData.CurrentGamePhase = MafiaGamePhase.TrialResult;
-            session.AddQueuedAction(QueuedActionType.AdvanceGamePhase, "StartGame", Utils.GetCurrentTimestampSeconds() + StartupReadingSeconds);
+            session.AddQueuedAction(QueuedActionType.AdvanceGamePhase, "StartGame", DoubleTime.GetCurrentTimestampSeconds() + StartupReadingSeconds);
 
             return outputString;
         }
@@ -429,7 +431,7 @@ namespace FChatDicebot.DiceFunctions
                             if(nextPhase != currentPhase)
                             {
                                 string newPhaseResult = StartNewPhase(nextPhase, botMain, session);
-                                botMain.SendMessageInChannel(newPhaseResult, session.ChannelId);
+                                botMain.SendMessageInChannel(newPhaseResult, session.GetMessageAddress());
                             }
                             break;
                     }
@@ -440,7 +442,7 @@ namespace FChatDicebot.DiceFunctions
         private string StartNewPhase(MafiaGamePhase newPhase, BotMain botMain, GameSession session)
         {
             string returnString = "";
-            double currentTime = Utils.GetCurrentTimestampSeconds();
+            double currentTime = DoubleTime.GetCurrentTimestampSeconds();
             session.MafiaData.CurrentGamePhase = newPhase;
 
             List<MafiaPlayer> livingPlayers = session.MafiaData.GetLivingPlayers();
@@ -484,26 +486,27 @@ namespace FChatDicebot.DiceFunctions
                     //after-activity notices for everyone
                     foreach(MafiaPlayer play in session.MafiaData.MafiaPlayers)
                     {
-                        if(!play.Eliminated && play.UsingPower)
+                        MessageAddress playerAddress = new MessageAddress(session.GetMessageAddress(), play.PlayerName);
+                        if (!play.Eliminated && play.UsingPower)
                         {
                             if(play.VeteranOnWatch)
                             {
-                                botMain.SendPrivateMessage("Your visitors while [b]on watch[/b] tonight: " + GetVisitorsString(play), play.PlayerName);
+                                botMain.SendPrivateMessage("Your visitors while [b]on watch[/b] tonight: " + GetVisitorsString(play), playerAddress);
                             }
                             if(play.Role.Id == MafiaRoles.TownLookout)
                             {
                                 MafiaPlayer target = GetMafiaPlayerByName(session, play.CurrentPlayerTarget);
                                 if(target != null)
-                                    botMain.SendPrivateMessage("Your target, " + Utils.GetCharacterUserTags(target.PlayerName) + "'s visitors tonight: " + GetVisitorsString(target), play.PlayerName);
+                                    botMain.SendPrivateMessage("Your target, " + TextFormat.GetCharacterUserTags(target.PlayerName) + "'s visitors tonight: " + GetVisitorsString(target), playerAddress);
                             }
                         }
                         if(play.Stunned)
                         {
-                            botMain.SendPrivateMessage("You were visited in the night by a very 'distracting' guest and haven't been able to use your power!", play.PlayerName);
+                            botMain.SendPrivateMessage("You were visited in the night by a very 'distracting' guest and haven't been able to use your power!", playerAddress);
                         }
                     }
 
-                    returnString = "Morning (" + Utils.PrintTimeFromSeconds(MorningNewsSeconds) + "): A new morning dawns. [eicon]sunshine[/eicon]\n" +
+                    returnString = "Morning (" + DoubleTime.PrintTimeFromSeconds(MorningNewsSeconds) + "): A new morning dawns. " + TextFormat.Emoji("sunshine") + "\n" +
                         (string.IsNullOrEmpty(allActions) ? "There are no gruesome deeds to report." : allActions) + "\nThe remaining people meet in town square: " + GetPlayerList(true, session, false);
 
                     foreach(MafiaPlayer mp in session.MafiaData.MafiaPlayers)
@@ -513,11 +516,11 @@ namespace FChatDicebot.DiceFunctions
                     session.AddQueuedAction(QueuedActionType.AdvanceGamePhase, "MorningEnd", currentTime + MorningNewsSeconds);
                     break;
                 case MafiaGamePhase.Day: //probably never gets called
-                    returnString = "Day (" + Utils.PrintTimeFromSeconds(DaytimeSeconds) + "): Discuss the recent events with the town and try to discover who's in the Mafia.";
+                    returnString = "Day (" + DoubleTime.PrintTimeFromSeconds(DaytimeSeconds) + "): Discuss the recent events with the town and try to discover who's in the Mafia.";
                     session.AddQueuedAction(QueuedActionType.AdvanceGamePhase, "MorningEnd", currentTime + DaytimeSeconds);
                     break;
                 case MafiaGamePhase.VotingNomination:
-                    returnString = "Voting Nomination (" + Utils.PrintTimeFromSeconds(VotingTimeSeconds) + "): Select the player you want to vote is guilty in this channel with !gc vote PLAYER NAME";
+                    returnString = "Voting Nomination (" + DoubleTime.PrintTimeFromSeconds(VotingTimeSeconds) + "): Select the player you want to vote is guilty in this channel with !gc vote PLAYER NAME";
                     session.AddQueuedAction(QueuedActionType.AdvanceGamePhase, "Phase", currentTime + VotingTimeSeconds);
                     break;
                 case MafiaGamePhase.VotingDefense:
@@ -546,10 +549,10 @@ namespace FChatDicebot.DiceFunctions
                     }
                     else
                     {
-                        accusationResult = "The votes have been tallied. " + Utils.GetCharacterUserTags(voteCounts[0].VoteTarget) + " has been arrested and stands accused of plotting against the town.";
+                        accusationResult = "The votes have been tallied. " + TextFormat.GetCharacterUserTags(voteCounts[0].VoteTarget) + " has been arrested and stands accused of plotting against the town.";
                         session.MafiaData.CurrentPlayerOnTrial = GetMafiaPlayerByName(session, voteCounts[0].VoteTarget);
 
-                        returnString = accusationResult + "\n" + "Trial (" + Utils.PrintTimeFromSeconds(VotingDefenseSeconds) + "): The accused can make their defense.";
+                        returnString = accusationResult + "\n" + "Trial (" + DoubleTime.PrintTimeFromSeconds(VotingDefenseSeconds) + "): The accused can make their defense.";
                         session.AddQueuedAction(QueuedActionType.AdvanceGamePhase, "Phase", currentTime + VotingDefenseSeconds);
                     }
 
@@ -557,13 +560,13 @@ namespace FChatDicebot.DiceFunctions
                 case MafiaGamePhase.VotingExecution:
                     if(session.MafiaData.CurrentPlayerOnTrial == null)
                     {
-                        returnString = "Voting Execution (" + Utils.PrintTimeFromSeconds(VotingTrialSeconds) + "): No player is on trial. Skipping";
+                        returnString = "Voting Execution (" + DoubleTime.PrintTimeFromSeconds(VotingTrialSeconds) + "): No player is on trial. Skipping";
                         session.AddQueuedAction(QueuedActionType.AdvanceGamePhase, "SkipPhase", 2);
                     }
                     else
                     {
                         int minimumExecutionV = livingPlayers.Count() / 2 + 1;
-                        returnString = "Voting Execution (" + Utils.PrintTimeFromSeconds(VotingTrialSeconds) + "): Vote whether you believe " + Utils.GetCharacterUserTags(session.MafiaData.CurrentPlayerOnTrial.PlayerName) + " is innocent or guilty to decide whether to execute them. It will require a total of (" + minimumExecutionV + ") votes. Use !gc guilty OR !gc innocent ";
+                        returnString = "Voting Execution (" + DoubleTime.PrintTimeFromSeconds(VotingTrialSeconds) + "): Vote whether you believe " + TextFormat.GetCharacterUserTags(session.MafiaData.CurrentPlayerOnTrial.PlayerName) + " is innocent or guilty to decide whether to execute them. It will require a total of (" + minimumExecutionV + ") votes. Use !gc guilty OR !gc innocent ";
                         session.AddQueuedAction(QueuedActionType.AdvanceGamePhase, "Phase", currentTime + VotingTrialSeconds);
                     }
                     break;
@@ -584,26 +587,27 @@ namespace FChatDicebot.DiceFunctions
                     string votesTally = "Votes: [b]" + votesGuilty + "[/b] Guilty vs [b]" + votesInnocent + "[/b] Innocent";
                     if(votesGuilty >= minimumExecutionVotes)
                     {
-                        trialResult = "[b]GUILTY[/b]! [eicon]guilty1[/eicon][eicon]guilty2[/eicon] [sub]May god have mercy on your soul.[/sub] ";
+                        trialResult = "[b]GUILTY[/b]! " + TextFormat.Emoji("guilty1") + TextFormat.Emoji("guilty2") + " [sub]May god have mercy on your soul.[/sub] ";
                         executionResult = "\n" + EliminatePlayer(botMain, session, session.MafiaData.CurrentPlayerOnTrial, session.MafiaData.CurrentPlayerOnTrial, true);
                     }
                     else
                     {
-                        trialResult = "[b]INNOCENT[/b]! [eicon]notguilty1[/eicon][eicon]notguilty2[/eicon] [sub]You will live another day.[/sub]";
+                        trialResult = "[b]INNOCENT[/b]! " + TextFormat.Emoji("notguilty1") + TextFormat.Emoji("notguilty2") + " [sub]You will live another day.[/sub]";
                     }
 
-                    returnString = "Trial Result (" + Utils.PrintTimeFromSeconds(TrialResultSeconds) + "): " + votesTally + "\nThe accused has been found... " + trialResult + executionResult;
-                    session.AddQueuedAction(QueuedActionType.AdvanceGamePhase, "Phase", currentTime + TrialResultSeconds);           
+                    returnString = "Trial Result (" + DoubleTime.PrintTimeFromSeconds(TrialResultSeconds) + "): " + votesTally + "\nThe accused has been found... " + trialResult + executionResult;
+                    session.AddQueuedAction(QueuedActionType.AdvanceGamePhase, "Phase", currentTime + TrialResultSeconds);
                     break;
                 case MafiaGamePhase.Night:
-                    returnString = "Night (" + Utils.PrintTimeFromSeconds(NighttimeSeconds) + "): The town rests peacefully... [eicon]cmoon2[/eicon]";
+                    returnString = "Night (" + DoubleTime.PrintTimeFromSeconds(NighttimeSeconds) + "): The town rests peacefully... " + TextFormat.Emoji("cmoon2");
 
                     foreach(MafiaPlayer player in livingPlayers)
                     {
                         int index = 1;
                         if(!player.Eliminated && player.Role.HasPowerAtNight)
                         {
-                            botMain.SendFutureMessage("It is night and you can use your ability: " + player.Role.PowerDescrpition + "\nActivate your power with !usepower PLAYERNAME\nThese are the remaining players: " + GetPlayerList(true, session, false), session.ChannelId, player.PlayerName, false, WaitPerPlayerMs * index);
+                            MessageAddress playerAddress = new MessageAddress(session.GetMessageAddress(), player.PlayerName);
+                            botMain.SendFutureMessage("It is night and you can use your ability: " + player.Role.PowerDescrpition + "\nActivate your power with !usepower PLAYERNAME\nThese are the remaining players: " + GetPlayerList(true, session, false), playerAddress, false, WaitPerPlayerMs * index);
                             index++;
                         }
                     }
@@ -615,21 +619,22 @@ namespace FChatDicebot.DiceFunctions
             return returnString;
         }
 
-        public void MessagePlayerToSendCommand(BotMain botMain, string channel, MafiaPlayer player, int msDelay)
+        public void MessagePlayerToSendCommand(BotMain botMain, MessageAddress address, MafiaPlayer player, int msDelay)
         {
             string powerString = "";
             if (player.Role.TargetPlayerAtNight)
                 powerString = "PLAYER NAME";
             if (player.Role.Id == MafiaRoles.NeutralWitch)
                 powerString = "PLAYER NAME \n then, designate the second target with !usepowersecondary PLAYER NAME";
-            string message = "It is night in the town... Send your action here in private for Mafia in " + channel + " by using !usepower " + powerString;
-            if(msDelay > 0)
+            string message = "It is night in the town... Send your action here in private for Mafia in " + address.GetChannelKey() + " by using !usepower " + powerString;
+            MessageAddress playerAddress = new MessageAddress(address, player.PlayerName);
+            if (msDelay > 0)
             {
-                botMain.SendFutureMessage(message, channel, player.PlayerName, false, msDelay);
+                botMain.SendFutureMessage(message, playerAddress, false, msDelay);
             }
             else
             {
-                botMain.SendPrivateMessage(message, player.PlayerName);
+                botMain.SendPrivateMessage(message, playerAddress);
             }
         }
 
@@ -638,7 +643,9 @@ namespace FChatDicebot.DiceFunctions
             MafiaRole sourceRole = source.Role;
             string resultString = "";
 
-            if(!source.Stunned && !source.Eliminated)
+            MessageAddress sourceAddress = new MessageAddress(session.GetMessageAddress(), source.PlayerName);
+
+            if (!source.Stunned && !source.Eliminated)
             {
                 if(target != null)
                 {
@@ -687,10 +694,10 @@ namespace FChatDicebot.DiceFunctions
                             Faction factionResult = target.Role.Faction;
                             if (target.Framed)
                                 factionResult = Faction.Mafia;
-                            botMain.SendPrivateMessage("Your target, " + Utils.GetCharacterUserTags(target.PlayerName) + " is part of the " + GetFactionPrint(factionResult) + " faction.", source.PlayerName);
+                            botMain.SendPrivateMessage("Your target, " + TextFormat.GetCharacterUserTags(target.PlayerName) + " is part of the " + GetFactionPrint(factionResult) + " faction.", sourceAddress);
                             break;
                         case MafiaRoles.MafiaConsigliere: //whispered result when it happens
-                            botMain.SendPrivateMessage("Your target, " + Utils.GetCharacterUserTags(target.PlayerName) + " has the role: " + target.Role.Print(), source.PlayerName);
+                            botMain.SendPrivateMessage("Your target, " + TextFormat.GetCharacterUserTags(target.PlayerName) + " has the role: " + target.Role.Print(), sourceAddress);
                             break;
                         case MafiaRoles.TownLookout: //whispered result after
                             break;
@@ -709,7 +716,7 @@ namespace FChatDicebot.DiceFunctions
                             }
                             else
                             {
-                                botMain.SendPrivateMessage("[color=yellow]Notice:[/color] Your power as witch requires two targets! The secondary target was not set so it cannot function tonight.", source.PlayerName);
+                                botMain.SendPrivateMessage("[color=yellow]Notice:[/color] Your power as witch requires two targets! The secondary target was not set so it cannot function tonight.", sourceAddress);
                             }
                             break;
                         case MafiaRoles.MafiaDisguiser: //whispered result after
@@ -757,7 +764,7 @@ namespace FChatDicebot.DiceFunctions
                             }
                             if (target.Framed)
                                 result = "may not be what they seem. (Sheriff, Framer, Anyone Framed)";
-                            botMain.SendPrivateMessage("Your target, " + Utils.GetCharacterUserTags(target.PlayerName) + " " + result, source.PlayerName);
+                            botMain.SendPrivateMessage("Your target, " + TextFormat.GetCharacterUserTags(target.PlayerName) + " " + result, sourceAddress);
                             break;
 
                     }
@@ -766,7 +773,7 @@ namespace FChatDicebot.DiceFunctions
             }
             else
             {
-                botMain.SendPrivateMessage("You were stopped from activating your ability tonight!", source.PlayerName);
+                botMain.SendPrivateMessage("You were stopped from activating your ability tonight!", sourceAddress);
             }
 
             return resultString;
@@ -782,7 +789,7 @@ namespace FChatDicebot.DiceFunctions
                 {
                     if (!string.IsNullOrEmpty(visitation))
                         visitation += ", ";
-                    visitation += Utils.GetCharacterUserTags(visitor);
+                    visitation += TextFormat.GetCharacterUserTags(visitor);
                 }
             }
             else
@@ -795,7 +802,10 @@ namespace FChatDicebot.DiceFunctions
         public string EliminatePlayer(BotMain botMain, GameSession session, MafiaPlayer source, MafiaPlayer target, bool townExecution)
         {
             target.Eliminated = true;
-            
+
+            //MessageAddress sourceAddress = new MessageAddress(session.GetMessageAddress(), source.PlayerName);
+            MessageAddress targetAddress = new MessageAddress(session.GetMessageAddress(), target.PlayerName);
+
             if(target.Role.Id == MafiaRoles.MafiaGodfather)
             {
                 var remainingMafia = session.MafiaData.MafiaPlayers.Where(a => a.Role.Faction == Faction.Mafia && !a.Eliminated).ToList();
@@ -803,7 +813,8 @@ namespace FChatDicebot.DiceFunctions
                 {
                     remainingMafia[0].Role = MafiaRoles.GetInstance().GetMafiaRole(MafiaRoles.MafiaGodfather).Copy();
 
-                    botMain.SendPrivateMessage("The godfather has died. You have become the new godfather. It has replaced your previous role: You now decide who to kill at night for the Mafia.", remainingMafia[0].PlayerName);
+                    botMain.SendPrivateMessage("The godfather has died. You have become the new godfather. It has replaced your previous role: You now decide who to kill at night for the Mafia.",
+                        new MessageAddress(session.GetMessageAddress(), remainingMafia[0].PlayerName));
                 }
             }
 
@@ -812,24 +823,24 @@ namespace FChatDicebot.DiceFunctions
             string resultString = "";
             if(townExecution)
             {
-                resultString = Utils.GetCharacterUserTags(target.PlayerName) + " was " + GetKilledString(session.MafiaData.UseCaptureElimination) + " by popular vote!";
+                resultString = TextFormat.GetCharacterUserTags(target.PlayerName) + " was " + GetKilledString(session.MafiaData.UseCaptureElimination) + " by popular vote!";
                 if (target.Role.Id == MafiaRoles.NeutralJester)
                 {
                     target.AchievedEarlyVictory = true;
-                    botMain.SendPrivateMessage("You have been executed and you've [b]won the game[/b], regardless of what happens in the future.", target.PlayerName);
+                    botMain.SendPrivateMessage("You have been executed and you've [b]won the game[/b], regardless of what happens in the future.", targetAddress);
                 }
 
                 foreach(MafiaPlayer player in executionersForTarget)
                 {
                     player.AchievedEarlyVictory = true;
                     player.ExecutionTarget = null;
-                    botMain.SendPrivateMessage("Your target has been executed and you've [b]won the game[/b], regardless of what happens in the future.", player.PlayerName);
+                    botMain.SendPrivateMessage("Your target has been executed and you've [b]won the game[/b], regardless of what happens in the future.", new MessageAddress(session.GetMessageAddress(), player.PlayerName));
                 }
             }
             else
             {
                 bool usingCaptureVerbs = session.MafiaData.UseCaptureElimination;
-                resultString = Utils.GetCharacterUserTags(target.PlayerName) + " was found " + GetDeadString(usingCaptureVerbs) + "! They were ";
+                resultString = TextFormat.GetCharacterUserTags(target.PlayerName) + " was found " + GetDeadString(usingCaptureVerbs) + "! They were ";
                 if (source.Role.Id == MafiaRoles.MafiaGodfather || source.Role.Id == MafiaRoles.NeutralSerialKiller)
                     resultString += Mafia.GetFlavorTextForMurder(session.MafiaData.Random, target.PlayerName, usingCaptureVerbs);
                 else if (source.Role.Id == MafiaRoles.TownVigilante)
@@ -845,7 +856,7 @@ namespace FChatDicebot.DiceFunctions
                     player.Role = jesterRole.Copy();
                     player.AchievedEarlyVictory = false;
                     player.ExecutionTarget = null;
-                    botMain.SendPrivateMessage("Your execution target has been killed during the night. Your new role is: " + player.Role.Print(), player.PlayerName);
+                    botMain.SendPrivateMessage("Your execution target has been killed during the night. Your new role is: " + player.Role.Print(), new MessageAddress(session.GetMessageAddress(), player.PlayerName));
                 }
             }
 
@@ -1026,7 +1037,7 @@ namespace FChatDicebot.DiceFunctions
         {
             string returnString = "";
 
-            returnString += "[b]Mafia[/b] game finished! " + GetFactionPrint(victoryFaction) + " has won! [eicon]confetti[/eicon]";
+            returnString += "[b]Mafia[/b] game finished! " + GetFactionPrint(victoryFaction) + " has won! " + TextFormat.Emoji("confetti");
 
             foreach(MafiaPlayer player in session.MafiaData.MafiaPlayers)
             {
@@ -1141,7 +1152,7 @@ namespace FChatDicebot.DiceFunctions
             return session.MafiaData.MafiaPlayers.FirstOrDefault(a => a.PlayerName.ToLower() == name.ToLower());
         }
 
-        public string IssueGameCommand(DiceBot diceBot, BotMain botMain, string character, string channel, GameSession session, string[] terms, string[] rawTerms)
+        public string IssueGameCommand(DiceBot diceBot, BotMain botMain, MessageAddress address, GameSession session, string[] terms, string[] rawTerms)
         {
             string returnString = "";
             if (terms.Contains("showplayers"))
@@ -1179,15 +1190,15 @@ namespace FChatDicebot.DiceFunctions
                     MafiaPlayer forcedPlayer = GetMafiaPlayerByName(session, nominatedName);
                     if (forcedPlayer == null)
                     {
-                        returnString = "Failed: " + Utils.GetCharacterUserTags(nominatedName) + " was not found as a valid player to vote for.";
+                        returnString = "Failed: " + TextFormat.GetCharacterUserTags(nominatedName) + " was not found as a valid player to vote for.";
                     }
                     else if (forcedPlayer == null)
                     {
-                        returnString = "Failed: " + Utils.GetCharacterUserTags(nominatedName) + " was not found in the list of players for Mafia and cannot vote.";
+                        returnString = "Failed: " + TextFormat.GetCharacterUserTags(nominatedName) + " was not found in the list of players for Mafia and cannot vote.";
                     }
                     else if (forcedPlayer.Eliminated)
                     {
-                        returnString = "Failed: " + Utils.GetCharacterUserTags(nominatedName) + " is " + Mafia.GetDeadString(session.MafiaData.UseCaptureElimination) + " and cannot vote.";
+                        returnString = "Failed: " + TextFormat.GetCharacterUserTags(nominatedName) + " is " + Mafia.GetDeadString(session.MafiaData.UseCaptureElimination) + " and cannot vote.";
                     }
                     else
                     {
@@ -1222,7 +1233,7 @@ namespace FChatDicebot.DiceFunctions
 
                         forcedPlayer.TrialVote = vote;
 
-                        returnString = Utils.GetCharacterUserTags(forcedPlayer.PlayerName) + " " + accusationString;
+                        returnString = TextFormat.GetCharacterUserTags(forcedPlayer.PlayerName) + " " + accusationString;
                     }
                 }
             }
@@ -1236,7 +1247,7 @@ namespace FChatDicebot.DiceFunctions
             {
                 if(session.QueuedActions != null && session.QueuedActions.Count() > 0)
                 {
-                    double currentTime = Utils.GetCurrentTimestampSeconds();
+                    double currentTime = DoubleTime.GetCurrentTimestampSeconds();
                     foreach(QueuedAction action in session.QueuedActions)
                     {
                         action.TriggerTime = currentTime;
@@ -1250,7 +1261,7 @@ namespace FChatDicebot.DiceFunctions
             }
             else if (terms.Contains("vote"))
             {
-                MafiaPlayer sourcePlayer = GetMafiaPlayerByName(session, character);
+                MafiaPlayer sourcePlayer = GetMafiaPlayerByName(session, address.character);// character);
 
                 if(session.MafiaData.CurrentGamePhase != MafiaGamePhase.VotingNomination)
                 {
@@ -1258,11 +1269,11 @@ namespace FChatDicebot.DiceFunctions
                 }
                 else if(sourcePlayer == null)
                 {
-                    returnString = "Failed: " + Utils.GetCharacterUserTags(character) + " was not found in the list of players for Mafia and cannot vote.";
+                    returnString = "Failed: " + TextFormat.GetCharacterUserTags(address.character) + " was not found in the list of players for Mafia and cannot vote.";
                 }
                 else if (sourcePlayer.Eliminated)
                 {
-                    returnString = "Failed: " + Utils.GetCharacterUserTags(character) + " is " + Mafia.GetDeadString(session.MafiaData.UseCaptureElimination) + " and cannot vote.";
+                    returnString = "Failed: " + TextFormat.GetCharacterUserTags(address.character) + " is " + Mafia.GetDeadString(session.MafiaData.UseCaptureElimination) + " and cannot vote.";
                 }
                 else
                 {
@@ -1273,20 +1284,20 @@ namespace FChatDicebot.DiceFunctions
                     MafiaPlayer nominatedPlayer = GetMafiaPlayerByName(session, nominatedName);
                     if(nominatedPlayer == null)
                     {
-                        returnString = "Failed: " + Utils.GetCharacterUserTags(nominatedName) + " was not found as a valid player to vote for.";
+                        returnString = "Failed: " + TextFormat.GetCharacterUserTags(nominatedName) + " was not found as a valid player to vote for.";
                     }
                     else
                     {
                         string accusationString = "";
                         if(string.IsNullOrEmpty(sourcePlayer.VoteTarget))
                         {
-                            accusationString = Utils.GetCharacterUserTags(character) + " has voted for " + Utils.GetCharacterUserTags(nominatedName) + "!";
+                            accusationString = TextFormat.GetCharacterUserTags(address.character) + " has voted for " + TextFormat.GetCharacterUserTags(nominatedName) + "!";
                             returnString = accusationString;
                             sourcePlayer.VoteTarget = nominatedName;
                         }
                         else if(sourcePlayer.VoteTarget != nominatedName)
                         {
-                            accusationString = Utils.GetCharacterUserTags(character) + " has changed their vote to " + Utils.GetCharacterUserTags(nominatedName) + "!";
+                            accusationString = TextFormat.GetCharacterUserTags(address.character) + " has changed their vote to " + TextFormat.GetCharacterUserTags(nominatedName) + "!";
                             returnString = accusationString;
                             sourcePlayer.VoteTarget = nominatedName;
                         }
@@ -1300,7 +1311,7 @@ namespace FChatDicebot.DiceFunctions
             }
             else if (terms.Contains("innocent") || terms.Contains("guilty") || terms.Contains("abstain"))
             {
-                MafiaPlayer sourcePlayer = GetMafiaPlayerByName(session, character);
+                MafiaPlayer sourcePlayer = GetMafiaPlayerByName(session, address.character);
 
                 if (session.MafiaData.CurrentGamePhase != MafiaGamePhase.VotingExecution)
                 {
@@ -1308,11 +1319,11 @@ namespace FChatDicebot.DiceFunctions
                 }
                 else if (sourcePlayer == null)
                 {
-                    returnString = "Failed: " + Utils.GetCharacterUserTags(character) + " was not found in the list of players for Mafia and cannot vote.";
+                    returnString = "Failed: " + TextFormat.GetCharacterUserTags(address.character) + " was not found in the list of players for Mafia and cannot vote.";
                 }
                 else if (sourcePlayer.Eliminated)
                 {
-                    returnString = "Failed: " + Utils.GetCharacterUserTags(character) + " is " + Mafia.GetDeadString(session.MafiaData.UseCaptureElimination) + " and cannot vote.";
+                    returnString = "Failed: " + TextFormat.GetCharacterUserTags(address.character) + " is " + Mafia.GetDeadString(session.MafiaData.UseCaptureElimination) + " and cannot vote.";
                 }
                 else
                 {
@@ -1347,7 +1358,7 @@ namespace FChatDicebot.DiceFunctions
 
                     sourcePlayer.TrialVote = vote;
 
-                    returnString = Utils.GetCharacterUserTags(sourcePlayer.PlayerName) + " " + accusationString;
+                    returnString = TextFormat.GetCharacterUserTags(sourcePlayer.PlayerName) + " " + accusationString;
                 }
             }
             else if (terms.Contains("setroles") || terms.Contains("roles") || terms.Contains("setrules") || terms.Contains("setmode") )
@@ -1389,7 +1400,7 @@ namespace FChatDicebot.DiceFunctions
             {
                 if (terms.Length < 2)
                 {
-                    returnString = "Error: improper command format. Use 'setallowtokens (on) or (off)'.";
+                    returnString = "Error: improper command format. Use 'setrevealdeath (on) or (off)'.";
                 }
                 else
                 {
@@ -1427,10 +1438,7 @@ namespace FChatDicebot.DiceFunctions
                     }
                 }
             }
-            else
-            {
-                returnString = "A command for " + GetGameName() + " was not found.";
-            }
+            else { returnString += "Failed: No such command exists for " + GetGameName(); }
 
             return returnString;
         }
@@ -1553,7 +1561,7 @@ namespace FChatDicebot.DiceFunctions
 
         public string Print()
         {
-            return "[eicon]" + Eicon +"[/eicon] [b]" + Name + "[/b] - " + Mafia.GetFactionPrint(Faction) + ": " + RoleDescription + " [b]Power:[/b] " + PowerDescrpition;
+            return TextFormat.Emoji(Eicon) + " [b]" + Name + "[/b] - " + Mafia.GetFactionPrint(Faction) + ": " + RoleDescription + " [b]Power:[/b] " + PowerDescrpition;
         }
         public string PrintName()
         {
@@ -1756,7 +1764,7 @@ namespace FChatDicebot.DiceFunctions
             {
                 Id = TownDoctor,
                 Name = "Doctor",
-                Eicon = "beebs nurse peace",
+                Eicon = "sylvienursesit",
                 Faction = DiceFunctions.Faction.Town,
                 CanRevealDuringDay = false,
                 HasPowerAtNight = true,

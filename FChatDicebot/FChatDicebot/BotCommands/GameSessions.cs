@@ -7,6 +7,7 @@ using FChatDicebot.BotCommands.Base;
 using FChatDicebot.SavedData;
 using Newtonsoft.Json;
 using FChatDicebot.DiceFunctions;
+using FChatDicebot.Model;
 
 namespace FChatDicebot.BotCommands
 {
@@ -21,15 +22,15 @@ namespace FChatDicebot.BotCommands
             LockCategory = CommandLockCategory.ChannelScores;
         }
 
-        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
+        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, MessageAddress address, UserGeneratedCommand command)
         {
-            ChannelSettings thisChannel = bot.GetChannelSettings(channel);
+            ChannelSettings thisChannel = bot.GetChannelSettings(address);
 
             if (thisChannel.AllowGames)
             {
                 string messageString = "";
 
-                List<GameSession> channelGameSessions = bot.DiceBot.GameSessions.Where(a => a.ChannelId == channel).ToList();
+                List<GameSession> channelGameSessions = bot.DiceBot.GameSessions.Where(a => a.GetChannelKey().ToLower() == address.GetChannelKey().ToLower()).ToList();
 
                 if(channelGameSessions.Count == 0)
                 {
@@ -48,11 +49,11 @@ namespace FChatDicebot.BotCommands
                     }
                 }
 
-                bot.SendMessageInChannel(messageString, channel);
+                bot.SendMessageInChannel(messageString, address);
             }
             else
             {
-                bot.SendMessageInChannel(Name + " is currently not allowed in this channel under " + Utils.GetCharacterUserTags(DiceBot.DiceBotCharacter) + "'s settings for this channel.", channel);
+                bot.SendMessageInChannel(Name + " is currently not allowed in this channel under " + TextFormat.GetCharacterUserTags(DiceBot.DiceBotCharacter) + "'s settings for this channel.", address);
             }
         }
     }

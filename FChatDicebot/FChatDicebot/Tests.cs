@@ -7,12 +7,18 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using WebSocketSharp;
+using Discord.Net;
 
 //This class is a dumping ground for old tests used to make parts of the connection work. Safe to ignore it really.
 namespace FChatDicebot
 {
     class Tests
     {
+        public void testDiscord()
+        {
+
+        }
+
         public void teststuff()
         {
             //10/11/2020 I'm not sure what this is : test info
@@ -323,33 +329,33 @@ namespace FChatDicebot
             }
         }
 
-        private void SaveStartingChannels()
-        {
-            List<StartingChannel> chans = new List<StartingChannel>();
-            chans.Add(new StartingChannel()
-            {
-                CharacterInvitedName = "Darkness Syndra",
-                Essential = true,
-                Name = "DiceBotTests",
-                Code = "adh-203298ce913d0544dd44"
-            });
-            chans.Add(new StartingChannel()
-            {
-                CharacterInvitedName = "Elise Pariat",
-                Essential = false,
-                Name = "VelvetCuff - Casino",
-                Code = "adh-3fe0682b9b6bbe0acb62"
-            });
-            chans.Add(new StartingChannel()
-            {
-                CharacterInvitedName = "Darkness Syndra",
-                Essential = false,
-                Name = "TestChannel55",
-                Code = "adh-fb744504ecce0909b18b"
-            });
+        //private void SaveStartingChannels()
+        //{
+        //    List<StartingChannel> chans = new List<StartingChannel>();
+        //    chans.Add(new StartingChannel()
+        //    {
+        //        CharacterInvitedName = "Darkness Syndra",
+        //        Essential = true,
+        //        Name = "DiceBotTests",
+        //        Code = "adh-203298ce913d0544dd44"
+        //    });
+        //    chans.Add(new StartingChannel()
+        //    {
+        //        CharacterInvitedName = "Elise Pariat",
+        //        Essential = false,
+        //        Name = "VelvetCuff - Casino",
+        //        Code = "adh-3fe0682b9b6bbe0acb62"
+        //    });
+        //    chans.Add(new StartingChannel()
+        //    {
+        //        CharacterInvitedName = "Darkness Syndra",
+        //        Essential = false,
+        //        Name = "TestChannel55",
+        //        Code = "adh-fb744504ecce0909b18b"
+        //    });
 
-            Utils.WriteToFileAsData(chans, Utils.GetTotalFileName("filefolder", "filename"));
-        }
+        //    Utils.WriteToFileAsData(chans, Utils.GetTotalFileName("filefolder", "filename"));
+        //}
 
         private void savenewtables()
         {

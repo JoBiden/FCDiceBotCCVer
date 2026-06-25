@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using FChatDicebot.BotCommands.Base;
 using FChatDicebot.SavedData;
 using FChatDicebot.DiceFunctions;
+using FChatDicebot.Model;
 
 namespace FChatDicebot.BotCommands
 {
@@ -22,9 +23,9 @@ namespace FChatDicebot.BotCommands
         //!slots x10 test jackpot
         //!slots x10 test fix2 fix3
         //!slots x10 test fail
-        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
+        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, MessageAddress address, UserGeneratedCommand command)
         {
-            ChannelSettings thisChannel = bot.GetChannelSettings(channel);
+            ChannelSettings thisChannel = bot.GetChannelSettings(address);
 
             if (thisChannel.AllowChips)
             {
@@ -32,12 +33,33 @@ namespace FChatDicebot.BotCommands
 
                 SavedSlotsSetting savedSlots = Utils.GetSlotsFromId(bot.SavedSlots, slotsName);
 
-                if (thisChannel.AllowSlots)
-                {
-                    CharacterData thisCharacterData = bot.DiceBot.GetCharacterData(characterName, channel);
-                    double slotsTimeSinceLastSpin = Utils.GetCurrentTimestampSeconds() - thisCharacterData.LastSlotsSpin;
+                SlotsSetting usedSlots = null;
+                //find possibilities from channel settings for slots
+                if (savedSlots != null)
+                    usedSlots = savedSlots.SlotsSetting;
+                else
+                    usedSlots = commandController.GetDefaultSlotsSetting(thisChannel.DefaultSlotsType);
 
-                    if (slotsTimeSinceLastSpin > BotMain.SlotsSpinCooldownSeconds || thisChannel.RemoveSlotsCooldown)
+                string errorString = "";
+                if (!thisChannel.AllowSlots)
+                {
+                    bot.SendMessageInChannel("This channel's settings for " + TextFormat.GetCharacterUserTags(DiceBot.DiceBotCharacter) + " do not allow slots.", address);
+                }
+                else if (usedSlots == null)
+                {
+                    bot.SendMessageInChannel("Failed: Unable to locate slots (" + slotsName + ")", address);
+                }
+                else if (thisChannel != null && Utils.GetNsfwError(thisChannel, usedSlots, out errorString))
+                {
+                    //sendMessage set in error method
+                    SendMessageToChannelOrUser(bot, commandController, address, errorString);
+                }
+                else
+                {
+                    CharacterData thisCharacterData = bot.DiceBot.GetCharacterData(address);
+                    double slotsTimeSinceLastSpin = DoubleTime.GetCurrentTimestampSeconds() - thisCharacterData.LastSlotsSpin;
+
+                    if (slotsTimeSinceLastSpin > thisChannel.SlotsCooldownSeconds || thisChannel.RemoveSlotsCooldown)
                     {
                         //get bet #
                         int betMultiplier = 1;
@@ -57,7 +79,7 @@ namespace FChatDicebot.BotCommands
                         if(terms.Contains("test"))
                         {
                             //test mode - set outcome (admin only)
-                            if (Utils.IsCharacterAdmin(bot.AccountSettings.AdminCharacters, characterName))
+                            if (Utils.IsCharacterAdmin(bot.AccountSettings.AdminCharacters, address.character))
                             {
                                 testCommand = new SlotsTestCommand();
                                 if(terms.Contains("jackpot"))
@@ -79,7 +101,7 @@ namespace FChatDicebot.BotCommands
                             }
                             else
                             {
-                                bot.SendMessageInChannel("Failed: Forbidden command for non-admin character " + Utils.GetCharacterUserTags(characterName) + ".", channel);
+                                bot.SendMessageInChannel("Failed: Forbidden command for non-admin character " + TextFormat.GetCharacterUserTags(address.character) + ".", address);
                             }
                         }
 
@@ -99,14 +121,7 @@ namespace FChatDicebot.BotCommands
                             errorMessage = "The multiplier given (" + betMultiplier + ") is higher than this channel's maximum slots multiplier (" + thisChannel.SlotsMultiplierLimit + ").";
                         }
 
-                        SlotsSetting usedSlots = null;
-                        //find possibilities from channel settings for slots
-                        if (savedSlots != null)
-                            usedSlots = savedSlots.SlotsSetting;
-                        else
-                            usedSlots = commandController.GetDefaultSlotsSetting(thisChannel.DefaultSlotsFruit);
-
-                        ChipPile thisCharacterPile = bot.DiceBot.GetChipPile(characterName, channel);
+                        ChipPile thisCharacterPile = bot.DiceBot.GetChipPile(address);
 
                         string sendMessage = "";
                         int usedNumber = usedSlots.MinimumBet * betMultiplier;
@@ -117,34 +132,33 @@ namespace FChatDicebot.BotCommands
                         }
                         else if(thisCharacterPile.Chips < usedNumber)
                         {
-                            sendMessage = "You don't have enough chips to spin. Held: (" + thisCharacterPile.Chips + ") required: (" + usedNumber + ")";
+                            sendMessage = "You don't have enough " + BotMain.CurrencyPlaceholder + "s to spin. Held: (" + thisCharacterPile.Chips + ") required: (" + usedNumber + ")";
                         }
                         else
                         {
                             //spin slots for 3 results
-                            sendMessage = bot.DiceBot.SpinSlots(usedSlots, characterName, channel, betMultiplier, testCommand);
-                            //get graphics for results
-                            thisCharacterData.LastSlotsSpin = Utils.GetCurrentTimestampSeconds();
+                            sendMessage = bot.DiceBot.SpinSlots(usedSlots, address, betMultiplier, testCommand);
+                            if(thisChannel.ShowSpoilerSlots)
+                            {
+                                sendMessage = "Slots Spin for " +  TextFormat.GetCharacterUserTags(address.character) + ": [spoiler]" + sendMessage + "[/spoiler]";
+                            }
+                            thisCharacterData.LastSlotsSpin = DoubleTime.GetCurrentTimestampSeconds();
                             thisCharacterData.TimesSlotsSpun += 1;
                             commandController.SaveChipsToDisk("Slots");
                             commandController.SaveCharacterDataToDisk();
                         }
 
-                        bot.SendMessageInChannel(sendMessage, channel);
+                        bot.SendMessageInChannel(sendMessage, address);
                     }
                     else
                     {
-                        bot.SendMessageInChannel("You cannot spin the slots for another " + Utils.PrintTimeFromSeconds(BotMain.SlotsSpinCooldownSeconds - slotsTimeSinceLastSpin), channel);
+                        bot.SendMessageInChannel("You cannot spin the slots for another " + DoubleTime.PrintTimeFromSeconds(thisChannel.SlotsCooldownSeconds - slotsTimeSinceLastSpin), address); ;//BotMain.SlotsSpinCooldownSeconds - slotsTimeSinceLastSpin), channel);
                     }
-                }
-                else
-                {
-                    bot.SendMessageInChannel("This channel's settings for " + Utils.GetCharacterUserTags(DiceBot.DiceBotCharacter) + " do not allow slots.", channel);
                 }
             }
             else
             {
-                bot.SendMessageInChannel(Name + " is currently not allowed in this channel under " + Utils.GetCharacterUserTags(DiceBot.DiceBotCharacter) + "'s settings for this channel. (chips must be allowed)", channel);
+                bot.SendMessageInChannel(Name + " is currently not allowed in this channel under " + TextFormat.GetCharacterUserTags(DiceBot.DiceBotCharacter) + "'s settings for this channel. (chips must be allowed)", address);
             }
         }
     }

@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using FChatDicebot.BotCommands.Base;
 using FChatDicebot.DiceFunctions;
+using FChatDicebot.Model;
 using FChatDicebot.SavedData;
 
 namespace FChatDicebot.BotCommands
@@ -21,9 +22,9 @@ namespace FChatDicebot.BotCommands
             LockCategory = CommandLockCategory.SavedChannels;
         }
 
-        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
+        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, MessageAddress address, UserGeneratedCommand command)
         {
-            var channelSettings = bot.GetChannelSettings(channel);
+            var channelSettings = bot.GetChannelSettings(address);
 
             string clearance = "";
             if (channelSettings.ChipsClearance == ChipsClearanceLevel.DicebotAdmin)
@@ -41,7 +42,7 @@ namespace FChatDicebot.BotCommands
 
             string output = "(Channel setting updated) chips clearance set to " + clearance;
 
-            bot.SendMessageInChannel(output, channel);
+            bot.SendMessageInChannel(output, address);
         }
     }
 

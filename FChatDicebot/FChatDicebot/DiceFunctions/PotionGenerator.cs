@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using FChatDicebot.Model;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -51,6 +52,25 @@ namespace FChatDicebot.DiceFunctions
                         Console.WriteLine("LoadPotionGenerationFromDisk file text " + fileText == null ? "null" : fileText.Take(100) + "...");
 
                     PotionGenerationInfo generationInfo = JsonConvert.DeserializeObject<PotionGenerationInfo>(fileText);
+
+                    foreach (Enchantment enchant in generationInfo.AllEnchantments)
+                    {
+                        int enchantValue = 200;
+                        if (enchant.Rarity == 1)
+                            enchantValue = 500;
+                        else if (enchant.Rarity > .2 && enchant.Rarity < 1)
+                            enchantValue = 1000;
+                        else if (enchant.Rarity > .05 && enchant.Rarity <= .2)
+                            enchantValue = 2000;
+                        else if (enchant.Rarity <= .05)
+                            enchantValue = 5000;
+                        enchant.Value = enchantValue;
+                    }
+                    foreach (Enchantment enchant in generationInfo.CommonEnchantments)
+                    {
+                        int enchantValue = 200;
+                        enchant.Value = enchantValue;
+                    }
 
                     //AllColors = generationInfo.AllColors;
                     //AllAdjectives = generationInfo.AllAdjectives;
@@ -144,11 +164,11 @@ namespace FChatDicebot.DiceFunctions
 
         private List<Enchantment> CommonEnchantments = new List<Enchantment>();
 
-        public List<Enchantment> GetAllEnchantments(BotMain botMain, bool includeCustom, string channel)
+        public List<Enchantment> GetAllEnchantments(BotMain botMain, bool includeCustom, MessageAddress address)
         {
             if(includeCustom)
             {
-                var potionos = botMain.GetChannelPotions(channel);
+                var potionos = botMain.GetChannelPotions(address);
                 List<Enchantment> enchantments = new List<Enchantment>(AllEnchantments);
                 enchantments.AddRange(potionos);
                 return enchantments;
@@ -171,7 +191,7 @@ namespace FChatDicebot.DiceFunctions
 
         private Potion GeneratePotionBase()
         {
-            Potion potion = new Potion("potion", ItemCategory.Potion, 1, 1);
+            Potion potion = new Potion("potion", ItemCategory.Potion, 1, 0);
 
             potion.strength = GetRandomStrength(Random);
             potion.printFormat = Random.Next(8);
@@ -328,21 +348,21 @@ namespace FChatDicebot.DiceFunctions
             return AllOrigins[r.Next(AllOrigins.Count)];
         }
 
-        public Enchantment GetRandomEnchantment(Random r, List<Enchantment> channelPotion, bool useDefaultPotions, bool allowFlavor, bool allowLewd, bool requireLewd)
+        public Enchantment GetRandomEnchantment(Random r, List<Enchantment> channelPotion, bool useDefaultPotions, bool allowFlavor, bool allowNsfw, bool requireNsfw)
         {
-            Enchantment first = GetRandomEnchantment(r, channelPotion, useDefaultPotions, allowLewd, requireLewd);
+            Enchantment first = GetRandomEnchantment(r, channelPotion, useDefaultPotions, allowNsfw, requireNsfw);
             int safety = 0;
 
             while (!allowFlavor && first.suffix.ToLower().Contains("flavor"))
             {
                 safety++;
-                first = GetRandomEnchantment(r, channelPotion, useDefaultPotions, allowLewd, requireLewd);
+                first = GetRandomEnchantment(r, channelPotion, useDefaultPotions, allowNsfw, requireNsfw);
             }
 
             return first;
         }
 
-        private Enchantment GetRandomEnchantment(Random r, List<Enchantment> channelPotions, bool useDefaultPotions, bool allowKinky, bool requireKinky)
+        private Enchantment GetRandomEnchantment(Random r, List<Enchantment> channelPotions, bool useDefaultPotions, bool allowNsfw, bool requireNsfw)
         {
             double seed = r.NextDouble();
 
@@ -359,20 +379,20 @@ namespace FChatDicebot.DiceFunctions
                 relevantAllEnchantments.AddRange(channelPotions);
             }
 
-            if (requireKinky)
+            if (requireNsfw)
             {
-                relevantCommonEnchantments = relevantCommonEnchantments.Where(ba => ba.kinky).ToList();
-                relevantAllEnchantments = relevantAllEnchantments.Where(ba => ba.kinky).ToList();
+                relevantCommonEnchantments = relevantCommonEnchantments.Where(ba => ba.Nsfw).ToList();
+                relevantAllEnchantments = relevantAllEnchantments.Where(ba => ba.Nsfw).ToList();
             }
-            if (!allowKinky)
+            if (!allowNsfw)
             {
-                relevantCommonEnchantments = relevantCommonEnchantments.Where(ba => !ba.kinky).ToList();
-                relevantAllEnchantments = relevantAllEnchantments.Where(ba => !ba.kinky).ToList();
+                relevantCommonEnchantments = relevantCommonEnchantments.Where(ba => !ba.Nsfw).ToList();
+                relevantAllEnchantments = relevantAllEnchantments.Where(ba => !ba.Nsfw).ToList();
             }
 
             if(relevantAllEnchantments.Count() == 0)
             {
-                return new Enchantment(false, "Watery", "of Water", "This is just some water... What happened? [sub](no matching potions found)[/sub]");
+                return new Enchantment(false, "Watery", "of Water", "This is just some water... What happened? [sub](no matching potions found)[/sub]", DiceBot.DiceBotCharacter);
             }
 
             if (seed <= .33 && useDefaultPotions) //was .40

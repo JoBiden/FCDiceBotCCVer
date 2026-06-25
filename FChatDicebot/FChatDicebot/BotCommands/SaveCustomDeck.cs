@@ -7,6 +7,7 @@ using FChatDicebot.BotCommands.Base;
 using FChatDicebot.SavedData;
 using Newtonsoft.Json;
 using FChatDicebot.DiceFunctions;
+using FChatDicebot.Model;
 
 namespace FChatDicebot.BotCommands
 {
@@ -21,14 +22,14 @@ namespace FChatDicebot.BotCommands
             LockCategory = CommandLockCategory.SavedTables;
         }
 
-        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
+        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, MessageAddress address, UserGeneratedCommand command)
         {
             string saveJson = Utils.GetFullStringOfInputs(rawTerms);
             string sendMessage = "";
 
             try
             {
-                SavedData.ChannelSettings channelSettings = bot.GetChannelSettings(channel);
+                SavedData.ChannelSettings channelSettings = bot.GetChannelSettings(address);
                 //accept JSON format deck
                 SavedDeck d = JsonConvert.DeserializeObject<SavedDeck>(saveJson);
 
@@ -39,9 +40,9 @@ namespace FChatDicebot.BotCommands
                 string newDeckId = Utils.SanitizeInput(d.DeckId).Trim().Replace(" ", "_").ToLower();
 
                 d.DeckId = newDeckId;
-                d.OriginCharacter = characterName;
+                d.OriginCharacter = address.character;
 
-                var thisCharacterDecks = bot.SavedDecks.Where(a => a.OriginCharacter == characterName);
+                var thisCharacterDecks = bot.SavedDecks.Where(a => a.OriginCharacter == address.character);
 
                 SavedDeck existingDeck = Utils.GetDeckFromId(bot.SavedDecks, newDeckId);
 
@@ -49,11 +50,15 @@ namespace FChatDicebot.BotCommands
                 {
                     sendMessage = "Error: Deck could not be created from input.";
                 }
+                else if (channelSettings != null && Utils.GetNsfwError(channelSettings, newDeck, out sendMessage))
+                {
+                    //sendMessage set in error method
+                }
                 else if (thisCharacterDecks.Count() >= BotMain.MaximumSavedTablesPerCharacter && existingDeck == null)
                 {
                     sendMessage = "Failed: A character can only save up to " + BotMain.MaximumSavedTablesPerCharacter + " decks at one time. Delete or overwrite old decks.";
                 }
-                else if (existingDeck != null && existingDeck.OriginCharacter != characterName)
+                else if (existingDeck != null && existingDeck.OriginCharacter != address.character)
                 {
                     sendMessage = "Failed: This deck name is taken by a different character.";
                 }
@@ -71,11 +76,13 @@ namespace FChatDicebot.BotCommands
                 }
                 else
                 {
+                    PrintSetting printSetting = new PrintSetting() { FourColorPlayingCards = false, SortCards = false, TarotIcons = false };
+
                     SavedDeck newSavedDeck = new SavedDeck()
                     {
-                        DeckList = newDeck.GetDeckList(channelSettings.CardPrintSetting),
+                        DeckList = newDeck.GetDeckList(printSetting),
                         DeckId = newDeckId,
-                        OriginCharacter = characterName
+                        OriginCharacter = address.character
                     };
 
                     if (existingDeck != null)
@@ -87,10 +94,10 @@ namespace FChatDicebot.BotCommands
                         bot.SavedDecks.Add(newSavedDeck);
                     }
 
-                    Utils.WriteToFileAsData(bot.SavedDecks, Utils.GetTotalFileName(BotMain.FileFolder, BotMain.SavedDecksFileName));
+                    commandController.SaveCustomDecksToDisk();
 
-                    bot.DiceBot.ResetDeck(false, 1, channel, channelSettings.CardPrintSetting, DeckType.Custom, newDeckId);
-                    sendMessage = "[b]Success[/b]. Deck saved by [user]" + characterName + "[/user]. Draw from this deck using !drawcard deck:" + newDeckId;
+                    bot.DiceBot.ResetDeck(false, 1, address, printSetting, DeckType.Custom, newDeckId);
+                    sendMessage = "[b]Success[/b]. Deck saved by " + TextFormat.GetCharacterUserTags(address.character) + ". Draw from this deck using !drawcard deck:" + newDeckId;
                 }
             }
             catch (Exception)
@@ -98,14 +105,7 @@ namespace FChatDicebot.BotCommands
                 sendMessage = "Failed to parse deck entry data. Make sure the Json is correctly formatted.";
             }
 
-            if (!commandController.MessageCameFromChannel(channel))
-            {
-                bot.SendPrivateMessage(sendMessage, characterName);
-            }
-            else
-            {
-                bot.SendMessageInChannel(sendMessage, channel);
-            }
+            SendMessageToChannelOrUser(bot, commandController, address, sendMessage);
         }
     }
 }

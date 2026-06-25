@@ -7,6 +7,7 @@ using FChatDicebot.BotCommands.Base;
 using FChatDicebot.SavedData;
 using Newtonsoft.Json;
 using FChatDicebot.DiceFunctions;
+using FChatDicebot.Model;
 
 namespace FChatDicebot.BotCommands
 {
@@ -21,30 +22,30 @@ namespace FChatDicebot.BotCommands
             LockCategory = CommandLockCategory.CharacterInventories;
         }
 
-        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
+        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, MessageAddress address, UserGeneratedCommand command)
         {
 
-            Potion p = bot.DiceBot.GetPotionHeld(characterName, channel);
+            Potion p = bot.DiceBot.GetPotionHeld(address);
 
             if(p == null)
             {
-                bot.SendMessageInChannel(Utils.GetCharacterUserTags(characterName) + " is not holding a potion.", channel);
+                bot.SendMessageInChannel(TextFormat.GetCharacterUserTags(address.character) + " is not holding a potion.", address);
             }
             else
             {
-                string targetUserName = characterName;
+                //string targetUserName = characterName;
                 //decided this feature wouldn't make much sense, but can drop potion held by another player
                 //if(rawTerms != null && rawTerms.Length > 0)
                 //{
                 //    targetUserName = Utils.GetFullStringOfInputs(rawTerms).Trim();
                 //}
 
-                bool success = bot.DiceBot.RemovePotionHeld(targetUserName, channel);
+                bool success = bot.DiceBot.RemovePotionHeld(address);// targetUserName, channel);
 
-                string output = "Removed potion held by " + Utils.GetCharacterIconTags(targetUserName) + ".";
+                string output = "Removed potion held by " + TextFormat.GetCharacterIconTags(address.character) + ".";
                 if(!success)
                 {
-                    output = "Failed to remove potion held by " + Utils.GetCharacterIconTags(targetUserName) + ".";
+                    output = "Failed to remove potion held by " + TextFormat.GetCharacterIconTags(address.character) + ".";
                 }
                 else
                 {
@@ -52,7 +53,7 @@ namespace FChatDicebot.BotCommands
                 }
 
 
-                bot.SendMessageInChannel(output, channel);
+                bot.SendMessageInChannel(output, address);
             }
 
         }

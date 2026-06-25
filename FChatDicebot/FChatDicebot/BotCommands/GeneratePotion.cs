@@ -7,6 +7,7 @@ using FChatDicebot.BotCommands.Base;
 using FChatDicebot.SavedData;
 using Newtonsoft.Json;
 using FChatDicebot.DiceFunctions;
+using FChatDicebot.Model;
 
 namespace FChatDicebot.BotCommands
 {
@@ -21,57 +22,84 @@ namespace FChatDicebot.BotCommands
             LockCategory = CommandLockCategory.CharacterInventories;
         }
 
-        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
+        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, MessageAddress address, UserGeneratedCommand command)
         {
-
             string privateMessage = "";
+            CharacterData dat = bot.DiceBot.GetCharacterData(address);
+            ChannelSettings settings = bot.GetChannelSettings(address);
+            string generatedItem = "a random " + commandController.GetChannelPotionName(settings, false);
 
-            CharacterData dat = bot.DiceBot.GetCharacterData(characterName, channel);
+            GeneratePotionResult rollResult = bot.DiceBot.GeneratePotion(terms, settings, address, true);//, out privateMessage);
 
-            string rollResult = bot.DiceBot.GeneratePotion(terms, characterName, channel, true, out privateMessage);
-
-            ChannelSettings settings = bot.GetChannelSettings(channel);
-            ChipPile pile = bot.DiceBot.GetChipPile(characterName, channel);
-            string transactionString = "";
-            bool generate = false;
-            if(settings.PotionChipsCost > 0 && settings.AllowChips)
+            if (rollResult == null)
             {
+                bot.SendMessageInChannel("Error: Rollresult was null on GeneratePotion.", address);
+            }
+            else if (rollResult.Result == null)
+            {
+                if(!string.IsNullOrEmpty(rollResult.OutputString))
+                    bot.SendMessageInChannel(rollResult.OutputString, address);
+                else
+                    bot.SendMessageInChannel("Error: Failed to generate " + commandController.GetChannelPotionName(settings, false) + " item in GeneratePotion (43).", address);
+            }
+            else
+            {
+                privateMessage = rollResult.PrivateMessage;
 
-                if(pile.Chips >= settings.PotionChipsCost)
+                ChipPile pile = bot.DiceBot.GetChipPile(address);
+                string transactionString = "";
+                bool canAffordPotion = false;
+                int potionCost = settings.PotionChipsCost;
+                if (settings.PotionChipsCost > 0 && settings.AllowChips)
                 {
-                    pile.Chips -= settings.PotionChipsCost;
+                    bool randomPotion = true;
+                    if (rollResult.Result != null && rollResult.SpecificPotionGenerated)
+                    {
+                        potionCost = rollResult.Result.GetValue();
+                        randomPotion = false;
+                    }
 
-                    transactionString = "[sub]Paying " + settings.PotionChipsCost + " chips and buying a potion...[/sub]\n";
+                    if (randomPotion)
+                        generatedItem = "a random " + commandController.GetChannelPotionName(settings, false);
+                    else
+                        generatedItem = rollResult.Result.GetName();
 
-                    commandController.SaveChipsToDisk("generatepotion");
+                    if (pile.Chips >= potionCost)//settings.PotionChipsCost)
+                    {
+                        pile.Chips -= potionCost;
 
-                    generate = true;
+                        transactionString = "[sub]Paying " + potionCost + " " + BotMain.CurrencyPlaceholder + "s and buying " + generatedItem + "...[/sub]\n";
+                        commandController.SaveChipsToDisk("generatepotion");
+
+                        canAffordPotion = true;
+                    }
+                    else
+                    {
+                        canAffordPotion = false;
+                    }
                 }
                 else
                 {
-                    generate = false;
+                    canAffordPotion = true;
                 }
-            }
-            else
-            {
-                generate = true;
-            }
 
-            if(generate)
-            {
-                bot.SendMessageInChannel(transactionString + rollResult, channel);
-                if (!string.IsNullOrEmpty(privateMessage))
+                if (canAffordPotion)
                 {
-                    bot.SendPrivateMessage(privateMessage, characterName);
-                }
+                    bot.SendMessageInChannel(transactionString + rollResult.OutputString, address);
+                    if (!string.IsNullOrEmpty(privateMessage))
+                    {
+                        bot.SendPrivateMessage(privateMessage, address);
+                    }
 
-                dat.TimesPotionGenerated += 1;
-                commandController.SaveCharacterDataToDisk();
+                    dat.TimesPotionGenerated += 1;
+                    commandController.SaveCharacterDataToDisk();
+                }
+                else
+                {
+                    bot.SendMessageInChannel("Failed: You could not afford to buy " + generatedItem + " for " + potionCost + " " + BotMain.CurrencyPlaceholder + "s (" + pile.Chips + " held)", address);
+                }
             }
-            else
-            {
-                bot.SendMessageInChannel("Failed: You could not afford to buy a potion for " + settings.PotionChipsCost + " chips (" + pile.Chips +" held)", channel);
-            }
+            ////
         }
     }
 }

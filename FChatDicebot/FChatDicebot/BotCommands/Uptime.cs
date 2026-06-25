@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using FChatDicebot.BotCommands.Base;
+using FChatDicebot.Model;
 
 namespace FChatDicebot.BotCommands
 {
@@ -18,18 +19,23 @@ namespace FChatDicebot.BotCommands
             LockCategory = CommandLockCategory.NONE;
         }
 
-        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
+        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, MessageAddress address, UserGeneratedCommand command)
         {
             int channelsNumber = bot.ChannelsJoined.Count();
-            double onlineTime = Utils.GetCurrentTimestampSeconds() - bot.LoginTime;
+            double onlineTime = DoubleTime.GetCurrentTimestampSeconds() - bot.FListLoginTime;
 
-            if (!commandController.MessageCameFromChannel(channel))
+            if (Utils.IsDiscordMessage(command))
             {
-                bot.SendPrivateMessage("Dicebot has been online for " + Utils.PrintTimeFromSeconds(onlineTime), characterName);
+                onlineTime = DoubleTime.GetCurrentTimestampSeconds() - bot.DiscordLoginTime;
+            }
+
+            if (!commandController.MessageCameFromChannel(address))
+            {
+                bot.SendPrivateMessage("Dicebot has been online for " + DoubleTime.PrintTimeFromSeconds(onlineTime), address);
             }
             else
             {
-                bot.SendMessageInChannel("Dicebot has been online for " + Utils.PrintTimeFromSeconds(onlineTime), channel);
+                bot.SendMessageInChannel("Dicebot has been online for " + DoubleTime.PrintTimeFromSeconds(onlineTime), address);
             }
         }
     }

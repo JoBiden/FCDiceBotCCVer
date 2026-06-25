@@ -48,6 +48,25 @@ namespace FChatDicebot
             return Messages.Count > 0;
         }
 
+        public void RemoveAllChannelJoins()
+        {
+            List<BotMessage> newList = new List<BotMessage>();
+            while (Messages.Count > 0)
+            {
+                BotMessage botMessage = Messages.Dequeue();
+                if (botMessage.messageType != BotMessageFactory.JCH)
+                    newList.Add(botMessage);
+            }
+            Messages = new Queue<BotMessage>();
+            if (newList.Count > 0)
+            {
+                foreach (BotMessage msg in newList)
+                {
+                    Messages.Enqueue(msg);
+                }
+            }
+        }
+
         //TODO: AddUrgentMessage to move a message to the front of the queue on add
         //public void AddUrgentMessage(BotMessage message)
         //{

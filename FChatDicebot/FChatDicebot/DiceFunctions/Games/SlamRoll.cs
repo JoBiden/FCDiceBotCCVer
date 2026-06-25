@@ -4,12 +4,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Linq;
+using FChatDicebot.Model;
 
 namespace FChatDicebot.DiceFunctions
 {
     public class SlamRoll : IGame
     {
-        public string CommandsList = "(!gc attack, !gc slam, !gc forfeit)";
+        public string CommandsList = "(!gc attack, !gc slam, !gc lightattack, !gc pass, !gc forfeit)";
 
         public string GetGameName()
         {
@@ -49,7 +50,7 @@ namespace FChatDicebot.DiceFunctions
         public string GetGameHelp()
         {
             string thisGameCommands = "SetAnte #, ShowPlayers, ResetRound, SetHealth # (player name), SetLives # (player name), SetTurn (player name), SetGrowingTwos (on or off)" +
-                    "\n(as current player only): attack, slam, forfeit";
+                    "\n(as current player only): attack, slam, lightattack, pass, forfeit";
             string thisGameStartupOptions = "lives# (set starting lives to #: 1, 2, 3, or 4) growingtwos (growing twos on) naturaltwos (growing twos off) singleslam (limited to 1 slam attack) rerollinit (reroll init instead of loser getting it) " +
                 "\nThe default rules are: starting lives: 1, starting health: 500, unlimited slams, growing twos on, initiative passes to losing player";
 
@@ -58,7 +59,7 @@ namespace FChatDicebot.DiceFunctions
 
         public string GetStartingDisplay()
         {
-            return "[eicon]dbslamroll1[/eicon][eicon]dbslamroll2[/eicon]";
+            return TextFormat.Emoji("dbslamroll1") + TextFormat.Emoji("dbslamroll2");
         }
 
         public string GetEndingDisplay()
@@ -131,8 +132,6 @@ namespace FChatDicebot.DiceFunctions
                 }
             }
 
-            //botMain.SendMessageInChannel("debug parameters: " + messageString, session.ChannelId);
-            
             return true;
         }
 
@@ -141,23 +140,6 @@ namespace FChatDicebot.DiceFunctions
             string returnString = "A player left the game, resetting the round.";
 
             ResetGameRound(session);
-            //if(session.KingsGamePlayers != null)
-            //{
-            //    if(PlayerIsKing(session, characterName))
-            //    {
-            //        returnString = "The king has left the game. The round will be reset.";
-            //        ResetGameRound(session);
-            //    }
-            //    else
-            //    {
-            //        var chara = session.KingsGamePlayers.FirstOrDefault(a => a.Name == characterName);
-            //        if(chara != null)
-            //            returnString = "A player has left the game. They had number " + chara.Role + ".";
-            //    }
-
-            //    session.KingsGamePlayers = session.KingsGamePlayers.Where(a => a.Name != characterName).ToList();
-            //}
-
             return returnString;
         }
 
@@ -168,14 +150,14 @@ namespace FChatDicebot.DiceFunctions
                 string outputErrorAnte = "";
                 foreach(string player in session.Players)
                 {
-                    ChipPile playerPile = diceBot.GetChipPile(player, session.ChannelId, true);
+                    ChipPile playerPile = diceBot.GetChipPile(new MessageAddress(session.GetMessageAddress(), player), true);
                     if(playerPile.Chips < session.Ante)
                     {
                         if(!string.IsNullOrEmpty(outputErrorAnte))
                         {
                             outputErrorAnte += ", ";
                         }
-                        outputErrorAnte = Utils.GetCharacterUserTags(player) + " cannot afford the ante of " + session.Ante + " chips. (" + playerPile.Chips + " held)";
+                        outputErrorAnte = TextFormat.GetCharacterUserTags(player) + " cannot afford the ante of " + session.Ante + " " + BotMain.CurrencyPlaceholder + "s. (" + playerPile.Chips + " held)";
                     }
                 }
                 if(!string.IsNullOrEmpty(outputErrorAnte))
@@ -185,7 +167,7 @@ namespace FChatDicebot.DiceFunctions
                 }
             }
 
-            botMain.SendMessageInChannel("[color=yellow]A new [b]Slam Roll[/b] fight is starting...[/color]", session.ChannelId);
+            botMain.SendMessageInChannel("[color=yellow]A new [b]Slam Roll[/b] fight is starting...[/color]", session.GetMessageAddress());
 
             if(session.SlamRollData == null)
             {
@@ -220,13 +202,13 @@ namespace FChatDicebot.DiceFunctions
                 }
                 playerPosition += 1;
 
-                playerIntrosOutput += Utils.GetCharacterIconTags(playerName) + " has [b]entered the ring[/b]! ";
+                playerIntrosOutput += TextFormat.GetCharacterIconTags(playerName) + " has [b]entered the ring[/b]! ";
 
                 string betstring = "";
 
                 if (session.Ante > 0)
                 {
-                    betstring = diceBot.BetChips(playerName, session.ChannelId, session.Ante, false) + "\n";
+                    betstring = diceBot.BetChips(new MessageAddress(session.GetMessageAddress(), playerName), session.Ante, false) + "\n";
                 }
 
                 playerIntrosOutput += betstring;
@@ -235,9 +217,9 @@ namespace FChatDicebot.DiceFunctions
             }
 
             string rollsOutput = "";
-            SlamRollPlayer highestInitiativePlayer = RollHighestInitiativePlayer(session, diceBot, out rollsOutput);
+            SlamRollPlayer highestInitiativePlayer = RollHighestInitiativePlayer(session, botMain, out rollsOutput);
             playerIntrosOutput += rollsOutput;
-            
+
             session.SlamRollData.CurrentPlayerIndex = session.SlamRollData.SlamRollPlayers.IndexOf(highestInitiativePlayer);
 
             //botMain.SendPrivateMessage("You are the king this round!\nGive your command to the other players using the numbers 1 - " + assignedNumbers.Length + " and then award points based on if they completed the tasks.", selectedKing);
@@ -254,7 +236,7 @@ namespace FChatDicebot.DiceFunctions
 
         }
 
-        public SlamRollPlayer RollHighestInitiativePlayer(GameSession session, DiceBot diceBot, out string outputString)
+        public SlamRollPlayer RollHighestInitiativePlayer(GameSession session, BotMain botMain, out string outputString)
         {
             outputString = "";
 
@@ -268,10 +250,10 @@ namespace FChatDicebot.DiceFunctions
             {
                 if (session.SlamRollData.RollForFirstTurn)
                 {
-                    DiceRoll initRoll = new DiceRoll(player.Name, session.ChannelId, diceBot) { DiceSides = 100, DiceRolled = 1 };
-                    initRoll.Roll(diceBot.random);
+                    DiceRoll initRoll = new DiceRoll(new MessageAddress(session.GetMessageAddress(), player.Name), botMain) { DiceSides = 100, DiceRolled = 1 };
+                    initRoll.Roll(botMain.DiceBot.random);
                     player.Initiative = (int) initRoll.Total;
-                    outputString += "\n" + Utils.GetCharacterUserTags(player.Name) + " rolled [color=gray]" + initRoll.ResultString() + " initiative[/color]";
+                    outputString += "\n" + TextFormat.GetCharacterUserTags(player.Name) + " rolled [color=gray]" + initRoll.ResultString() + " initiative[/color]";
 
                     if (highestRoll < initRoll.Total)
                     {
@@ -285,15 +267,15 @@ namespace FChatDicebot.DiceFunctions
             if (session.SlamRollData.SlamRollPlayers.Count(a => a.Initiative == highestRoll) > 1)
             {
                 int ties = session.SlamRollData.SlamRollPlayers.Count(a => a.Initiative == highestRoll);
-                int winnerSpot = diceBot.random.Next(ties);
+                int winnerSpot = botMain.DiceBot.random.Next(ties);
 
                 List<SlamRollPlayer> tiedPlayers = session.SlamRollData.SlamRollPlayers.Where(a => a.Initiative == highestRoll).ToList();
                 highestInitiativePlayer = tiedPlayers[winnerSpot];
 
-                outputString += "\nThey're evenly matched, but " + Utils.GetCharacterUserTags(highestInitiativePlayer.Name) + " seizes the initiative!";
+                outputString += "\nThey're evenly matched, but " + TextFormat.GetCharacterUserTags(highestInitiativePlayer.Name) + " seizes the initiative!";
             }
 
-            outputString += "\n" + Utils.GetCharacterUserTags(highestInitiativePlayer.Name) + " has the first turn. [sub]" + CommandsList + "[/sub]";
+            outputString += "\n" + TextFormat.GetCharacterUserTags(highestInitiativePlayer.Name) + " has the first turn. [sub]" + CommandsList + "[/sub]";
 
             return highestInitiativePlayer;
         }
@@ -308,7 +290,7 @@ namespace FChatDicebot.DiceFunctions
 
         public SlamRollPlayer GetSlamRollPlayerByName(GameSession session, string name)
         {
-            return session.SlamRollData.SlamRollPlayers.FirstOrDefault(a => a.Name == name);
+            return session.SlamRollData.SlamRollPlayers.FirstOrDefault(a => a.Name.ToLower() == name.ToLower());
         }
 
         private void MoveActiveTurnToNextPlayer(System.Random random, GameSession session)
@@ -340,11 +322,11 @@ namespace FChatDicebot.DiceFunctions
             session.State = GameState.Unstarted;
         }
 
-        public string SetNewPlayerHealthTotal(int newHealth, DiceBot diceBot, GameSession session, SlamRollPlayer player, int setTwosRolled, bool fromAttack = true)
+        public string SetNewPlayerHealthTotal(int newHealth, BotMain botMain, GameSession session, SlamRollPlayer player, int setTwosRolled, bool fromAttack = true)
         {
             string result = "";
 
-            result = Utils.GetCharacterUserTags(player.Name) + " was set to [color=yellow]" + newHealth + " health[/color].";// +(fromAttack ? " from that attack!" : ".");
+            result = TextFormat.GetCharacterUserTags(player.Name) + " was set to [color=yellow]" + newHealth + " health[/color].";// +(fromAttack ? " from that attack!" : ".");
 
             player.Health = newHealth;
             if(setTwosRolled >= 0)
@@ -366,7 +348,7 @@ namespace FChatDicebot.DiceFunctions
                     SlamRollPlayer winner = null;
                     if(MatchFinished(session, out winner))
                     {
-                        result += "\n" + EndMatch(diceBot, session, winner, true);
+                        result += "\n" + EndMatch(botMain.DiceBot, session, winner, true);
                     }
                 }
                 else
@@ -375,23 +357,20 @@ namespace FChatDicebot.DiceFunctions
 
                     if(session.SlamRollData.ResetBothPlayersForRound)
                     {
-                        //player.Health = diceBot.random.Next(session.SlamRollData.StartingHealth) + 1;
-                        //if (player.Health == 1)
-                        //    player.Health = 2;
                         foreach(SlamRollPlayer playerReset in session.SlamRollData.SlamRollPlayers)
                         {
-                            result += "\n" + SetNewPlayerHealthTotal(session.SlamRollData.StartingHealth, diceBot, session, playerReset, 0, false);
+                            result += "\n" + SetNewPlayerHealthTotal(session.SlamRollData.StartingHealth, botMain, session, playerReset, 0, false);
                         }
                     }
                     else
                     {
-                        result += "\n" + SetNewPlayerHealthTotal(session.SlamRollData.StartingHealth, diceBot, session, player, 0, false);
+                        result += "\n" + SetNewPlayerHealthTotal(session.SlamRollData.StartingHealth, botMain, session, player, 0, false);
                     }
 
                     if (session.SlamRollData.RollInitiativeAfterRound)
                     {
                         string outputInitiative = "";
-                        SlamRollPlayer highestInitNew = RollHighestInitiativePlayer(session, diceBot, out outputInitiative);
+                        SlamRollPlayer highestInitNew = RollHighestInitiativePlayer(session, botMain, out outputInitiative);
                         int newHighestPlayerIndex = session.SlamRollData.SlamRollPlayers.IndexOf(highestInitNew);
                         session.SlamRollData.CurrentPlayerIndex = newHighestPlayerIndex;
 
@@ -402,9 +381,9 @@ namespace FChatDicebot.DiceFunctions
                         //SlamRollPlayer otherPlayer = session.SlamRollData.SlamRollPlayers.FirstOrDefault(a => a.Name != player.Name);
                         //if(otherPlayer != null)
                         //{
-                        //    result += "\nIt is now " + Utils.GetCharacterUserTags(otherPlayer.Name) + "'s turn";
-                        //}  
-                        result += "\nIt is now " + Utils.GetCharacterUserTags(player.Name) + "'s turn";
+                        //    result += "\nIt is now " + TextFormat.GetCharacterUserTags(otherPlayer.Name) + "'s turn";
+                        //}
+                        result += "\nIt is now " + TextFormat.GetCharacterUserTags(player.Name) + "'s turn";
                     }
                     //result += " (new health total: " + player.Health + ")";
                 }
@@ -432,23 +411,23 @@ namespace FChatDicebot.DiceFunctions
             string output = "This match is over. ";
             if(winner != null)
             {
-                output += "The winner is " + Utils.GetCharacterIconTags(winner.Name) + "!";
+                output += "The winner is " + TextFormat.GetCharacterIconTags(winner.Name) + "!";
             }
 
             output += " " + GetFlavorTextForMatch(bot.random, finishedByElimination);
 
             if(session.Ante > 0)
             {
-                output += "\n" + bot.ClaimPot(winner.Name, session.ChannelId, 1);
+                output += "\n" + bot.ClaimPot(new MessageAddress(session.GetMessageAddress(), winner.Name), 1);
             }
 
             session.State = GameState.Finished;
 
-            bot.RemoveGameSession(session.ChannelId, session.CurrentGame);
+            bot.RemoveGameSession(session.GetMessageAddress(), session.CurrentGame);
             return output;
         }
 
-        public static string GetFlavorTextForAttack(System.Random random, bool criticalAttack)
+        public static string GetFlavorTextForAttack(System.Random random, bool criticalAttack, bool noDamage)
         {
             string flavorText = "";
             if (criticalAttack)
@@ -476,6 +455,34 @@ namespace FChatDicebot.DiceFunctions
                         break;
                     case 6:
                         flavorText = " [sub]This is what the fans love to see![/sub]";
+                        break;
+                }
+            }
+            else if (noDamage)
+            {
+                int flavorRoll = random.Next(6);
+                switch (flavorRoll)
+                {
+                    case 0:
+                        flavorText = " [sub]Looks like a miss![/sub]";
+                        break;
+                    case 1:
+                        flavorText = " [sub]...[/sub]";
+                        break;
+                    case 2:
+                        flavorText = " [sub]A lucky dodge.[/sub]";
+                        break;
+                    case 3:
+                        flavorText = " [sub]Not a scratch![/sub]";
+                        break;
+                    case 4:
+                        flavorText = " [sub]What a blunder![/sub]";
+                        break;
+                    case 5:
+                        flavorText = " [sub]Must have seen it coming...[/sub]";
+                        break;
+                    case 6:
+                        flavorText = " [sub]No damage.[/sub]";
                         break;
                 }
             }
@@ -538,18 +545,18 @@ namespace FChatDicebot.DiceFunctions
             return rules;
         }
 
-        public string IssueGameCommand(DiceBot diceBot, BotMain botMain, string character, string channel, GameSession session, string[] terms, string[] rawTerms)
+        public string IssueGameCommand(DiceBot diceBot, BotMain botMain, MessageAddress address, GameSession session, string[] terms, string[] rawTerms)
         {
             if(session.State != GameState.GameInProgress)
             {
                 return "Game commands for " + GetGameName() + " only work while the game is running.";
             }
-            else if(session.SlamRollData.SlamRollPlayers.Count(a => a.Name == character) < 1)
+            else if(session.SlamRollData.SlamRollPlayers.Count(a => a.Name == address.character) < 1)
             {
                 return "Game commands for " + GetGameName() + " can only be used by characters who are playing the game.";
             }
 
-            bool characterIsCurrentActivePlayer = character == GetCurrentActivePlayerName(session);
+            bool characterIsCurrentActivePlayer = address.character == GetCurrentActivePlayerName(session);
 
             string returnString = "";
             if (terms.Contains("resetround"))
@@ -564,25 +571,32 @@ namespace FChatDicebot.DiceFunctions
 
                 returnString = playerList;
             }
-            else if (terms.Contains("attack") || terms.Contains("slam"))
+            else if (terms.Contains("attack") || terms.Contains("slam") || terms.Contains("pass") || terms.Contains("lightattack"))
             {
                 if(!characterIsCurrentActivePlayer)
                 {
-                    returnString = "It is currently " + Utils.GetCharacterUserTags(GetCurrentActivePlayerName(session)) + "'s turn.";
+                    returnString = "It is currently " + TextFormat.GetCharacterUserTags(GetCurrentActivePlayerName(session)) + "'s turn.";
                 }
                 else
                 {
-                    if(terms.Contains("attack"))
+                    if (terms.Contains("pass"))
                     {
-                        SlamRollPlayer targetPlayer = session.SlamRollData.SlamRollPlayers.FirstOrDefault(a => a.Name != character);
+                        MoveActiveTurnToNextPlayer(diceBot.random, session);
 
+                        returnString = TextFormat.GetCharacterUserTags(address.character) + " passes.";
+                    }
+                    if (terms.Contains("attack") || terms.Contains("lightattack"))
+                    {
+                        SlamRollPlayer targetPlayer = session.SlamRollData.SlamRollPlayers.FirstOrDefault(a => a.Name != address.character);
+                        bool regularAttack = !terms.Contains("lightattack");
                         if(targetPlayer == null)
                         {
                             returnString = "Error: Target not found";
                         }
                         else
                         {
-                            DiceRoll dmgRoll = new DiceRoll() { DiceSides = targetPlayer.Health, DiceRolled = 1 };
+                            int diceSides = regularAttack? targetPlayer.Health : (int) Math.Max(Math.Ceiling((double)targetPlayer.Health /2),2);
+                            DiceRoll dmgRoll = new DiceRoll() { DiceSides = diceSides, DiceRolled = 1 };
 
                             if(session.SlamRollData.GrowingTwos && targetPlayer.TwosRolled > 0)
                             {
@@ -592,25 +606,27 @@ namespace FChatDicebot.DiceFunctions
 
                             dmgRoll.Roll(diceBot.random);
 
-                            int newHealthRoll = (int) dmgRoll.Total;// dmgRoll.Total; //diceBot.random.Next(targetPlayer.Health) + 1;
+                            int healthFloor = Math.Max(targetPlayer.Health - diceSides, 0);
+                            int newHealthRoll = regularAttack? ((int) dmgRoll.Total) : ( (int)dmgRoll.Total + healthFloor);
 
-                            string flavorText = GetFlavorTextForAttack(diceBot.random, newHealthRoll <= .25 * targetPlayer.Health);
+                            string flavorText = GetFlavorTextForAttack(diceBot.random, newHealthRoll <= .25 * targetPlayer.Health, newHealthRoll >= .995 * targetPlayer.Health);
 
-                            string actionString = Utils.GetCharacterUserTags(character) + " attacks! " + dmgRoll.ResultString() + " " 
-                                //+ Utils.GetCharacterUserTags(targetPlayer.Name) + " has been reduced to " + newHealthRoll + " health!" 
-                                + flavorText;
+                            string attackText = regularAttack ? " attacks! " : " light attacks! ";
+                            string rollText = regularAttack ? dmgRoll.ResultString() : (dmgRoll.ResultString() + " + " + healthFloor + " = [b]" + newHealthRoll + "[/b]");
+                            string actionString = TextFormat.GetCharacterUserTags(address.character) + attackText + rollText + " " + flavorText;
+                                //+ TextFormat.GetCharacterUserTags(targetPlayer.Name) + " has been reduced to " + newHealthRoll + " health!"
 
                             MoveActiveTurnToNextPlayer(diceBot.random, session);
 
-                            string setResult = SetNewPlayerHealthTotal(newHealthRoll, diceBot, session, targetPlayer, -1, true);
-                            
+                            string setResult = SetNewPlayerHealthTotal(newHealthRoll, botMain, session, targetPlayer, -1, true);
+
                             returnString = actionString + "\n" + setResult;
                         }
                     }
                     else if (terms.Contains("slam"))
                     {
-                        SlamRollPlayer targetPlayer = session.SlamRollData.SlamRollPlayers.FirstOrDefault(a => a.Name != character);
-                        SlamRollPlayer thisPlayer = GetSlamRollPlayerByName(session, character);
+                        SlamRollPlayer targetPlayer = session.SlamRollData.SlamRollPlayers.FirstOrDefault(a => a.Name != address.character);
+                        SlamRollPlayer thisPlayer = GetSlamRollPlayerByName(session, address.character);
 
                         if (targetPlayer == null)
                         {
@@ -641,20 +657,21 @@ namespace FChatDicebot.DiceFunctions
 
                             int slamDamage = targetPlayer.Health - newHealthRoll;
 
-                            string flavorText = GetFlavorTextForAttack(diceBot.random, true);
+                            string flavorText = GetFlavorTextForAttack(diceBot.random, newHealthRoll <= .25 * targetPlayer.Health, newHealthRoll >= .995 * targetPlayer.Health);
+                                //, true, false);
 
-                            string actionString = Utils.GetCharacterUserTags(character) + " [b]SLAMS[/b]! " + dmgRoll.ResultString() + " " 
-                                //+ Utils.GetCharacterUserTags(targetPlayer.Name) + " has been reduced to " + newHealthRoll + " health!" 
+                            string actionString = TextFormat.GetCharacterUserTags(address.character) + " [b]SLAMS[/b]! " + dmgRoll.ResultString() + " "
+                                //+ TextFormat.GetCharacterUserTags(targetPlayer.Name) + " has been reduced to " + newHealthRoll + " health!"
                                 + flavorText;
 
-                            string setResult = SetNewPlayerHealthTotal(newHealthRoll, diceBot, session, targetPlayer, -1, true);
+                            string setResult = SetNewPlayerHealthTotal(newHealthRoll, botMain, session, targetPlayer, -1, true);
 
                             MoveActiveTurnToNextPlayer(diceBot.random, session);
 
                             string setSelfResult = "";
                             if(newHealthRoll != 1)
                             {
-                                setSelfResult = "\nThe impact from their [b]slam[/b] returned: " + SetNewPlayerHealthTotal(thisPlayer.Health - slamDamage, diceBot, session, thisPlayer, -1, true);
+                                setSelfResult = "\nThe impact from their [b]slam[/b] returned: " + SetNewPlayerHealthTotal(thisPlayer.Health - slamDamage, botMain, session, thisPlayer, -1, true);
                             }
 
                             returnString = actionString + "\n" + setResult + setSelfResult;
@@ -678,7 +695,7 @@ namespace FChatDicebot.DiceFunctions
                     string playerName = allInputs.Substring(allInputs.IndexOf(' ')).Trim();
                     if(terms.Length == 2)
                     {
-                        playerName = character;
+                        playerName = address.character;
                     }
                     else
                         playerName = playerName.Substring(playerName.IndexOf(' ')).Trim();
@@ -691,7 +708,7 @@ namespace FChatDicebot.DiceFunctions
                         returnString = "Error: Cannot set health to 0 or less.";
                     else if (relevantPlayer != null)
                     {
-                        string setResult = SetNewPlayerHealthTotal(inputNumber, diceBot, session, relevantPlayer, -1, false);
+                        string setResult = SetNewPlayerHealthTotal(inputNumber, botMain, session, relevantPlayer, -1, false);
                         returnString = setResult;
                     }
                     else
@@ -712,7 +729,7 @@ namespace FChatDicebot.DiceFunctions
                     string playerName = allInputs.Substring(allInputs.IndexOf(' ')).Trim();
                     if (terms.Length == 2)
                     {
-                        playerName = character;
+                        playerName = address.character;
                     }
                     else
                         playerName = playerName.Substring(playerName.IndexOf(' ')).Trim();
@@ -727,7 +744,7 @@ namespace FChatDicebot.DiceFunctions
                     if (relevantPlayer != null)
                     {
                         relevantPlayer.Lives = inputNumber;
-                        returnString = Utils.GetCharacterUserTags(relevantPlayer.Name) + " was set to " + inputNumber + " lives.";
+                        returnString = TextFormat.GetCharacterUserTags(relevantPlayer.Name) + " was set to " + inputNumber + " lives.";
                     }
                     else
                     {
@@ -751,7 +768,7 @@ namespace FChatDicebot.DiceFunctions
                     if (relevantPlayer != null)
                     {
                         session.SlamRollData.CurrentPlayerIndex = session.SlamRollData.SlamRollPlayers.IndexOf(relevantPlayer);
-                        returnString = "It was set to " + Utils.GetCharacterUserTags(playerName) + "'s turn.";
+                        returnString = "It was set to " + TextFormat.GetCharacterUserTags(playerName) + "'s turn.";
                     }
                     else
                     {
@@ -761,13 +778,13 @@ namespace FChatDicebot.DiceFunctions
             }
             else if (terms.Contains("forfeit"))
             {
-                SlamRollPlayer otherPlayer = session.SlamRollData.SlamRollPlayers.FirstOrDefault(a => a.Name != character);
+                SlamRollPlayer otherPlayer = session.SlamRollData.SlamRollPlayers.FirstOrDefault(a => a.Name != address.character);
 
                 if (otherPlayer != null)
                 {
                     string endResult = EndMatch(diceBot, session, otherPlayer, false);
 
-                    returnString = Utils.GetCharacterUserTags(character) + " has forefeit the match.\n" + endResult;
+                    returnString = TextFormat.GetCharacterUserTags(address.character) + " has forefeit the match.\n" + endResult;
                 }
                 else
                 {

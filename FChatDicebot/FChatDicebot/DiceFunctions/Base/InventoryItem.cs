@@ -13,7 +13,7 @@ namespace FChatDicebot.DiceFunctions
 
         protected double Rarity;//ITEM rarity. enchantment rarity is its own thing.
 
-        protected int GoldValue;
+        protected int BaseValue;
 
         public Enchantment enchantment;
 
@@ -23,16 +23,15 @@ namespace FChatDicebot.DiceFunctions
 
         public int RandomSeed;
 
-        public InventoryItem(string name, ItemCategory category, double rarity, int goldValue )
+        public InventoryItem(string name, ItemCategory category, double rarity, int baseValue )
         {
             Name = name;
             Category = category;
             Rarity = rarity;
-            GoldValue = goldValue;
+            BaseValue = baseValue;
             Hidden = false;
         }
 
-        //????
         public double GetRarity()
         {
             return Rarity;
@@ -53,9 +52,9 @@ namespace FChatDicebot.DiceFunctions
             return Category;
         }
 
-        public int GetGoldValue()
+        public int GetValue()
         {
-            return GoldValue;
+            return BaseValue + (enchantment == null? 0 : enchantment.Value);
         }
 
         public bool IsHidden()
@@ -90,7 +89,7 @@ namespace FChatDicebot.DiceFunctions
 
         public virtual string ToString()
         {
-            return "Inventory Item: " + Category + " " + GetRarityString() + " " + GetGoldValue();
+            return "Inventory Item: " + Category + " " + GetRarityString() + " " + GetValue();
         }
     }
 }

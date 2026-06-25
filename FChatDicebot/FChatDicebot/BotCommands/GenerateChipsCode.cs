@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using FChatDicebot.BotCommands.Base;
+using FChatDicebot.Model;
 using FChatDicebot.SavedData;
 using Newtonsoft.Json;
 
@@ -20,7 +21,7 @@ namespace FChatDicebot.BotCommands
             LockCategory = CommandLockCategory.ChannelScores;
         }
 
-        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
+        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, MessageAddress address, UserGeneratedCommand command)
         {
             string outputString = "";
             if(rawTerms.Length != 1)
@@ -47,21 +48,21 @@ namespace FChatDicebot.BotCommands
                     });
                     commandController.SaveCouponsToDisk();
 
-                    outputString = "Added code " + chipCode + " for " + chipAmount + " chips.";
+                    outputString = "Added code " + chipCode + " for " + chipAmount + " " + BotMain.CurrencyPlaceholder + "s.";
                 }
                 else
                 {
-                    outputString = "Error on inputs for chips code.";
+                    outputString = "Error on inputs for " + BotMain.CurrencyPlaceholder + "s code.";
                 }
             }
 
-            if (!commandController.MessageCameFromChannel(channel))
+            if (!commandController.MessageCameFromChannel(address))
             {
-                bot.SendPrivateMessage(outputString, characterName);
+                bot.SendPrivateMessage(outputString, address);
             }
             else
             {
-                bot.SendMessageInChannel(outputString, channel);
+                bot.SendMessageInChannel(outputString, address);
             }
         }
     }

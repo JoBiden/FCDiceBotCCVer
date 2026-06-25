@@ -7,6 +7,7 @@ using FChatDicebot.BotCommands.Base;
 using FChatDicebot.SavedData;
 using Newtonsoft.Json;
 using FChatDicebot.DiceFunctions;
+using FChatDicebot.Model;
 
 namespace FChatDicebot.BotCommands
 {
@@ -21,15 +22,15 @@ namespace FChatDicebot.BotCommands
             LockCategory = CommandLockCategory.ChannelScores;
         }
 
-        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
+        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, MessageAddress address, UserGeneratedCommand command)
         {
-            ChannelSettings thisChannel = bot.GetChannelSettings(channel);
+            ChannelSettings thisChannel = bot.GetChannelSettings(address);
 
             if (thisChannel.AllowChips)
             {
                 if(thisChannel.ChipsClearance != ChipsClearanceLevel.DicebotAdmin)
                 {
-                    bot.SendMessageInChannel("Redeemchips is only functional in channels that have [b]restricted[/b] chips pools. Please try using '!addchips' instead.", channel);
+                    bot.SendMessageInChannel("Redeemchips is only functional in channels that have [b]restricted[/b] " + BotMain.CurrencyPlaceholder + "s pools. Please try using '!addchips' instead.", address);
                 }
                 else
                 {
@@ -37,7 +38,7 @@ namespace FChatDicebot.BotCommands
 
                     if(rawTerms.Count() < 1)
                     {
-                        messageString = "Error: This command requires a chips code.";
+                        messageString = "Error: This command requires a " + BotMain.CurrencyPlaceholder + "s code.";
                     }
                     else
                     {
@@ -48,33 +49,33 @@ namespace FChatDicebot.BotCommands
 
                         if (coupon == null)
                         {
-                            messageString = "chips code not found (" + chipsCode + ")";
+                            messageString = "" + BotMain.CurrencyPlaceholderCapital + "s code not found (" + chipsCode + ")";
                         }
                         else if (coupon.Redeemed)
                         {
-                            messageString = "This chips code (" + chipsCode + ") has already been redeemed.";
+                            messageString = "This " + BotMain.CurrencyPlaceholder + "s code (" + chipsCode + ") has already been redeemed.";
                         }
                         else
                         {
                             //mark redeemed and add chips to the redeeming character
                             coupon.Redeemed = true;
-                            coupon.RedeemedBy = characterName;
+                            coupon.RedeemedBy = address.character;
 
-                            messageString = "Chips code redeemed. " + bot.DiceBot.AddChips(characterName, channel, coupon.ChipsAmount, false) +
-                                " [sub]Thank you for purchasing Dice Bot chips![/sub]";
+                            messageString = "" + BotMain.CurrencyPlaceholderCapital + "s code redeemed. " + bot.DiceBot.AddChips(address, coupon.ChipsAmount, false) +
+                                " [sub]Thank you for purchasing " + DiceBot.DiceBotCharacter + " " + BotMain.CurrencyPlaceholder + "s![/sub]";
 
                             commandController.SaveChipsToDisk("RedeemChips");
                             commandController.SaveCouponsToDisk();
                         }
                     }
-                    
 
-                    bot.SendMessageInChannel(messageString, channel);
+
+                    bot.SendMessageInChannel(messageString, address);
                 }
             }
             else
             {
-                bot.SendMessageInChannel(Name + " is currently not allowed in this channel under " + Utils.GetCharacterUserTags(DiceBot.DiceBotCharacter) + "'s settings for this channel.", channel);
+                bot.SendMessageInChannel(Name + " is currently not allowed in this channel under " + TextFormat.GetCharacterUserTags(DiceBot.DiceBotCharacter) + "'s settings for this channel.", address);
             }
         }
     }

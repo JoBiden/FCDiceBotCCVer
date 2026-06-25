@@ -15,3 +15,287 @@ C:\MyProjects\FChatDicebot\FChatDicebot\bin\Release\websocket-sharp.dll
 C:\MyProjects\FChatDicebot\FChatDicebot\bin\Release\Newtonsoft.Json.xml
 C:\MyProjects\FChatDicebot\FChatDicebot\bin\Release\FChatDicebot.pdb
 C:\MyProjects\FChatDicebot\FChatDicebot\obj\Release\FChatDicebot.csprojResolveAssemblyReference.cache
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\FChatDicebot.exe.config
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\FChatDicebot.exe
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\FChatDicebot.pdb
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\Microsoft.Win32.Primitives.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\netstandard.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.AppContext.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Collections.Concurrent.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Collections.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Collections.NonGeneric.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Collections.Specialized.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.ComponentModel.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.ComponentModel.EventBasedAsync.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.ComponentModel.Primitives.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.ComponentModel.TypeConverter.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Console.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Data.Common.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Diagnostics.Contracts.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Diagnostics.Debug.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Diagnostics.FileVersionInfo.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Diagnostics.Process.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Diagnostics.StackTrace.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Diagnostics.TextWriterTraceListener.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Diagnostics.Tools.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Diagnostics.TraceSource.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Diagnostics.Tracing.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Drawing.Primitives.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Dynamic.Runtime.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Globalization.Calendars.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Globalization.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Globalization.Extensions.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.IO.Compression.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.IO.Compression.ZipFile.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.IO.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.IO.FileSystem.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.IO.FileSystem.DriveInfo.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.IO.FileSystem.Primitives.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.IO.FileSystem.Watcher.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.IO.IsolatedStorage.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.IO.MemoryMappedFiles.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.IO.Pipes.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.IO.UnmanagedMemoryStream.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Linq.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Linq.Expressions.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Linq.Parallel.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Linq.Queryable.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Net.Http.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Net.NameResolution.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Net.NetworkInformation.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Net.Ping.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Net.Primitives.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Net.Requests.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Net.Security.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Net.Sockets.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Net.WebHeaderCollection.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Net.WebSockets.Client.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Net.WebSockets.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.ObjectModel.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Reflection.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Reflection.Extensions.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Reflection.Primitives.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Resources.Reader.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Resources.ResourceManager.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Resources.Writer.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Runtime.CompilerServices.VisualC.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Runtime.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Runtime.Extensions.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Runtime.Handles.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Runtime.InteropServices.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Runtime.InteropServices.RuntimeInformation.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Runtime.Numerics.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Runtime.Serialization.Formatters.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Runtime.Serialization.Json.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Runtime.Serialization.Primitives.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Runtime.Serialization.Xml.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Security.Claims.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Security.Cryptography.Algorithms.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Security.Cryptography.Csp.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Security.Cryptography.Encoding.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Security.Cryptography.Primitives.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Security.Cryptography.X509Certificates.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Security.Principal.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Security.SecureString.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Text.Encoding.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Text.Encoding.Extensions.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Text.RegularExpressions.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Threading.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Threading.Overlapped.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Threading.Tasks.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Threading.Tasks.Parallel.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Threading.Thread.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Threading.ThreadPool.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Threading.Timer.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Xml.ReaderWriter.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Xml.XDocument.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Xml.XmlDocument.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Xml.XmlSerializer.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Xml.XPath.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Xml.XPath.XDocument.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\Discord.Net.Commands.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\Discord.Net.Core.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\Discord.Net.Interactions.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\Discord.Net.Rest.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\Discord.Net.Webhook.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\Discord.Net.WebSocket.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\Microsoft.Bcl.AsyncInterfaces.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\Microsoft.Extensions.DependencyInjection.Abstractions.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\Newtonsoft.Json.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Buffers.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Collections.Immutable.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Interactive.Async.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Linq.Async.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Memory.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Numerics.Vectors.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Reactive.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Runtime.CompilerServices.Unsafe.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Threading.Tasks.Extensions.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.ValueTuple.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\websocket-sharp.dll
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\Discord.Net.Commands.xml
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\Discord.Net.Core.xml
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\Discord.Net.Interactions.xml
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\Discord.Net.Rest.xml
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\Discord.Net.Webhook.xml
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\Discord.Net.WebSocket.xml
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\Microsoft.Bcl.AsyncInterfaces.xml
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\Microsoft.Extensions.DependencyInjection.Abstractions.xml
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\Newtonsoft.Json.xml
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Buffers.xml
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Collections.Immutable.xml
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Interactive.Async.xml
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Linq.Async.xml
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Memory.xml
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Numerics.Vectors.xml
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Reactive.xml
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Runtime.CompilerServices.Unsafe.xml
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.Threading.Tasks.Extensions.xml
+C:\MyProjects\Dicebot\FChatDicebot\bin\Release\System.ValueTuple.xml
+C:\MyProjects\Dicebot\FChatDicebot\obj\Release\FChatDicebot.csproj.AssemblyReference.cache
+C:\MyProjects\Dicebot\FChatDicebot\obj\Release\FChatDicebot.csproj.CoreCompileInputs.cache
+C:\MyProjects\Dicebot\FChatDicebot\obj\Release\FChatDicebot.csproj.CopyComplete
+C:\MyProjects\Dicebot\FChatDicebot\obj\Release\FChatDicebot.exe
+C:\MyProjects\Dicebot\FChatDicebot\obj\Release\FChatDicebot.pdb
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\FChatDicebot.exe.config
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\FChatDicebot.exe
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\FChatDicebot.pdb
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\Microsoft.Win32.Primitives.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\netstandard.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.AppContext.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Collections.Concurrent.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Collections.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Collections.NonGeneric.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Collections.Specialized.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.ComponentModel.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.ComponentModel.EventBasedAsync.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.ComponentModel.Primitives.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.ComponentModel.TypeConverter.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Console.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Data.Common.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Diagnostics.Contracts.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Diagnostics.Debug.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Diagnostics.FileVersionInfo.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Diagnostics.Process.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Diagnostics.StackTrace.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Diagnostics.TextWriterTraceListener.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Diagnostics.Tools.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Diagnostics.TraceSource.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Diagnostics.Tracing.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Drawing.Primitives.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Dynamic.Runtime.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Globalization.Calendars.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Globalization.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Globalization.Extensions.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.IO.Compression.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.IO.Compression.ZipFile.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.IO.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.IO.FileSystem.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.IO.FileSystem.DriveInfo.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.IO.FileSystem.Primitives.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.IO.FileSystem.Watcher.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.IO.IsolatedStorage.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.IO.MemoryMappedFiles.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.IO.Pipes.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.IO.UnmanagedMemoryStream.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Linq.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Linq.Expressions.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Linq.Parallel.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Linq.Queryable.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Net.Http.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Net.NameResolution.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Net.NetworkInformation.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Net.Ping.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Net.Primitives.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Net.Requests.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Net.Security.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Net.Sockets.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Net.WebHeaderCollection.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Net.WebSockets.Client.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Net.WebSockets.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.ObjectModel.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Reflection.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Reflection.Extensions.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Reflection.Primitives.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Resources.Reader.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Resources.ResourceManager.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Resources.Writer.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Runtime.CompilerServices.VisualC.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Runtime.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Runtime.Extensions.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Runtime.Handles.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Runtime.InteropServices.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Runtime.InteropServices.RuntimeInformation.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Runtime.Numerics.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Runtime.Serialization.Formatters.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Runtime.Serialization.Json.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Runtime.Serialization.Primitives.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Runtime.Serialization.Xml.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Security.Claims.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Security.Cryptography.Algorithms.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Security.Cryptography.Csp.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Security.Cryptography.Encoding.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Security.Cryptography.Primitives.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Security.Cryptography.X509Certificates.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Security.Principal.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Security.SecureString.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Text.Encoding.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Text.Encoding.Extensions.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Text.RegularExpressions.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Threading.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Threading.Overlapped.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Threading.Tasks.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Threading.Tasks.Parallel.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Threading.Thread.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Threading.ThreadPool.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Threading.Timer.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Xml.ReaderWriter.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Xml.XDocument.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Xml.XmlDocument.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Xml.XmlSerializer.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Xml.XPath.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Xml.XPath.XDocument.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\Discord.Net.Commands.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\Discord.Net.Core.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\Discord.Net.Interactions.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\Discord.Net.Rest.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\Discord.Net.Webhook.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\Discord.Net.WebSocket.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\Microsoft.Bcl.AsyncInterfaces.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\Microsoft.Extensions.DependencyInjection.Abstractions.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\Newtonsoft.Json.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Buffers.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Collections.Immutable.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Interactive.Async.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Linq.Async.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Memory.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Numerics.Vectors.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Reactive.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Runtime.CompilerServices.Unsafe.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Threading.Tasks.Extensions.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.ValueTuple.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\websocket-sharp.dll
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\Discord.Net.Commands.xml
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\Discord.Net.Core.xml
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\Discord.Net.Interactions.xml
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\Discord.Net.Rest.xml
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\Discord.Net.Webhook.xml
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\Discord.Net.WebSocket.xml
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\Microsoft.Bcl.AsyncInterfaces.xml
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\Microsoft.Extensions.DependencyInjection.Abstractions.xml
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\Newtonsoft.Json.xml
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Buffers.xml
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Collections.Immutable.xml
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Interactive.Async.xml
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Linq.Async.xml
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Memory.xml
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Numerics.Vectors.xml
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Reactive.xml
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Runtime.CompilerServices.Unsafe.xml
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.Threading.Tasks.Extensions.xml
+C:\My Projects\VS2019\Dicebot\FChatDicebot\bin\Release\System.ValueTuple.xml
+C:\My Projects\VS2019\Dicebot\FChatDicebot\obj\Release\FChatDicebot.csproj.AssemblyReference.cache
+C:\My Projects\VS2019\Dicebot\FChatDicebot\obj\Release\FChatDicebot.csproj.CoreCompileInputs.cache
+C:\My Projects\VS2019\Dicebot\FChatDicebot\obj\Release\FChatDicebot.csproj.CopyComplete
+C:\My Projects\VS2019\Dicebot\FChatDicebot\obj\Release\FChatDicebot.exe
+C:\My Projects\VS2019\Dicebot\FChatDicebot\obj\Release\FChatDicebot.pdb

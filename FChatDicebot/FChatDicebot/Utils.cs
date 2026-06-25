@@ -1,4 +1,6 @@
-﻿using FChatDicebot.DiceFunctions;
+﻿using Discord;
+using Discord.WebSocket;
+using FChatDicebot.DiceFunctions;
 using FChatDicebot.Model;
 using FChatDicebot.SavedData;
 using Newtonsoft.Json;
@@ -76,6 +78,11 @@ namespace FChatDicebot
             return Math.Max(Math.Min(input, max), min);
         }
 
+        public static float Clamp(float input, float min, float max)
+        {
+            return Math.Max(Math.Min(input, max), min);
+        }
+
         public static string PrintList(string[] stringArray)
         {
             if (stringArray == null || stringArray.Length == 0)
@@ -91,6 +98,11 @@ namespace FChatDicebot
             }
 
             return rtnString;
+        }
+
+        public static string GetYesNo(bool input)
+        {
+            return input ? "yes" : "no";
         }
 
         public static string PrintList(List<string> stringList)
@@ -278,6 +290,21 @@ namespace FChatDicebot
             return returnList.ToArray();
         }
 
+        public static string[] RemoveStringFromAllTerms(string[] inputs, string removeString)
+        {
+            List<string> returnList = new List<string>();
+
+            if (inputs != null && inputs.Length > 0)
+            {
+                foreach (string s in inputs)
+                {
+                    returnList.Add(s.Replace(removeString, ""));
+                }
+            }
+
+            return returnList.ToArray();
+        }
+
         public static string CombineStringArray(string[] input)
         {
             if (input == null)
@@ -341,18 +368,56 @@ namespace FChatDicebot
             return returnString;
         }
 
+        public static string RemoveChannelIdFromInputsAndReturnFullInputs(string[] inputs, out string error)
+        {
+            error = "";
+
+            string combinedInputs = GetFullStringOfInputs(inputs);
+            if (combinedInputs.Contains("[/session]"))
+            {
+                int index1 = combinedInputs.IndexOf("[session=");
+                int index2 = combinedInputs.IndexOf("[/session]");
+
+                combinedInputs = combinedInputs.Substring(0, index1) + combinedInputs.Substring(index2 + 10);
+            }
+
+            return combinedInputs;
+        }
+
+        public static string GetFullStringOfInputsAfterTermX(string[] inputs, int termsToIgnore)
+        {
+            if (inputs == null || inputs.Length <= termsToIgnore)
+                return null;
+
+            string[] newInputs = new string[inputs.Length - termsToIgnore];
+            int currentIndex = 0;
+            for (int i = termsToIgnore; i < inputs.Length; i++)
+            {
+                newInputs[currentIndex] = inputs[i];
+                currentIndex++;
+            }
+
+            return GetFullStringOfInputs(newInputs);
+        }
+
         public static string GetFullStringOfInputs(string [] inputs)
         {
             string returnString = "";
             if (inputs == null || inputs.Length == 0)
                 return returnString;
 
-            for (int i = 0; i < inputs.Length - 1; i++ )
+            string[] newArray = new string[inputs.Length];
+            for (int i = 0; i < inputs.Length - 1; i++)
             {
-                inputs[i] = inputs[i] + " ";
+                newArray[i] = inputs[i] + " ";
             }
+            newArray[inputs.Length - 1] = inputs[inputs.Length - 1];
+            //for (int i = 0; i < inputs.Length - 1; i++ )
+            //{
+            //    inputs[i] = inputs[i] + " ";
+            //}
 
-            returnString = CombineStringArray(inputs);
+            returnString = CombineStringArray(newArray);
 
             return returnString;
         }
@@ -364,9 +429,45 @@ namespace FChatDicebot
             return partial;
         }
 
-        public static string LimitStringToNCharacters(string inputString, int maxCharacters)
+        public static bool GetNsfwError(ChannelSettings settings, ICustomUserContent userContent, out string errorMessage)
         {
-            return (inputString.Length > maxCharacters ? inputString.Substring(0, maxCharacters) : inputString);
+            errorMessage =  "";
+            if (settings == null || settings.AllowNsfw || userContent == null || !userContent.IsNsfw())
+                return false;
+            else
+            {
+                errorMessage = "Failed: This item contains Nsfw content and these are not allowed in this guild's settings.";
+                return true;
+            }
+        }
+
+        public static string LimitStringToNCharacters(string inputString, int maxCharacters)//, bool addTestLength = false)
+        {
+            if (string.IsNullOrEmpty(inputString))
+                return "";
+
+            string rtn = "";
+            int characterPoints = 0;
+            //there is an issue where specialCharacters count as 3 characters each for length when transmitted to the server
+            //string specialCharacters = "♥♦♣♠🍵✪ƪ✝"; //altering so it counts anything outside of ASCI 32 (space) to ASCI 126 (~)
+            for (int i = 0; i < inputString.Length; i++ )
+            {
+                char thisChar = inputString[i];
+                if (thisChar < 32 || thisChar > 126)//specialCharacters.Contains(thisChar))
+                    characterPoints += 3;
+                else
+                    characterPoints += 1;
+
+                if (characterPoints > maxCharacters)
+                    break;
+                rtn += inputString[i];
+            }
+
+            //if (addTestLength)
+            //    return rtn;// + " {" + characterPoints + "}";
+            //else
+                return rtn;
+            // (inputString.Length > maxCharacters ? inputString.Substring(0, maxCharacters) : inputString);
         }
 
         public static string GetDeckTypeString(DeckType deckType, string customDeckName)
@@ -522,6 +623,18 @@ namespace FChatDicebot
                 Console.WriteLine("exception on addtolog: " + exc.ToString());
             }
         }
+        public static void AddToChannelAuditLog(string note, object saveData)
+        {
+            try
+            {
+                AppendToFileAsData(DateTime.Now.ToString() + ": " + note + ": ", saveData, Utils.GetTotalFileName(BotMain.LogsFolder, AddDateToFileName(BotMain.ChannelAuditLogFileName)));
+
+            }
+            catch (Exception exc)
+            {
+                Console.WriteLine("exception on addtochannelauditlog: " + exc.ToString());
+            }
+        }
 
         public static string AddDateToFileName(string fileName)
         {
@@ -565,6 +678,16 @@ namespace FChatDicebot
             return rtnString;
         }
 
+        public static string GetStringOfNLength(int n, string x)
+        {
+            string rtnString = "";
+            for (int i = 0; i < n; i++)
+            {
+                rtnString += x;
+            }
+            return rtnString;
+        }
+
         public static string GetTotalFileName(string folderName, string fileName)
         {
             string fileNameWithTest = BotMain._testVersion ? BotMain.TestFilePrefix + fileName : fileName;
@@ -576,29 +699,20 @@ namespace FChatDicebot
             return adminCharacters.Contains(character);
         }
 
-        public static bool IsCharacterTrusted(List<ChannelCharacter> trustedCharacters, string character, string channel)
+        public static bool IsCharacterTrusted(List<ChannelCharacter> trustedCharacters, MessageAddress address)
         {
-            return trustedCharacters.Count(a => a.Channel == channel && a.Character == character) > 0;
+            string channelKey = address.GetChannelKey();
+            return trustedCharacters.Count(a => a.Channel.ToLower() == channelKey.ToLower() && a.Character == address.character) > 0;
         }
 
-        public static bool BotMessageIsChatMessage(BotMessage message)
+        public static bool BotMessageIsFListChatMessage(BotMessage message)
         {
             return message.messageType == BotMessageFactory.MSG || message.messageType == BotMessageFactory.PRI;
         }
 
-        public static string GetCharacterUserTags(string characterName)
-        {
-            return "[user]" + characterName + "[/user]";
-        }
-
-        public static string GetCharacterIconTags(string characterName)
-        {
-            return "[icon]" + characterName + "[/icon]";
-        }
-
         public static string GetCharacterStringFromSpecialName(string characterName)
         {
-            string cardDrawingCharacterString = GetCharacterUserTags(characterName);
+            string cardDrawingCharacterString = TextFormat.GetCharacterUserTags(characterName);
             if (characterName == DiceBot.DealerPlayerAlias)
                 cardDrawingCharacterString = "The dealer";
             else if (characterName == DiceBot.BurnCardsPlayerAlias)
@@ -613,11 +727,67 @@ namespace FChatDicebot
             return cardDrawingCharacterString;
         }
 
+        public static bool IsDiscordAdmin(SocketGuildUser discordUser)
+        {
+            if (discordUser == null)
+                return false;
+
+            if (discordUser.Guild.OwnerId == discordUser.Id)
+                return true;
+
+            var perms = discordUser.GuildPermissions;
+
+            return perms.Administrator
+                || perms.ManageMessages
+                || perms.KickMembers
+                || perms.BanMembers
+                || perms.ManageChannels;
+        }
+
+        //public static bool IsDiscordAdmin(SocketGuildUser discordUser)
+        //{
+        //    // Ensure the message is from a guild and is not from a bot
+        //    if (discordUser == null)
+        //        return false;
+        //    else
+        //    {
+        //        // Define the moderator permissions you are looking for
+        //        var moderatorPermissions = new GuildPermission[]
+        //        {
+        //            GuildPermission.ManageMessages,
+        //            GuildPermission.KickMembers,
+        //            GuildPermission.BanMembers,
+        //            GuildPermission.ManageChannels,
+        //            GuildPermission.Administrator
+        //        };
+
+        //        // Check if the user has any role with the defined moderator permissions
+        //        bool isModerator = discordUser.Roles.Any(role => role.Permissions.ToList().Intersect(moderatorPermissions).Any());
+
+        //        return isModerator;
+        //    }
+        //}
+
+        public static bool IsDiscordMessage(UserGeneratedCommand command)
+        {
+            return !string.IsNullOrEmpty(command.guild);
+        }
+        public static bool IsDiscordMessage(MessageAddress command)
+        {
+            return !string.IsNullOrEmpty(command.guild);
+        }
+
         public static SavedRollTable GetTableFromId(List<SavedRollTable> tables, string id)
         {
             SavedRollTable infoTable = tables.FirstOrDefault(a => a.TableId == id);
 
             return infoTable;
+        }
+
+        public static SavedJobsList GetJobsListFromChannel(List<SavedJobsList> jobsLists, string channelId)
+        {
+            SavedJobsList jobsList = jobsLists.FirstOrDefault(a => a.Channel.ToLower() == channelId.ToLower());
+            return jobsList;
         }
 
         public static SavedSlotsSetting GetSlotsFromId(List<SavedSlotsSetting> slots, string id)
@@ -701,38 +871,6 @@ namespace FChatDicebot
             const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
             return new string(Enumerable.Repeat(chars, length)
               .Select(s => s[rnd.Next(s.Length)]).ToArray());
-        }
-
-        public static DateTime ConvertFromSecondsTimestamp(double timestamp)
-        {
-            DateTime origin = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
-            return origin.AddSeconds(timestamp);
-        }
-
-        public static double GetCurrentTimestampSeconds()
-        {
-            return ConvertToSecondsTimestamp(DateTime.UtcNow);
-        }
-
-        public static double ConvertToSecondsTimestamp(DateTime date)
-        {
-            DateTime origin = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
-            TimeSpan diff = date.ToUniversalTime() - origin;
-            return Math.Floor(diff.TotalSeconds);
-        }
-
-        public static string PrintTimeFromSeconds(double seconds)
-        {
-            if (seconds < 0)
-                seconds = 0;
-            string output = seconds.ToString("F1") + " seconds";
-            if(seconds > 60)
-                output = (seconds / 60).ToString("F1") + " minutes";
-            if (seconds > 60 * 60)
-                output = (seconds / (60 * 60)).ToString("F2") + " hours";
-            if (seconds > 60 * 60 * 24)
-                output = (seconds / (60 * 60 * 24)).ToString("F2") + " days";
-            return output;
         }
     }
 }

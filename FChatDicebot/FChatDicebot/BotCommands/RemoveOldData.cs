@@ -7,6 +7,7 @@ using FChatDicebot.BotCommands.Base;
 using FChatDicebot.SavedData;
 using Newtonsoft.Json;
 using FChatDicebot.DiceFunctions;
+using FChatDicebot.Model;
 
 //NOTE: Admin, used to manually remove dead channels, automatically remove redeemed coupons
 namespace FChatDicebot.BotCommands
@@ -22,7 +23,7 @@ namespace FChatDicebot.BotCommands
             LockCategory = CommandLockCategory.ChannelScores;
         }
 
-        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
+        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, MessageAddress address, UserGeneratedCommand command)
         {
             var chipCodes = bot.ChipsCoupons;
             var cleanedCodes = bot.ChipsCoupons.Where(a => !a.Redeemed).ToList();
@@ -43,8 +44,8 @@ namespace FChatDicebot.BotCommands
 
             var dumpFileName = "dataremoved_" + Utils.RandomString(bot.DiceBot.random, 8) + ".txt";
             Utils.WriteToFileAsData(removedStuff, Utils.GetTotalFileName(BotMain.FileFolder, dumpFileName));
-            
-            bot.SendMessageInChannel("Success: Removed redeemed coupons", channel);
+
+            bot.SendMessageInChannel("Success: Removed redeemed coupons", address);
         }
 
         public class RemovedData

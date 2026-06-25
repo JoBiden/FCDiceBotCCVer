@@ -10,6 +10,6 @@ namespace FChatDicebot.Model
     public class ERRserver : iSocketCommand
     {
         public string message;
-        public int number;
+        public int number; //26 = channel not found, 28 = already in channel cannot join again
     }
 }

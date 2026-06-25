@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using FChatDicebot.BotCommands.Base;
 using FChatDicebot.DiceFunctions;
+using FChatDicebot.Model;
 
 namespace FChatDicebot.BotCommands
 {
@@ -19,7 +20,7 @@ namespace FChatDicebot.BotCommands
             LockCategory = CommandLockCategory.ChannelDecks;
         }
 
-        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
+        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, MessageAddress address, UserGeneratedCommand command)
         {
             CardPileId fromPile = CardPileId.NONE;
             CardPileId toPile = CardPileId.NONE;
@@ -102,21 +103,21 @@ namespace FChatDicebot.BotCommands
 
             if (fromPile == CardPileId.Deck)
             {
-                bot.SendMessageInChannel("Error: cannot move cards from 'deck' with this command. Try 'drawcard'.", channel);
+                bot.SendMessageInChannel("Error: cannot move cards from 'deck' with this command. Try 'drawcard'.", address);
                 return;
             }
             if (fromPile == CardPileId.NONE || toPile == CardPileId.NONE)
             {
-                bot.SendMessageInChannel("Error: please specify a FROM pile and then a TO pile by name (hand/play/discard/hidden/deck/burn/dealer).", channel);
+                bot.SendMessageInChannel("Error: please specify a FROM pile and then a TO pile by name (hand/play/discard/hidden/deck/burn/dealer).", address);
                 return;
             }
             if (fromPile == toPile)
             {
-                bot.SendMessageInChannel("Error: cannot move cards to the same pile.", channel);
+                bot.SendMessageInChannel("Error: cannot move cards to the same pile.", address);
                 return;
             }
 
-            MoveCards.Run(bot, commandController, rawTerms, terms, characterName, channel, command, fromPile, toPile);
+            MoveCards.Run(bot, commandController, rawTerms, terms, address, command, fromPile, toPile);
         }
     }
 }

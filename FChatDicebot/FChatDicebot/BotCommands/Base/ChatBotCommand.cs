@@ -1,4 +1,5 @@
-﻿using System;
+﻿using FChatDicebot.Model;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -11,12 +12,26 @@ namespace FChatDicebot.BotCommands.Base
         public string Name;
         public bool RequireBotAdmin;
         public bool RequireChannelAdmin;
+        public bool RequireBotIsChannelAdmin;
         public bool RequireChannel;
 
         public CommandLockCategory LockCategory;
 
-        public virtual void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
+        public virtual void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, MessageAddress address, UserGeneratedCommand command)
         {
+
+        }
+
+        public void SendMessageToChannelOrUser(BotMain bot, BotCommandController commandController, MessageAddress address, string sendMessage)
+        {
+            if (!commandController.MessageCameFromChannel(address))
+            {
+                bot.SendPrivateMessage(sendMessage, address);
+            }
+            else
+            {
+                bot.SendMessageInChannel(sendMessage, address);
+            }
 
         }
     }

@@ -7,6 +7,7 @@ using FChatDicebot.BotCommands.Base;
 using FChatDicebot.SavedData;
 using Newtonsoft.Json;
 using FChatDicebot.DiceFunctions;
+using FChatDicebot.Model;
 
 namespace FChatDicebot.BotCommands
 {
@@ -21,13 +22,13 @@ namespace FChatDicebot.BotCommands
             LockCategory = CommandLockCategory.SavedTables;
         }
 
-        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
+        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, MessageAddress address, UserGeneratedCommand command)
         {
             ChannelSettings thisChannel = null;
-            if (commandController.MessageCameFromChannel(channel))
-                thisChannel = bot.GetChannelSettings(channel);
+            bool fromChannel = commandController.MessageCameFromChannel(address);
+            if (fromChannel)
+                thisChannel = bot.GetChannelSettings(address);
 
-            bool fromChannel = commandController.MessageCameFromChannel(channel);
 
             if (!fromChannel || ( thisChannel != null && thisChannel.AllowGames ))
             {
@@ -35,8 +36,11 @@ namespace FChatDicebot.BotCommands
                 List<SavedDeck> relevantDecks = bot.SavedDecks;
                 if(!terms.Contains("all"))
                 {
-                    relevantDecks = relevantDecks.Where(a => a.OriginCharacter == characterName).ToList();
+                    relevantDecks = relevantDecks.Where(a => a.OriginCharacter == address.character).ToList();
                 }
+
+                if (thisChannel != null && !thisChannel.AllowNsfw)
+                    relevantDecks = relevantDecks.Where(a => !a.Nsfw).ToList();
 
                 if (relevantDecks.Count == 0)
                 {
@@ -44,7 +48,7 @@ namespace FChatDicebot.BotCommands
                     sendMessage = "No decks found.";
                     if(!terms.Contains("all"))
                     {
-                        sendMessage = "No decks found created by " + Utils.GetCharacterUserTags(characterName) + ".";
+                        sendMessage = "No decks found created by " + TextFormat.GetCharacterUserTags(address.character) + ".";
                     }
                 }
                 else
@@ -70,7 +74,7 @@ namespace FChatDicebot.BotCommands
                                 sendMessage += decksMessage;
                                 decksMessage = "";
                             }
-                            sendMessage += "\n" + Utils.GetCharacterUserTags(savedDeck.OriginCharacter) + ": ";
+                            sendMessage += "\n" + TextFormat.GetCharacterUserTags(savedDeck.OriginCharacter) + ": ";
                         }
                         if(!string.IsNullOrEmpty(decksMessage))
                         {
@@ -86,19 +90,19 @@ namespace FChatDicebot.BotCommands
 
                 if (!fromChannel)
                 {
-                    bot.SendPrivateMessage(sendMessage, characterName);
+                    bot.SendPrivateMessage(sendMessage, address);
                 }
                 else
                 {
-                    bot.SendMessageInChannel(sendMessage, channel);
+                    bot.SendMessageInChannel(sendMessage, address);
                 }
             }
             else
             {
                 if(fromChannel)
-                    bot.SendMessageInChannel(Name + " is currently not allowed in this channel under " + Utils.GetCharacterUserTags(DiceBot.DiceBotCharacter) + "'s settings for this channel.", channel);
+                    bot.SendMessageInChannel(Name + " is currently not allowed in this channel under " + TextFormat.GetCharacterUserTags(DiceBot.DiceBotCharacter) + "'s settings for this channel.", address);
             }
-            
+
         }
     }
 }

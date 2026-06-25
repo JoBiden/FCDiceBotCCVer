@@ -7,6 +7,7 @@ using FChatDicebot.BotCommands.Base;
 using FChatDicebot.SavedData;
 using Newtonsoft.Json;
 using FChatDicebot.DiceFunctions;
+using FChatDicebot.Model;
 
 namespace FChatDicebot.BotCommands
 {
@@ -21,24 +22,29 @@ namespace FChatDicebot.BotCommands
             LockCategory = CommandLockCategory.CharacterInventories;
         }
 
-        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
+        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, MessageAddress address, UserGeneratedCommand command)
         {
+            Potion p = bot.DiceBot.GetPotionHeld(address);
 
-            Potion p = bot.DiceBot.GetPotionHeld(characterName, channel);
+            ChannelSettings channelSettings = bot.GetChannelSettings(address);
 
-            if(p == null)
+            string sendMessage = "";
+
+            if (p == null)
             {
-                bot.SendMessageInChannel(Utils.GetCharacterUserTags(characterName) + " is not holding a potion.", channel);
+                bot.SendMessageInChannel(TextFormat.GetCharacterUserTags(address.character) + " is not holding a potion.", address);
+            }
+            else if (Utils.GetNsfwError(channelSettings, p.enchantment, out sendMessage))
+            {
+                //sendMessage set in error method
             }
             else
             {
+                sendMessage = bot.DiceBot.PotionGenerator.GetPotionGenerationOutputString(p, false);
 
-                string output = bot.DiceBot.PotionGenerator.GetPotionGenerationOutputString(p, false);
-
-                output = "Showing potion held by " + Utils.GetCharacterIconTags(characterName) + "\n" + output;
-
-                bot.SendMessageInChannel(output, channel);
+                sendMessage = "Showing potion held by " + TextFormat.GetCharacterIconTags(address.character) + "\n" + sendMessage;
             }
+            bot.SendMessageInChannel(sendMessage, address);
 
         }
     }

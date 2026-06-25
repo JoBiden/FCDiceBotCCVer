@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using FChatDicebot.BotCommands.Base;
 using FChatDicebot.DiceFunctions;
+using FChatDicebot.Model;
 using FChatDicebot.SavedData;
 
 namespace FChatDicebot.BotCommands
@@ -20,75 +21,78 @@ namespace FChatDicebot.BotCommands
             LockCategory = CommandLockCategory.ChannelScores;
         }
 
-        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
+        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, MessageAddress address, UserGeneratedCommand command)
         {
-            ChannelSettings chan = bot.GetChannelSettings(channel);
-            string responseMessage = "";
-            if(!chan.AllowChips)
-            {
-                responseMessage = "Chips are not allowed under the settings for this channel.";
-            }
-            else if (channel.ToLower() != BotMain.CasinoChannelId)
-            {
-                responseMessage = "Only chip piles in Velvetcuff Casino channel are eligible for the !cashout command.";
-            }
-            else
-            {
-                ChipPile pile = bot.DiceBot.GetChipPile(characterName, channel);
-                
-                bool timerFinished = bot.DiceBot.CountdownFinishedOrNotStarted(channel, characterName + DiceBot.PlayerCashoutSuffix);
+            ChannelSettings chan = bot.GetChannelSettings(address);
+            string responseMessage = "Cashout has been deactivated: Velvetcuff is no longer operational. Please use the !work command to acquire more " + BotMain.CurrencyPlaceholder + "s.";
+            //string responseMessage = "";
+            //if(!chan.AllowChips)
+            //{
+            //    responseMessage = "Failed: " + BotMain.CurrencyPlaceholder + "s are not allowed under the settings for this channel.";
+            //}
+            //else if (address.GetChannelKey().ToLower() != BotMain.CasinoChannelId)
+            //{
+            //    responseMessage = "Failed: Only " + BotMain.CurrencyPlaceholder + " piles in Velvetcuff Casino channel are eligible for the !cashout command.";
+            //}
+            //else
+            //{
+            //    ChipPile pile = bot.DiceBot.GetChipPile(address);
 
-                if(pile == null)
-                {
-                    responseMessage = "Error: Chips pile not found for " + Utils.GetCharacterUserTags(characterName);
-                }
-                else if(pile.Chips < DiceBot.MinimumChipCashoutSize)
-                {
-                    responseMessage = "Failed: You do not have enough chips to cash out, " + Utils.GetCharacterUserTags(characterName) + ". (held: " + pile.Chips + ") (minimum: " + DiceBot.MinimumChipCashoutSize + ")";
-                }
-                else if(!timerFinished)
-                {
-                    CountdownTimer redeemTimer = bot.DiceBot.GetCountdownTimer(channel, characterName + DiceBot.PlayerCashoutSuffix);
+            //    bool timerFinished = bot.DiceBot.CountdownFinishedOrNotStarted(address, address.character + DiceBot.PlayerCashoutSuffix);
 
-                    responseMessage = "Failed: You must wait longer cash out again, " + Utils.GetCharacterUserTags(characterName) + ". (remaining: " + redeemTimer.GetMinutesRemaining().ToString("F0") + " minutes)";
-                }
-                else
-                {
-                    int cashoutAmount = pile.Chips;
+            //    if(pile == null)
+            //    {
+            //        responseMessage = "Error: " + BotMain.CurrencyPlaceholder + "s pile not found for " + TextFormat.GetCharacterUserTags(address.character);
+            //    }
+            //    else if(pile.Chips < DiceBot.MinimumChipCashoutSize)
+            //    {
+            //        responseMessage = "Failed: You do not have enough " + BotMain.CurrencyPlaceholder + "s to cash out, " + TextFormat.GetCharacterUserTags(address.character) + ". (held: " + pile.Chips + ") (minimum: " + DiceBot.MinimumChipCashoutSize + ")";
+            //    }
+            //    else if(!timerFinished)
+            //    {
+            //        CountdownTimer redeemTimer = bot.DiceBot.GetCountdownTimer(address, address.character + DiceBot.PlayerCashoutSuffix);
 
-                    if(terms.Length > 0)
-                    {
-                        cashoutAmount = Utils.GetNumberFromInputs(terms);
-                        if(cashoutAmount <= 0 || cashoutAmount > pile.Chips)
-                        {
-                            cashoutAmount = pile.Chips;
-                        }
-                    }
-                    if (cashoutAmount > DiceBot.MaximumChipCashoutSize)
-                        cashoutAmount = DiceBot.MaximumChipCashoutSize;
+            //        responseMessage = "Failed: You must wait longer cash out again, " + TextFormat.GetCharacterUserTags(address.character) + ". (remaining: " + redeemTimer.GetMinutesRemaining().ToString("F0") + " minutes)";
+            //    }
+            //    else
+            //    {
+            //        int cashoutAmount = pile.Chips;
 
-                    bot.SendMessageInChannel("Starting cash out from chips to VC$...", channel);
+            //        if(terms.Length > 0)
+            //        {
+            //            cashoutAmount = Utils.GetNumberFromInputs(terms);
+            //            if(cashoutAmount <= 0 || cashoutAmount > pile.Chips)
+            //            {
+            //                cashoutAmount = pile.Chips;
+            //            }
+            //        }
+            //        if (cashoutAmount > DiceBot.MaximumChipCashoutSize)
+            //            cashoutAmount = DiceBot.MaximumChipCashoutSize;
 
-                    bool success = bot.VelvetcuffConnection.CreateNewVcTransaction(cashoutAmount, characterName, DiceBot.DiceBotCharacter, true, "Cashing out with " + cashoutAmount + " chips from the Casino.");
-                    
-                    if(success)
-                    {
-                        string giveChips = bot.DiceBot.GiveChips(characterName, DiceBot.HousePlayerAlias, channel, cashoutAmount, cashoutAmount == pile.Chips);
+            //        bot.SendMessageInChannel("Starting cash out from " + BotMain.CurrencyPlaceholder + "s to VC$...", address);
 
-                        bot.BotCommandController.SaveChipsToDisk("Cashout");
-                        bot.DiceBot.StartCountdownTimer(channel, characterName + DiceBot.PlayerCashoutSuffix, characterName, DiceBot.CashoutCooldownMs);
+            //        string invoiceMessage = "Cashing out with " + cashoutAmount + " " + BotMain.CurrencyPlaceholder + "s from the Casino.";
+            //        invoiceMessage = TextFormat.SubstituteInCurrencyName(invoiceMessage, chan);
+            //        bool success = bot.VelvetcuffConnection.CreateNewVcTransaction(cashoutAmount, address.character, DiceBot.DiceBotCharacter, true, invoiceMessage);
 
-                        responseMessage = giveChips + "\n" + Utils.GetCharacterUserTags(characterName) + " has cashed out their chips for [color=green]VC$" + cashoutAmount + "[/color]\n[sub]Please accept the VC invoice as soon as possible.[/sub]";
-                    }
-                    else
-                    {
-                        responseMessage = "Error: Failed to cash out. [sub]Probably a web connection issue.[/sub] Try again later and contact Ambitious Syndra is the issue persists.";
-                    }
-                    
-                }
-            }
+            //        if(success)
+            //        {
+            //            string giveChips = bot.DiceBot.GiveChips(address, DiceBot.HousePlayerAlias, cashoutAmount, cashoutAmount == pile.Chips);
 
-            bot.SendMessageInChannel(responseMessage, channel);
+            //            bot.BotCommandController.SaveChipsToDisk("Cashout");
+            //            bot.DiceBot.StartCountdownTimer(address, address.character + DiceBot.PlayerCashoutSuffix, DiceBot.CashoutCooldownMs);
+
+            //            responseMessage = giveChips + "\n" + TextFormat.GetCharacterUserTags(address.character) + " has cashed out their " + BotMain.CurrencyPlaceholder + "s for [color=green]VC$" + cashoutAmount + "[/color]\n[sub]Please accept the VC invoice as soon as possible.[/sub]";
+            //        }
+            //        else
+            //        {
+            //            responseMessage = "Error: Failed to cash out. [sub]Probably a web connection issue.[/sub] Try again later and contact Ambitious Syndra is the issue persists.";
+            //        }
+
+            //    }
+            //}
+
+            bot.SendMessageInChannel(responseMessage, address);
         }
     }
 }

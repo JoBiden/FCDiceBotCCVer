@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using FChatDicebot.BotCommands.Base;
 using FChatDicebot.DiceFunctions;
+using FChatDicebot.Model;
 
 namespace FChatDicebot.BotCommands
 {
@@ -16,19 +17,19 @@ namespace FChatDicebot.BotCommands
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
             RequireChannel = false;
-            LockCategory = CommandLockCategory.NONE;
+            LockCategory = CommandLockCategory.CharacterInventories;
         }
 
-        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
+        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, MessageAddress address, UserGeneratedCommand command)
         {
             if (BotMain._debug)
-                bot.SendMessageInChannel("Command recieved: " + Utils.PrintList(terms), channel);
+                bot.SendMessageInChannel("Command recieved: " + Utils.PrintList(terms), address);
 
             string resultMessage = "";
-            DiceRoll diceRoll = bot.DiceBot.GetLastDiceRoll(channel);
+            DiceRoll diceRoll = bot.DiceBot.GetLastDiceRoll(address);
             if(diceRoll == null)
             {
-                resultMessage = "Error: No previous die roll in this channel was found.";
+                resultMessage = "Failed: No previous die roll in this channel was found.";
             }
             else
             {
@@ -36,7 +37,7 @@ namespace FChatDicebot.BotCommands
                 int changeFrom = -1;
                 if(terms.Count() == 0)
                 {
-                    changeFrom = diceRoll.Rolls.Min(); 
+                    changeFrom = diceRoll.Rolls.Min(a => a.Result);
                 }
                 else{
                     string tempString = terms[0];
@@ -71,22 +72,24 @@ namespace FChatDicebot.BotCommands
                 }
                 else
                 {
-                    int targetIndex = diceRoll.Rolls.IndexOf(changeFrom);
-                    diceRoll.Rolls[targetIndex] = changeTo;
+                    DiceFace foundFace = diceRoll.Rolls.FirstOrDefault(a => a.Result == changeFrom);
+                    //int targetIndex = diceRoll.Rolls.IndexOf(changeFrom);
+                    foundFace.Result = changeTo;
+                    //diceRoll.Rolls[targetIndex].Result = changeTo;
 
-                    diceRoll.Total = diceRoll.Rolls.Sum();
+                    diceRoll.Total = diceRoll.Rolls.Sum(a => a.Result);
 
-                    resultMessage = Utils.GetCharacterUserTags(characterName) + " [color=yellow]tipped the die[/color] and " + diceRoll.ResultString();
+                    resultMessage = TextFormat.GetCharacterUserTags(address.character) + " [color=yellow]tipped the die[/color] and " + diceRoll.ResultString();
                 }
             }
 
-            if (!commandController.MessageCameFromChannel(channel))
+            if (!commandController.MessageCameFromChannel(address))
             {
-                bot.SendPrivateMessage(resultMessage, characterName);
+                bot.SendPrivateMessage(resultMessage, address);
             }
             else
             {
-                bot.SendMessageInChannel(resultMessage, channel);
+                bot.SendMessageInChannel(resultMessage, address);
             }
 
             if (BotMain._debug)

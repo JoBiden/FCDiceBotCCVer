@@ -1,4 +1,5 @@
-﻿using System;
+﻿using FChatDicebot.Model;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -12,10 +13,8 @@ namespace FChatDicebot.DiceFunctions
         public int DiceSides;
 
         public long Total;
-        public List<int> Rolls;
-        public List<int> HighlightedIndexes;
-        public List<int> CrossoutIndexes;
-        public List<int> BoldedIndexes;
+
+        public List<DiceFace> Rolls;
 
         public bool Error;
         public string ErrorString;
@@ -31,6 +30,12 @@ namespace FChatDicebot.DiceFunctions
         public int CountUnder;
 
         public bool Explode;
+        public bool ExplodeTable;
+        public bool FateDice;
+        public bool AlsoCountOver;
+        public int CountOfOver;
+        public bool AlsoCountUnder;
+        public int CountOfUnder;
         public int ExplodeThreshold;
 
         public DiceRollFormat RollFormat;
@@ -45,14 +50,16 @@ namespace FChatDicebot.DiceFunctions
             RollFormat = rollFormat;
         }
 
-        public DiceRoll(string playerName, string channelId, DiceBot diceBot)
+        public DiceRoll(MessageAddress address, BotMain botMain)
         {
-            FChatDicebot.SavedData.CharacterData dat = diceBot.GetCharacterData(playerName, channelId, true);
+            FChatDicebot.SavedData.CharacterData dat = botMain.DiceBot.GetCharacterData(address, true);
 
-            RollFormat = dat.DiceUnlocked? DiceRollFormat.GoldEicon6 : DiceRollFormat.OjEicon6;
+            bool goldDice = dat.DiceUnlocked || (botMain.AccountSettings != null && botMain.AccountSettings.FullCosmeticsUnlockCharacters != null &&
+                botMain.AccountSettings.FullCosmeticsUnlockCharacters.Count(a => a.ToLower() == address.character.ToLower()) > 0);
+            RollFormat = goldDice? DiceRollFormat.GoldEicon6 : DiceRollFormat.OjEicon6;
         }
 
-        public string ResultString(DiceRollFormat rollFormat = DiceRollFormat.Inherit, bool showTotal = true)
+        public string ResultString(DiceRollFormat rollFormat = DiceRollFormat.Inherit, bool sort = false, bool showTotal = true)
         {
             if (rollFormat == DiceRollFormat.Inherit)
                 rollFormat = RollFormat;
@@ -62,7 +69,14 @@ namespace FChatDicebot.DiceFunctions
                 return "ERROR: " + ErrorString;
             }
             if (DiceRolled > 0)
-                return "Rolled " + DiceRolled + "d" + DiceSides + " {" + PrintRollsList(Rolls, rollFormat) + "} " + GetConditionsString() + (showTotal ?  "= [b]" + Total + "[/b]" : "");
+            {
+                string extraOutput = "";
+                if (AlsoCountOver)
+                    extraOutput += " [sup]{w/ " + CountOfOver + " rolls over " + CountOver + "}[/sup]";
+                if (AlsoCountUnder)
+                    extraOutput += " [sup]{w/ " + CountOfUnder + " rolls under " + CountUnder + "}[/sup]";
+                return "Rolled " + DiceRolled + "d" + DiceSides + " {" + PrintRollsList(Rolls, sort, rollFormat) + "} " + GetConditionsString() + (showTotal ? "= [b]" + Total + "[/b]" + extraOutput : "");
+            }
             else
                 return "[b]" + Total + "[/b]";
         }
@@ -74,10 +88,7 @@ namespace FChatDicebot.DiceFunctions
 
             try
             {
-                Rolls = new List<int>();
-                BoldedIndexes = new List<int>();
-                CrossoutIndexes = new List<int>();
-                HighlightedIndexes = new List<int>();
+                Rolls = new List<DiceFace>();
 
                 int explosionBonusDice = 0;
                 int rerollBonusDice = 0;
@@ -86,13 +97,13 @@ namespace FChatDicebot.DiceFunctions
                 for (int i = 0; (i < DiceRolled + explosionBonusDice + rerollBonusDice && i < DiceBot.MaximumRolls); i++)
                 {
                     int rollAmount = r.Next(DiceSides) + 1;
-                    Rolls.Add(rollAmount);
+                    DiceFace thisRoll = new DiceFace() { Result = rollAmount };
 
                     if(RerollNumber != 0)
                     {
                         if(RerollNumber == rollAmount && !currentDieIsReroll)
                         {
-                            CrossoutIndexes.Add(i);
+                            thisRoll.Crossout = true;
                             rerollBonusDice++;
                             currentDieIsReroll = true;
                         }
@@ -102,7 +113,7 @@ namespace FChatDicebot.DiceFunctions
                         }
                     }
 
-                    if(Explode)
+                    if(Explode || ExplodeTable)
                     {
                         if((ExplodeThreshold == 0 && rollAmount == DiceSides) ||
                             (ExplodeThreshold > 1 && rollAmount >= ExplodeThreshold)
@@ -110,84 +121,80 @@ namespace FChatDicebot.DiceFunctions
                         {
                             if(TextFormat)
                             {
-                                BoldedIndexes.Add(i);
+                                thisRoll.Bold = true;
+                                thisRoll.UseTableExplosionScore = ExplodeTable;
                             }
                             explosionBonusDice++;
                         }
                     }
+                    if (FateDice)
+                    {
+                        if (DiceSides != 3)
+                            thisRoll.Result %= 3;
+
+                        thisRoll.Result -= 2;
+                    }
+                    Rolls.Add(thisRoll);
                 }
 
                 bool useKeptRollsTotal = false;
-                List<int> keptRolls = new List<int>();
+                List<DiceFace> keptRolls = new List<DiceFace>();
 
-                if(RerollNumber != 0)
+                //these two are not exclusive to the others anymore
+                if (CountOver != 0)
                 {
-                    for (int i = 0; i < Rolls.Count; i++ )
-                    {
-                        if (CrossoutIndexes.Contains(i))
-                        {
-                        }
-                        else
-                        {
-                            keptRolls.Add(Rolls[i]);
-                        }
-                    }
-
-                    useKeptRollsTotal = true;
-                }
-                else if(CountOver != 0)
-                {
-                    List<int> countedRollsIndexes = new List<int>();
                     for (int i = 0; i < Rolls.Count; i++)
                     {
-                        if (Rolls[i] > CountOver)
+                        if (Rolls[i].Result > CountOver)
                         {
-                            countedRollsIndexes.Add(i);
-                            keptRolls.Add(1);
+                            Rolls[i].Asterisk = true; //set later with total of kept or normal dice
+                            //CountOfOver++;
+                            //keptRolls.Add(new DiceFace(){ Result = 1 }); //also would set useKeptRolls = true; before
                         }
                     }
-
-                    useKeptRollsTotal = true;
-                    HighlightedIndexes = countedRollsIndexes;
                 }
-                else if (CountUnder != 0)
+                if (CountUnder != 0)
                 {
-                    List<int> countedRollsIndexes = new List<int>();
-
                     for (int i = 0; i < Rolls.Count; i++)
                     {
-                        if (Rolls[i] < CountUnder)
+                        if (Rolls[i].Result < CountUnder)
                         {
-                            countedRollsIndexes.Add(i);
-                            keptRolls.Add(1);
+                            Rolls[i].LowerAsterisk = true;
+                            //CountOfUnder++; //set later with total of kept or normal dice
+                            //keptRolls.Add(new DiceFace() { Result = 1 }); //also would set useKeptRolls = true; before
                         }
                     }
-
-                    useKeptRollsTotal = true;
-                    HighlightedIndexes = countedRollsIndexes;
                 }
-                else if(KeepHighest != 0)
+
+                List<DiceFace> currentKeptRolls = Rolls;
+
+                if (RerollNumber != 0)
                 {
-                    List<int> highestRollsIndexes = new List<int>();
-                    List<int> highestRollsValues = new List<int>();
+                    keptRolls = Rolls.Where(a => !a.Crossout).ToList();
+                    currentKeptRolls = keptRolls;//this is handled a little badly rn, but the value totalled at the end is keptRolls and this currentKeptRolls is just used along the way to track rerolled dice correctly
+                    useKeptRollsTotal = true;
+                }
+
+
+                if(KeepHighest != 0)
+                {
+                    List<DiceFace> highestRollsValues = new List<DiceFace>();
 
                     int index = 0;
-                    foreach(int j in Rolls)
+                    foreach(DiceFace j in currentKeptRolls)
                     {
-                        if(highestRollsIndexes.Count < KeepHighest)
+                        if (highestRollsValues.Count < KeepHighest)
                         {
-                            highestRollsIndexes.Add(index);
                             highestRollsValues.Add(j);
                         }
                         else
                         {
-                            int min = highestRollsValues.Min();
-                            if(min < j)
+                            int min = highestRollsValues.Min(a => a.Result);
+                            if(min < j.Result)
                             {
-                                int indexOfLowValue = highestRollsValues.IndexOf(min);
-                                highestRollsIndexes.RemoveAt(indexOfLowValue);
+                                DiceFace item = highestRollsValues.FirstOrDefault(a => a.Result == min);
+                                int indexOfLowValue = highestRollsValues.IndexOf(item);
                                 highestRollsValues.RemoveAt(indexOfLowValue);
-                                highestRollsIndexes.Add(index);
                                 highestRollsValues.Add(j);
                             }
                         }
@@ -196,30 +203,31 @@ namespace FChatDicebot.DiceFunctions
 
                     useKeptRollsTotal = true;
                     keptRolls = highestRollsValues;
-                    HighlightedIndexes = highestRollsIndexes;
+                    currentKeptRolls = keptRolls;
+                    foreach (DiceFace d in keptRolls)
+                    {
+                        d.Highlight = true;
+                    }
                 }
                 else if(KeepLowest != 0)
                 {
-                    List<int> highestRollsIndexes = new List<int>();
-                    List<int> highestRollsValues = new List<int>();
+                    List<DiceFace> highestRollsValues = new List<DiceFace>();
 
                     int index = 0;
-                    foreach (int j in Rolls)
+                    foreach (DiceFace j in currentKeptRolls)
                     {
-                        if (highestRollsIndexes.Count < KeepLowest)
+                        if (highestRollsValues.Count < KeepLowest)
                         {
-                            highestRollsIndexes.Add(index);
                             highestRollsValues.Add(j);
                         }
                         else
                         {
-                            int max = highestRollsValues.Max();
-                            if (max > j)
+                            int max = highestRollsValues.Max(a => a.Result);
+                            if (max > j.Result)
                             {
-                                int indexOfLowValue = highestRollsValues.IndexOf(max);
-                                highestRollsIndexes.RemoveAt(indexOfLowValue);
+                                DiceFace item = highestRollsValues.FirstOrDefault(a => a.Result == max);
+                                int indexOfLowValue = highestRollsValues.IndexOf(item);
                                 highestRollsValues.RemoveAt(indexOfLowValue);
-                                highestRollsIndexes.Add(index);
                                 highestRollsValues.Add(j);
                             }
                         }
@@ -228,30 +236,31 @@ namespace FChatDicebot.DiceFunctions
 
                     useKeptRollsTotal = true;
                     keptRolls = highestRollsValues;
-                    HighlightedIndexes = highestRollsIndexes;
+                    currentKeptRolls = keptRolls;
+                    foreach (DiceFace d in keptRolls)
+                    {
+                        d.Highlight = true;
+                    }
                 }
                 else if (RemoveHighest != 0)
                 {
-                    List<int> highestRollsIndexes = new List<int>();
-                    List<int> highestRollsValues = new List<int>();
+                    List<DiceFace> highestRollsValues = new List<DiceFace>();
 
                     int index = 0;
-                    foreach (int j in Rolls)
+                    foreach (DiceFace j in currentKeptRolls)
                     {
-                        if (highestRollsIndexes.Count < RemoveHighest)
+                        if (highestRollsValues.Count < RemoveHighest)
                         {
-                            highestRollsIndexes.Add(index);
                             highestRollsValues.Add(j);
                         }
                         else
                         {
-                            int min = highestRollsValues.Min();
-                            if (min < j)
+                            int min = highestRollsValues.Min(a => a.Result);
+                            if (min < j.Result)
                             {
-                                int indexOfLowValue = highestRollsValues.IndexOf(min);
-                                highestRollsIndexes.RemoveAt(indexOfLowValue);
+                                DiceFace item = highestRollsValues.FirstOrDefault(a => a.Result == min);
+                                int indexOfLowValue = highestRollsValues.IndexOf(item);
                                 highestRollsValues.RemoveAt(indexOfLowValue);
-                                highestRollsIndexes.Add(index);
                                 highestRollsValues.Add(j);
                             }
                         }
@@ -260,39 +269,41 @@ namespace FChatDicebot.DiceFunctions
 
                     useKeptRollsTotal = true;
 
-                    keptRolls = Utils.CopyList(Rolls);
+                    keptRolls = new List<DiceFace>(currentKeptRolls);
                     while (highestRollsValues.Count > 0)
                     {
-                        int value = highestRollsValues[0];
-                        int indexOfValue = keptRolls.IndexOf(value);
+                        int value = highestRollsValues[0].Result;
+                        DiceFace item = highestRollsValues.FirstOrDefault(a => a.Result == value);
+                        int indexOfValue = keptRolls.IndexOf(item);
                         keptRolls.RemoveAt(indexOfValue);
                         highestRollsValues.RemoveAt(0);
                     }
-                    
-                    HighlightedIndexes = highestRollsIndexes;
+
+                    currentKeptRolls = keptRolls;
+                    foreach (DiceFace d in keptRolls)
+                    {
+                        d.Highlight = true;
+                    }
                 }
                 else if (RemoveLowest != 0)
                 {
-                    List<int> highestRollsIndexes = new List<int>();
-                    List<int> highestRollsValues = new List<int>();
+                    List<DiceFace> highestRollsValues = new List<DiceFace>();
 
                     int index = 0;
-                    foreach (int j in Rolls)
+                    foreach (DiceFace j in currentKeptRolls)
                     {
-                        if (highestRollsIndexes.Count < RemoveLowest)
+                        if (highestRollsValues.Count < RemoveLowest)
                         {
-                            highestRollsIndexes.Add(index);
                             highestRollsValues.Add(j);
                         }
                         else
                         {
-                            int max = highestRollsValues.Max();
-                            if (max > j)
+                            int max = highestRollsValues.Max(a => a.Result);
+                            if (max > j.Result)
                             {
-                                int indexOfLowValue = highestRollsValues.IndexOf(max);
-                                highestRollsIndexes.RemoveAt(indexOfLowValue);
-                                highestRollsValues.RemoveAt(indexOfLowValue);
-                                highestRollsIndexes.Add(index);
+                                DiceFace item = highestRollsValues.FirstOrDefault(a => a.Result == max);
+                                int indexOfHighValue = highestRollsValues.IndexOf(item);
+                                highestRollsValues.RemoveAt(indexOfHighValue);
                                 highestRollsValues.Add(j);
                             }
                         }
@@ -300,22 +311,39 @@ namespace FChatDicebot.DiceFunctions
                     }
 
                     useKeptRollsTotal = true;
-                    keptRolls = Utils.CopyList(Rolls);
+
+                    keptRolls = new List<DiceFace>(currentKeptRolls);
                     while (highestRollsValues.Count > 0)
                     {
-                        int value = highestRollsValues[0];
-                        int indexOfValue = keptRolls.IndexOf(value);
+                        int value = highestRollsValues[0].Result;
+                        DiceFace item = highestRollsValues.FirstOrDefault(a => a.Result == value);
+                        int indexOfValue = keptRolls.IndexOf(item);
                         keptRolls.RemoveAt(indexOfValue);
                         highestRollsValues.RemoveAt(0);
                     }
 
-                    HighlightedIndexes = highestRollsIndexes;
+                    currentKeptRolls = keptRolls;
+                    foreach (DiceFace d in keptRolls)
+                    {
+                        d.Highlight = true;
+                    }
                 }
-                
+
+                List<DiceFace> countedRolls = Rolls;
                 if (useKeptRollsTotal)
-                    Total = keptRolls.Sum();
+                    countedRolls = keptRolls;
+
+                if (CountOver != 0)
+                    CountOfOver = countedRolls.Count(a => a.Result > CountOver);
+                if (CountUnder != 0)
+                    CountOfUnder = countedRolls.Count(a => a.Result < CountUnder);
+
+                if (CountOfOver > 0 && !AlsoCountOver)
+                    Total = CountOfOver;
+                if (CountOfUnder > 0 && !AlsoCountUnder)
+                    Total = CountOfUnder;
                 else
-                    Total = Rolls.Sum();
+                    Total = GetTotalOfRolls(countedRolls);
             }
             catch(Exception exc)
             {
@@ -324,24 +352,57 @@ namespace FChatDicebot.DiceFunctions
             }
         }
 
-        public string PrintRollsList(List<int> rollsList, DiceRollFormat rollFormat = DiceRollFormat.OjEicon6)
+        public int GetTotalOfRolls(List<DiceFace> usedList)
+        {
+            if (usedList == null || usedList.Count == 0)
+                return 0;
+
+            if (CountOver > 0 && !AlsoCountOver)
+            {
+                return CountOfOver;
+            }
+            if (CountUnder > 0 && !AlsoCountUnder)
+                return CountOfUnder;
+
+            if (ExplodeTable)
+            {
+                int currentTotal = usedList.Where(a => !a.UseTableExplosionScore).Sum(b => b.Result);
+                int explosionTableAmount = GetTableExplodeAmount(DiceSides, DiceRolled);
+                currentTotal += usedList.Count(a => a.UseTableExplosionScore) * explosionTableAmount;
+                return currentTotal;
+            }
+            else
+            {
+                return usedList.Sum(a => a.Result);
+            }
+        }
+
+        public string PrintRollsList(List<DiceFace> rollsList, bool sort, DiceRollFormat rollFormat = DiceRollFormat.OjEicon6)
         {
             if (rollsList == null || rollsList.Count == 0)
                 return "";
 
+            List<DiceFace> usedList = new List<DiceFace>(rollsList);
+
+            if(sort)
+            {
+                usedList = usedList.OrderBy(a => a.Result).ToList();
+            }
+
             string rtnString = "";
 
-            bool noFormats = (CrossoutIndexes == null || CrossoutIndexes.Count() == 0) &&
-                (HighlightedIndexes == null || HighlightedIndexes.Count() == 0) &&
-                (BoldedIndexes == null || BoldedIndexes.Count() == 0);
+            bool formatsRequired = Rolls.Where(a => a.Highlight || a.Bold || a.Crossout).Count() > 0;
+
             string shownDice = "";
-            bool powerTenDie = DiceSides.ToString().Count(a => a == '1') == 1 && DiceSides.ToString().Count(a => a == '0') > 0;
-            //show vanity dice before the main roll: the main roll will show the crossed out/ highlighted/ etc dice
-            if (!noFormats && rollFormat != DiceRollFormat.Text && (DiceSides == 6 || (powerTenDie)) && DiceRolled <= 10)
+            List<int> diceSidesList = new List<int>() { 4, 6, 8, 10, 12, 20 };
+            bool powerTenDie = DiceSides % 10 == 0;
+
+            //only used when there are highlights or crossouts due to keeping certain dice or rerolling AND format is not text
+            if (formatsRequired && rollFormat != DiceRollFormat.Text && (powerTenDie || diceSidesList.Contains(DiceSides)) &&  DiceRolled <= 10)
             {
-                foreach (int i in rollsList)
+                foreach (DiceFace i in usedList)
                 {
-                    string addition = GetDiceResult(rollFormat, true, DiceSides, i);
+                    string addition = GetDiceResult(rollFormat, true, FateDice, DiceSides, i.Result);
 
                     shownDice += addition;
                 }
@@ -349,28 +410,30 @@ namespace FChatDicebot.DiceFunctions
             }
             int count = 0;
             int digits = DiceSides.ToString().Length - 1;
-            bool showEicon = rollFormat != DiceRollFormat.Text && ((DiceSides == 6 && DiceRolled <= 10) || ((powerTenDie) && DiceRolled <= (10 / digits))) && noFormats;
-            foreach(int i in rollsList)
-            {
-                string addition = GetDiceResult(rollFormat, showEicon,DiceSides, i);
-                
-                if (addition.Length < 15 && rtnString.Length > 0)
-                    rtnString += ", ";
-                else if (addition.Length > 15 && powerTenDie && rtnString.Length > 0)
-                {
-                    rtnString += ", ";
-                }
 
-                if(CrossoutIndexes != null && CrossoutIndexes.Contains(count))
+            bool showEiconInMainString = rollFormat != DiceRollFormat.Text && !formatsRequired;
+
+            foreach (DiceFace i in usedList)
+            {
+                string addition = GetDiceResult(rollFormat, showEiconInMainString, FateDice, DiceSides, i.Result);
+
+                if (rtnString.Length > 0)
+                    rtnString += ", ";
+
+                if(i.Crossout)
                 {
                     addition = "[s]" + addition + "[/s]";
                 }
+                if (i.Asterisk)
+                    addition += "[sup]*[/sup]";
+                if (i.LowerAsterisk)
+                    addition += "[sub]*[/sub]";
 
-                if (HighlightedIndexes != null && HighlightedIndexes.Contains(count))
+                if (i.Highlight)
                 {
                     addition = "[color=yellow]" + addition + "[/color]";
                 }
-                else if (BoldedIndexes != null && BoldedIndexes.Contains(count))
+                else if (i.Bold)
                 {
                     addition = "[b]" + addition + "[/b]";
                 }
@@ -382,18 +445,44 @@ namespace FChatDicebot.DiceFunctions
             return shownDice + rtnString;
         }
 
-        public string GetDiceResult( DiceRollFormat rollFormat, bool showEicon, int sides, int dieRoll)
+        public string GetDiceResult( DiceRollFormat rollFormat, bool showEicon, bool fateDice, int sides, int dieRoll)
         {
             string addition = dieRoll.ToString();
+            if (fateDice)
+            {
+                switch (dieRoll)
+                {
+                    case -1: addition = "[color=red]-[/color]"; break;
+                    case 0: addition = "o"; break;
+                    case 1: addition = "[color=green]+[/color]"; break;
+                }
+            }
             if (showEicon)
             {
                 if (rollFormat == DiceRollFormat.GoldEicon6)
                 {
-                    if(sides == 6)
+                    if (sides == 4)
                     {
-                        addition = "[eicon]dbgoldd6-" + dieRoll + "[/eicon]";
+                        addition = FChatDicebot.TextFormat.Emoji("d4gold-" + dieRoll);
                     }
-                    else
+                    else if (sides == 6)
+                    {
+                        addition = FChatDicebot.TextFormat.Emoji("db-d6gold-" + dieRoll);
+                        //addition = FChatDicebot.TextFormat.Emoji("dbgoldd6-" + dieRoll);
+                    }
+                    else if (sides == 8)
+                    {
+                        addition = FChatDicebot.TextFormat.Emoji("d8gold-" + dieRoll);
+                    }
+                    else if (sides == 12)
+                    {
+                        addition = FChatDicebot.TextFormat.Emoji("d12gold-" + dieRoll);
+                    }
+                    else if (sides == 20)
+                    {
+                        addition = FChatDicebot.TextFormat.Emoji("d20gold-" + dieRoll);
+                    }
+                    else if (sides % 10 == 0) //check d-10 string
                     {
                         addition = "";
                         //d10s/100/1000/10000 etc
@@ -401,29 +490,41 @@ namespace FChatDicebot.DiceFunctions
                         int startIndex = 0;
                         if(roll10String.StartsWith("10") && roll10String.Length == sides.ToString().Length)
                         {
-                            addition += "[eicon]dbgoldd10-10[/eicon]";
+                            addition += FChatDicebot.TextFormat.Emoji("db-d10gold-10");
+                            //addition += FChatDicebot.TextFormat.Emoji("dbgoldd10-10");
                             startIndex = 2;
                         }
                         for (int i = startIndex; i < roll10String.Length; i++ )
                         {
-                            addition += "[eicon]dbgoldd10-" + roll10String[i] + "[/eicon]";
+                            addition += FChatDicebot.TextFormat.Emoji("db-d10gold-" + roll10String[i]);
+                            //addition += FChatDicebot.TextFormat.Emoji("dbgoldd10-" + roll10String[i]);
                         }
                     }
                 }
                 else
                 {
-                    if(sides == 6)
+                    if (sides == 4)
                     {
-                        if (dieRoll == 1)
-                        {
-                            addition = "[eicon]dboj-dice1[/eicon]";
-                        }
-                        else
-                        {
-                            addition = "[eicon]oj-dice" + dieRoll + "[/eicon]";
-                        }
+                        addition = FChatDicebot.TextFormat.Emoji("d4-" + dieRoll);
                     }
-                    else
+                    else if (sides == 6)
+                    {
+                        addition = FChatDicebot.TextFormat.Emoji("db-d6-" + dieRoll);
+                        //addition = FChatDicebot.TextFormat.Emoji("dbd6-" + dieRoll);
+                    }
+                    else if (sides == 8)
+                    {
+                        addition = FChatDicebot.TextFormat.Emoji("d8-" + dieRoll);
+                    }
+                    else if (sides == 12)
+                    {
+                        addition = FChatDicebot.TextFormat.Emoji("d12-" + dieRoll);
+                    }
+                    else if (sides == 20)
+                    {
+                        addition = FChatDicebot.TextFormat.Emoji("d20-" + dieRoll);
+                    }
+                    else if (sides % 10 == 0) //check d-10 string
                     {
                         addition = "";
                         //d10s/100/1000/10000 etc
@@ -431,12 +532,14 @@ namespace FChatDicebot.DiceFunctions
                         int startIndex = 0;
                         if (roll10String.StartsWith("10") && roll10String.Length == sides.ToString().Length)
                         {
-                            addition += "[eicon]dbredd10-10[/eicon]";
+                            addition += FChatDicebot.TextFormat.Emoji("db-d10-10");
+                            //addition += FChatDicebot.TextFormat.Emoji("dbredd10-10");
                             startIndex = 2;
                         }
                         for (int i = startIndex; i < roll10String.Length; i++)
                         {
-                            addition += "[eicon]dbredd10-" + roll10String[i] + "[/eicon]";
+                            addition += FChatDicebot.TextFormat.Emoji("db-d10-" + roll10String[i]);
+                            //addition += FChatDicebot.TextFormat.Emoji("dbredd10-" + roll10String[i]);
                         }
                     }
                 }
@@ -454,7 +557,31 @@ namespace FChatDicebot.DiceFunctions
 
             return numberString;
         }
-        
+
+        public int GetTableExplodeAmount(int dieSides, int dieAmount)
+        {
+            int amountExplode = dieSides;
+            if (dieAmount > 1)
+            {
+                if (dieSides <= 3)
+                    amountExplode = Math.Max(dieSides - 2, 0);
+                else
+                    amountExplode = dieSides - 1;
+            }
+            else
+            {
+                if (dieSides <= 1)
+                    amountExplode = 0;
+                else if (dieSides == 2)
+                    amountExplode = 1;
+                else if (dieSides == 3)
+                    amountExplode = 2;
+                else
+                    amountExplode = (int)Math.Floor(((double)dieSides - 4) * 1.5) + 4;//4 = 4, 6 = 7, 8 = 10, 10 = 13, etc
+            }
+            return amountExplode;
+        }
+
         public string GetConditionsString()
         {
             string explodeStr = "";
@@ -464,27 +591,35 @@ namespace FChatDicebot.DiceFunctions
                 explodeStr += "(Maximum roll count reached.)";
             }
 
-            if (Explode)
+            if (Explode || ExplodeTable)
             {
                 string explosionNumberPrint = (ExplodeThreshold > 0 ? ExplodeThreshold + "+" : DiceSides.ToString());
-                explodeStr += "(exploding on " + explosionNumberPrint + ") ";
+                if (ExplodeTable)
+                {
+                    int explodeAmount = GetTableExplodeAmount(DiceSides, DiceRolled);
+                    explodeStr += "(exploding on " + explosionNumberPrint + " for " + explodeAmount + ") ";
+                }
+                else
+                    explodeStr += "(exploding on " + explosionNumberPrint + ") ";
             }
-            if (RerollNumber > 0)
-                return explodeStr + "(re-rolling once on " + RerollNumber + ") ";
-            if (CountOver > 0)
-                return explodeStr + "(# of rolls over " + CountOver + ") ";
-            if (CountUnder > 0)
-                return explodeStr + "(# of rolls under " + CountUnder + ") ";
-            if (KeepHighest > 0)
-                return explodeStr + "(keeping highest " + KeepHighest + ") ";
-            if (KeepLowest > 0)
-                return explodeStr + "(keeping lowest " + KeepLowest + ") ";
-            if (RemoveHighest > 0)
-                return explodeStr + "(removing highest " + RemoveHighest + ") ";
-            if (RemoveLowest > 0)
-                return explodeStr + "(removing lowest " + RemoveLowest + ") ";
 
-            return explodeStr;
+            string outputString = explodeStr;
+            if (RerollNumber > 0)
+                outputString += "(re-rolling once on " + RerollNumber + ") ";
+            if (KeepHighest > 0)
+                outputString += "(keeping highest " + KeepHighest + ") ";
+            if (KeepLowest > 0)
+                outputString += "(keeping lowest " + KeepLowest + ") ";
+            if (RemoveHighest > 0)
+                outputString += "(removing highest " + RemoveHighest + ") ";
+            if (RemoveLowest > 0)
+                outputString += "(removing lowest " + RemoveLowest + ") ";
+            if (CountOver > 0 && !AlsoCountOver)
+                outputString += "(# of rolls over " + CountOver + ") ";
+            if (CountUnder > 0 && !AlsoCountUnder)
+                outputString += "(# of rolls under " + CountUnder + ") ";
+
+            return outputString;
         }
     }
 
@@ -495,5 +630,16 @@ namespace FChatDicebot.DiceFunctions
         GoldEicon6,
         AllEiconDb,
         Inherit
+    }
+
+    public class DiceFace
+    {
+        public int Result;
+        public bool Highlight;
+        public bool Asterisk;
+        public bool LowerAsterisk;
+        public bool Crossout;
+        public bool Bold;
+        public bool UseTableExplosionScore;
     }
 }

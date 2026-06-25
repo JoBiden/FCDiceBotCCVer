@@ -22,10 +22,10 @@ namespace FChatDicebot.DiceFunctions
         public Potion(string name, ItemCategory category, double rarity, int goldValue) : base(name, category, rarity, goldValue)
         {
         }
-        
+
         public override string GetName()
         {
-            return GetName(false);
+            return GetName(enchantment == null? false : enchantment.HidePotionDetails);
         }
 
         public override string GetName(bool hidePotionDetails)
@@ -72,6 +72,7 @@ namespace FChatDicebot.DiceFunctions
                 return "(invalid potion)";
 
             bool hidePotionDetails = enchantment.HidePotionDetails;
+            bool hideValue = enchantment.HideValue;
             string str = "";
             for (int i = 0; i < strength; i++)
                 str += "☆";
@@ -94,18 +95,31 @@ namespace FChatDicebot.DiceFunctions
             string explanationString = " \n[sub]" + enchantment.explanation + "[/sub]";
 
             string rarity = GetRarityString();
-            
-            string flavorString = string.IsNullOrEmpty(flavor) ? "" : ( "\n[sub]" + flavor.Substring(0, 1).ToUpper() + flavor.Substring(1) + " flavored. " + rarity + "[/sub]" );
-            string eiconString = "[eicon]" + eicon + "[/eicon]";
+            string value = "Value: " + GetValue() + " " + BotMain.CurrencyPlaceholder + "s";
+
+            string flavorString = string.IsNullOrEmpty(flavor) ? "" : ( "\n[sub]" + flavor.Substring(0, 1).ToUpper() + flavor.Substring(1) + " flavored. " + "[/sub]" );
+            string rarityAndValueString = "[sub]" + rarity + ", " + value + "[/sub]";
+            string rarityString = "[sub]" + rarity + "[/sub]";
+            string valueString = "[sub]" + value + "[/sub]";
+            string eiconString = FChatDicebot.TextFormat.Emoji(eicon);
 
             string potionName = GetName(hidePotionDetails);
             string returnString = potionName + strengthString + eiconString + explanationString + flavorString;
-            if(hidePotionDetails)
+            if (hideValue)
+                returnString += rarityString;
+            else
+                returnString += rarityAndValueString;
+
+            if (hidePotionDetails)
             {
-                returnString = potionName + eiconString + explanationString;
+                returnString = potionName + eiconString + explanationString;// + "\n" + rarityString;
+                if (!hideValue)
+                {
+                    returnString += "\n" + valueString;
+                }
             }
-            
-            returnString = returnString.Substring(0, 1).ToUpper() + returnString.Substring(1);
+
+            returnString = returnString.Substring(0, 1).ToUpper() + returnString.Substring(1); //capitalize first letter
             return returnString;
         }
 

@@ -7,6 +7,7 @@ using FChatDicebot.BotCommands.Base;
 using FChatDicebot.SavedData;
 using Newtonsoft.Json;
 using FChatDicebot.DiceFunctions;
+using FChatDicebot.Model;
 
 namespace FChatDicebot.BotCommands
 {
@@ -21,18 +22,11 @@ namespace FChatDicebot.BotCommands
             LockCategory = CommandLockCategory.NONE;
         }
 
-        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
+        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, MessageAddress address, UserGeneratedCommand command)
         {
-            string result = "[color=pink][b]Pink[/b] is the best color ˚*＊*˚*＊~ [/color][eicon]smoochpink[/eicon]";
+            string result = "[color=pink][b]Pink[/b] is the best color ˚*＊*˚*＊~ " + FChatDicebot.TextFormat.Emoji("smoochpink");
 
-            if (!commandController.MessageCameFromChannel(channel))
-            {
-                bot.SendPrivateMessage(result, characterName);
-            }
-            else
-            {
-                bot.SendMessageInChannel(result, channel);
-            }
+            SendMessageToChannelOrUser(bot, commandController, address, result);
         }
     }
 }

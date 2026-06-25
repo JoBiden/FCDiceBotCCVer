@@ -14,8 +14,10 @@ namespace FChatDicebot
     public class BotFutureMessage
     {
         public string MessageContent;
-        public string Channel;
-        public string Character;
+        public MessageAddress Address;
+        //public string Channel;
+        //public string Guild;
+        //public string Character;
 
         public bool ChannelMessage;
 

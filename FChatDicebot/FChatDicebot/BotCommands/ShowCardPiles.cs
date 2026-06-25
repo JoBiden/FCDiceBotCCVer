@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using FChatDicebot.BotCommands.Base;
 using FChatDicebot.DiceFunctions;
+using FChatDicebot.Model;
 
 namespace FChatDicebot.BotCommands
 {
@@ -19,13 +20,13 @@ namespace FChatDicebot.BotCommands
             LockCategory = CommandLockCategory.ChannelDecks;
         }
 
-        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
+        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, MessageAddress address, UserGeneratedCommand command)
         {
             bool allPiles = false;
             bool revealHand = false;
             bool secretOutput = false;
-            string characterDrawName = commandController.GetCharacterDrawNameFromCommandTerms(characterName, terms);
-            SavedData.ChannelSettings channelSettings = bot.GetChannelSettings(channel);
+            string characterDrawName = commandController.GetCharacterDrawNameFromCommandTerms(address.character, terms);
+            SavedData.ChannelSettings channelSettings = bot.GetChannelSettings(address);
 
             if (terms.Contains("reveal"))
                 revealHand = true;
@@ -40,7 +41,7 @@ namespace FChatDicebot.BotCommands
             DeckType deckType = commandController.GetDeckTypeFromCommandTerms(terms, out customDeckName);
 
             string deckTypeString = Utils.GetDeckTypeStringHidePlaying(deckType, customDeckName);
-            Hand h = bot.DiceBot.GetHand(channel, deckType, customDeckName, characterName);
+            Hand h = bot.DiceBot.GetHand(deckType, customDeckName, address, null);
 
             string displayName = characterDrawName;
             if (displayName.Contains(DiceBot.PlaySuffix))
@@ -50,12 +51,20 @@ namespace FChatDicebot.BotCommands
 
             string outputString = "[i]Card piles for " + deckTypeString;
 
+            Deck deckInUse = bot.DiceBot.GetDeck(address, deckType, customDeckName);
+            if (channelSettings != null && Utils.GetNsfwError(channelSettings, deckInUse, out outputString))
+            {
+                //sendMessage set in error method
+                SendMessageToChannelOrUser(bot, commandController, address, outputString);
+                return;
+            }
+
             bool showHandSize = !revealHand;
             if (secretOutput)
                 showHandSize = false;
             outputString += "\n[user]" + displayName + "[/user]'s " + h.GetCollectionName() + ": [/i]" + h.Print(showHandSize, channelSettings.CardPrintSetting);
 
-            Hand hiddenplay = bot.DiceBot.GetHand(channel, deckType, customDeckName, characterName + DiceBot.HiddenPlaySuffix);
+            Hand hiddenplay = bot.DiceBot.GetHand(deckType, customDeckName, address, DiceBot.HiddenPlaySuffix);
 
             if(!secretOutput && h != null)
             {
@@ -64,16 +73,17 @@ namespace FChatDicebot.BotCommands
                 {
                     privateOutput += "\n[i]" + deckTypeString + " " + h.GetCollectionName() + ": [/i]" + hiddenplay.Print(false, channelSettings.CardPrintSetting);
                 }
-                bot.SendPrivateMessage(privateOutput, characterName);
+                bot.SendPrivateMessage(privateOutput, address);
             }
 
-            Hand play = bot.DiceBot.GetHand(channel, deckType, customDeckName, characterName + DiceBot.PlaySuffix);
+            Hand play = bot.DiceBot.GetHand(deckType, customDeckName, address, DiceBot.PlaySuffix);
             outputString += "\n[i]cards in play: [/i]" + play.Print(false, channelSettings.CardPrintSetting);
             if(hiddenplay != null && (hiddenplay.CardsCount() > 0 || allPiles))
             {
                 outputString += "\n[i]hidden cards in play: [/i]" + hiddenplay.Print(showHandSize, channelSettings.CardPrintSetting);
             }
-            Hand discarded = bot.DiceBot.GetHand(channel, deckType, customDeckName, DiceBot.DiscardPlayerAlias);
+            Hand discarded = bot.DiceBot.GetHand(deckType, customDeckName, new MessageAddress() { character = DiceBot.DiscardPlayerAlias, channel = address.channel, guild = address.guild }, null);
+
             if(discarded != null && (discarded.CardsCount() > 0 || allPiles))
             {
                 outputString += "\n[i]discarded cards: [/i]" + discarded.Print(false, channelSettings.CardPrintSetting);
@@ -81,23 +91,25 @@ namespace FChatDicebot.BotCommands
 
             if (characterDrawName == DiceBot.BurnCardsPlayerAlias || allPiles)
             {
-                Hand hNew = bot.DiceBot.GetHand(channel, deckType, customDeckName, DiceBot.BurnCardsPlayerAlias);
+                Hand hNew = bot.DiceBot.GetHand(deckType, customDeckName, new MessageAddress() { character = DiceBot.BurnCardsPlayerAlias, channel = address.channel, guild = address.guild }, null);
+
                 outputString += "\n[i]burned cards: [/i]" + hNew.Print(showHandSize, channelSettings.CardPrintSetting);
             }
             if (characterDrawName == DiceBot.DealerPlayerAlias || allPiles)
             {
-                Hand hNew = bot.DiceBot.GetHand(channel, deckType, customDeckName, DiceBot.DealerPlayerAlias);
+                Hand hNew = bot.DiceBot.GetHand(deckType, customDeckName, new MessageAddress() { character = DiceBot.DealerPlayerAlias, channel = address.channel, guild = address.guild }, null);
+
                 outputString += "\n[i]dealer's hand: [/i]" + hNew.Print(showHandSize, channelSettings.CardPrintSetting);
             }
 
             if(secretOutput)
             {
-                bot.SendPrivateMessage(outputString, characterName);
-                bot.SendMessageInChannel("Sent information for card piles to " + Utils.GetCharacterUserTags(characterName), channel);
+                bot.SendPrivateMessage(outputString, address);
+                bot.SendMessageInChannel("Sent information for card piles to " + TextFormat.GetCharacterUserTags(address.character), address);
             }
             else
             {
-                bot.SendMessageInChannel(outputString, channel);
+                bot.SendMessageInChannel(outputString, address);
             }
         }
     }

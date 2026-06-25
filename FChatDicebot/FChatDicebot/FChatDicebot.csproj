@@ -9,8 +9,24 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>FChatDicebot</RootNamespace>
     <AssemblyName>FChatDicebot</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
+    <PublishUrl>publish\</PublishUrl>
+    <Install>true</Install>
+    <InstallFrom>Disk</InstallFrom>
+    <UpdateEnabled>false</UpdateEnabled>
+    <UpdateMode>Foreground</UpdateMode>
+    <UpdateInterval>7</UpdateInterval>
+    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+    <UpdatePeriodically>false</UpdatePeriodically>
+    <UpdateRequired>false</UpdateRequired>
+    <MapFileExtensions>true</MapFileExtensions>
+    <ApplicationRevision>0</ApplicationRevision>
+    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <UseApplicationTrust>false</UseApplicationTrust>
+    <BootstrapperEnabled>true</BootstrapperEnabled>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -32,12 +48,66 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\packages\Newtonsoft.Json.12.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
-      <Private>True</Private>
+    <Reference Include="Discord.Net.Commands, Version=3.14.1.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Discord.Net.Commands.3.14.1\lib\net461\Discord.Net.Commands.dll</HintPath>
+    </Reference>
+    <Reference Include="Discord.Net.Core, Version=3.14.1.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Discord.Net.Core.3.14.1\lib\net461\Discord.Net.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="Discord.Net.Interactions, Version=3.14.1.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Discord.Net.Interactions.3.14.1\lib\net461\Discord.Net.Interactions.dll</HintPath>
+    </Reference>
+    <Reference Include="Discord.Net.Rest, Version=3.14.1.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Discord.Net.Rest.3.14.1\lib\net461\Discord.Net.Rest.dll</HintPath>
+    </Reference>
+    <Reference Include="Discord.Net.Webhook, Version=3.14.1.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Discord.Net.Webhook.3.14.1\lib\netstandard2.0\Discord.Net.Webhook.dll</HintPath>
+    </Reference>
+    <Reference Include="Discord.Net.WebSocket, Version=3.14.1.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Discord.Net.WebSocket.3.14.1\lib\net461\Discord.Net.WebSocket.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Bcl.AsyncInterfaces, Version=6.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Bcl.AsyncInterfaces.6.0.0\lib\net461\Microsoft.Bcl.AsyncInterfaces.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Extensions.DependencyInjection.Abstractions, Version=6.0.0.0, Culture=neutral, PublicKeyToken=adb9793829ddae60, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Extensions.DependencyInjection.Abstractions.6.0.0\lib\net461\Microsoft.Extensions.DependencyInjection.Abstractions.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.13.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="System.Buffers, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Buffers.4.5.1\lib\net461\System.Buffers.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Collections.Immutable, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Collections.Immutable.6.0.0\lib\net461\System.Collections.Immutable.dll</HintPath>
+    </Reference>
     <Reference Include="System.Core" />
+    <Reference Include="System.Interactive.Async, Version=6.0.0.0, Culture=neutral, PublicKeyToken=94bc3704cddfc263, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Interactive.Async.6.0.1\lib\netstandard2.0\System.Interactive.Async.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Linq.Async, Version=6.0.0.0, Culture=neutral, PublicKeyToken=94bc3704cddfc263, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Linq.Async.6.0.1\lib\netstandard2.0\System.Linq.Async.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Memory, Version=4.0.1.1, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Memory.4.5.4\lib\net461\System.Memory.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Numerics" />
+    <Reference Include="System.Numerics.Vectors, Version=4.1.4.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Numerics.Vectors.4.5.0\lib\net46\System.Numerics.Vectors.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Reactive, Version=6.0.0.0, Culture=neutral, PublicKeyToken=94bc3704cddfc263, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Reactive.6.0.0\lib\netstandard2.0\System.Reactive.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Runtime.CompilerServices.Unsafe, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Runtime.CompilerServices.Unsafe.6.0.0\lib\net461\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Threading.Tasks.Extensions, Version=4.2.0.1, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Threading.Tasks.Extensions.4.5.4\lib\net461\System.Threading.Tasks.Extensions.dll</HintPath>
+    </Reference>
+    <Reference Include="System.ValueTuple, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.ValueTuple.4.5.0\lib\net461\System.ValueTuple.dll</HintPath>
+    </Reference>
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -50,13 +120,33 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BotCommandController.cs" />
+    <Compile Include="BotCommands\DeleteJobsList.cs" />
+    <Compile Include="BotCommands\RemoveAllChipsOverAmount.cs" />
+    <Compile Include="BotCommands\SaveJobsList.cs" />
+    <Compile Include="BotCommands\SetChannelDescription.cs" />
+    <Compile Include="BotCommands\ShowChannelsJoined.cs" />
     <Compile Include="BotCommands\CombinedCommands\MoveChips.cs" />
     <Compile Include="BotCommands\DeletePotion.cs" />
     <Compile Include="BotCommands\HelpGame.cs" />
     <Compile Include="BotCommands\GameHelp.cs" />
     <Compile Include="BotCommands\DeckJson.cs" />
+    <Compile Include="BotCommands\MyDecks.cs" />
     <Compile Include="BotCommands\PotionJson.cs" />
+    <Compile Include="BotCommands\Lizard.cs" />
+    <Compile Include="BotCommands\GenerateMonster.cs" />
+    <Compile Include="BotCommands\ShowLastRoll.cs" />
+    <Compile Include="BotCommands\ShowMonster.cs" />
+    <Compile Include="BotCommands\ShowPotionMenu.cs" />
+    <Compile Include="BotCommands\ShowPotionPrices.cs" />
+    <Compile Include="BotCommands\Spock.cs" />
+    <Compile Include="BotCommands\JobsListJson.cs" />
     <Compile Include="BotCommands\TableJson.cs" />
+    <Compile Include="BotCommands\AuditChannels.cs" />
+    <Compile Include="BotCommands\TestDiscordEmote.cs" />
+    <Compile Include="BotCommands\Directory.cs" />
+    <Compile Include="BotCommands\Timeout.cs" />
+    <Compile Include="BotCommands\UnlockDiceAll.cs" />
+    <Compile Include="BotCommands\ViewStartupChannels.cs" />
     <Compile Include="BotCommands\UsePower2.cs" />
     <Compile Include="BotCommands\UsePowerSecondary.cs" />
     <Compile Include="BotCommands\UsePower.cs" />
@@ -72,8 +162,6 @@
     <Compile Include="BotCommands\RestrictChips.cs" />
     <Compile Include="BotCommands\Work.cs" />
     <Compile Include="BotCommands\LuckForecast.cs" />
-    <Compile Include="BotCommands\CancelBuyChips.cs" />
-    <Compile Include="BotCommands\BuyChips.cs" />
     <Compile Include="BotCommands\Cashout.cs" />
     <Compile Include="BotCommands\CombinedCommands\SendCommandToGame.cs" />
     <Compile Include="BotCommands\ForceGiveChips.cs" />
@@ -92,7 +180,6 @@
     <Compile Include="BotCommands\HideCard.cs" />
     <Compile Include="BotCommands\RevealCard.cs" />
     <Compile Include="BotCommands\TestChannel.cs" />
-    <Compile Include="BotCommands\TestVcConnection.cs" />
     <Compile Include="BotCommands\TestSlotRolls.cs" />
     <Compile Include="BotCommands\TestSetHand.cs" />
     <Compile Include="BotCommands\TipDie.cs" />
@@ -170,13 +257,42 @@
     <Compile Include="BotCommands\DrawCard.cs" />
     <Compile Include="BotCommands\FitD.cs" />
     <Compile Include="BotCommands\Roll.cs" />
+    <Compile Include="ChannelsAuditSession.cs" />
+    <Compile Include="DiceFunctions\Games\AlphaRoyale.cs" />
+    <Compile Include="DiceFunctions\Games\Chess.cs" />
+    <Compile Include="DiceFunctions\Games\CustomChessEngine\Board.cs" />
+    <Compile Include="DiceFunctions\Games\CustomChessEngine\ChessEngine.cs" />
+    <Compile Include="DiceFunctions\Games\CustomChessEngine\Evaluation.cs" />
+    <Compile Include="DiceFunctions\Games\CustomChessEngine\GameController.cs" />
+    <Compile Include="DiceFunctions\Games\CustomChessEngine\MatchRecording.cs" />
+    <Compile Include="DiceFunctions\Games\CustomChessEngine\Move.cs" />
+    <Compile Include="DiceFunctions\Games\CustomChessEngine\MoveGenerator.cs" />
+    <Compile Include="DiceFunctions\Games\CustomChessEngine\Piece.cs" />
+    <Compile Include="DiceFunctions\Games\CustomChessEngine\Ruleset.cs" />
+    <Compile Include="DiceFunctions\Games\CustomChessEngine\Search.cs" />
+    <Compile Include="DiceFunctions\Games\CustomChessEngine\TranspositionTable.cs" />
+    <Compile Include="DiceFunctions\Games\CustomChessEngine\Zobrist.cs" />
     <Compile Include="DiceFunctions\Games\Mafia.cs" />
+    <Compile Include="DiceFunctions\Games\DungeonDelve.cs" />
+    <Compile Include="DiceFunctions\TierEntry.cs" />
+    <Compile Include="DiceFunctions\JobEntry.cs" />
+    <Compile Include="DiceFunctions\JobsList.cs" />
     <Compile Include="DiceFunctions\VcChipOrder.cs" />
+    <Compile Include="Model\CDSclient.cs" />
+    <Compile Include="Model\CDSserver.cs" />
+    <Compile Include="Model\MGWebRequest.cs" />
+    <Compile Include="Model\GenerateMonsterRequest.cs" />
+    <Compile Include="SavedData\SavedJobsList.cs" />
+    <Compile Include="ShaUtility.cs" />
+    <Compile Include="Model\DiscordSocketMessage.cs" />
+    <Compile Include="Model\MessageAddress.cs" />
+    <Compile Include="Model\ChatMessage.cs" />
+    <Compile Include="SavedData\Base\ICustomUserContent.cs" />
     <Compile Include="SavedData\SavedPotion.cs" />
-    <Compile Include="VelvetcuffConnection.cs" />
+    <Compile Include="TextFormat.cs" />
+    <Compile Include="DoubleTime.cs" />
     <Compile Include="BotMain.cs" />
     <Compile Include="BotFutureMessage.cs" />
-    <Compile Include="BuyCommand.cs" />
     <Compile Include="BotMessageFactory.cs" />
     <Compile Include="BotMessageQueue.cs" />
     <Compile Include="BotWebRequests.cs" />
@@ -217,8 +333,6 @@
     <Compile Include="Model\BotMessage.cs" />
     <Compile Include="Model\COLclient.cs" />
     <Compile Include="Model\PostOAuthReponse.cs" />
-    <Compile Include="Model\VCTransactionResponse.cs" />
-    <Compile Include="Model\VCTransactionRequest.cs" />
     <Compile Include="Model\JCHserver.cs" />
     <Compile Include="Model\MSGserver.cs" />
     <Compile Include="Model\HLOserver.cs" />
@@ -255,8 +369,23 @@
     <None Include="App.config" />
     <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Model\MonsterGenerator\Data\" />
+  </ItemGroup>
+  <ItemGroup>
+    <BootstrapperPackage Include=".NETFramework,Version=v4.6.1">
+      <Visible>False</Visible>
+      <ProductName>Microsoft .NET Framework 4.6.1 %28x86 and x64%29</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it.
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">
   </Target>

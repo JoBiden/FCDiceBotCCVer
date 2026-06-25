@@ -20,24 +20,24 @@ namespace FChatDicebot.BotCommands
             LockCategory = CommandLockCategory.NONE;
         }
 
-        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
+        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, MessageAddress address, UserGeneratedCommand command)
         {
-            string messageString = "[b][DICE BOT ADMIN MESSAGE]:[/b] " + Utils.GetFullStringOfInputs(rawTerms);
+            string messageString = "[b]" + DiceBot.DiceBotCharacter + " Admin Message:[/b] " + Utils.GetFullStringOfInputs(rawTerms);
 
-            string resultMessageString = "[b][ADMIN] Sending message to all occupied channels: [/b]" + messageString;
-            
-            if (!commandController.MessageCameFromChannel(channel))
+            string resultMessageString = "[b](Admin) Sending message to all occupied channels: [/b]" + messageString;
+
+            if (!commandController.MessageCameFromChannel(address))
             {
-                bot.SendPrivateMessage(resultMessageString, characterName);
+                bot.SendPrivateMessage(resultMessageString, address);
             }
             else
             {
-                bot.SendMessageInChannel(resultMessageString, channel);
+                bot.SendMessageInChannel(resultMessageString, address);
             }
 
             foreach (string channelCode in bot.ChannelsJoined)
             {
-                bot.SendMessageInChannel(messageString, channelCode);
+                bot.SendMessageInChannel(messageString, address);
             }
         }
     }

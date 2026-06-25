@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using FChatDicebot.Model;
 
 namespace FChatDicebot.DiceFunctions
 {
@@ -60,7 +61,7 @@ namespace FChatDicebot.DiceFunctions
 
         public string GetStartingDisplay()
         {
-            return "[eicon]dbpoker1[/eicon][eicon]dbpoker2[/eicon][eicon]dbpoker3[/eicon]";
+            return TextFormat.Emoji("dbpoker1") + TextFormat.Emoji("dbpoker2") + TextFormat.Emoji("dbpoker3");
         }
 
         public string GetEndingDisplay()
@@ -74,15 +75,15 @@ namespace FChatDicebot.DiceFunctions
             {
                 string anteString = session.Ante > 0 ? session.Ante + "" : "none";
                 string blindsString = session.PokerData.SmallBlind > 0 || session.PokerData.BigBlind > 0 ? ", small blind: " + session.PokerData.SmallBlind
-                    + ", big blind: " + session.PokerData.BigBlind + " chips" : "(no blinds)";
-                string output = "Rules: " + session.PokerData.Rules + ", decks used: " + session.PokerData.decksNumber + ", ante: " + anteString + blindsString 
+                    + ", big blind: " + session.PokerData.BigBlind + " " + BotMain.CurrencyPlaceholder + "s" : "(no blinds)";
+                string output = "Rules: " + session.PokerData.Rules + ", decks used: " + session.PokerData.decksNumber + ", ante: " + anteString + blindsString
                     + ", max bet: " + (session.PokerData.MaximumBet >= 0 ? session.PokerData.MaximumBet + "" : "none")
-                    + ", hand size: " + session.PokerData.MaxHandSize + ", token betting: " + (session.PokerData.AllowTokens ? "[b]on[/b]" : "off") 
+                    + ", hand size: " + session.PokerData.MaxHandSize + ", token betting: " + (session.PokerData.AllowTokens ? "[b]on[/b]" : "off")
                     + ", checkraise allowed: " + session.PokerData.AllowCheckRaise + ".\n";
 
                 if (session.State == GameState.GameInProgress && session.PokerData.PokerPlayers != null && session.PokerData.PokerPlayers.Count > 0)
                 {
-                    output += "Current bet level: [b]" + session.PokerData.CurrentBetLevel + "[/b] chips. The pot contains [color=yellow]" + session.PokerData.GetPotTotalChipsNotTokens() + "[/color] chips. " + session.PokerData.GetPotTokensString();
+                    output += "Current bet level: [b]" + session.PokerData.CurrentBetLevel + "[/b] " + BotMain.CurrencyPlaceholder + "s. The pot contains [color=yellow]" + session.PokerData.GetPotTotalChipsNotTokens() + "[/color] " + BotMain.CurrencyPlaceholder + "s. " + session.PokerData.GetPotTokensString();
 
                     if (output != null)
                         output += "\n";
@@ -237,7 +238,7 @@ namespace FChatDicebot.DiceFunctions
                 outputString += "Rules set: (game type: " + ruleset + ") (decks: " + deckNumber + ") (ante: " + session.Ante + ") (blinds: " + session.PokerData.SmallBlind + " small / " + session.PokerData.BigBlind + " big) " + maxbet + " " + handSize + " " + (allowTokens ? "(allowing token betting) " : "") + "(checkraise allowed: " + checkRaise + " ) " + blindsError;
             }
 
-            if (GetMinCards(session.Players.Count() + 1, session) > 52)
+            if (GetMinCards(session.Players.Count() + 1, session) > session.PokerData.decksNumber * 52)
             {
                 outputString += "[color=orange]Warning: more than " + session.Players.Count() + " players is not recommended with these rules because the deck might run out of cards.[/color]";
             }
@@ -278,14 +279,14 @@ namespace FChatDicebot.DiceFunctions
         public string RunGame(System.Random r, String executingPlayer, List<String> playerNames, DiceBot diceBot, BotMain botMain, GameSession session)
         {
             string outputString = "[i]Setting up Poker...[/i]";
-            SavedData.ChannelSettings channelSettings = botMain.GetChannelSettings(session.ChannelId);
+            SavedData.ChannelSettings channelSettings = botMain.GetChannelSettings(session.GetMessageAddress());
             session.PokerData.CardPrintSetting = channelSettings.CardPrintSetting;
 
             bool resetDeck = false;
 
             if (session.PokerData.PokerPlayers != null && session.PokerData.PokerPlayers.Count > 0)
             {
-                Deck d = diceBot.GetDeck(session.ChannelId, DeckType.Playing, null);
+                Deck d = diceBot.GetDeck(session.GetMessageAddress(), DeckType.Playing, null);
                 int minCards = GetMinCards(session.Players.Count(), session);
                 if (d.GetCardsRemaining() < minCards)
                     resetDeck = true;
@@ -300,10 +301,10 @@ namespace FChatDicebot.DiceFunctions
             resetDeck = true;
 
             if(resetDeck)
-                diceBot.ResetDeck(false, session.PokerData.decksNumber, session.ChannelId, channelSettings.CardPrintSetting, DeckType.Playing, null);
+                diceBot.ResetDeck(false, session.PokerData.decksNumber, session.GetMessageAddress(), channelSettings.CardPrintSetting, DeckType.Playing, null);
 
             session.PokerData.PokerPlayers = new List<PokerPlayer>();
-            //set up starting data 
+            //set up starting data
             foreach (string playerName in session.Players)
             {
                 session.PokerData.PokerPlayers.Add(new PokerPlayer()
@@ -346,7 +347,7 @@ namespace FChatDicebot.DiceFunctions
             //put in all antes
             foreach(PokerPlayer bet in session.PokerData.PokerPlayers)
             {
-                ChipPile pile = diceBot.GetChipPile(bet.PlayerName, session.ChannelId, false);
+                ChipPile pile = diceBot.GetChipPile(new MessageAddress(session.GetMessageAddress(), bet.PlayerName), false);
 
                 if(pile.Chips >= session.Ante + session.PokerData.BigBlind)
                 {
@@ -366,7 +367,7 @@ namespace FChatDicebot.DiceFunctions
                         bigBlind = false;
                         totalBetAmount += session.PokerData.BigBlind;
                     }
-                    IncreaseBet(diceBot, botMain, session, session.ChannelId, bet, totalBetAmount);
+                    IncreaseBet(diceBot, botMain, session, session.GetMessageAddress(), bet, totalBetAmount);
                 }
                 else
                 {
@@ -375,18 +376,19 @@ namespace FChatDicebot.DiceFunctions
                 }
             }
 
-            string drawOut = "";
+            //string drawOut = "";
             foreach(PokerPlayer bet in session.PokerData.PokerPlayers)
             {
                 int initialCardsDrawn = session.PokerData.MaxHandSize;// 5;
 
                 if(!bet.CannotAfford)
                 {
-                    diceBot.DrawCards(initialCardsDrawn, false, true, session.ChannelId, DeckType.Playing, null, bet.PlayerName, false, DeckType.NONE, null, out drawOut);
-                    Hand h2 = diceBot.GetHand(session.ChannelId, DeckType.Playing, null, bet.PlayerName);
+                    MessageAddress betPlayerAddress = new MessageAddress(session.GetMessageAddress(), bet.PlayerName);
+                    diceBot.DrawCards(initialCardsDrawn, false, true, DeckType.Playing, null, betPlayerAddress, false, DeckType.NONE, null);
+                    Hand h2 = diceBot.GetHand(DeckType.Playing, null, betPlayerAddress, null);
                     bet.PlayerHand = h2;
 
-                    botMain.SendPrivateMessage("Poker hand drawn: " + h2.Print(false, channelSettings.CardPrintSetting), bet.PlayerName);
+                    botMain.SendPrivateMessage("Poker hand drawn: " + h2.Print(false, channelSettings.CardPrintSetting), betPlayerAddress);
                 }
             }
 
@@ -424,7 +426,7 @@ namespace FChatDicebot.DiceFunctions
             {
                 if (player.BetAmount > 0)
                 {
-                    diceBot.GiveChips(DiceBot.PotPlayerAlias, player.PlayerName, session.ChannelId, player.BetAmount, false);
+                    diceBot.GiveChips(new MessageAddress(session.GetMessageAddress(), DiceBot.PotPlayerAlias), player.PlayerName, player.BetAmount, false);
                     player.BetAmount = 0;
                 }
             }
@@ -449,7 +451,7 @@ namespace FChatDicebot.DiceFunctions
 
         public string PlayerLeftGame(BotMain botMain, GameSession session, string characterName)
         {
-            string outputstring = "Goodbye " + Utils.GetCharacterUserTags( characterName);
+            string outputstring = "Goodbye " + TextFormat.GetCharacterUserTags( characterName);
 
             if (session.PokerData.PokerPlayers.Count(c => c.PlayerName == characterName) > 0)
             {
@@ -459,7 +461,7 @@ namespace FChatDicebot.DiceFunctions
 
                 if (thisPlayer.BetAmount > 0)
                 {
-                    botMain.DiceBot.GiveChips(DiceBot.PotPlayerAlias, thisPlayer.PlayerName, session.ChannelId, thisPlayer.BetAmount, false);
+                    botMain.DiceBot.GiveChips(new MessageAddress(session.GetMessageAddress(), DiceBot.PotPlayerAlias), thisPlayer.PlayerName, thisPlayer.BetAmount, false);
                     session.PokerData.CurrentPotTotal -= thisPlayer.BetAmount;
 
                     outputstring += ", your bet amount of " + thisPlayer.BetAmount + " was returned.";
@@ -482,7 +484,7 @@ namespace FChatDicebot.DiceFunctions
                     if (session.Players.Count() == 0)
                         return outputstring;
 
-                    bool ended = PassTurnToNextPlayer(botMain.DiceBot, botMain, session, session.ChannelId);
+                    bool ended = PassTurnToNextPlayer(botMain.DiceBot, botMain, session);
 
                     if(session.State != GameState.Finished) //round not finished by passing turn
                     {
@@ -755,7 +757,7 @@ namespace FChatDicebot.DiceFunctions
             return result;
         }
 
-        public bool PassTurnToNextPlayer(DiceBot diceBot, BotMain botMain, GameSession session, string channel)
+        public bool PassTurnToNextPlayer(DiceBot diceBot, BotMain botMain, GameSession session)
         {
             PokerData data = session.PokerData;
 
@@ -779,20 +781,20 @@ namespace FChatDicebot.DiceFunctions
 
                 if (PlayersAllFinishedThisRound(session))
                 {
-                    FinishRound(diceBot, botMain, session, channel);
+                    FinishRound(diceBot, botMain, session);
                     return true;
                 }
-                else if (thisPlayer.Folded || thisPlayer.AllIn || thisPlayer.CannotAfford)
+                else if (thisPlayer.Folded || (thisPlayer.AllIn && (session.PokerData.PokerBettingPhase != PokerBettingPhase.DrawPhase)) || thisPlayer.CannotAfford)
                 {
-                    return PassTurnToNextPlayer(diceBot, botMain, session, channel);
+                    return PassTurnToNextPlayer(diceBot, botMain, session);
                 }
             }
             return false;
         }
 
-        public void FinishRound(DiceBot diceBot, BotMain botMain, GameSession session, string channel)
+        public void FinishRound(DiceBot diceBot, BotMain botMain, GameSession session)
         {
-            SavedData.ChannelSettings settings = botMain.GetChannelSettings(channel);
+            SavedData.ChannelSettings settings = botMain.GetChannelSettings(session.GetMessageAddress());
 
             List<PokerPlayer> activeHandPlayers = session.PokerData.PokerPlayers.Where(a => a.Active && !a.Folded && !a.CannotAfford).ToList();
             string activePlayers = "";
@@ -800,17 +802,19 @@ namespace FChatDicebot.DiceFunctions
             {
                 if (!string.IsNullOrEmpty(activePlayers))
                     activePlayers += ", ";
-                activePlayers += Utils.GetCharacterUserTags(player.PlayerName);
+                activePlayers += TextFormat.GetCharacterUserTags(player.PlayerName);
             }
             if(!string.IsNullOrEmpty(activePlayers))
                 activePlayers = "Active Players: " + activePlayers;
 
             bool finished = false;
-            switch(session.PokerData.Rules)
+            MessageAddress dealerAddress = new MessageAddress(session.GetMessageAddress(), DiceBot.DealerPlayerAlias);
+            MessageAddress burnPlayerAddress = new MessageAddress(session.GetMessageAddress(), DiceBot.BurnCardsPlayerAlias);
+            switch (session.PokerData.Rules)
             {
                 case PokerRuleset.FiveCardStud:
                 case PokerRuleset.NCardStud:
-                    FinishHand(diceBot, botMain, session, channel);
+                    FinishHand(diceBot, botMain, session);
                     break;
                 case PokerRuleset.DBHoldem:
                 case PokerRuleset.TexasHoldem:
@@ -818,13 +822,14 @@ namespace FChatDicebot.DiceFunctions
                     //started with 2 cards for each player
                     if (OnePlayerRemains(session, true) || CurrentBetLevelIsMaxBet(session))
                     {
-                        Hand dealerHand = diceBot.GetHand(session.ChannelId, DeckType.Playing, null, DiceBot.DealerPlayerAlias);
+                        //draw remaining cards for dealer communal hand to finish the round
+                        Hand dealerHand = diceBot.GetHand(DeckType.Playing, null, new MessageAddress(session.GetMessageAddress(), DiceBot.DealerPlayerAlias), null);
                         if(dealerHand.CardsCount() < 5 && session.PokerData.PokerPlayers.Count(a => !a.CannotAfford && !a.Folded && a.Active) > 1)
                         {
-                            string drawnString = "";
-                            string drawResultCards = diceBot.DrawCards(5 - dealerHand.CardsCount(), false, true, session.ChannelId, DeckType.Playing, null, DiceBot.DealerPlayerAlias, false, DeckType.NONE, null, out drawnString);
+                            DrawCardResult drawResult = diceBot.DrawCards(5 - dealerHand.CardsCount(), false, true, DeckType.Playing, null, dealerAddress, false, DeckType.NONE, null);//, out drawnString);
 
-                            botMain.SendFutureMessage("There are no more actions to take in this hand. Drawing the remaining cards for the dealer...", session.ChannelId, null, true, 900);
+                            //string drawResultCards = drawResult.OutputString;
+                            botMain.SendFutureMessage("There are no more actions to take in this hand. Drawing the remaining cards for the dealer... ", session.GetMessageAddress(), true, 900);
                         }
                         session.PokerData.PokerBettingPhase = PokerBettingPhase.BettingPhase4;
 
@@ -834,11 +839,12 @@ namespace FChatDicebot.DiceFunctions
                     {
                         case PokerBettingPhase.InitialHandBets: //3 card flop
                             {
-                                string drawnString = "";
-                                string drawResultBurn = diceBot.DrawCards(1, false, true, session.ChannelId, DeckType.Playing, null, DiceBot.BurnCardsPlayerAlias, true, DeckType.NONE, null, out drawnString);
-                                string drawResultCards = diceBot.DrawCards(3, false, true, session.ChannelId, DeckType.Playing, null, DiceBot.DealerPlayerAlias, false, DeckType.NONE, null, out drawnString);
-                                Hand dealerHand = diceBot.GetHand(session.ChannelId, DeckType.Playing, null, DiceBot.DealerPlayerAlias);
-                                DeckCard lastCard = dealerHand.GetCardAtIndex(dealerHand.CardsCount() - 1);
+                                //string drawnString = "";
+                                DrawCardResult drawResultBurn = diceBot.DrawCards(1, false, true, DeckType.Playing, null, burnPlayerAddress, true, DeckType.NONE, null);//, out drawnString);
+                                //string drawResultBurn =
+                                DrawCardResult drawResultCards = diceBot.DrawCards(3, false, true, DeckType.Playing, null, dealerAddress, false, DeckType.NONE, null);//, out drawnString);
+                                Hand dealerHand = diceBot.GetHand(DeckType.Playing, null, dealerAddress, null);
+                                //DeckCard lastCard = dealerHand.GetCardAtIndex(dealerHand.CardsCount() - 1);
 
                                 ResetAllPlayerActed(session);
                                 session.PokerData.PokerBettingPhase = PokerBettingPhase.BettingPhase2;
@@ -847,25 +853,25 @@ namespace FChatDicebot.DiceFunctions
                                 string burnString = "Burned [color=red]🔥[/color] one card face down...";
                                 if(session.PokerData.Rules == PokerRuleset.DBHoldem)
                                 {
-                                    Hand burnHand = diceBot.GetHand(session.ChannelId, DeckType.Playing, null, DiceBot.BurnCardsPlayerAlias);
-                                    DeckCard lastBurnCard = burnHand.GetCardAtIndex(burnHand.CardsCount() - 1);
+                                    Hand burnHand = diceBot.GetHand(DeckType.Playing, null, burnPlayerAddress, null);
+                                    DeckCard lastBurnCard = drawResultBurn.Cards != null? drawResultBurn.Cards[0] : new DeckCard();// burnHand.GetCardAtIndex(burnHand.CardsCount() - 1);
                                     burnString = "Burned [color=red]🔥[/color] " + lastBurnCard.Print(settings.CardPrintSetting) + " from the deck...";
                                 }
 
                                 botMain.SendFutureMessage("Initial Betting Round ended; the flop round is starting.\n" + burnString + "\nAnd the [color=cyan]draws[/color] are: " + dealerHand.Print(false, settings.CardPrintSetting, false) + "\n"
                                     + "Current Community Cards: " + dealerHand.Print(false, settings.CardPrintSetting, false) + "\n"
-                                    + activePlayers + "\n" 
-                                    + "Place your bets. [sub]!gc raise #, !gc check, !gc fold, !gc all-in[/sub] " + PrintCurrentPlayerTurn(session, finished), channel, null, true, RoundEndingWaitMsPerPlayer * session.PokerData.PokerPlayers.Count() + RoundEndingWaitMs);
+                                    + activePlayers + "\n"
+                                    + "Place your bets. [sub]!gc raise #, !gc check, !gc fold, !gc all-in[/sub] " + PrintCurrentPlayerTurn(session, finished), session.GetMessageAddress(), true, RoundEndingWaitMsPerPlayer * session.PokerData.PokerPlayers.Count() + RoundEndingWaitMs);
                             }
                             break;
                         case PokerBettingPhase.BettingPhase2: //1 card turn
                             {
-                                string drawnString = "";
-                                string drawResultBurn = diceBot.DrawCards(1, false, true, session.ChannelId, DeckType.Playing, null, DiceBot.BurnCardsPlayerAlias, true, DeckType.NONE, null, out drawnString);
-                                string drawResultCards = diceBot.DrawCards(1, false, true, session.ChannelId, DeckType.Playing, null, DiceBot.DealerPlayerAlias, false, DeckType.NONE, null, out drawnString);
-                                Hand dealerHand = diceBot.GetHand(session.ChannelId, DeckType.Playing, null, DiceBot.DealerPlayerAlias);
-                                DeckCard lastCard = dealerHand.GetCardAtIndex(dealerHand.CardsCount() - 1);
-                                
+                                //string drawnString = "";
+                                DrawCardResult drawResultBurn = diceBot.DrawCards(1, false, true, DeckType.Playing, null, burnPlayerAddress, true, DeckType.NONE, null);
+                                DrawCardResult drawResultCards = diceBot.DrawCards(1, false, true, DeckType.Playing, null, dealerAddress, false, DeckType.NONE, null);
+                                Hand dealerHand = diceBot.GetHand(DeckType.Playing, null, dealerAddress, null);
+                                DeckCard lastCard = drawResultCards.Cards[0];// dealerHand.GetCardAtIndex(dealerHand.CardsCount() - 1);
+
                                 ResetAllPlayerActed(session);
                                 session.PokerData.PokerBettingPhase = PokerBettingPhase.BettingPhase3;
                                 session.PokerData.currentPlayerIndex = 0;
@@ -873,24 +879,23 @@ namespace FChatDicebot.DiceFunctions
                                 string burnString = "Burned [color=red]🔥[/color] one card face down...";
                                 if (session.PokerData.Rules == PokerRuleset.DBHoldem)
                                 {
-                                    Hand burnHand = diceBot.GetHand(session.ChannelId, DeckType.Playing, null, DiceBot.BurnCardsPlayerAlias);
-                                    DeckCard lastBurnCard = burnHand.GetCardAtIndex(burnHand.CardsCount() - 1);
+                                    Hand burnHand = diceBot.GetHand(DeckType.Playing, null, burnPlayerAddress, null);
+                                    DeckCard lastBurnCard = drawResultBurn.Cards != null ? drawResultBurn.Cards[0] : new DeckCard(); burnHand.GetCardAtIndex(burnHand.CardsCount() - 1);
                                     burnString = "Burned [color=red]🔥[/color] " + lastBurnCard.Print(settings.CardPrintSetting) + " from the deck...";
                                 }
 
                                 botMain.SendFutureMessage("Flop Betting Round ended; the turn round is starting.\n" + burnString + "\nAnd the [color=cyan]draw[/color] is: " + lastCard.Print(settings.CardPrintSetting) + "\n"
                                     + "Current Community Cards: " + dealerHand.Print(false, settings.CardPrintSetting, false) + "\n"
-                                    + activePlayers + "\n" 
-                                    + "Place your bets. [sub]!gc raise #, !gc check, !gc fold, !gc all-in[/sub] " + PrintCurrentPlayerTurn(session, finished), channel, null, true, RoundEndingWaitMsPerPlayer * session.PokerData.PokerPlayers.Count() + RoundEndingWaitMs);
+                                    + activePlayers + "\n"
+                                    + "Place your bets. [sub]!gc raise #, !gc check, !gc fold, !gc all-in[/sub] " + PrintCurrentPlayerTurn(session, finished), session.GetMessageAddress(), true, RoundEndingWaitMsPerPlayer * session.PokerData.PokerPlayers.Count() + RoundEndingWaitMs);
                             }
                             break;
                         case PokerBettingPhase.BettingPhase3: //1 card river
                             {
-                                string drawnString = "";
-                                string drawResultBurn = diceBot.DrawCards(1, false, true, session.ChannelId, DeckType.Playing, null, DiceBot.BurnCardsPlayerAlias, true, DeckType.NONE, null, out drawnString);
-                                string drawResultCards = diceBot.DrawCards(1, false, true, session.ChannelId, DeckType.Playing, null, DiceBot.DealerPlayerAlias, false, DeckType.NONE, null, out drawnString);
-                                Hand dealerHand = diceBot.GetHand(session.ChannelId, DeckType.Playing, null, DiceBot.DealerPlayerAlias);
-                                DeckCard lastCard = dealerHand.GetCardAtIndex(dealerHand.CardsCount() - 1);
+                                DrawCardResult drawResultBurn = diceBot.DrawCards(1, false, true, DeckType.Playing, null, burnPlayerAddress, true, DeckType.NONE, null);
+                                DrawCardResult drawResultCards = diceBot.DrawCards(1, false, true, DeckType.Playing, null, dealerAddress, false, DeckType.NONE, null);
+                                Hand dealerHand = diceBot.GetHand(DeckType.Playing, null, dealerAddress, null);
+                                DeckCard lastCard = drawResultCards.Cards[0];// dealerHand.GetCardAtIndex(dealerHand.CardsCount() - 1);
 
                                 ResetAllPlayerActed(session);
                                 session.PokerData.PokerBettingPhase = PokerBettingPhase.BettingPhase4;
@@ -899,20 +904,20 @@ namespace FChatDicebot.DiceFunctions
                                 string burnString = "Burned [color=red]🔥[/color] one card face down...";
                                 if (session.PokerData.Rules == PokerRuleset.DBHoldem)
                                 {
-                                    Hand burnHand = diceBot.GetHand(session.ChannelId, DeckType.Playing, null, DiceBot.BurnCardsPlayerAlias);
-                                    DeckCard lastBurnCard = burnHand.GetCardAtIndex(burnHand.CardsCount() - 1);
+                                    Hand burnHand = diceBot.GetHand(DeckType.Playing, null, burnPlayerAddress, null);
+                                    DeckCard lastBurnCard = drawResultBurn.Cards[0];// burnHand.GetCardAtIndex(burnHand.CardsCount() - 1);
                                     burnString = "Burned [color=red]🔥[/color] " + lastBurnCard.Print(settings.CardPrintSetting) + " from the deck...";
                                 }
 
                                 botMain.SendFutureMessage("Turn Betting Round ended; the river round is starting.\n" + burnString + "\nAnd the [color=cyan]draw[/color] is: " + lastCard.Print(settings.CardPrintSetting) + "\n"
                                     + "Current Community Cards: " + dealerHand.Print(false, settings.CardPrintSetting, false) + "\n"
-                                    + activePlayers + "\n" 
-                                    + "Place your bets. [sub]!gc raise #, !gc check, !gc fold, !gc all-in[/sub] " + PrintCurrentPlayerTurn(session, finished), channel, null, true, RoundEndingWaitMsPerPlayer * session.PokerData.PokerPlayers.Count() + RoundEndingWaitMs);
+                                    + activePlayers + "\n"
+                                    + "Place your bets. [sub]!gc raise #, !gc check, !gc fold, !gc all-in[/sub] " + PrintCurrentPlayerTurn(session, finished), session.GetMessageAddress(), true, RoundEndingWaitMsPerPlayer * session.PokerData.PokerPlayers.Count() + RoundEndingWaitMs);
                             }
                             break;
                         case PokerBettingPhase.BettingPhase4://finish round
                             session.PokerData.PokerBettingPhase = PokerBettingPhase.FinishedBetting;
-                            FinishHand(diceBot, botMain, session, channel);
+                            FinishHand(diceBot, botMain, session);
                             break;
 
                     }
@@ -923,7 +928,7 @@ namespace FChatDicebot.DiceFunctions
                         (CurrentBetLevelIsMaxBet(session) && session.PokerData.PokerBettingPhase == PokerBettingPhase.DrawPhase) )
                     {
                         session.PokerData.PokerBettingPhase = PokerBettingPhase.BettingPhase2;
-                        botMain.SendFutureMessage("There are no more actions to take in this hand. Skipping to completion...", session.ChannelId, null, true, 900);
+                        botMain.SendFutureMessage("There are no more actions to take in this hand. Skipping to completion...", session.GetMessageAddress(), true, 900);
                     }
 
                     switch(session.PokerData.PokerBettingPhase)
@@ -934,21 +939,21 @@ namespace FChatDicebot.DiceFunctions
                             session.PokerData.currentPlayerIndex = 0;
                             session.PokerData.PassTurnToFirstActivePlayer();
                             botMain.SendFutureMessage("Initial Betting Round ended; the draw round is starting.\n"
-                                    + activePlayers + "\n" + 
-                                    "Choose your cards to redraw [i](specify each card number)[/i]. [sub]!gc draw 1 2 3 4 5, !gc keep[/sub] " + PrintCurrentPlayerTurn(session, finished), channel, null, true, RoundEndingWaitMsPerPlayer * session.PokerData.PokerPlayers.Count() + RoundEndingWaitMs);
+                                    + activePlayers + "\n" +
+                                    "Choose your cards to redraw [i](specify each card number)[/i]. [sub]!gc draw 1 2 3 4 5, !gc keep[/sub] " + PrintCurrentPlayerTurn(session, finished), session.GetMessageAddress(), true, RoundEndingWaitMsPerPlayer * session.PokerData.PokerPlayers.Count() + RoundEndingWaitMs);
                             break;
                         case PokerBettingPhase.DrawPhase:
                             ResetAllPlayerActed(session);
                             session.PokerData.PokerBettingPhase = PokerBettingPhase.BettingPhase2;
                             session.PokerData.currentPlayerIndex = 0;
-                            session.PokerData.PassTurnToFirstActivePlayer();
+                            session.PokerData.PassTurnToFirstActivePlayer(true);
                             botMain.SendFutureMessage("Player draws ended; the final betting round is starting.\n"
-                                    + activePlayers + "\n" + 
-                                    "Place your final bets. [sub]!gc raise #, !gc check, !gc allin, !gc fold[/sub] " + PrintCurrentPlayerTurn(session, finished), channel, null, true, RoundEndingWaitMsPerPlayer * session.PokerData.PokerPlayers.Count() + RoundEndingWaitMs);
+                                    + activePlayers + "\n" +
+                                    "Place your final bets. [sub]!gc raise #, !gc check, !gc allin, !gc fold[/sub] " + PrintCurrentPlayerTurn(session, finished), session.GetMessageAddress(), true, RoundEndingWaitMsPerPlayer * session.PokerData.PokerPlayers.Count() + RoundEndingWaitMs);
                             break;
                         case PokerBettingPhase.BettingPhase2:
                             session.PokerData.PokerBettingPhase = PokerBettingPhase.FinishedBetting;
-                            FinishHand(diceBot, botMain, session, channel);
+                            FinishHand(diceBot, botMain, session);
                             break;
 
                     }
@@ -956,9 +961,9 @@ namespace FChatDicebot.DiceFunctions
             }
         }
 
-        public void FinishHand(DiceBot diceBot, BotMain botMain, GameSession session, string channel)
+        public void FinishHand(DiceBot diceBot, BotMain botMain, GameSession session)
         {
-            SavedData.ChannelSettings channelSettings = botMain.GetChannelSettings(channel);
+            SavedData.ChannelSettings channelSettings = botMain.GetChannelSettings(session.GetMessageAddress());
 
             int remainingPot = session.PokerData.GetPotTotalChipsNotTokens();
             int actualPotChips = remainingPot;
@@ -967,12 +972,13 @@ namespace FChatDicebot.DiceFunctions
             string playerHandsString = "";
 
 
+            MessageAddress dealerAddress = new MessageAddress(session.GetMessageAddress(), DiceBot.DealerPlayerAlias);
             if (session.PokerData.PokerPlayers != null)
             {
                 bool showAnyHand = session.PokerData.PokerPlayers.Count(a => a.Active && !a.Folded && !a.CannotAfford) > 1;
 
-                Hand dealerHand = (session.PokerData.Rules == PokerRuleset.TexasHoldem || session.PokerData.Rules == PokerRuleset.DBHoldem) ? 
-                    diceBot.GetHand(session.ChannelId, DeckType.Playing, null, DiceBot.DealerPlayerAlias) : null;
+                Hand dealerHand = (session.PokerData.Rules == PokerRuleset.TexasHoldem || session.PokerData.Rules == PokerRuleset.DBHoldem) ?
+                    diceBot.GetHand(DeckType.Playing, null, dealerAddress, null) : null;
                 //score each hand to check whose hand is the best
                 foreach (PokerPlayer player in session.PokerData.PokerPlayers)
                 {
@@ -984,7 +990,7 @@ namespace FChatDicebot.DiceFunctions
 
                     string handPrintout = (player.HandEvaluation.folded || !showAnyHand) ? " (cards hidden) " : player.PlayerHand.Print(false, channelSettings.CardPrintSetting, false);
                     string handEvaluationPrintout = (player.HandEvaluation.folded || !showAnyHand) ? "" : " (" + player.HandEvaluation.ToString() + ") ";
-                    playerHandsString += Utils.GetCharacterUserTags(player.PlayerName) + " 's hand : " + handPrintout + handEvaluationPrintout + 
+                    playerHandsString += TextFormat.GetCharacterUserTags(player.PlayerName) + " 's hand : " + handPrintout + handEvaluationPrintout +
                         ((player.Folded || player.CannotAfford)? "[color=gray](folded)[/color]":"[color=green](active)[/color] ") + (player.AllIn? "[color=red](all in)[/color]":"");
                 }
 
@@ -1054,36 +1060,37 @@ namespace FChatDicebot.DiceFunctions
                 if(payoutAmounts != null && payoutAmounts.Count() > 0)
                 {
                     string handOutput = showAnyHand ? " with " + payoutAmounts[0].HandEvaluation.HandType : " by surrender";
-                    outputString += Utils.GetCharacterIconTags(payoutAmounts[0].CharacterName) + " [color=green]won[/color]" + "!\n"; 
+                    outputString += TextFormat.GetCharacterIconTags(payoutAmounts[0].CharacterName) + " [color=green]won[/color]" + "!\n";
                 }
 
                 bool firstAward = true;
                 foreach (PokerBetNonsense payoutAward in payoutAmounts)
                 {
                     outputString += "\n";
-                    
+
                     if(payoutAward.AmountPaid > 0)
-                        outputString += Utils.GetCharacterUserTags(payoutAward.CharacterName) + " is awarded " + payoutAward.AmountPaid + " chips.";
+                        outputString += TextFormat.GetCharacterUserTags(payoutAward.CharacterName) + " is awarded " + payoutAward.AmountPaid + " " + BotMain.CurrencyPlaceholder + "s.";
                     else
-                        outputString += Utils.GetCharacterUserTags(payoutAward.CharacterName) + " did not win any chips.";
+                        outputString += TextFormat.GetCharacterUserTags(payoutAward.CharacterName) + " did not win any " + BotMain.CurrencyPlaceholder + "s.";
 
                     if (firstAward && session.PokerData.CurrentPotTokenBets != null && session.PokerData.CurrentPotTokenBets.Count() > 0)
                         outputString += " They are also awarded: " + session.PokerData.GetPotTokensString();
 
                     firstAward = false;
-                    diceBot.GiveChips(DiceBot.PotPlayerAlias, payoutAward.CharacterName, channel, payoutAward.AmountPaid, false);
+
+                    diceBot.GiveChips(new MessageAddress(session.GetMessageAddress(), DiceBot.PotPlayerAlias), payoutAward.CharacterName, payoutAward.AmountPaid, false);
                 }
 
-                diceBot.ClaimPot(DiceBot.DealerPlayerAlias, channel, 1); //remove extras from pot
+                diceBot.ClaimPot(dealerAddress, 1); //remove extras from pot
 
-                diceBot.EndHand(channel, false, channelSettings.CardPrintSetting, DeckType.Playing, null);
+                diceBot.EndHand(session.GetMessageAddress(), false, channelSettings.CardPrintSetting, DeckType.Playing, null);
                 //save chips modifications to disk
                 botMain.BotCommandController.SaveChipsToDisk("Pokerroundfinish");
             }
 
 
-            string fullPotString = "The pot contains [color=yellow]" + actualPotChips + " chips[/color]. " + session.PokerData.GetPotTokensString();
-            botMain.SendFutureMessage("[color=yellow]Round Finished![/color]\n" + fullPotString + "\n" + playerHandsString + "\n" + outputString, channel, null, true, RoundEndingWaitMsPerPlayer + RoundEndingWaitMs);
+            string fullPotString = "The pot contains [color=yellow]" + actualPotChips + " " + BotMain.CurrencyPlaceholder + "s[/color]. " + session.PokerData.GetPotTokensString();
+            botMain.SendFutureMessage("[color=yellow]Round Finished![/color]\n" + fullPotString + "\n" + playerHandsString + "\n" + outputString, session.GetMessageAddress(), true, RoundEndingWaitMsPerPlayer + RoundEndingWaitMs);
             session.State = GameState.Finished;
 
             ResetAllPlayerStatus(session);
@@ -1107,22 +1114,23 @@ namespace FChatDicebot.DiceFunctions
             }
         }
 
-        public string DrawCards(DiceBot diceBot, string channel, string character, List<int> cardIndexes, out string truedraw)
+        public string DrawCards(DiceBot diceBot, MessageAddress address, List<int> cardIndexes, out string truedraw)
         {
             int discardNumber = 0;
-            diceBot.DiscardCards(cardIndexes, false, channel, DeckType.Playing, null, character, out discardNumber);
+            diceBot.DiscardCards(cardIndexes, false, DeckType.Playing, null, address, out discardNumber);
 
-            string drawString = diceBot.DrawCards(cardIndexes.Count(), false, true, channel, DeckType.Playing, null, character, false, DeckType.NONE, null, out truedraw);
+            DrawCardResult drawString = diceBot.DrawCards(cardIndexes.Count(), false, true, DeckType.Playing, null, address, false, DeckType.NONE, null);
+            truedraw = drawString.TrueDraw;
 
-            return Utils.GetCharacterStringFromSpecialName(character) + " discarded " + discardNumber + " cards to draw. " + drawString;
+            return Utils.GetCharacterStringFromSpecialName(address.character) + " discarded " + discardNumber + " cards to draw. " + drawString;
         }
 
-        public string IncreaseBet(DiceBot diceBot, BotMain botMain, GameSession session, string channel, PokerPlayer player, int additionalBetAmount, bool usedTokenBet = false, string tokenTitle = "")
+        public string IncreaseBet(DiceBot diceBot, BotMain botMain, GameSession session, MessageAddress channelAddress, PokerPlayer player, int additionalBetAmount, bool usedTokenBet = false, string tokenTitle = "")
         {
             player.ActualChipsAmountBet = player.BetAmount;
             player.BetAmount = player.BetAmount + additionalBetAmount;
-
-            ChipPile pile = diceBot.GetChipPile(player.PlayerName, channel, false);
+            MessageAddress playerAddress = new MessageAddress(channelAddress, player.PlayerName);
+            ChipPile pile = diceBot.GetChipPile(playerAddress, false);
             bool allin = false;
             if(!usedTokenBet && pile.Chips < additionalBetAmount)
             {
@@ -1135,13 +1143,13 @@ namespace FChatDicebot.DiceFunctions
             string giveChipsOutput = "";
             if (usedTokenBet)
             {
-                string characterString = diceBot.SpecialCharacterName(player.PlayerName)? Utils.GetCharacterStringFromSpecialName(player.PlayerName) : Utils.GetCharacterUserTags(player.PlayerName);
-                giveChipsOutput = characterString + " added a token worth " + additionalBetAmount + " chips to the pot.";
+                string characterString = diceBot.SpecialCharacterName(player.PlayerName) ? Utils.GetCharacterStringFromSpecialName(player.PlayerName) : TextFormat.GetCharacterUserTags(player.PlayerName);
+                giveChipsOutput = characterString + " added a token worth " + additionalBetAmount + " " + BotMain.CurrencyPlaceholder + "s to the pot.";
 
                 session.PokerData.CurrentPotTokenBets.Add(new TokenBet() { CharacterName = player.PlayerName, TokenAmount = additionalBetAmount, TokenName = tokenTitle });
             }else
             {
-                giveChipsOutput = diceBot.GiveChips(player.PlayerName, DiceBot.PotPlayerAlias, channel, additionalBetAmount, allin);
+                giveChipsOutput = diceBot.GiveChips(playerAddress, DiceBot.PotPlayerAlias, additionalBetAmount, allin);
             }
 
             session.PokerData.CurrentPotTotal += additionalBetAmount;
@@ -1203,34 +1211,34 @@ namespace FChatDicebot.DiceFunctions
             return (session.PokerData.MaximumBet >= 0 && session.PokerData.MaximumBet == session.PokerData.CurrentBetLevel);
         }
 
-        public string IssueGameCommand(DiceBot diceBot, BotMain botMain, string character, string channel, GameSession session, string[] terms, string[] rawTerms)
+        public string IssueGameCommand(DiceBot diceBot, BotMain botMain, MessageAddress address, GameSession session, string[] terms, string[] rawTerms)
         {
             string returnString = "";
 
             PokerPlayer currentPlayer = session.PokerData.GetCurrentPlayer();
-            bool currentPlayerIssuedCommand = currentPlayer != null && currentPlayer.PlayerName == character;
-            SavedData.ChannelSettings channelSettings = botMain.GetChannelSettings(channel);
+            bool currentPlayerIssuedCommand = currentPlayer != null && currentPlayer.PlayerName == address.character;
+            SavedData.ChannelSettings channelSettings = botMain.GetChannelSettings(address);
 
             if (terms.Contains("forcestand") || terms.Contains("forcecheck"))
             {
-                var bp = session.PokerData.GetPlayer(character);
+                var bp = session.PokerData.GetPlayer(address.character);
 
                 if (session.State != GameState.GameInProgress)
                     returnString = "Failed: This command can only be used while the game is in progress.";
-                else if (session.PokerData.ForceStandVotes.Contains(character))
+                else if (session.PokerData.ForceStandVotes.Contains(address.character))
                     returnString = "Failed: Each player in the game only has one vote to force stand.";
                 else
                 {
-                    bool characterIsAdmin = Utils.IsCharacterTrusted(botMain.AccountSettings.TrustedCharacters, character, channel) 
-                        || Utils.IsCharacterAdmin(botMain.AccountSettings.AdminCharacters, character);
+                    bool characterIsAdmin = Utils.IsCharacterTrusted(botMain.AccountSettings.TrustedCharacters, address)
+                        || Utils.IsCharacterAdmin(botMain.AccountSettings.AdminCharacters, address.character);
                     if (characterIsAdmin)
                     {
-                        session.PokerData.ForceStandVotes.Add(character);
-                        session.PokerData.ForceStandVotes.Add(character);
-                        session.PokerData.ForceStandVotes.Add(character);
-                        session.PokerData.ForceStandVotes.Add(character);
+                        session.PokerData.ForceStandVotes.Add(address.character);
+                        session.PokerData.ForceStandVotes.Add(address.character);
+                        session.PokerData.ForceStandVotes.Add(address.character);
+                        session.PokerData.ForceStandVotes.Add(address.character);
                     }
-                    session.PokerData.ForceStandVotes.Add(character);
+                    session.PokerData.ForceStandVotes.Add(address.character);
 
                     int currentVotes = session.PokerData.ForceStandVotes.Count();
                     int requiredVotes = Math.Max(2, session.PokerData.PokerPlayers.Count() / 2);
@@ -1241,68 +1249,68 @@ namespace FChatDicebot.DiceFunctions
 
                         if (session.PokerData.CurrentBetLevel > currentPlayer.BetAmount)
                         {
-                            betChangeAmount = IncreaseBet(diceBot, botMain, session, channel, currentPlayer, session.PokerData.CurrentBetLevel - currentPlayer.BetAmount);
+                            betChangeAmount = IncreaseBet(diceBot, botMain, session, address, currentPlayer, session.PokerData.CurrentBetLevel - currentPlayer.BetAmount);
                         }
 
                         int currentBetLevel = session.PokerData.CurrentBetLevel;
 
                         string forcedCharacter = session.PokerData.GetCurrentPlayer().PlayerName;
-                        bool finished = PassTurnToNextPlayer(diceBot, botMain, session, channel);
+                        bool finished = PassTurnToNextPlayer(diceBot, botMain, session);
 
-                        returnString = Utils.GetCharacterUserTags(forcedCharacter) + " [color=cyan]checks[/color]. They will meet the current bet of " + currentBetLevel + ".\n"
+                        returnString = TextFormat.GetCharacterUserTags(forcedCharacter) + " [color=cyan]checks[/color]. They will meet the current bet of " + currentBetLevel + ".\n"
                             + betChangeAmount + " " + PrintCurrentPlayerTurn(session, finished);
                     }
                     else
-                        returnString = Utils.GetCharacterUserTags(character) + " has voted to force stand: " + currentVotes + " / " + (requiredVotes) + " votes.";
+                        returnString = TextFormat.GetCharacterUserTags(address.character) + " has voted to force stand: " + currentVotes + " / " + (requiredVotes) + " votes.";
                 }
             }
             else if (terms.Contains("forceallin") || terms.Contains("forcefold"))
             {
-                var bp = session.PokerData.GetPlayer(character);
+                var bp = session.PokerData.GetPlayer(address.character);
 
                 if (session.State != GameState.GameInProgress)
                     returnString = "Failed: This command can only be used while the game is in progress.";
-                else if (session.PokerData.ForceStandVotes.Contains(character))
+                else if (session.PokerData.ForceStandVotes.Contains(address.character))
                     returnString = "Failed: Each player in the game only has one vote to force stand.";
                 else
                 {
-                    bool characterIsAdmin = Utils.IsCharacterTrusted(botMain.AccountSettings.TrustedCharacters, character, channel)
-                        || Utils.IsCharacterAdmin(botMain.AccountSettings.AdminCharacters, character);
+                    bool characterIsAdmin = Utils.IsCharacterTrusted(botMain.AccountSettings.TrustedCharacters, address)
+                        || Utils.IsCharacterAdmin(botMain.AccountSettings.AdminCharacters, address.character);
                     if (characterIsAdmin)
                     {
-                        PokerPlayer forcedPokerPlayer =session.PokerData.GetCurrentPlayer(); 
+                        PokerPlayer forcedPokerPlayer =session.PokerData.GetCurrentPlayer();
                         string forcedCharacter = forcedPokerPlayer.PlayerName;
                         string resultString = "";
                         if(terms.Contains("forceallin"))
                         {
-                            ChipPile pile = diceBot.GetChipPile(forcedCharacter, channel, false);
-                            resultString = "(All In) " + IncreaseBet(diceBot, botMain, session, channel, currentPlayer, pile.Chips);
+                            ChipPile pile = diceBot.GetChipPile(new MessageAddress(address, forcedCharacter), false);
+                            resultString = "(All In) " + IncreaseBet(diceBot, botMain, session, address, currentPlayer, pile.Chips);
                             forcedPokerPlayer.AllIn = true;
                         }
                         if(terms.Contains("forcefold"))
                         {
                             forcedPokerPlayer.Folded = true;
-                            resultString = "(Fold) " + Utils.GetCharacterUserTags(forcedCharacter) + " folds.";
+                            resultString = "(Fold) " + TextFormat.GetCharacterUserTags(forcedCharacter) + " folds.";
                         }
 
                         if (!string.IsNullOrEmpty(resultString))
                         {
 
-                            bool finished = PassTurnToNextPlayer(diceBot, botMain, session, channel);
+                            bool finished = PassTurnToNextPlayer(diceBot, botMain, session);
 
-                            returnString = Utils.GetCharacterUserTags(character) + " forced: " +  resultString +".\n"
+                            returnString = TextFormat.GetCharacterUserTags(address.character) + " forced: " +  resultString +".\n"
                                 + PrintCurrentPlayerTurn(session, finished);
                         }
 
                     }
                     else
-                        returnString = "Failed: " + Utils.GetCharacterUserTags(character) + " is not an admin and cannot perform this command.";
+                        returnString = "Failed: " + TextFormat.GetCharacterUserTags(address.character) + " is not an admin and cannot perform this command.";
                 }
             }
             else if (terms.Contains("changebet") || terms.Contains("betchange"))
             {
-                var bp = session.PokerData.GetPlayer(character);
-                
+                var bp = session.PokerData.GetPlayer(address.character);
+
                 int newCurrentBet = Utils.GetNumberFromInputs(terms);
 
                 if (session.State != GameState.GameInProgress)
@@ -1325,7 +1333,7 @@ namespace FChatDicebot.DiceFunctions
                         if(player.ActualChipsAmountBet > session.PokerData.CurrentBetLevel)
                         {
                             int difference = player.ActualChipsAmountBet - session.PokerData.CurrentBetLevel;
-                            diceBot.GiveChips(DiceBot.PotPlayerAlias, player.PlayerName, session.ChannelId, difference, false);
+                            diceBot.GiveChips(new MessageAddress(session.GetMessageAddress(), DiceBot.PotPlayerAlias), player.PlayerName, difference, false);
                             player.ActualChipsAmountBet = session.PokerData.CurrentBetLevel;
 
                             session.PokerData.CurrentPotTotal -= difference;
@@ -1336,10 +1344,10 @@ namespace FChatDicebot.DiceFunctions
                     }
 
                     botMain.BotCommandController.SaveChipsToDisk("poker changebet");
-                    returnString = "Updated the current bet to " + newCurrentBet + " chips. All bets above this amount were reduced to it and chips were refunded.";
+                    returnString = "Updated the current bet to " + newCurrentBet + " " + BotMain.CurrencyPlaceholder + "s. All bets above this amount were reduced to it and " + BotMain.CurrencyPlaceholder + "s were refunded.";
                 }
             }
-            else if (terms.Contains("fold") || terms.Contains("surrender") || terms.Contains("call") || terms.Contains("check") || terms.Contains("stand") 
+            else if (terms.Contains("fold") || terms.Contains("surrender") || terms.Contains("call") || terms.Contains("check") || terms.Contains("stand")
                 || terms.Contains("raise") || terms.Contains("bet") || terms.Contains("allin") || terms.Contains("all-in")
                 || terms.Contains("draw") || terms.Contains("nodraws") || terms.Contains("nodraw") || terms.Contains("redraw") || terms.Contains("keep")
                 || terms.Contains("raisetoken") || terms.Contains("bettoken") || terms.Contains("token"))
@@ -1371,8 +1379,8 @@ namespace FChatDicebot.DiceFunctions
                     {
                         currentPlayer.Folded = true;
 
-                        bool finished = PassTurnToNextPlayer(diceBot, botMain, session, channel);
-                        returnString = Utils.GetCharacterUserTags(character) + " [color=gray]folds[/color]. " + PrintCurrentPlayerTurn(session, finished);
+                        bool finished = PassTurnToNextPlayer(diceBot, botMain, session);
+                        returnString = TextFormat.GetCharacterUserTags(address.character) + " [color=gray]folds[/color]. " + PrintCurrentPlayerTurn(session, finished);
                     }
                     //stand
                     else if (terms.Contains("call") || terms.Contains("check") || (terms.Contains("stand") && session.PokerData.PokerBettingPhase != PokerBettingPhase.DrawPhase))
@@ -1381,13 +1389,13 @@ namespace FChatDicebot.DiceFunctions
 
                         if(session.PokerData.CurrentBetLevel > currentPlayer.BetAmount)
                         {
-                            betChangeAmount = IncreaseBet(diceBot, botMain, session, channel, currentPlayer, session.PokerData.CurrentBetLevel - currentPlayer.BetAmount);
+                            betChangeAmount = IncreaseBet(diceBot, botMain, session, address, currentPlayer, session.PokerData.CurrentBetLevel - currentPlayer.BetAmount);
                         }
 
                         int currentBetLevel = session.PokerData.CurrentBetLevel;
 
-                        bool finished = PassTurnToNextPlayer(diceBot, botMain, session, channel);
-                        returnString = Utils.GetCharacterUserTags(character) + " [color=cyan]checks[/color]. They will meet the current bet of " + currentBetLevel + ".\n"
+                        bool finished = PassTurnToNextPlayer(diceBot, botMain, session);
+                        returnString = TextFormat.GetCharacterUserTags(address.character) + " [color=cyan]checks[/color]. They will meet the current bet of " + currentBetLevel + ".\n"
                             + betChangeAmount + " " + PrintCurrentPlayerTurn(session, finished);
                     }
                     //raise
@@ -1396,10 +1404,10 @@ namespace FChatDicebot.DiceFunctions
                     {
                         //first call the current raise
                         int firstAmountIncreased = session.PokerData.CurrentBetLevel - currentPlayer.BetAmount;
-                        
+
                         //now determine how much can be raised
                         int amountRaised = 0;
-                        var cp = diceBot.GetChipPile(currentPlayer.PlayerName, channel, false);
+                        var cp = diceBot.GetChipPile(new MessageAddress(address, currentPlayer.PlayerName), false);
 
                         if(terms.Contains("allin") || terms.Contains("all-in") || terms.Contains("all"))
                         {
@@ -1416,7 +1424,7 @@ namespace FChatDicebot.DiceFunctions
                         {
                             amountRaised = session.PokerData.MaximumBet - (session.PokerData.CurrentBetLevel);
                             amountRaised = Math.Max(0, amountRaised);
-                            raiseChange = " Maximum bet exceeded: This session's max bet size is " + session.PokerData.MaximumBet + " chips. (Raise was changed from " + originalRaise + " to " + amountRaised + " chips instead).";
+                            raiseChange = " Maximum bet exceeded: This session's max bet size is " + session.PokerData.MaximumBet + " " + BotMain.CurrencyPlaceholder + "s. (Raise was changed from " + originalRaise + " to " + amountRaised + " " + BotMain.CurrencyPlaceholder + "s instead).";
                         }
 
                         if (amountRaised > 0 && currentPlayer.HasActedThisRound && !token)
@@ -1430,7 +1438,7 @@ namespace FChatDicebot.DiceFunctions
                         else if(!token && amountRaised + firstAmountIncreased > cp.Chips)
                         {
                             //error
-                            returnString = "Failed: you do not have enough chips in your pile to raise by " + amountRaised + " and meet the current bet. Try allin. (requested " + amountRaised + ")(held " + cp.Chips + ")";
+                            returnString = "Failed: you do not have enough " + BotMain.CurrencyPlaceholder + "s in your pile to raise by " + amountRaised + " and meet the current bet. Try allin. (requested " + amountRaised + ")(held " + cp.Chips + ")";
                         }
                         else
                         {
@@ -1449,11 +1457,11 @@ namespace FChatDicebot.DiceFunctions
                                 tokenTitle = tokenTitle.Replace("raisetoken", "").Replace("bettoken", "").Replace("token", "").Replace(amountRaised.ToString(), "").Trim();
                                 tokenTitle = Utils.SanitizeInput(tokenTitle).Trim();
 
-                                outputFromIncreasedBet = IncreaseBet(diceBot, botMain, session, channel, currentPlayer, amountRaised, token, tokenTitle);
+                                outputFromIncreasedBet = IncreaseBet(diceBot, botMain, session, address, currentPlayer, amountRaised, token, tokenTitle);
                                 currentTurn = "[sub](and it's still their turn)[/sub]";
                                 if(amountRaisedShown >= 0)
                                 {
-                                    bool finished = PassTurnToNextPlayer(diceBot, botMain, session, channel);
+                                    bool finished = PassTurnToNextPlayer(diceBot, botMain, session);
                                     currentTurn = PrintCurrentPlayerTurn(session, finished);
                                 }
 
@@ -1461,35 +1469,35 @@ namespace FChatDicebot.DiceFunctions
 
                                 if(amountRaisedShown > 0)
                                 {
-                                    returnString = Utils.GetCharacterUserTags(character) + " has [color=yellow]raised[/color] by " + amountRaisedShown +
-                                        ". The current total bet to meet is " + session.PokerData.CurrentBetLevel + " chips. " + raiseChange + "\n" +
+                                    returnString = TextFormat.GetCharacterUserTags(address.character) + " has [color=yellow]raised[/color] by " + amountRaisedShown +
+                                        ". The current total bet to meet is " + session.PokerData.CurrentBetLevel + " " + BotMain.CurrencyPlaceholder + "s. " + raiseChange + "\n" +
                                         outputFromIncreasedBet + " " + (currentPlayer.AllIn ? "[color=red]all in[/color] " : "") + currentTurn;
                                 }
                                 else
                                 {
-                                    returnString = Utils.GetCharacterUserTags(character) + " has bet a [color=yellow]token[/color] worth " + amountRaised + ". They are up to " + currentPlayer.BetAmount + " chips bet." +
-                                        ". The current total bet to meet is " + session.PokerData.CurrentBetLevel + " chips. " + raiseChange + "\n" +
+                                    returnString = TextFormat.GetCharacterUserTags(address.character) + " has bet a [color=yellow]token[/color] worth " + amountRaised + ". They are up to " + currentPlayer.BetAmount + " " + BotMain.CurrencyPlaceholder + "s bet." +
+                                        ". The current total bet to meet is " + session.PokerData.CurrentBetLevel + " " + BotMain.CurrencyPlaceholder + "s. " + raiseChange + "\n" +
                                         outputFromIncreasedBet + " " + (currentPlayer.AllIn ? "[color=red]all in[/color] " : "") + currentTurn;
                                 }
                             }
                             else
                             {
-                                outputFromIncreasedBet = IncreaseBet(diceBot, botMain, session, channel, currentPlayer, amountRaised + firstAmountIncreased);
-                                bool finished = PassTurnToNextPlayer(diceBot, botMain, session, channel);
+                                outputFromIncreasedBet = IncreaseBet(diceBot, botMain, session, address, currentPlayer, amountRaised + firstAmountIncreased);
+                                bool finished = PassTurnToNextPlayer(diceBot, botMain, session);
                                 currentTurn = PrintCurrentPlayerTurn(session, finished);
 
-                                returnString = Utils.GetCharacterUserTags(character) + " has [color=yellow]raised[/color] by " + amountRaised +
-                                    ". The current total bet to meet is " + session.PokerData.CurrentBetLevel + " chips. " + raiseChange + "\n" +
+                                returnString = TextFormat.GetCharacterUserTags(address.character) + " has [color=yellow]raised[/color] by " + amountRaised +
+                                    ". The current total bet to meet is " + session.PokerData.CurrentBetLevel + " " + BotMain.CurrencyPlaceholder + "s. " + raiseChange + "\n" +
                                     outputFromIncreasedBet + " " + (currentPlayer.AllIn ? "[color=red]all in[/color] " : "") + currentTurn;
                             }
-                           
+
                         }
                     }
                     //nodraw / keep
                     else if (terms.Contains("nodraw") || terms.Contains("keep") || terms.Contains("nodraws") || (terms.Contains("stand") && session.PokerData.PokerBettingPhase == PokerBettingPhase.DrawPhase))
                     {
-                        bool finished = PassTurnToNextPlayer(diceBot, botMain, session, channel);
-                        returnString = Utils.GetCharacterUserTags(character) + " [color=gray]keeps[/color]. " + PrintCurrentPlayerTurn(session, finished);
+                        bool finished = PassTurnToNextPlayer(diceBot, botMain, session);
+                        returnString = TextFormat.GetCharacterUserTags(address.character) + " [color=gray]keeps[/color]. " + PrintCurrentPlayerTurn(session, finished);
                     }
                     //draw / redraw
                     else if (terms.Contains("draw") || terms.Contains("redraw"))
@@ -1500,23 +1508,23 @@ namespace FChatDicebot.DiceFunctions
                         }
                         else
                         {
-                            CardCommandOptions options = new CardCommandOptions(botMain.BotCommandController, terms, character); //sets all, # indexes for discards
+                            CardCommandOptions options = new CardCommandOptions(botMain.BotCommandController, terms, address.character); //sets all, # indexes for discards
                             int numberDiscards = 0;
                             options.redraw = true;
                             options.secretDraw = true;
                             options.deckType = DeckType.Playing;
                             options.jokers = false;
 
-                            string outputQuestion = botMain.DiceBot.MoveCardsFromTo(options.moveCardsList, options.all, options.secretDraw, channel, options.deckType, null, options.characterDrawName, CardPileId.Hand, CardPileId.Burn, out numberDiscards);
+                            string outputQuestion = botMain.DiceBot.MoveCardsFromTo(options.moveCardsList, options.all, options.secretDraw, options.deckType, null, new MessageAddress(address, options.characterDrawName), CardPileId.Hand, CardPileId.Burn, out numberDiscards);
 
-                            string trueDraw = "";
-                            string outputQuestion2 = botMain.DiceBot.DrawCards(numberDiscards, false, true, channel, DeckType.Playing, null, character, true, options.fromExtraDeckType, null, out trueDraw);// .MoveCardsFromTo(options.moveCardsList, options.all, options.secretDraw, channel, options.deckType, options.characterDrawName, CardPileId.Hand, CardPileId.Discard, out numberDiscards);
+                            DrawCardResult outputQuestion2 = botMain.DiceBot.DrawCards(numberDiscards, false, true, DeckType.Playing, null, address, true, options.fromExtraDeckType, null);// .MoveCardsFromTo(options.moveCardsList, options.all, options.secretDraw, channel, options.deckType, options.characterDrawName, CardPileId.Hand, CardPileId.Discard, out numberDiscards);
 
-                            botMain.SendPrivateMessage("You redrew " + numberDiscards + " cards for Poker:\n" +  trueDraw, character);
-                            bool finished = PassTurnToNextPlayer(botMain.DiceBot, botMain, session, channel);
-                            returnString = Utils.GetCharacterUserTags(character) + " [color=cyan]draws[/color]. Discarding " + numberDiscards + " cards.\nRedrawing " + numberDiscards + " cards... " + PrintCurrentPlayerTurn(session, finished);
+                            botMain.SendPrivateMessage("You redrew " + numberDiscards + " cards for Poker:\n" + outputQuestion2.TrueDraw, address);
+                            bool finished = PassTurnToNextPlayer(botMain.DiceBot, botMain, session);
+                            returnString = TextFormat.GetCharacterUserTags(address.character) + " [color=cyan]draws[/color]. Discarding " + numberDiscards + " cards.\nRedrawing " + numberDiscards + " cards... " + PrintCurrentPlayerTurn(session, finished);
                         }
                     }
+                    else { returnString += "Failed: No such command exists for " + GetGameName(); }
 
                 }
             }
@@ -1540,17 +1548,17 @@ namespace FChatDicebot.DiceFunctions
                             amount = session.PokerData.BigBlind;
                         }
                         session.PokerData.SmallBlind = amount;
-                        returnString += "Set the small blind this session to " + session.PokerData.SmallBlind + " chips. (blinds: " + session.PokerData.SmallBlind + " small / " + session.PokerData.BigBlind + " big).";
+                        returnString += "Set the small blind this session to " + session.PokerData.SmallBlind + " " + BotMain.CurrencyPlaceholder + "s. (blinds: " + session.PokerData.SmallBlind + " small / " + session.PokerData.BigBlind + " big).";
                     }
                     else if (terms.Contains("setbigblind") || terms.Contains("bigblind"))
                     {
                         session.PokerData.BigBlind = amount;
-                        returnString = "Set the big blind this session to " + session.PokerData.BigBlind + " chips. (blinds: " + session.PokerData.SmallBlind + " small / " + session.PokerData.BigBlind + " big).";
+                        returnString = "Set the big blind this session to " + session.PokerData.BigBlind + " " + BotMain.CurrencyPlaceholder + "s. (blinds: " + session.PokerData.SmallBlind + " small / " + session.PokerData.BigBlind + " big).";
                     }
                 }
                 else
                 {
-                    returnString = "Failed: no positive chip amount was found to set blind.";
+                    returnString = "Failed: no positive " + BotMain.CurrencyPlaceholder + " amount was found to set blind.";
                 }
             }
             else if (terms.Contains("setblinds") || terms.Contains("blinds") || terms.Contains("blind") || terms.Contains("setblind"))
@@ -1564,7 +1572,7 @@ namespace FChatDicebot.DiceFunctions
                 }
                 else
                 {
-                    returnString = "Failed: no positive chip amount was found to set blinds.";
+                    returnString = "Failed: no positive " + BotMain.CurrencyPlaceholder + " amount was found to set blinds.";
                 }
             }
             else if (terms.Contains("setmaxbet"))
@@ -1573,7 +1581,7 @@ namespace FChatDicebot.DiceFunctions
                 if (amount >= 0)
                 {
                     session.PokerData.MaximumBet = amount;
-                    returnString = "Set the maximum bet this session to [b]" + amount + "[/b] chips.";
+                    returnString = "Set the maximum bet this session to [b]" + amount + "[/b] " + BotMain.CurrencyPlaceholder + "s.";
                 }
                 else
                 {
@@ -1635,7 +1643,7 @@ namespace FChatDicebot.DiceFunctions
                     ResetAllPlayerStatus(session);
                     session.PokerData.CurrentBetLevel = 0;
                     session.PokerData.PokerPlayers = new List<PokerPlayer>();
-                    diceBot.ResetDeck(false, session.PokerData.decksNumber, session.ChannelId, channelSettings.CardPrintSetting, DeckType.Playing, null);
+                    diceBot.ResetDeck(false, session.PokerData.decksNumber, session.GetMessageAddress(), channelSettings.CardPrintSetting, DeckType.Playing, null);
 
                     session.State = GameState.Unstarted;
                     returnString = "This hand has been [color=red]cancelled[/color]. All bets have been returned and the deck was reset and shuffled. (You can start again with !startgame poker).";
@@ -1789,11 +1797,11 @@ namespace FChatDicebot.DiceFunctions
             return returnString;
         }
 
-        public void PassTurnToFirstActivePlayer()
+        public void PassTurnToFirstActivePlayer(bool drawPhase = false)
         {
             var player = GetCurrentPlayer();
             int skips = 0;
-            while ((player.Folded || player.AllIn || player.CannotAfford) && skips < PokerPlayers.Count())
+            while ((player.Folded || (player.AllIn && !drawPhase) || player.CannotAfford) && skips < PokerPlayers.Count())
             {
                 skips += 1;
                 currentPlayerIndex += 1;
@@ -1913,7 +1921,7 @@ namespace FChatDicebot.DiceFunctions
             if (currentPlayerIndex >= PokerPlayers.Count)
                 outputString += "it is now the dealer's turn.";
             else
-                outputString += "it is now " + Utils.GetCharacterUserTags(GetCurrentPlayer().PlayerName) + "'s turn";
+                outputString += "it is now " + TextFormat.GetCharacterUserTags(GetCurrentPlayer().PlayerName) + "'s turn";
 
             return outputString;
         }
@@ -1999,14 +2007,14 @@ namespace FChatDicebot.DiceFunctions
 
         public string Print(PrintSetting cardPrintSetting)
         {
-            
-            string betAmount = "has bet: [b]" + ActualChipsAmountBet + "[/b] chips" + (AllIn? " [color=red](All-In)[/color]":"");
+
+            string betAmount = "has bet: [b]" + ActualChipsAmountBet + "[/b] " + BotMain.CurrencyPlaceholder + "s" + (AllIn? " [color=red](All-In)[/color]":"");
             if (CannotAfford)
             {
                 betAmount = "(could not afford the ante and has not joined)";
             }
 
-            return Utils.GetCharacterUserTags(PlayerName) + " " + betAmount + ", dealt" + GetHandString(PlayerHand, cardPrintSetting) + "." + (Folded? "(folded)":"") + (Active ? "" : " (inactive)");
+            return TextFormat.GetCharacterUserTags(PlayerName) + " " + betAmount + ", dealt" + GetHandString(PlayerHand, cardPrintSetting) + "." + (Folded? "(folded)":"") + (Active ? "" : " (inactive)");
         }
     }
 

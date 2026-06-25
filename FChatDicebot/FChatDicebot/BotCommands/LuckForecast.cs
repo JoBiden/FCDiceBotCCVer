@@ -7,6 +7,7 @@ using FChatDicebot.BotCommands.Base;
 using FChatDicebot.SavedData;
 using Newtonsoft.Json;
 using FChatDicebot.DiceFunctions;
+using FChatDicebot.Model;
 
 namespace FChatDicebot.BotCommands
 {
@@ -21,31 +22,31 @@ namespace FChatDicebot.BotCommands
             LockCategory = CommandLockCategory.ChannelScores;
         }
 
-        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
+        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, MessageAddress address, UserGeneratedCommand command)
         {
-            ChannelSettings thisChannel = bot.GetChannelSettings(channel);
+            ChannelSettings thisChannel = bot.GetChannelSettings(address);
 
-            int forecastCost = 200;
+            int forecastCost =  thisChannel.LuckForecastChipsCost;
 
-            ChipPile chipPile = bot.DiceBot.GetChipPile(characterName, channel, true);
+            ChipPile chipPile = bot.DiceBot.GetChipPile(address, true);
 
             string messageString = "";
-            
-            CharacterData thisCharacterData = bot.DiceBot.GetCharacterData(characterName, channel);
-            double currentDoubleTime = Utils.GetCurrentTimestampSeconds();
+
+            CharacterData thisCharacterData = bot.DiceBot.GetCharacterData(address);
+            double currentDoubleTime = DoubleTime.GetCurrentTimestampSeconds();
             double timeSinceForecast = currentDoubleTime - thisCharacterData.LastLuckForecastTime;
 
-            if (timeSinceForecast < BotMain.LuckForecastCooldownSeconds && !thisChannel.RemoveLuckForecastCooldown)
+            if (timeSinceForecast < thisChannel.LuckForecastCooldownSeconds && !thisChannel.RemoveLuckForecastCooldown)
             {
-                messageString = "Failed: You must wait another " + (BotMain.LuckForecastCooldownSeconds - timeSinceForecast) + " seconds to have another luck forecast.";
+                messageString = "Failed: You must wait another " + (thisChannel.LuckForecastCooldownSeconds - timeSinceForecast) + " seconds to have another luck forecast.";
             }
             else if (thisChannel.AllowChips && chipPile == null)
             {
-                messageString = "Error: Chips pile not found for " + Utils.GetCharacterUserTags(characterName);
+                messageString = "Error: " + BotMain.CurrencyPlaceholderCapital + "s pile not found for " + TextFormat.GetCharacterUserTags(address.character);
             }
             else if (thisChannel.AllowChips && chipPile.Chips < forecastCost)
             {
-                messageString = "Failed: You do not have enough chips to hear the luck forecast. Held:(" + chipPile.Chips + ") Required(" + forecastCost + ")";
+                messageString = "Failed: You do not have enough " + BotMain.CurrencyPlaceholder + "s to hear the luck forecast. Held:(" + chipPile.Chips + ") Required(" + forecastCost + ")";
             }
             else
             {
@@ -104,7 +105,10 @@ namespace FChatDicebot.BotCommands
                             fortune = "I've seen worse.";
                             break;
                         case 1:
-                            fortune = "Below average.";
+                            if (randomLuck >= 8)
+                                fortune = "About average.";
+                            else
+                                fortune = "Below average.";
                             break;
                         case 2:
                             fortune = "Hey you can still make it work if you try!";
@@ -126,16 +130,19 @@ namespace FChatDicebot.BotCommands
                             break;
                     }
                 }
-                if (randomLuck > 10)
+                if (randomLuck >= 10)
                 {
-                    luckColor = "green";
+                    luckColor = "cyan";
                     switch (luckReading)
                     {
                         case 0:
                             fortune = "Not bad.";
                             break;
                         case 1:
-                            fortune = "Above average.";
+                            if (randomLuck >= 11)
+                                fortune = "Above average.";
+                            else
+                                fortune = "About average.";
                             break;
                         case 2:
                             fortune = "Don't get too cocky!";
@@ -204,15 +211,15 @@ namespace FChatDicebot.BotCommands
 
                     commandController.SaveChipsToDisk("LuckForecast");
 
-                    messageString = "Deducted " + forecastCost + " chips from " + Utils.GetCharacterUserTags(characterName) + " to read their [b]Luck Forecast[/b]:\n" + buildMeter;
+                    messageString = "Deducted " + forecastCost + " " + BotMain.CurrencyPlaceholder + "s from " + TextFormat.GetCharacterUserTags(address.character) + " to read their [b]Luck Forecast[/b]:\n" + buildMeter;
                 }
                 else
                 {
-                    messageString = Utils.GetCharacterUserTags(characterName) + "'s [b]Luck Forecast[/b]:\n" + buildMeter;
+                    messageString = TextFormat.GetCharacterUserTags(address.character) + "'s [b]Luck Forecast[/b]:\n" + buildMeter;
                 }
             }
 
-            bot.SendMessageInChannel(messageString, channel);
+            bot.SendMessageInChannel(messageString, address);
         }
     }
 }

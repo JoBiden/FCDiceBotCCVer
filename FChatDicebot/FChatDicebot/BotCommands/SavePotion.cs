@@ -7,8 +7,8 @@ using FChatDicebot.BotCommands.Base;
 using FChatDicebot.SavedData;
 using Newtonsoft.Json;
 using FChatDicebot.DiceFunctions;
+using FChatDicebot.Model;
 
-//NOTE: currently unfinished and does not function
 namespace FChatDicebot.BotCommands
 {
     public class SavePotion : ChatBotCommand
@@ -18,24 +18,80 @@ namespace FChatDicebot.BotCommands
             Name = "savepotion";
             RequireBotAdmin = false;
             RequireChannelAdmin = true;
-            RequireChannel = true;
+            RequireChannel = false;
             LockCategory = CommandLockCategory.SavedTables;
         }
 
-        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
+        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, MessageAddress address, UserGeneratedCommand command)
         {
+            ///
+            ChannelSettings thisChannel = null;
+            bool fromChannel = commandController.MessageCameFromChannel(address);
+
+            if (fromChannel)
+                thisChannel = bot.GetChannelSettings(address);
+
+            string channelName = commandController.GetChannelFromInputs(rawTerms, out string channelIdError);
+
+            bool usedCustomChannel = !string.IsNullOrEmpty(channelName);
+            string outputMessage = "";
+
+            if (!string.IsNullOrEmpty(channelIdError) && !fromChannel)
+            {
+                SendMessageToChannelOrUser(bot, commandController, address, channelIdError);
+                return;
+            }
+            else if (thisChannel != null && thisChannel.AllowTableInfo)
+            {
+                if (fromChannel && string.IsNullOrEmpty(channelName))
+                    channelName = address.GetChannelKey();
+            }
+
+            //secondary check for required ops
+            if (command.ops == null)
+            {
+                //get the channel Id to check...
+                bot.RequestChannelOpListAndQueueFurtherRequest(command, channelName);
+                return;
+            }
+            else if (command.ops != null && !command.ops.Contains(command.characterName) && !Utils.IsCharacterAdmin(bot.AccountSettings.AdminCharacters, command.characterName))
+            {
+                SendMessageToChannelOrUser(bot, commandController, address, "Error: You are not a channel OP of the requested channel!");
+                return;
+            }
+
+            ///
+
             string saveJson = Utils.GetFullStringOfInputs(rawTerms);
+            if (usedCustomChannel)//new channel used
+                saveJson = Utils.GetFullStringOfInputsAfterTermX(rawTerms, 1);
             string sendMessage = "save potion error";
 
             try
             {
                 FChatDicebot.DiceFunctions.Enchantment newPotion = JsonConvert.DeserializeObject<FChatDicebot.DiceFunctions.Enchantment>(saveJson);
 
-                List<Enchantment> allEnchantments = bot.DiceBot.PotionGenerator.GetAllEnchantments(bot, true, channel);
-                var thisCharacterEnchantments = allEnchantments.Where(a => a.CreatedBy == characterName);
+                MessageAddress tempAddress = address;
+                if (!Utils.IsDiscordMessage(command) && usedCustomChannel)
+                    tempAddress = new MessageAddress() { channel = channelName, character = address.character, guild = address.guild };
+
+                ChannelSettings settings = bot.GetChannelSettings(tempAddress);
+                if(newPotion == null)
+                {
+                    SendMessageToChannelOrUser(bot, commandController, address, "Failed: could not parse potion JSON.");
+                    return;
+                }
+                else if (settings != null && Utils.GetNsfwError(settings, newPotion, out sendMessage))
+                {
+                    SendMessageToChannelOrUser(bot, commandController, address, sendMessage);
+                    return;
+                }
+
+                List<Enchantment> allEnchantments = bot.DiceBot.PotionGenerator.GetAllEnchantments(bot, true, tempAddress);
+                var thisCharacterEnchantments = allEnchantments.Where(a => a.CreatedBy == address.character);
                 string lowerPre = newPotion.prefix.ToLower();
                 string lowerSuf = newPotion.suffix.ToLower();
-                var thisCharacterTotalEnchantments = bot.GetCharacterTotalEnchantments(characterName);
+                var thisCharacterTotalEnchantments = bot.GetCharacterTotalEnchantments(address.character);
 
                 FChatDicebot.DiceFunctions.Enchantment existingEnchantment = allEnchantments.FirstOrDefault(a => a.suffix.ToLower() == lowerSuf || a.prefix.ToLower() == lowerPre);
 
@@ -43,7 +99,7 @@ namespace FChatDicebot.BotCommands
                 {
                     sendMessage = "Failed: A character can only save up to " + BotMain.MaximumSavedPotionsPerCharacter + " potions at one time. Delete or overwrite old potions.";
                 }
-                else if (existingEnchantment != null && existingEnchantment.CreatedBy != characterName)
+                else if (existingEnchantment != null && existingEnchantment.CreatedBy != address.character)
                 {
                     sendMessage = "Failed: Potion name is already used by another character.";
                 }
@@ -61,7 +117,7 @@ namespace FChatDicebot.BotCommands
                 }
                 else
                 {
-                    newPotion.CreatedBy = characterName;
+                    newPotion.CreatedBy = address.character;
                     newPotion.Flag = EnchantmentFlag.UserGenerated;
 
                     newPotion.explanation = newPotion.explanation == null ? null : Utils.LimitStringToNCharacters(newPotion.explanation, BotMain.MaximumCharactersPotionDescription);
@@ -78,18 +134,18 @@ namespace FChatDicebot.BotCommands
                     {
                         SavedPotion newSavedPotion = new SavedPotion()
                         {
-                            Channel = channel,
+                            Channel = tempAddress.GetChannelKey(),
                             DefaultPotion = false,
                             Enchantment = newPotion,
-                            OriginCharacter = characterName
+                            OriginCharacter = address.character
                         };
 
                         bot.SavedPotions.Add(newSavedPotion);
                     }
 
                     commandController.SavePotionDataToDisk();
-                    
-                    sendMessage = "[b]Success[/b]. Potion saved by " + Utils.GetCharacterUserTags(characterName) + ". This can now be generated using !generatepotion " + newPotion.suffix.ToLower();
+
+                    sendMessage = "[b]Success[/b]. Potion saved by " + TextFormat.GetCharacterUserTags(address.character) + ". This can now be generated using !generatepotion " + newPotion.suffix.ToLower();
                 }
             }
             catch (Exception)
@@ -97,14 +153,7 @@ namespace FChatDicebot.BotCommands
                 sendMessage = "Failed to parse potion enchantment entry data. Make sure the Json is correctly formatted.";
             }
 
-            if (!commandController.MessageCameFromChannel(channel))
-            {
-                bot.SendPrivateMessage(sendMessage, characterName);
-            }
-            else
-            {
-                bot.SendMessageInChannel(sendMessage, channel);
-            }
+            SendMessageToChannelOrUser(bot, commandController, address, sendMessage);
         }
     }
 }

@@ -5,39 +5,60 @@ using System.Text;
 using System.Threading.Tasks;
 using FChatDicebot.BotCommands.Base;
 using FChatDicebot.DiceFunctions;
+using FChatDicebot.Model;
 using FChatDicebot.SavedData;
 
 namespace FChatDicebot.BotCommands.Base
 {
     public class MoveChips
     {
-        public static void Run(BotMain bot, BotCommandController commandController, 
-            string[] rawTerms, string[] terms, string characterName, string channel, 
+        public static void Run(BotMain bot, BotCommandController commandController,
+            string[] rawTerms, string[] terms, MessageAddress originCharacterAddress,// string characterName, string channel, string guild,
             UserGeneratedCommand command, string originCommandName, string verbUsed, bool chipsMovingFromOriginUser, bool forceGiveWithoutName)// CardMoveType moveType)
         {
-            ChannelSettings thisChannel = bot.GetChannelSettings(channel);
+            ChannelSettings thisChannel = bot.GetChannelSettings(originCharacterAddress);
 
-            bool characterIsAdmin = Utils.IsCharacterAdmin(bot.AccountSettings.AdminCharacters, characterName);
+            bool characterIsAdmin = Utils.IsCharacterAdmin(bot.AccountSettings.AdminCharacters, originCharacterAddress.character);
+            bool characterIsTrustedForChannel = Utils.IsCharacterTrusted(bot.AccountSettings.TrustedCharacters, originCharacterAddress);
+            bool discordMessage = Utils.IsDiscordMessage(command);
+            bool discordAuthorized = discordMessage && commandController.AuthorizedDiscordAdmin(command);
 
-            if (!thisChannel.AllowChips)
-            {
-                bot.SendMessageInChannel("Moving chips is currently not allowed in this channel under " + Utils.GetCharacterUserTags(DiceBot.DiceBotCharacter) + "'s settings for this channel.", channel);
-            }
-            else if (thisChannel.ChipsClearance == ChipsClearanceLevel.ChannelOp && command.ops == null)
+            if ((thisChannel.ChipsClearance == ChipsClearanceLevel.ChannelOp && command.ops == null) && !discordAuthorized)
             {
                 bot.RequestChannelOpListAndQueueFurtherRequest(command);
             }
-            else if ((forceGiveWithoutName || !chipsMovingFromOriginUser) && ((thisChannel.ChipsClearance == ChipsClearanceLevel.DicebotAdmin && !characterIsAdmin) ||
-                (thisChannel.ChipsClearance == ChipsClearanceLevel.ChannelOp && !command.ops.Contains(characterName) && !characterIsAdmin)))
+            else if (!thisChannel.AllowChips)
             {
-                bot.SendMessageInChannel(Utils.GetCharacterUserTags(characterName) + " cannot perform [" + originCommandName + "] under the current chip settings for this channel.", channel);
+                bot.SendMessageInChannel(originCommandName + " is currently not allowed in this channel under " + TextFormat.GetCharacterUserTags(DiceBot.DiceBotCharacter) + "'s settings for this channel.", originCharacterAddress);
             }
+            else if ((forceGiveWithoutName || !chipsMovingFromOriginUser) && ((thisChannel.ChipsClearance == ChipsClearanceLevel.DicebotAdmin && !characterIsAdmin && !characterIsTrustedForChannel) ||
+                (thisChannel.ChipsClearance == ChipsClearanceLevel.ChannelOp && command.ops != null && !command.ops.Contains(originCharacterAddress.character) && !characterIsAdmin) ||
+                (thisChannel.ChipsClearance == ChipsClearanceLevel.ChannelOp && !discordAuthorized && discordMessage)))
+            {
+                bot.SendMessageInChannel(TextFormat.GetCharacterUserTags(originCharacterAddress.character) + " cannot perform \'" + originCommandName + "\' under the current chip settings for this channel.", originCharacterAddress);
+            }
+
+            //    bool characterIsAdmin = Utils.IsCharacterAdmin(bot.AccountSettings.AdminCharacters, originCharacterAddress.character);
+
+            //if (!thisChannel.AllowChips)
+            //{
+            //    bot.SendMessageInChannel("Moving " + BotMain.CurrencyPlaceholder + "s is currently not allowed in this channel under " + TextFormat.GetCharacterUserTags(DiceBot.DiceBotCharacter) + "'s settings for this channel.", originCharacterAddress);
+            //}
+            //else if (thisChannel.ChipsClearance == ChipsClearanceLevel.ChannelOp && command.ops == null)
+            //{
+            //    bot.RequestChannelOpListAndQueueFurtherRequest(command);
+            //}
+            //else if ((forceGiveWithoutName || !chipsMovingFromOriginUser) && ((thisChannel.ChipsClearance == ChipsClearanceLevel.DicebotAdmin && !characterIsAdmin) ||
+            //    (thisChannel.ChipsClearance == ChipsClearanceLevel.ChannelOp && !command.ops.Contains(originCharacterAddress.character) && !characterIsAdmin)))
+            //{
+            //    bot.SendMessageInChannel(TextFormat.GetCharacterUserTags(originCharacterAddress.character) + " cannot perform [" + originCommandName + "] under the current chip settings for this channel.", originCharacterAddress);
+            //}
             else
             {
                 string messageString = "";
                 if (terms.Length < 2)
                 {
-                    messageString = "Error: This command requires a number (first) and a user name (second).";
+                    messageString = "Failed: \'" + originCommandName + "\' requires a number (first) and a user name (second).";
                 }
                 else
                 {
@@ -46,7 +67,7 @@ namespace FChatDicebot.BotCommands.Base
 
                     if (giveAmount <= 0 && !all)
                     {
-                        messageString = "Error: You must input a number to take an amount of chips.";
+                        messageString = "Failed: You must input a number of " + BotMain.CurrencyPlaceholder + "s over 0 or 'all' to use \'" + originCommandName + "\'";
                     }
                     else
                     {
@@ -56,17 +77,17 @@ namespace FChatDicebot.BotCommands.Base
 
                         if(!chipsMovingFromOriginUser)
                         {
-                            messageString = bot.DiceBot.TakeChips(characterName, targetUserName, channel, giveAmount, all);
+                            messageString = bot.DiceBot.TakeChips(originCharacterAddress, targetUserName, giveAmount, all);
                         }
                         else
                         {
                             if(forceGiveWithoutName)
                             {
-                                messageString = bot.DiceBot.GiveChips(characterName, targetUserName, channel, giveAmount, all, true);
+                                messageString = bot.DiceBot.GiveChips(originCharacterAddress, targetUserName, giveAmount, all, true);
                             }
                             else
                             {
-                                messageString = bot.DiceBot.GiveChips(characterName, targetUserName, channel, giveAmount, all, false);
+                                messageString = bot.DiceBot.GiveChips(originCharacterAddress, targetUserName, giveAmount, all, false);
                             }
                         }
 
@@ -74,7 +95,7 @@ namespace FChatDicebot.BotCommands.Base
                     }
                 }
 
-                bot.SendMessageInChannel(messageString, channel);
+                bot.SendMessageInChannel(messageString, originCharacterAddress);
             }
         }
     }
