@@ -618,6 +618,14 @@
     <Compile Include="Model\GenerateMonsterRequest.cs" />
     <Compile Include="Model\MGWebRequest.cs" />
     <Compile Include="Model\MessageAddress.cs" />
+    <!-- Incomplete MonsterGenerator subsystem: these files live in the
+         MonsterGenerator2_Net47.Models.Data namespace and reference model types
+         (Alignment, Race, RandomGenerationTable, AbilityModel, FeatModel, etc.) that
+         were never ported into this repo, so they cannot compile. Nothing outside this
+         folder references them (the !monsterize command uses the Chateau interaction
+         system, not this code). Excluded from the build to unblock compilation; files
+         retained on disk so the feature can be completed later by adding the missing
+         MonsterGenerator2_Net47.Models definitions and re-enabling these Compile entries.
     <Compile Include="Model\MonsterGenerator\Data\Alignments.cs" />
     <Compile Include="Model\MonsterGenerator\Data\ChallengeRatings.cs" />
     <Compile Include="Model\MonsterGenerator\Data\Feats.cs" />
@@ -632,6 +640,7 @@
     <Compile Include="Model\MonsterGenerator\Data\Skills.cs" />
     <Compile Include="Model\MonsterGenerator\MonsterGeneratorModel.cs" />
     <Compile Include="Model\MonsterGenerator\PrintMonster.cs" />
+    -->
     <Compile Include="SavedData\Base\ICustomUserContent.cs" />
     <Compile Include="SavedData\SavedJobsList.cs" />
     <Compile Include="ShaUtility.cs" />

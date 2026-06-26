@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using FChatDicebot.BotCommands.Base;
+using FChatDicebot.Model;
 using FChatDicebot.DiceFunctions;
 using FChatDicebot.SavedData;
 
@@ -20,8 +21,10 @@ namespace FChatDicebot.BotCommands
             LockCategory = CommandLockCategory.NONE;
         }
 
-        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
+        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, MessageAddress address, UserGeneratedCommand command)
         {
+            string characterName = address.character;
+            string channel = address.channel;
             //perform authorization
             bool success = bot.VelvetcuffConnection.GetNewVelvetcuffOauthToken();
             bot.SendMessageInChannel("Authorization completed, token retrieved... " + (bot.VelvetcuffConnection.CurrentOAuthVcKey == null? "null" : bot.VelvetcuffConnection.CurrentOAuthVcKey.Take(10) ) + "... " + success, channel);

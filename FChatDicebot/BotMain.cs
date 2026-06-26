@@ -1389,6 +1389,13 @@ namespace FChatDicebot
             BotCommandController.SaveChannelSettingsToDisk();
         }
 
+        // Convenience overload for legacy string-channel callers (F-Chat Chateau commands).
+        // Wraps the channel id into a MessageAddress; guild stays null => F-Chat path.
+        public void SendMessageInChannel(string message, string channel)
+        {
+            SendMessageInChannel(message, new MessageAddress() { channel = channel });
+        }
+
         public void SendFutureMessage(string message, MessageAddress address, bool channelMessage, int waitMs)
         {
             lock (MessageQueueLock)
@@ -1424,6 +1431,12 @@ namespace FChatDicebot
                     MessageQueue.AddMessage(BotMessageFactory.NewMessage(BotMessageFactory.PRI, new PRIclient() { recipient = address.character, message = message }));
                 }
             }
+        }
+
+        // Convenience overload for legacy string-recipient callers (F-Chat Chateau commands).
+        public void SendPrivateMessage(string message, string recipient)
+        {
+            SendPrivateMessage(message, new MessageAddress() { character = recipient });
         }
 
         public void JoinChannel(MessageAddress address, bool startupJoin) //FList only
