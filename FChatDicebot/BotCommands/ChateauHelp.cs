@@ -179,7 +179,7 @@ namespace FChatDicebot.BotCommands
                     "!feedbacklist [count] - view recent !feedback / !suggestion submissions (newest first) \n";
             }
 
-            if (commandController.MessageCameFromChannel(channel))
+            if (commandController.MessageCameFromChannel(address))
             {
                 bot.SendMessageInChannel("We've messaged the requested help directly to you, " + command.characterName + ". In the future you can message this profile directly to avoid cluttering the public channel. Thank you~", channel);
                 

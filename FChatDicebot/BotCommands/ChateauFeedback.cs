@@ -44,7 +44,7 @@ namespace FChatDicebot.BotCommands
             string characterName = address.character;
             string channel = address.channel;
             Profile userProfile = MonDB.getProfile(characterName);
-            bool fromChannel = commandController.MessageCameFromChannel(channel);
+            bool fromChannel = commandController.MessageCameFromChannel(address);
 
             // Cooldown gate — set only on a successful submission, so a too-soon retry that was
             // never accepted (e.g. an empty message) does not start the timer.

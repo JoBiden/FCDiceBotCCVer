@@ -27,7 +27,7 @@ namespace FChatDicebot.BotCommands
             string characterName = address.character;
             string channel = address.channel;
 
-            Potion p = bot.DiceBot.GetPotionHeld(characterName);
+            Potion p = bot.DiceBot.GetPotionHeld(address);
 
             if(p == null)
             {

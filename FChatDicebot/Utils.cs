@@ -78,6 +78,11 @@ namespace FChatDicebot
             return Math.Max(Math.Min(input, max), min);
         }
 
+        public static float Clamp(float input, float min, float max)
+        {
+            return Math.Max(Math.Min(input, max), min);
+        }
+
         public static string PrintList(string[] stringArray)
         {
             if (stringArray == null || stringArray.Length == 0)

@@ -39,7 +39,7 @@ namespace FChatDicebot.BotCommands
             }
             string messageText = MonDB.modMessage(terms[0]);
 
-            if (!commandController.MessageCameFromChannel(channel))
+            if (!commandController.MessageCameFromChannel(address))
             {
                 bot.SendPrivateMessage(messageText, characterName);
             }

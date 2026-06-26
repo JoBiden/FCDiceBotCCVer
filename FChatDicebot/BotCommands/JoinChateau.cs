@@ -36,7 +36,7 @@ namespace FChatDicebot.BotCommands
             string characterName = address.character;
             string channel = address.channel;
             string confirmMessage = MonDB.registerUserChateau(characterName);
-            if (!commandController.MessageCameFromChannel(channel))
+            if (!commandController.MessageCameFromChannel(address))
             {
                 bot.SendPrivateMessage(confirmMessage, characterName);
             }
