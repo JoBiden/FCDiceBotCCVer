@@ -29,8 +29,10 @@ namespace FChatDicebot.BotCommands
             //maintenance note: this command is similar to ChateauVolunteer, consider refactoring shared logic into a base class. For now, echo changes to both commands.
         }
 
-        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
+        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, MessageAddress address, UserGeneratedCommand command)
         {
+            string characterName = address.character;
+            string channel = address.channel;
             Profile userProfile = MonDB.getProfile(characterName);
             PendingDuty dutyInProgress = MonDB.getPendingDuty(characterName);
             string message = "";
