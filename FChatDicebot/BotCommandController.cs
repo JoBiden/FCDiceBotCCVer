@@ -35,19 +35,39 @@ namespace FChatDicebot
 
         private void LoadChatBotCommands()
         {
-            Type[] allTypes = Assembly.GetExecutingAssembly().GetTypes();
+            Type[] allTypes;
+            try
+            {
+                allTypes = Assembly.GetExecutingAssembly().GetTypes();
+            }
+            catch (ReflectionTypeLoadException ex)
+            {
+                // If some types can't be loaded (e.g. a dependency that isn't present in
+                // the current host, such as a unit-test runner), keep the ones that did load.
+                allTypes = ex.Types.Where(t => t != null).ToArray();
+            }
 
             foreach(Type thisType in allTypes)
             {
-                if (thisType.Namespace == "FChatDicebot.BotCommands")
+                if (thisType != null && thisType.Namespace == "FChatDicebot.BotCommands")
                 {
-                    object obj = Activator.CreateInstance(thisType);
+                    try
+                    {
+                        object obj = Activator.CreateInstance(thisType);
 
-                    //dynamic is assumed to be any type you tell it, not validated at compile time. can crash runtime if methods not found.
-                    dynamic changedObj = Convert.ChangeType(obj, thisType);
+                        //dynamic is assumed to be any type you tell it, not validated at compile time. can crash runtime if methods not found.
+                        dynamic changedObj = Convert.ChangeType(obj, thisType);
 
-                    if (changedObj.GetType().BaseType == typeof(ChatBotCommand))
-                        BotCommands.Add(changedObj);
+                        if (changedObj.GetType().BaseType == typeof(ChatBotCommand))
+                            BotCommands.Add(changedObj);
+                    }
+                    catch (Exception ex)
+                    {
+                        // A single command type that can't be instantiated here (for example a
+                        // DI command whose parameterless constructor expects a live database
+                        // during unit tests) should not stop every other command from loading.
+                        Console.WriteLine("LoadChatBotCommands: skipped " + thisType.FullName + " - " + ex.Message);
+                    }
                 }
             }
         }
