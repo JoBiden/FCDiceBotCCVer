@@ -25,7 +25,7 @@ namespace FChatDicebot.BotCommands
         {
             string characterName = address.character;
             string channel = address.channel;
-            ChannelSettings chan = bot.GetChannelSettings(channel);
+            ChannelSettings chan = bot.GetChannelSettings(address);
             string responseMessage = "";
             if(!chan.AllowChips)
             {
@@ -33,9 +33,9 @@ namespace FChatDicebot.BotCommands
             }
             else
             {
-                ChipPile pile = bot.DiceBot.GetChipPile(characterName, channel);
-                
-                VcChipOrder existingOrder = bot.DiceBot.GetVcChipOrder(characterName, channel);
+                ChipPile pile = bot.DiceBot.GetChipPile(address);
+
+                VcChipOrder existingOrder = bot.DiceBot.GetVcChipOrder(address);
 
                 if(pile == null)
                 {

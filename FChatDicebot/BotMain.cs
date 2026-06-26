@@ -952,7 +952,7 @@ namespace FChatDicebot
                     {
                         //add chips in casino
                         int amount = command.GetChipsAmount();
-                        string chipsAdded = DiceBot.AddChips(command.CharacterName, CasinoChannelId, amount, false);
+                        string chipsAdded = DiceBot.AddChips(new MessageAddress() { character = command.CharacterName, channel = CasinoChannelId }, amount, false);
                         //send confirm message to casino
                         SendMessageInChannel("Chips recorded in the VC Casino Channel: " + chipsAdded, new MessageAddress() { channel = command.ChannelName });
                         //remove from waiting commands

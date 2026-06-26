@@ -36,7 +36,7 @@ namespace FChatDicebot.BotCommands
             else
             {
 
-                string output = bot.DiceBot.PotionGenerator.GetPotionGenerationOutputString(p);
+                string output = bot.DiceBot.PotionGenerator.GetPotionGenerationOutputString(p, false);
 
                 output = "Showing potion held by " + Utils.GetCharacterIconTags(characterName) + output;
 

@@ -863,6 +863,16 @@ namespace FChatDicebot
             return rtnString;
         }
 
+        public static string GetStringOfNLength(int n, string character)
+        {
+            string rtnString = "";
+            for(int i = 0; i < n; i++)
+            {
+                rtnString += character;
+            }
+            return rtnString;
+        }
+
         public static string GetTotalFileName(string folderName, string fileName)
         {
             string fileNameWithTest = BotMain._testVersion ? BotMain.TestFilePrefix + fileName : fileName;
@@ -874,9 +884,9 @@ namespace FChatDicebot
             return adminCharacters.Contains(character);
         }
 
-        public static bool IsCharacterTrusted(List<ChannelCharacter> trustedCharacters, string character, string channel)
+        public static bool IsCharacterTrusted(List<ChannelCharacter> trustedCharacters, MessageAddress address)
         {
-            return trustedCharacters.Count(a => a.Channel == channel && a.Character == character) > 0;
+            return trustedCharacters.Count(a => a.Channel == address.channel && a.Character == address.character) > 0;
         }
 
         public static bool BotMessageIsChatMessage(BotMessage message)
