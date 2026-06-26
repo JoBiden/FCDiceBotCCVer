@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using FChatDicebot.BotCommands.Base;
 using FChatDicebot.DiceFunctions;
+using FChatDicebot.Model;
 using FChatDicebot.SavedData;
 
 namespace FChatDicebot.BotCommands
@@ -20,12 +21,12 @@ namespace FChatDicebot.BotCommands
             LockCategory = CommandLockCategory.ChannelDecks;
         }
 
-        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
+        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, MessageAddress address, UserGeneratedCommand command)
         {
             string cardName = Utils.GetFullStringOfInputs(rawTerms);
 
             List<SavedDeck> possibleDecks = bot.SavedDecks.Where(a => a.DeckList.Contains(cardName)).ToList();
-            SavedData.ChannelSettings channelSettings = bot.GetChannelSettings(channel);
+            SavedData.ChannelSettings channelSettings = bot.GetChannelSettings(address);
 
             string allReturned = "";
 
@@ -53,7 +54,10 @@ namespace FChatDicebot.BotCommands
                         allReturned += d.FullDescription(channelSettings.CardPrintSetting);
                     }
 
-                    allReturned += " (" + saved.DeckId + ")";
+                    if(!saved.Nsfw || channelSettings.AllowNsfw)
+                    {
+                        allReturned += " (" + saved.DeckId + ")";
+                    }
                 }
             }
             else
@@ -61,7 +65,7 @@ namespace FChatDicebot.BotCommands
                 allReturned = "The card '" + cardName + "' was not found.";
             }
 
-            bot.SendMessageInChannel("[i]Card Info: [/i]" + allReturned, channel);
+            bot.SendMessageInChannel("[i]Card Info: [/i]" + allReturned, address);
         }
     }
 }

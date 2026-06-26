@@ -7,6 +7,7 @@ using FChatDicebot.BotCommands.Base;
 using FChatDicebot.SavedData;
 using Newtonsoft.Json;
 using FChatDicebot.DiceFunctions;
+using FChatDicebot.Model;
 
 namespace FChatDicebot.BotCommands
 {
@@ -21,13 +22,18 @@ namespace FChatDicebot.BotCommands
             LockCategory = CommandLockCategory.CharacterInventories;
         }
 
-        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
+        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, MessageAddress address, UserGeneratedCommand command)
         {
-            List<Enchantment> enchantments = bot.DiceBot.PotionGenerator.GetAllEnchantments(bot, true, channel);
+            List<Enchantment> enchantments = bot.DiceBot.PotionGenerator.GetAllEnchantments(bot, true, address);
+
+            ChannelSettings settings = bot.GetChannelSettings(address);
+            if (!settings.AllowNsfw)
+                enchantments = enchantments.Where(a => !a.Nsfw).ToList();
+
             string wholeList = string.Join(", ", enchantments.Select(a => (a.suffix) ) );
 
-            bot.SendPrivateMessage("[i]List of every generateable potion by suffix name: [/i]" + wholeList, characterName);
-            bot.SendMessageInChannel("Sent list of generateable potions to " + Utils.GetCharacterUserTags(characterName), channel);
+            bot.SendPrivateMessage("[i]List of every generateable potion by suffix name: [/i]" + wholeList, address);
+            bot.SendMessageInChannel("Sent list of generateable potions to " + TextFormat.GetCharacterUserTags(address.character), address);
         }
     }
 }

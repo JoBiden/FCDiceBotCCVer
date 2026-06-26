@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using FChatDicebot.BotCommands.Base;
 using FChatDicebot.DiceFunctions;
+using FChatDicebot.Model;
 
 namespace FChatDicebot.BotCommands
 {
@@ -19,7 +20,7 @@ namespace FChatDicebot.BotCommands
             LockCategory = CommandLockCategory.ChannelDecks;
         }
 
-        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
+        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, MessageAddress address, UserGeneratedCommand command)
         {
             List<string> newTerms = new List<string>();
             newTerms.AddRange(terms.Where( a=> a != "s" && a != "secret"));
@@ -27,12 +28,12 @@ namespace FChatDicebot.BotCommands
             string[] replacementTerms = newTerms.ToArray();
             string deckTypeId = "";
             DeckType deckType = commandController.GetDeckTypeFromCommandTerms(terms, out deckTypeId);
-            Hand h = bot.DiceBot.GetHand(channel, deckType, deckTypeId, characterName + DiceBot.HiddenPlaySuffix);
+            Hand h = bot.DiceBot.GetHand(deckType, deckTypeId, address, DiceBot.HiddenPlaySuffix);
             if (h == null || h.CardsCount() == 0)
-                bot.SendMessageInChannel("(No secret cards inn play to reveal)", channel);
+                bot.SendMessageInChannel("(No secret cards in play to reveal)", address);
             else
             {
-                MoveCards.Run(bot, commandController, rawTerms, replacementTerms, characterName, channel, command, CardPileId.HiddenInPlay, CardPileId.Play);
+                MoveCards.Run(bot, commandController, rawTerms, replacementTerms, address, command, CardPileId.HiddenInPlay, CardPileId.Play);
             }
         }
     }

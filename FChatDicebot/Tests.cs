@@ -1,4 +1,4 @@
-﻿using FChatDicebot.DiceFunctions;
+using FChatDicebot.DiceFunctions;
 using FChatDicebot.SavedData;
 using System;
 using System.Collections.Generic;
@@ -7,12 +7,18 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using WebSocketSharp;
+using Discord.Net;
 
 //This class is a dumping ground for old tests used to make parts of the connection work. Safe to ignore it really.
 namespace FChatDicebot
 {
     class Tests
     {
+        public void testDiscord()
+        {
+
+        }
+
         public void teststuff()
         {
             //10/11/2020 I'm not sure what this is : test info
@@ -67,7 +73,7 @@ namespace FChatDicebot
                 // To enable the redirection.
                 //ws.EnableRedirection = true;
 
-                //ws.Protocol = 
+                //ws.Protocol =
 
                 // Connect to the server.
                 ws.Connect();
@@ -107,7 +113,7 @@ namespace FChatDicebot
                     Console.WriteLine("websocket Error: " + e.Message);
                 ws.OnClose += (sender, e) =>
                     Console.WriteLine("WebSocket Close ({0}) ({1})", e.Code, e.Reason);
-                //ws.Credentials = 
+                //ws.Credentials =
                 //ws.IsSecure = false;
 
                 // Connect to the server.
@@ -140,7 +146,7 @@ namespace FChatDicebot
                     Console.WriteLine("websocket Error: " + e.Message);
                 ws.OnClose += (sender, e) =>
                     Console.WriteLine("WebSocket Close ({0}) ({1})", e.Code, e.Reason);
-                //ws.Credentials = 
+                //ws.Credentials =
                 //ws.IsSecure = false;
 
                 // Connect to the server.
@@ -157,7 +163,7 @@ namespace FChatDicebot
                     Console.WriteLine("websocket Error: " + e.Message);
                 ws.OnClose += (sender, e) =>
                     Console.WriteLine("WebSocket Close ({0}) ({1})", e.Code, e.Reason);
-                //ws.Credentials = 
+                //ws.Credentials =
                 //ws.IsSecure = false;
 
                 // Connect to the server.
@@ -174,7 +180,7 @@ namespace FChatDicebot
                     Console.WriteLine("websocket Error: " + e.Message);
                 ws.OnClose += (sender, e) =>
                     Console.WriteLine("WebSocket Close ({0}) ({1})", e.Code, e.Reason);
-                //ws.Credentials = 
+                //ws.Credentials =
                 //ws.IsSecure = false;
 
                 // Connect to the server.
@@ -191,7 +197,7 @@ namespace FChatDicebot
                     Console.WriteLine("websocket Error: " + e.Message);
                 ws.OnClose += (sender, e) =>
                     Console.WriteLine("WebSocket Close ({0}) ({1})", e.Code, e.Reason);
-                //ws.Credentials = 
+                //ws.Credentials =
                 //ws.IsSecure = false;
 
                 // Connect to the server.
@@ -208,7 +214,7 @@ namespace FChatDicebot
                     Console.WriteLine("websocket Error: " + e.Message);
                 ws.OnClose += (sender, e) =>
                     Console.WriteLine("WebSocket Close ({0}) ({1})", e.Code, e.Reason);
-                //ws.Credentials = 
+                //ws.Credentials =
                 //ws.IsSecure = false;
 
                 // Connect to the server.
@@ -225,7 +231,7 @@ namespace FChatDicebot
                     Console.WriteLine("websocket Error: " + e.Message);
                 ws.OnClose += (sender, e) =>
                     Console.WriteLine("WebSocket Close ({0}) ({1})", e.Code, e.Reason);
-                //ws.Credentials = 
+                //ws.Credentials =
                 //ws.IsSecure = false;
 
                 // Connect to the server.
@@ -275,7 +281,7 @@ namespace FChatDicebot
                     Console.WriteLine("triggered onopen");
                     ws.Send("Hi, there!");
                 };
-                //ws.Credentials = 
+                //ws.Credentials =
 
                 ws.OnMessage += (sender, e) =>
                     Console.WriteLine("websocket message: Recieved a ping /" + e.Data);
@@ -283,7 +289,7 @@ namespace FChatDicebot
                     Console.WriteLine("websocket Error: " + e.Message);
                 ws.OnClose += (sender, e) =>
                     Console.WriteLine("WebSocket Close ({0}) ({1})", e.Code, e.Reason);
-                //ws.Credentials = 
+                //ws.Credentials =
                 //ws.IsSecure = false;
 
                 // Connect to the server.
@@ -303,7 +309,7 @@ namespace FChatDicebot
                     Console.WriteLine("triggered onopen");
                     ws.Send("Hi, there! this message was sent to echo websocket.");
                 };
-                //ws.Credentials = 
+                //ws.Credentials =
 
                 ws.OnMessage += (sender, e) =>
                     Console.WriteLine("websocket message: Recieved a ping :" + e.Data);
@@ -311,7 +317,7 @@ namespace FChatDicebot
                     Console.WriteLine("websocket Error: " + e.Message);
                 ws.OnClose += (sender, e) =>
                     Console.WriteLine("WebSocket Close ({0}) ({1})", e.Code, e.Reason);
-                //ws.Credentials = 
+                //ws.Credentials =
                 //ws.IsSecure = false;
 
                 // Connect to the server.
@@ -360,42 +366,42 @@ namespace FChatDicebot
                 Name = "Cheeses",
                 Description = "Test table of different cheese types.",
                 TableEntries = new List<TableEntry>() {
-                    new TableEntry() { 
+                    new TableEntry() {
                         Description = "Some classic cheese",
                         Name = "Cheddar",
                         Roll = 1
                     },
-                    new TableEntry() { 
+                    new TableEntry() {
                         Description = "blue lines all over this cheese...",
                         Name = "Stilton",
                         Roll = 2
                     },
-                    new TableEntry() { 
+                    new TableEntry() {
                         Description = "just as plastic as it sounds",
                         Name = "American",
                         Roll = 3
                     },
-                    new TableEntry() { 
+                    new TableEntry() {
                         Description = "white and creamy",
                         Name = "Monzarella",
                         Roll = 4
                     },
-                    new TableEntry() { 
+                    new TableEntry() {
                         Description = "bad on anything but spaghetti",
                         Name = "Parmezan",
                         Roll = 5
                     },
-                    new TableEntry() { 
+                    new TableEntry() {
                         Description = "that cheese you wish you found out about earlier in life",
                         Name = "Provalone",
                         Roll = 6
                     },
-                    new TableEntry() { 
+                    new TableEntry() {
                         Description = "I'm running out of cheese comments",
                         Name = "Feta",
                         Roll = 7
                     },
-                    new TableEntry() { 
+                    new TableEntry() {
                         Description = "it comes in a tub",
                         Name = "Cottage",
                         Roll = 8

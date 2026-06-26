@@ -1,4 +1,5 @@
-﻿using FChatDicebot.DiceFunctions;
+﻿using Discord.WebSocket;
+using FChatDicebot.DiceFunctions;
 using FChatDicebot.Model;
 using FChatDicebot.SavedData;
 using Newtonsoft.Json;
@@ -808,6 +809,18 @@ namespace FChatDicebot
             }
         }
 
+        public static void AddToChannelAuditLog(string note, object saveData)
+        {
+            try
+            {
+                AppendToFileAsData(DateTime.Now.ToString() + ": " + note + ": ", saveData, Utils.GetTotalFileName(BotMain.LogsFolder, AddDateToFileName(BotMain.ChannelAuditLogFileName)));
+            }
+            catch (Exception exc)
+            {
+                Console.WriteLine("exception on addtochannelauditlog: " + exc.ToString());
+            }
+        }
+
         public static string AddDateToFileName(string fileName)
         {
             DateTime dNow = DateTime.Now.Date;
@@ -869,6 +882,97 @@ namespace FChatDicebot
         public static bool BotMessageIsChatMessage(BotMessage message)
         {
             return message.messageType == BotMessageFactory.MSG || message.messageType == BotMessageFactory.PRI;
+        }
+
+        public static bool BotMessageIsFListChatMessage(BotMessage message)
+        {
+            return message.messageType == BotMessageFactory.MSG || message.messageType == BotMessageFactory.PRI;
+        }
+
+        public static string GetYesNo(bool input)
+        {
+            return input ? "yes" : "no";
+        }
+
+        public static string[] RemoveStringFromAllTerms(string[] inputs, string removeString)
+        {
+            List<string> returnList = new List<string>();
+            if (inputs != null && inputs.Length > 0)
+            {
+                foreach (string s in inputs)
+                {
+                    returnList.Add(s.Replace(removeString, ""));
+                }
+            }
+            return returnList.ToArray();
+        }
+
+        public static string RemoveChannelIdFromInputsAndReturnFullInputs(string[] inputs, out string error)
+        {
+            error = "";
+            string combinedInputs = GetFullStringOfInputs(inputs);
+            if (combinedInputs.Contains("[/session]"))
+            {
+                int index1 = combinedInputs.IndexOf("[session=");
+                int index2 = combinedInputs.IndexOf("[/session]");
+                combinedInputs = combinedInputs.Substring(0, index1) + combinedInputs.Substring(index2 + 10);
+            }
+            return combinedInputs;
+        }
+
+        public static string GetFullStringOfInputsAfterTermX(string[] inputs, int termsToIgnore)
+        {
+            if (inputs == null || inputs.Length <= termsToIgnore)
+                return null;
+            string[] newInputs = new string[inputs.Length - termsToIgnore];
+            int currentIndex = 0;
+            for (int i = termsToIgnore; i < inputs.Length; i++)
+            {
+                newInputs[currentIndex] = inputs[i];
+                currentIndex++;
+            }
+            return GetFullStringOfInputs(newInputs);
+        }
+
+        public static bool GetNsfwError(ChannelSettings settings, ICustomUserContent userContent, out string errorMessage)
+        {
+            errorMessage = "";
+            if (settings == null || settings.AllowNsfw || userContent == null || !userContent.IsNsfw())
+                return false;
+            else
+            {
+                errorMessage = "Failed: This item contains Nsfw content and these are not allowed in this guild's settings.";
+                return true;
+            }
+        }
+
+        public static bool IsDiscordAdmin(SocketGuildUser discordUser)
+        {
+            if (discordUser == null)
+                return false;
+            if (discordUser.Guild.OwnerId == discordUser.Id)
+                return true;
+            var perms = discordUser.GuildPermissions;
+            return perms.Administrator
+                || perms.ManageMessages
+                || perms.KickMembers
+                || perms.BanMembers
+                || perms.ManageChannels;
+        }
+
+        public static bool IsDiscordMessage(UserGeneratedCommand command)
+        {
+            return !string.IsNullOrEmpty(command.guild);
+        }
+        public static bool IsDiscordMessage(MessageAddress command)
+        {
+            return !string.IsNullOrEmpty(command.guild);
+        }
+
+        public static SavedJobsList GetJobsListFromChannel(List<SavedJobsList> jobsLists, string channelId)
+        {
+            SavedJobsList jobsList = jobsLists.FirstOrDefault(a => a.Channel.ToLower() == channelId.ToLower());
+            return jobsList;
         }
 
         public static string GetCharacterUserTags(string characterName)

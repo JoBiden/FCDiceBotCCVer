@@ -1,26 +1,29 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Linq;
+using FChatDicebot.SavedData;
 
 namespace FChatDicebot.DiceFunctions
 {
-    public abstract class CardCollection
+    public abstract class CardCollection : ICustomUserContent
     {
         public string Id;
         public string DeckTypeId;
         protected List<DeckCard> Cards;
         protected string CollectionName = "";
+        public bool Nsfw;
 
-        public override string ToString()
-        {
-            string rtnString = "";
-            if (Cards == null || Cards.Count == 0)
-                return CollectionName + " empty";
+        //public override string ToString()
+        //{
+        //    string rtnString = "";
+        //    if (Cards == null || Cards.Count == 0)
+        //        return CollectionName + " empty";
 
-            rtnString = GetCollectionString(true, null);
+        //    rtnString = GetCollectionString(true, null);
 
-            return rtnString;
-        }
+        //    return rtnString;
+        //}
 
         public string Print(bool showHandSize, PrintSetting printSetting, bool includeAddress = true)
         {
@@ -53,8 +56,16 @@ namespace FChatDicebot.DiceFunctions
             return rtnString;
         }
 
-        private string GetCollectionString(bool includeAddress, PrintSetting printSetting)
+        public string GetCollectionString(bool includeAddress, PrintSetting printSetting, bool forceNoSort = false)
         {
+            //List<DeckCard> usedList = Cards;
+            if(!forceNoSort && printSetting != null && printSetting.SortCards)
+            {
+                //List<DeckCard> sorted = new List<DeckCard>(Cards);
+                //sorted = sorted.OrderBy(b => b.suit).ThenBy(b => b.number).ThenBy(b => b.specialName).ToList();
+                Cards = Cards.OrderBy(b => b.suit).ThenBy(b => b.number).ThenBy(b => b.specialName).ToList();// sorted; //actually sort because of the #use cards thing
+            }
+
             string rtnString = "";
             int counter = 1;
             foreach (DeckCard d in Cards)
@@ -105,6 +116,11 @@ namespace FChatDicebot.DiceFunctions
         public int CardsCount()
         {
             return Cards.Count;
+        }
+
+        public bool IsNsfw()
+        {
+            return Nsfw;
         }
     }
 }

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using FChatDicebot.BotCommands.Base;
 using FChatDicebot.SavedData;
 using FChatDicebot.DiceFunctions;
+using FChatDicebot.Model;
 
 namespace FChatDicebot.BotCommands
 {
@@ -20,26 +21,27 @@ namespace FChatDicebot.BotCommands
             LockCategory = CommandLockCategory.SavedTables;
         }
 
-        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
+        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, MessageAddress address, UserGeneratedCommand command)
         {
-            string sendMessage = ParseCommandsAndRoll(bot, commandController, terms, characterName, channel);
-            bot.SendMessageInChannel(sendMessage, channel);
+            string sendMessage = ParseCommandsAndRoll(bot, commandController, terms, address);
+            bot.SendMessageInChannel(sendMessage, address);
         }
 
-        public static string ParseCommandsAndRoll(BotMain bot, BotCommandController commandController, string[] terms, string characterName, string channel, int callDepth = DiceBot.MaximumSecondaryTableRolls)
+        public static string ParseCommandsAndRoll(BotMain bot, BotCommandController commandController, string[] terms, MessageAddress address, int callDepth = DiceBot.MaximumSecondaryTableRolls)
         {
             string sendMessage = "";
 
-            if(string.IsNullOrEmpty(characterName) || string.IsNullOrEmpty(channel))
+            string channelKey = address.GetChannelKey();
+            if(string.IsNullOrEmpty(address.character) || string.IsNullOrEmpty(channelKey))
             {
                 return "Failed: Missing data on rolltable call";
             }
 
-            ChannelSettings channelSettings = bot.GetChannelSettings(channel);
+            ChannelSettings channelSettings = bot.GetChannelSettings(address);
 
             if(!channelSettings.AllowTableRolls)
             {
-                return "Failed: !RollTable is currently not allowed in this channel under " + Utils.GetCharacterUserTags(DiceBot.DiceBotCharacter) + "'s settings for this channel.";
+                return "Failed: !RollTable is currently not allowed in this channel under " + TextFormat.GetCharacterUserTags(DiceBot.DiceBotCharacter) + "'s settings for this channel.";
             }
 
             bool includeLabel = true;
@@ -80,13 +82,17 @@ namespace FChatDicebot.BotCommands
             {
                 sendMessage = "Failed: The table \'" + tableName + "\' was not found.";
             }
+            else if (Utils.GetNsfwError(channelSettings, savedTable.Table, out sendMessage))
+            {
+                //sendMessage set in error method
+            }
             else if (savedTable.DefaultTable || channelSettings.AllowCustomTableRolls)
             {
-                sendMessage = bot.DiceBot.GetRollTableResult(bot.SavedTables, tableName, characterName, channel, rollModifier, includeLabel, secondaryRolls, dataX, dataY, dataZ, callDepth);
+                sendMessage = bot.DiceBot.GetRollTableResult(bot.SavedTables, tableName, address, rollModifier, includeLabel, secondaryRolls, dataX, dataY, dataZ, callDepth);
             }
             else
             {
-                sendMessage = "Failed: Only default tables are allowed in this channel under " + Utils.GetCharacterUserTags(DiceBot.DiceBotCharacter) + "'s settings for this channel.";
+                sendMessage = "Failed: Only default tables are allowed in this channel under " + TextFormat.GetCharacterUserTags(DiceBot.DiceBotCharacter) + "'s settings for this channel.";
             }
             return sendMessage;
         }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using FChatDicebot.Model;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -9,6 +10,15 @@ namespace FChatDicebot.DiceFunctions
     public class GameSession
     {
         public string ChannelId;
+        public string GuildId;
+        public MessageAddress GetMessageAddress()
+        {
+            return new MessageAddress() { channel = ChannelId, guild = GuildId };
+        }
+        public string GetChannelKey()
+        {
+            return GetMessageAddress().GetChannelKey();
+        }
 
         public IGame CurrentGame;
 
@@ -24,7 +34,10 @@ namespace FChatDicebot.DiceFunctions
         public RockPaperScissorsData RockPaperScissorsData = new RockPaperScissorsData();
         public PokerData PokerData = new PokerData();
         public MafiaData MafiaData = new MafiaData();
+        public AlphaRoyaleData AlphaRoyaleData = new AlphaRoyaleData();
         public HighRollData HighRollData = new HighRollData();
+        public DungeonDelveData DungeonDelveData = null;// new DungeonDelveData();
+        public ChessData ChessData = new ChessData();
 
         public PlayerRandomQueueData RandomPlayerQueueData = new PlayerRandomQueueData();
 
@@ -32,6 +45,7 @@ namespace FChatDicebot.DiceFunctions
         public bool AnteSet = false;
 
         public int MinimumBetIncrement;
+        public ulong DiscordMessageId; //for use with description editing / message editing
 
         public double CreationTime; //currently unused
         public double StartTime; //currently unused
@@ -42,19 +56,19 @@ namespace FChatDicebot.DiceFunctions
 
         public string RunGame(String executingCharacter, DiceBot diceBot, BotMain botMain)
         {
-            StartTime = Utils.GetCurrentTimestampSeconds();
+            StartTime = DoubleTime.GetCurrentTimestampSeconds();
 
             string returnString = CurrentGame.RunGame(diceBot.random, executingCharacter, Players, diceBot, botMain, this);
 
             return returnString;
         }
 
-        public string IssueGameCommand(DiceBot diceBot, BotMain botMain, string character, string channel, string[] terms, string[] rawTerms)
+        public string IssueGameCommand(DiceBot diceBot, BotMain botMain, MessageAddress address, string[] terms, string[] rawTerms)
         {
             string returnString = "";
-            if(CurrentGame == null)
+            if (CurrentGame == null)
             {
-                returnString = "Error: CurrentGame not set on IssueGameCommand";
+                returnString = "Error: CurrentGame not set on IssueGameCommand (game session not completely created).";
             }
             else if (terms.Contains("help"))
             {
@@ -62,20 +76,20 @@ namespace FChatDicebot.DiceFunctions
             }
             else if (terms.Contains("pause") || terms.Contains("pausegame"))
             {
-                PauseGame(Utils.GetCurrentTimestampSeconds());
+                PauseGame(DoubleTime.GetCurrentTimestampSeconds());
 
-                returnString = "Game paused.";
+                returnString = CurrentGame.GetGameName() + " Game paused.";
             }
             else if (terms.Contains("unpause") || terms.Contains("unpausegame"))
             {
-                UnpauseGame(Utils.GetCurrentTimestampSeconds());
+                UnpauseGame(DoubleTime.GetCurrentTimestampSeconds());
 
-                returnString = "Game unpaused.";
+                returnString = CurrentGame.GetGameName() + " Game unpaused.";
             }
             else if (terms.Contains("showchips") || terms.Contains("showchippiles"))
             {
                 string output = "";
-                if(Players == null || Players.Count() == 0)
+                if (Players == null || Players.Count() == 0)
                 {
                     output = "Failed: No players found.";
                 }
@@ -83,20 +97,21 @@ namespace FChatDicebot.DiceFunctions
                 {
                     foreach (string player in Players)
                     {
-                        ChipPile pile = diceBot.GetChipPile(player, channel, true);
+                        MessageAddress addressPlayer = new MessageAddress() { character = player, channel = address.channel, guild = address.guild };
+                        ChipPile pile = diceBot.GetChipPile(addressPlayer, true);
 
                         if (pile != null)
                         {
                             if (!string.IsNullOrEmpty(output))
                                 output += "\n";
 
-                            output += Utils.GetCharacterUserTags(player) + "'s pile: [b]" + pile.Chips + "[/b] chips.";
+                            output += TextFormat.GetCharacterUserTags(player) + "'s pile: [b]" + pile.Chips + "[/b] " + BotMain.CurrencyPlaceholder + "s.";
                         }
 
                     }
                 }
 
-                returnString = "List of Chip Piles for players in " + CurrentGame.GetGameName() + ":\n" + output;
+                returnString = "List of " + BotMain.CurrencyPlaceholder + " piles for players in " + CurrentGame.GetGameName() + ":\n" + output;
             }
             else if (terms.Contains("setante") || terms.Contains("ante"))
             {
@@ -106,23 +121,27 @@ namespace FChatDicebot.DiceFunctions
                     if (amount > 0 || terms.Contains("0"))
                     {
                         Ante = amount;
-                        returnString = "Set the ante this session to " + Ante + " chips.";
+                        returnString = "Set the ante for this session of " + CurrentGame.GetGameName() + " to " + Ante + " " + BotMain.CurrencyPlaceholder + "s.";
                     }
                     else
                     {
-                        returnString = "Failed: no positive ante amount was found.";
+                        returnString = "Failed: No positive ante amount was found in the command.";
                     }
                 }
                 else
-                    returnString = "Failed: this game does not allow ante";
+                    returnString = "Failed: " + CurrentGame.GetGameName() + " game does not allow ante";
             }
-            else if(Paused)
+            else if (Paused)
             {
-                returnString = "Failed: you cannot give commands while the game is paused. Use !gc unpause";
+                returnString = "Failed: You cannot give commands while the game is paused. Use !gc unpause";
+            }
+            else if (Players.Count(a => a.ToLower() == address.character.ToLower()) == 0 && !Utils.IsCharacterAdmin(botMain.AccountSettings.AdminCharacters, address.character))
+            {
+                returnString = "Failed: " + TextFormat.GetCharacterUserTags(address.character) + " has not joined the game session for " + CurrentGame.GetGameName() + ". Join the game with '!joingame " + CurrentGame.GetGameName() + "' before using gamecommands.";
             }
             else
             {
-                returnString = CurrentGame.IssueGameCommand(diceBot, botMain, character, channel, this, terms, rawTerms);
+                returnString = CurrentGame.IssueGameCommand(diceBot, botMain, address, this, terms, rawTerms);
             }
 
             return returnString;

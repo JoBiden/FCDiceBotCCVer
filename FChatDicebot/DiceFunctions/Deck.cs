@@ -235,6 +235,7 @@ namespace FChatDicebot.DiceFunctions
                     {
                         if(savedDeck != null)
                         {
+                            Nsfw = savedDeck.Nsfw;
                             CreateFromDeckList(savedDeck.DeckList);
                         }
                     }
@@ -307,22 +308,23 @@ namespace FChatDicebot.DiceFunctions
 
         public string GetDeckList(PrintSetting printSetting)
         {
-            if (Cards == null)
-                return null;
+            return GetCollectionString(false, printSetting, true);
+            //if (Cards == null)
+            //    return null;
 
-            string deckList = "";
-            foreach (DeckCard d in Cards)
-            {
-                if (!string.IsNullOrEmpty(deckList))
-                    deckList += ",";
+            //string deckList = "";
+            //foreach (DeckCard d in Cards)
+            //{
+            //    if (!string.IsNullOrEmpty(deckList))
+            //        deckList += ",";
 
-                deckList += d.Print(printSetting);
+            //    deckList += d.Print(printSetting);
 
-                if (!string.IsNullOrEmpty(d.description))
-                    deckList += "|" + d.description;
-            }
+            //    if (!string.IsNullOrEmpty(d.description))
+            //        deckList += "|" + d.description;
+            //}
 
-            return deckList;
+            //return deckList;
         }
 
         public void ShuffleFullDeck(System.Random r)

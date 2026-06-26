@@ -1,4 +1,5 @@
-﻿using System;
+﻿using FChatDicebot.Model;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -55,7 +56,7 @@ namespace FChatDicebot.DiceFunctions
 
         public string GetStartingDisplay()
         {
-            return "[eicon]dbhighroll1[/eicon][eicon]dbhighroll2[/eicon]";
+            return FChatDicebot.TextFormat.Emoji("dbhighroll1") + FChatDicebot.TextFormat.Emoji("dbhighroll2");
         }
 
         public string GetEndingDisplay()
@@ -99,7 +100,7 @@ namespace FChatDicebot.DiceFunctions
                     }
                 }
 
-                messageString = dieString + messageString;
+                messageString = dieString + "(ante: " + session.Ante + ") " + messageString;
             }
 
             return true;
@@ -124,7 +125,8 @@ namespace FChatDicebot.DiceFunctions
 
             foreach (HighRollScore playerScore in session.HighRollData.Scores)
             {
-                DiceRoll d = new DiceRoll(playerScore.PlayerName, session.ChannelId, diceBot) { DiceRolled = 1, DiceSides = dieSides };
+                DiceRoll d = new DiceRoll(new MessageAddress() { character = playerScore.PlayerName, channel = session.ChannelId, guild = session.GuildId }, botMain) { DiceRolled = 1, DiceSides = dieSides };
+                //playerScore.PlayerName, session.ChannelId, diceBot)
 
                 d.Roll(r);
                 playerScore.FirstDiceRoll = d;
@@ -143,20 +145,21 @@ namespace FChatDicebot.DiceFunctions
                 bool successfulBet = true;
                 if(session.Ante > 0)
                 {
-                    ChipPile playerPile = diceBot.GetChipPile(currentPlayerScore.PlayerName, session.ChannelId);
+                    MessageAddress playerChipPileAddress = new MessageAddress() { character = currentPlayerScore.PlayerName, channel = session.ChannelId, guild = session.GuildId };
+                    ChipPile playerPile = diceBot.GetChipPile(playerChipPileAddress);//playerChipPileAddress currentPlayerScore.PlayerName, session.ChannelId) ;
                     if(playerPile.Chips >= session.Ante)
-                        betstring = diceBot.BetChips(currentPlayerScore.PlayerName, session.ChannelId, session.Ante, false);// + "\n";
+                        betstring = diceBot.BetChips(playerChipPileAddress, session.Ante, false);// + "\n";
                     else
                     {
                         successfulBet = false;
                         currentPlayerScore.CannotAfford = true;
-                        betstring = Utils.GetCharacterUserTags(currentPlayerScore.PlayerName) + " cannot afford the ante to join and has not rolled.";
+                        betstring = TextFormat.GetCharacterUserTags(currentPlayerScore.PlayerName) + " cannot afford the ante to join and has not rolled.";
                         currentPlayerScore.PlayerScore = -1;
                     }
                 }
 
-                string thisPlayerRollString = (string.IsNullOrEmpty(betstring) ? Utils.GetCharacterUserTags(currentPlayerScore.PlayerName) : betstring) ;
-                    
+                string thisPlayerRollString = (string.IsNullOrEmpty(betstring) ? TextFormat.GetCharacterUserTags(currentPlayerScore.PlayerName) : betstring) ;
+
                 if(successfulBet)
                 {
                     thisPlayerRollString += " [i]Rolling...[/i] " + currentPlayerScore.FirstDiceRoll.ResultString();
@@ -195,9 +198,11 @@ namespace FChatDicebot.DiceFunctions
                 {
                     foreach(var playerScore in groupOfTwoPlus)
                     {
-                        DiceRoll diceRoll = new DiceRoll(playerScore.PlayerName, session.ChannelId, diceBot) { DiceRolled = 1, DiceSides = dieSides };
+                        MessageAddress playerChipPileAddress = new MessageAddress() { character = playerScore.PlayerName, channel = session.ChannelId, guild = session.GuildId };
+                        DiceRoll diceRoll = new DiceRoll(playerChipPileAddress, botMain) { DiceRolled = 1, DiceSides = dieSides };
+                            //playerScore.PlayerName, session.ChannelId, diceBot) { DiceRolled = 1, DiceSides = dieSides };
                         diceRoll.Roll(r);
-                        allAdditonalRolls += "\n[i]" + Utils.GetCharacterUserTags(playerScore.PlayerName) + "'s score is " + playerScore.PlayerScore + ".[/i] Rolling: " + diceRoll.ResultString();
+                        allAdditonalRolls += "\n[i]" + TextFormat.GetCharacterUserTags(playerScore.PlayerName) + "'s score is " + playerScore.PlayerScore + ".[/i] Rolling: " + diceRoll.ResultString();
                         playerScore.PlayerScore += ((double)diceRoll.Total) / Math.Pow(dieSides * 10, tieRollsCount);
                     }
                 }
@@ -208,7 +213,7 @@ namespace FChatDicebot.DiceFunctions
             session.HighRollData.Scores = session.HighRollData.Scores.OrderByDescending(a => a.PlayerScore).ToList();
 
             string resultsString = "\n[color=yellow][b]Results:[/b][/color]";
-            int originalPot = diceBot.GetChipPile(DiceBot.PotPlayerAlias, session.ChannelId).Chips;
+            int originalPot = diceBot.GetChipPile(new MessageAddress() { character = DiceBot.PotPlayerAlias, channel = session.ChannelId, guild = session.GuildId }).Chips;// DiceBot.PotPlayerAlias, session.ChannelId).Chips;
             for (int i = 0; i < session.HighRollData.Scores.Count && i < 3; i++)
             {
                 string placeString = "first place!";
@@ -225,10 +230,11 @@ namespace FChatDicebot.DiceFunctions
                         if (session.HighRollData.PotSplits.Count() >= i + 1)
                         {
                             int amount = (int) Math.Ceiling(originalPot * ((double)session.HighRollData.PotSplits[i]) / 100);
-                            betstring = " " + diceBot.ClaimPot(session.HighRollData.Scores[i].PlayerName, session.ChannelId, 1, amount);
+                            MessageAddress addr = new MessageAddress() { character = session.HighRollData.Scores[i].PlayerName, channel = session.ChannelId, guild = session.GuildId };
+                            betstring = " " + diceBot.ClaimPot(addr, 1, amount);
                         }
                     }
-                    resultsString += "\n[b]" + Utils.GetCharacterUserTags(session.HighRollData.Scores[i].PlayerName) + " got " + placeString + "[/b]" + betstring;
+                    resultsString += "\n[b]" + TextFormat.GetCharacterUserTags(session.HighRollData.Scores[i].PlayerName) + " got " + placeString + "[/b]" + betstring;
                 }
             }
 
@@ -238,11 +244,11 @@ namespace FChatDicebot.DiceFunctions
             }
             if (session.HighRollData.Scores.Count >= 5)
             {
-                resultsString += "\n[b]" + Utils.GetCharacterUserTags(session.HighRollData.Scores[session.HighRollData.Scores.Count - 2].PlayerName) + " got [i]second-to-last[/i] place.[/b]";
+                resultsString += "\n[b]" + TextFormat.GetCharacterUserTags(session.HighRollData.Scores[session.HighRollData.Scores.Count - 2].PlayerName) + " got [i]second-to-last[/i] place.[/b]";
             }
             if (session.HighRollData.Scores.Count > 3)//session.HighRollData.PotSplits.Count())
             {
-                resultsString += "\n[b]" + Utils.GetCharacterUserTags(session.HighRollData.Scores[session.HighRollData.Scores.Count - 1].PlayerName) + " got [i]last[/i] place.[/b]";
+                resultsString += "\n[b]" + TextFormat.GetCharacterUserTags(session.HighRollData.Scores[session.HighRollData.Scores.Count - 1].PlayerName) + " got [i]last[/i] place.[/b]";
             }
 
             outputString += resultsString;
@@ -325,7 +331,7 @@ namespace FChatDicebot.DiceFunctions
 
         }
 
-        public string IssueGameCommand(DiceBot diceBot, BotMain botMain, string character, string channel, GameSession session, string[] terms, string[] rawTerms)
+        public string IssueGameCommand(DiceBot diceBot, BotMain botMain, MessageAddress address, GameSession session, string[] terms, string[] rawTerms)
         {
             //help, keepsession, ante can be standardized across games
             string returnString = "";
@@ -348,10 +354,7 @@ namespace FChatDicebot.DiceFunctions
                     returnString = "Failed: no positive die sides amount was found (must be between 2 and " + DiceBot.MaximumSides + ").";
                 }
             }
-            else
-            {
-                returnString += "Failed: No such command exists";
-            }
+            else { returnString += "Failed: No such command exists for " + GetGameName(); }
 
             return returnString;
         }

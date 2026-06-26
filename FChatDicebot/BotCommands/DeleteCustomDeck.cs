@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using FChatDicebot.BotCommands.Base;
+using FChatDicebot.Model;
 using FChatDicebot.SavedData;
 using Newtonsoft.Json;
 
@@ -20,7 +21,7 @@ namespace FChatDicebot.BotCommands
             LockCategory = CommandLockCategory.SavedTables;
         }
 
-        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
+        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, MessageAddress address, UserGeneratedCommand command)
         {
             string sendMessage = "";
             if(terms.Length != 1)
@@ -39,11 +40,11 @@ namespace FChatDicebot.BotCommands
                 }
                 else
                 {
-                    if (characterName == deleteDeck.OriginCharacter)
+                    if (address.character == deleteDeck.OriginCharacter)
                     {
                         bot.SavedDecks.Remove(deleteDeck);
 
-                        sendMessage = "[b]" + deleteDeck.DeckId + "[/b] deleted by [user]" + characterName + "[/user]";
+                        sendMessage = "[b]" + deleteDeck.DeckId + "[/b] deleted by " + TextFormat.GetCharacterUserTags(address.character);
 
                         Utils.WriteToFileAsData(bot.SavedDecks, Utils.GetTotalFileName(BotMain.FileFolder, BotMain.SavedDecksFileName));
                     }
@@ -53,14 +54,14 @@ namespace FChatDicebot.BotCommands
                     }
                 }
             }
-            
-            if (!commandController.MessageCameFromChannel(channel))
+
+            if (!commandController.MessageCameFromChannel(address))
             {
-                bot.SendPrivateMessage(sendMessage, characterName);
+                bot.SendPrivateMessage(sendMessage, address);
             }
             else
             {
-                bot.SendMessageInChannel(sendMessage, channel);
+                bot.SendMessageInChannel(sendMessage, address);
             }
         }
     }

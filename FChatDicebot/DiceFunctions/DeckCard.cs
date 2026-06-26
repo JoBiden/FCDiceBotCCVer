@@ -32,30 +32,42 @@ namespace FChatDicebot.DiceFunctions
             string numString = "";
             string colorString = "";
             string closeColorString = "[/color]";
+            string eiconName = "card";
             bool fourColorSuits = cardPrintSetting != null && cardPrintSetting.FourColorPlayingCards;
             bool useTarotIcons = cardPrintSetting != null && cardPrintSetting.TarotIcons;
+            bool doPrintEicon = cardPrintSetting != null && ((number > 0 || joker) && suit < 4) && cardPrintSetting.UsePlayingCardEmotes;
 
             switch (suit)
             {
                 case 0:
                     colorString = "[color=red]";
                     suitString = "♥";
+                    if (joker)
+                        eiconName += "jr";
+                    else
+                        eiconName += "h";
                     break;
                 case 1:
                     colorString = "[color=red]";
                     if (fourColorSuits)
                         colorString = "[color=cyan]";
                     suitString = "♦";
+                    eiconName += "d";
                     break;
                 case 2:
                     colorString = "[color=gray]";
                     if (fourColorSuits)
                         colorString = "[color=green]";
                     suitString = "♣";
+                    if (joker)
+                        eiconName += "jb";
+                    else
+                        eiconName += "c";
                     break;
                 case 3:
                     colorString = "[color=gray]";
                     suitString = "♠";
+                    eiconName += "p";
                     break;
                 case 4://red for uno
                     colorString = "[color=red]";
@@ -152,8 +164,15 @@ namespace FChatDicebot.DiceFunctions
                 numString = "Joker";
                 suitString = "";
             }
+            else
+            {
+                eiconName += number.ToString();
+            }
 
-            return colorString + numString + suitString + closeColorString + cardStateString;
+            if (doPrintEicon)
+                return FChatDicebot.TextFormat.Emoji(eiconName);
+            else
+                return colorString + numString + suitString + closeColorString + cardStateString;
         }
 
         public string FullDescription(PrintSetting printSetting)
@@ -175,5 +194,7 @@ namespace FChatDicebot.DiceFunctions
     {
         public bool FourColorPlayingCards = false;
         public bool TarotIcons = false;
+        public bool SortCards = false;
+        public bool UsePlayingCardEmotes = false;
     }
 }

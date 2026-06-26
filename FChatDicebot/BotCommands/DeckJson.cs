@@ -7,6 +7,7 @@ using FChatDicebot.BotCommands.Base;
 using FChatDicebot.SavedData;
 using Newtonsoft.Json;
 using FChatDicebot.DiceFunctions;
+using FChatDicebot.Model;
 
 namespace FChatDicebot.BotCommands
 {
@@ -21,26 +22,31 @@ namespace FChatDicebot.BotCommands
             LockCategory = CommandLockCategory.SavedTables;
         }
 
-        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
+        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, MessageAddress address, UserGeneratedCommand command)
         {
             ChannelSettings thisChannel = null;
-            if(commandController.MessageCameFromChannel(channel))
-                thisChannel = bot.GetChannelSettings(channel);
+            if(commandController.MessageCameFromChannel(address))
+                thisChannel = bot.GetChannelSettings(address);
 
-            bool fromChannel = commandController.MessageCameFromChannel(channel);
+            bool fromChannel = commandController.MessageCameFromChannel(address);
 
             if (!fromChannel || (thisChannel != null && thisChannel.AllowTableInfo))
             {
                 string sendMessage = "(no deck found)";
 
-                string deckTypeId = "";
-                DeckType deckType = commandController.GetDeckTypeFromCommandTerms(terms, out deckTypeId);
+                //string deckTypeId = "";
+                string deckTypeId = terms[0];
+                //DeckType deckType = commandController.GetDeckTypeFromCommandTerms(terms, out deckTypeId);
 
-                CardCommandOptions options = new CardCommandOptions(commandController, terms, characterName);
+                //CardCommandOptions options = new CardCommandOptions(commandController, terms, address.character);
 
-                SavedDeck deck = bot.SavedDecks.FirstOrDefault(a => a.DeckId == options.deckTypeId);
+                SavedDeck deck = bot.SavedDecks.FirstOrDefault(a => a.DeckId == deckTypeId);// options.deckTypeId);
 
-                if (deck != null)
+                if (deck != null && Utils.GetNsfwError(thisChannel, deck, out sendMessage))
+                {
+                    //sendMessage set in error method
+                }
+                else if (deck != null)
                 {
                     sendMessage = "Deck id [b]" + deck.DeckId + "[/b] created by [user]" + deck.OriginCharacter + "[/user]";
 
@@ -52,17 +58,17 @@ namespace FChatDicebot.BotCommands
 
                 if (fromChannel)
                 {
-                    bot.SendMessageInChannel(sendMessage, channel);
+                    bot.SendMessageInChannel(sendMessage, address);
                 }
                 else
-                    bot.SendPrivateMessage(sendMessage, characterName);
+                    bot.SendPrivateMessage(sendMessage, address);
             }
             else
             {
                 if(fromChannel)
-                    bot.SendMessageInChannel(Name + " is currently not allowed in this channel under " + Utils.GetCharacterUserTags(DiceBot.DiceBotCharacter) + "'s settings for this channel.", channel);
+                    bot.SendMessageInChannel(Name + " is currently not allowed in this channel under " + TextFormat.GetCharacterUserTags(DiceBot.DiceBotCharacter) + "'s settings for this channel.", address);
             }
-            
+
         }
     }
 }

@@ -7,6 +7,7 @@ using FChatDicebot.BotCommands.Base;
 using FChatDicebot.SavedData;
 using Newtonsoft.Json;
 using FChatDicebot.DiceFunctions;
+using FChatDicebot.Model;
 
 namespace FChatDicebot.BotCommands
 {
@@ -21,28 +22,12 @@ namespace FChatDicebot.BotCommands
             LockCategory = CommandLockCategory.ChannelScores;
         }
 
-        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
+        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, MessageAddress address, UserGeneratedCommand command)
         {
-            ChannelSettings thisChannel = bot.GetChannelSettings(channel);
+            ChannelSettings thisChannel = bot.GetChannelSettings(address);
+            string allInputs = TextFormat.GetPlayerNameFromInputs(bot, rawTerms, true);
 
-            //get player name to remove
-            string allInputs = Utils.GetUserNameFromFullInputs(rawTerms);
-
-            if (allInputs.Contains("_noreplace_"))
-            {
-                allInputs.Replace("_noreplace_", "");
-            }
-            else
-            {
-                foreach (string s in bot.DiceBot.PossibleGames.Select(a => a.GetGameName()))
-                {
-                    allInputs = allInputs.Replace(s, "");
-                }
-            }
-
-            allInputs = allInputs.Trim();
-
-            AddPlayerToGame.Run(bot, commandController, rawTerms, terms, characterName, channel, command, allInputs, Name);
+            AddPlayerToGame.Run(bot, commandController, rawTerms, terms, address, command, allInputs, Name);
         }
     }
 }

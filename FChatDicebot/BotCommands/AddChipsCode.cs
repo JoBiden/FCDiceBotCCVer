@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using FChatDicebot.BotCommands.Base;
+using FChatDicebot.Model;
 using FChatDicebot.SavedData;
 using Newtonsoft.Json;
 
@@ -20,11 +21,11 @@ namespace FChatDicebot.BotCommands
             LockCategory = CommandLockCategory.ChannelScores;
         }
 
-        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
+        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, MessageAddress address, UserGeneratedCommand command)
         {
             if(rawTerms.Length < 2)
             {
-                bot.SendMessageInChannel("Error: This command requires 2 terms. (Amount and chip code)", channel);
+                bot.SendMessageInChannel("Error: This command requires 2 terms. (Amount and " + BotMain.CurrencyPlaceholder + " code)", address);
             }
             else
             {
@@ -43,11 +44,11 @@ namespace FChatDicebot.BotCommands
                     });
                     commandController.SaveCouponsToDisk();
 
-                    bot.SendMessageInChannel("Added code " + chipCode + " for " + chipAmount + " chips.", channel);
+                    bot.SendMessageInChannel("Added code " + chipCode + " for " + chipAmount + " " + BotMain.CurrencyPlaceholder + TextFormat.SIfPlural(chipAmount) + ".", address);
                 }
                 else
                 {
-                    bot.SendMessageInChannel("Error on inputs for chips code.", channel);
+                    bot.SendMessageInChannel("Error on inputs for " + BotMain.CurrencyPlaceholder + "s code.", address);
                 }
 
 

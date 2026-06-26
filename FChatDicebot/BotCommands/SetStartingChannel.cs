@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using FChatDicebot.BotCommands.Base;
+using FChatDicebot.Model;
 using FChatDicebot.SavedData;
 
 namespace FChatDicebot.BotCommands
@@ -19,21 +20,21 @@ namespace FChatDicebot.BotCommands
             LockCategory = CommandLockCategory.SavedChannels;
         }
 
-        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
+        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, MessageAddress address, UserGeneratedCommand command)
         {
-            ChannelSettings existing = bot.GetChannelSettings(channel);
+            ChannelSettings existing = bot.GetChannelSettings(address);
 
-            string sendMessage = "[b]Added[/b] " + channel + " to list of startup channels.";
+            string sendMessage = "[b]Added[/b] " + address.GetChannelKey() + " to list of startup channels.";
 
             if (existing.StartupChannel)
             {
-                sendMessage = "[b]Removed[/b] " + channel + " from list of startup channels.";
+                sendMessage = "[b]Removed[/b] " + address.GetChannelKey() + " from list of startup channels.";
             }
             existing.StartupChannel = !existing.StartupChannel;
 
             commandController.SaveChannelSettingsToDisk();
 
-            bot.SendMessageInChannel(sendMessage, channel);
+            bot.SendMessageInChannel(sendMessage, address);
         }
     }
 }

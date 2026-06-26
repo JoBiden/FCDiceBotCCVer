@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Linq;
+using FChatDicebot.Model;
 
 namespace FChatDicebot.DiceFunctions
 {
@@ -56,7 +57,7 @@ namespace FChatDicebot.DiceFunctions
 
         public string GetStartingDisplay()
         {
-            return "[eicon]dbkingsgame1b[/eicon][eicon]dbkingsgame2b[/eicon]";
+            return FChatDicebot.TextFormat.Emoji("dbkingsgame1b") + FChatDicebot.TextFormat.Emoji("dbkingsgame2b");
         }
 
         public string GetEndingDisplay()
@@ -116,7 +117,8 @@ namespace FChatDicebot.DiceFunctions
 
         public string RunGame(System.Random r, String executingPlayer, List<String> playerNames, DiceBot diceBot, BotMain botMain, GameSession session)
         {
-            botMain.SendMessageInChannel("[color=yellow]Selecting a new king and assigning numbers...[/color]", session.ChannelId);
+            MessageAddress address = new MessageAddress() { character = executingPlayer, channel = session.ChannelId, guild = session.GuildId };
+            botMain.SendMessageInChannel("[color=yellow]Selecting a new king and assigning numbers...[/color]", address);
 
             //int index = r.Next(playerNames.Count);
 
@@ -205,8 +207,8 @@ namespace FChatDicebot.DiceFunctions
                         Name = player,
                         Role = playerAssignedNumber
                     });
-
-                    botMain.SendPrivateMessage(messageToPlayer, player);
+                    MessageAddress privatePlayerAddress = new MessageAddress(address, player);
+                    botMain.SendPrivateMessage(messageToPlayer, privatePlayerAddress);
                 }
                 else
                 {
@@ -219,12 +221,13 @@ namespace FChatDicebot.DiceFunctions
                 //playerNumber++;
             }
 
-            botMain.SendPrivateMessage("King's Game: You are the [b]king[/b] this round!\nGive your command to the other players using the numbers 1 - " + assignedNumbers.Length + " and then award points based on if they completed the tasks.", selectedKing);
+            MessageAddress kingPlayerAddress = new MessageAddress(address, selectedKing);
+            botMain.SendPrivateMessage("King's Game: You are the [b]king[/b] this round!\nGive your command to the other players using the numbers 1 - " + assignedNumbers.Length + " and then award points based on if they completed the tasks.", kingPlayerAddress);
 
-            string outputString = "" + kingIntroText + Utils.GetCharacterUserTags(selectedKing) +
+            string outputString = "" + kingIntroText + TextFormat.GetCharacterUserTags(selectedKing) +
                 "\nEveryone has been assigned their numbers and the king may make decrees using the numbers 1 - " + assignedNumbers.Length + "." +
                 "\n..." +
-                "\nNext Step: After the tasks are finished, the king must assign points with !gc awardpoints [player number(s)], or the round can be cancelled with !gc endround" + 
+                "\nNext Step: After the tasks are finished, the king must assign points with !gc awardpoints [player number(s)], or the round can be cancelled with !gc endround" +
                 "\n[sub]Note: If there is any confusion about who has what number you can use !gc showallnumbers[/sub]";
             
             session.State = DiceFunctions.GameState.GameInProgress;
@@ -251,11 +254,11 @@ namespace FChatDicebot.DiceFunctions
                     }
                     if (p.Role != 0)
                     {
-                        playerRoles += Utils.GetCharacterUserTags(p.Name) + " is #" + p.Role;
+                        playerRoles += TextFormat.GetCharacterUserTags(p.Name) + " is #" + p.Role;
                     }
                     else
                     {
-                        playerRoles += Utils.GetCharacterUserTags(p.Name) + " is the [b]king[/b]";
+                        playerRoles += TextFormat.GetCharacterUserTags(p.Name) + " is the [b]king[/b]";
                     }
                 }
             }
@@ -270,7 +273,7 @@ namespace FChatDicebot.DiceFunctions
                 KingsGamePlayer p = session.KingsGamePlayers.FirstOrDefault(a => a.Role == playerNumer);
                 if(p != null)
                 {
-                    playerString = "#" + playerNumer + ": " + Utils.GetCharacterUserTags(p.Name);
+                    playerString = "#" + playerNumer + ": " + TextFormat.GetCharacterUserTags(p.Name);
                 }
             }
             return playerString;
@@ -303,7 +306,7 @@ namespace FChatDicebot.DiceFunctions
             session.State = GameState.Unstarted;
         }
 
-        public string IssueGameCommand(DiceBot diceBot, BotMain botMain, string character, string channel, GameSession session, string[] terms, string[] rawTerms)
+        public string IssueGameCommand(DiceBot diceBot, BotMain botMain, MessageAddress address, GameSession session, string[] terms, string[] rawTerms)
         {
             string returnString = "";
 
@@ -312,8 +315,8 @@ namespace FChatDicebot.DiceFunctions
                 if(session.State == GameState.GameInProgress)
                 {
                     string messageString = "Showing all information for this round of The King's Game:\n" + GetPlayerNumbers(session);
-                    botMain.SendPrivateMessage(messageString, character);
-                    returnString = Utils.GetCharacterUserTags(character) + " has been sent the information for this round's secret numbers.";
+                    botMain.SendPrivateMessage(messageString, address);
+                    returnString = TextFormat.GetCharacterUserTags(address.character) + " has been sent the information for this round's secret numbers.";
                 }
                 else
                 {
@@ -329,7 +332,7 @@ namespace FChatDicebot.DiceFunctions
             {
                 if (session.State == GameState.GameInProgress  )
                 {
-                    if(PlayerIsKing(session, character))
+                    if(PlayerIsKing(session, address.character))
                     {
                         if(session.KingsGamePlayers == null || session.KingsGamePlayers.Count < GetMinPlayers())
                         {
@@ -359,7 +362,8 @@ namespace FChatDicebot.DiceFunctions
                                     KingsGamePlayer player = session.KingsGamePlayers.FirstOrDefault(a => a.Role == i);
                                     if(player != null)
                                     {
-                                        string chipsAward = diceBot.AddChips(player.Name, channel, 100, false);
+                                        MessageAddress chipsAddAddress = new MessageAddress() { character = player.Name, channel = address.channel, guild = address.guild };
+                                        string chipsAward = diceBot.AddChips(chipsAddAddress, 100, false);
                                         playerAwardsList += "\n" + chipsAward;
                                     }
                                     playerAwardsList += "\n";
@@ -371,8 +375,8 @@ namespace FChatDicebot.DiceFunctions
                             }
 
 
-                            string messageString = "King " + Utils.GetCharacterUserTags(character) + " is awarding Points to :\n" + playerAwardsList;
-                            
+                            string messageString = "King " + TextFormat.GetCharacterUserTags(address.character) + " is awarding Points to :\n" + playerAwardsList;
+
                             returnString = messageString + "\n This round has finished.";
 
                             ResetGameRound(session);
@@ -388,10 +392,7 @@ namespace FChatDicebot.DiceFunctions
                     returnString = "The King's Game is not already in progress, points cannot be awarded.";
                 }
             }
-            else
-            {
-                returnString = "A command for " + GetGameName() + " was not found.";
-            }
+            else { returnString += "Failed: No such command exists for " + GetGameName(); }
 
             return returnString;
         }

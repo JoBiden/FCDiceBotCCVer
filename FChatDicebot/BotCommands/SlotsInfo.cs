@@ -7,6 +7,7 @@ using FChatDicebot.BotCommands.Base;
 using FChatDicebot.SavedData;
 using Newtonsoft.Json;
 using FChatDicebot.DiceFunctions;
+using FChatDicebot.Model;
 
 namespace FChatDicebot.BotCommands
 {
@@ -21,21 +22,21 @@ namespace FChatDicebot.BotCommands
             LockCategory = CommandLockCategory.NONE;
         }
 
-        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
+        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, MessageAddress address, UserGeneratedCommand command)
         {
             bool debugInfo = false;
-            if (terms.Contains("debug") && Utils.IsCharacterAdmin(bot.AccountSettings.AdminCharacters, characterName))
+            if (terms.Contains("debug") && Utils.IsCharacterAdmin(bot.AccountSettings.AdminCharacters, address.character))
             {
                 debugInfo = true;
             }
 
-            ChannelSettings thisChannel = bot.GetChannelSettings(channel);
+            ChannelSettings thisChannel = bot.GetChannelSettings(address);
 
             string slotsName = commandController.GetNonNumberWordFromCommandTerms(terms);
 
             SavedSlotsSetting savedSlots = Utils.GetSlotsFromId(bot.SavedSlots, slotsName);
 
-            bool fromChannel = commandController.MessageCameFromChannel(channel);
+            bool fromChannel = commandController.MessageCameFromChannel(address);
 
             if (!fromChannel || (thisChannel != null && thisChannel.AllowTableInfo && thisChannel.AllowSlots))
             {
@@ -44,19 +45,31 @@ namespace FChatDicebot.BotCommands
                 if (savedSlots != null)
                     usedSlots = savedSlots.SlotsSetting;
                 else if (thisChannel != null)
-                    usedSlots = commandController.GetDefaultSlotsSetting(thisChannel.DefaultSlotsFruit);
+                    usedSlots = commandController.GetDefaultSlotsSetting(thisChannel.DefaultSlotsType);
                 else
-                    usedSlots = commandController.GetDefaultSlotsSetting(false);
+                    usedSlots = commandController.GetDefaultSlotsSetting(SlotsType.Default);
 
                 //spin slots for 3 results
                 string sendMessage = usedSlots.PrintInformation(debugInfo);
                 //get graphics for results
 
-                bot.SendMessageInChannel(sendMessage, channel);
+                if (thisChannel != null && Utils.GetNsfwError(thisChannel, usedSlots, out sendMessage))
+                {
+                    //sendMessage set in error method
+                    SendMessageToChannelOrUser(bot, commandController, address, sendMessage);
+                }
+                else if (!commandController.MessageCameFromChannel(address))
+                {
+                    bot.SendPrivateMessage(sendMessage, address);
+                }
+                else
+                {
+                    bot.SendMessageInChannel(sendMessage, address);
+                }
             }
             else
             {
-                bot.SendMessageInChannel("This channel's settings for " + Utils.GetCharacterUserTags(DiceBot.DiceBotCharacter) + " do not allow one of slots or showing table info.", channel);
+                bot.SendMessageInChannel("This channel's settings for " + TextFormat.GetCharacterUserTags(DiceBot.DiceBotCharacter) + " do not allow one of slots or showing table info.", address);
             }
         }
     }

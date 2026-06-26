@@ -7,6 +7,7 @@ using FChatDicebot.BotCommands.Base;
 using FChatDicebot.SavedData;
 using Newtonsoft.Json;
 using FChatDicebot.DiceFunctions;
+using FChatDicebot.Model;
 
 namespace FChatDicebot.BotCommands
 {
@@ -21,36 +22,36 @@ namespace FChatDicebot.BotCommands
             LockCategory = CommandLockCategory.ChannelScores;
         }
 
-        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
+        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, MessageAddress address, UserGeneratedCommand command)
         {
-            ChannelSettings thisChannel = bot.GetChannelSettings(channel);
+            ChannelSettings thisChannel = bot.GetChannelSettings(address);
 
             if (thisChannel.AllowChips)
             {
                 string messageString = "";
 
-                ChipPile existing = bot.DiceBot.GetChipPile(characterName, channel, false);
+                ChipPile existing = bot.DiceBot.GetChipPile(address, false);
                 if(existing != null)
                 {
-                    messageString = Utils.GetCharacterUserTags(characterName) + " is already registered.";
+                    messageString = TextFormat.GetCharacterUserTags(address.character) + " is already registered.";
                 }
                 else
                 {
-                    messageString = Utils.GetCharacterUserTags(characterName) + " was registered for a chips pile.";
+                    messageString = TextFormat.GetCharacterUserTags(address.character) + " was registered for a " + BotMain.CurrencyPlaceholder + "s pile.";
 
                     if(thisChannel.StartingChips > 0)
-                        messageString += "\n[b]" + thisChannel.StartingChips + " chips[/b] were given to " + Utils.GetCharacterUserTags(characterName) + " to start.";
+                        messageString += "\n[b]" + thisChannel.StartingChips + " " + BotMain.CurrencyPlaceholderCapital + "s[/b] were given to " + TextFormat.GetCharacterUserTags(address.character) + " to start.";
 
-                    bot.DiceBot.AddChips(characterName, channel, 0, false);
+                    bot.DiceBot.AddChips(address, 0, false);
 
                     commandController.SaveChipsToDisk("Register");
                 }
 
-                bot.SendMessageInChannel(messageString, channel);
+                bot.SendMessageInChannel(messageString, address);
             }
             else
             {
-                bot.SendMessageInChannel(Name + " is currently not allowed in this channel under " + Utils.GetCharacterUserTags(DiceBot.DiceBotCharacter) + "'s settings for this channel.", channel);
+                bot.SendMessageInChannel(Name + " is currently not allowed in this channel under " + TextFormat.GetCharacterUserTags(DiceBot.DiceBotCharacter) + "'s settings for this channel.", address);
             }
         }
     }

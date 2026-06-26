@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using FChatDicebot.BotCommands.Base;
+using FChatDicebot.Model;
 using FChatDicebot.SavedData;
 using Newtonsoft.Json;
 
@@ -20,21 +21,21 @@ namespace FChatDicebot.BotCommands
             LockCategory = CommandLockCategory.SavedTables;
         }
 
-        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
+        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, MessageAddress address, UserGeneratedCommand command)
         {
             string tableName = commandController.GetTableNameFromCommandTerms(terms);
 
-            bool characterIsAdmin = Utils.IsCharacterAdmin(bot.AccountSettings.AdminCharacters, characterName);
+            bool characterIsAdmin = Utils.IsCharacterAdmin(bot.AccountSettings.AdminCharacters, address.character);
             SavedRollTable deleteTable = Utils.GetTableFromId(bot.SavedTables, tableName);
 
-            string sendMessage = "No tables found for " + Utils.GetCharacterUserTags(characterName) + " with id " + tableName;
+            string sendMessage = "No tables found for " + TextFormat.GetCharacterUserTags(address.character) + " with id " + tableName;
             if (deleteTable != null)
             {
-                if (characterName == deleteTable.OriginCharacter || characterIsAdmin)
+                if (address.character == deleteTable.OriginCharacter || characterIsAdmin)
                 {
                     bot.SavedTables.Remove(deleteTable);
 
-                    sendMessage = "[b]" + deleteTable.TableId + "[/b] deleted by " + Utils.GetCharacterUserTags(characterName);
+                    sendMessage = "[b]" + deleteTable.TableId + "[/b] deleted by " + TextFormat.GetCharacterUserTags(address.character);
 
                     Utils.WriteToFileAsData(bot.SavedTables, Utils.GetTotalFileName(BotMain.FileFolder, BotMain.SavedTablesFileName));
                 }
@@ -44,13 +45,13 @@ namespace FChatDicebot.BotCommands
                 }
             }
 
-            if (!commandController.MessageCameFromChannel(channel))
+            if (!commandController.MessageCameFromChannel(address))
             {
-                bot.SendPrivateMessage(sendMessage, characterName);
+                bot.SendPrivateMessage(sendMessage, address);
             }
             else
             {
-                bot.SendMessageInChannel(sendMessage, channel);
+                bot.SendMessageInChannel(sendMessage, address);
             }
         }
     }

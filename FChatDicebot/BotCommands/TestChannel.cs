@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using FChatDicebot.BotCommands.Base;
 using FChatDicebot.DiceFunctions;
+using FChatDicebot.Model;
 using FChatDicebot.SavedData;
 
 namespace FChatDicebot.BotCommands
@@ -20,11 +21,11 @@ namespace FChatDicebot.BotCommands
             LockCategory = CommandLockCategory.NONE;
         }
 
-        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
+        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, MessageAddress address, UserGeneratedCommand command)
         {
-            ChannelSettings chan = bot.GetChannelSettings(channel);
+            ChannelSettings chan = bot.GetChannelSettings(address);
             string responseMessage = "";
-            string channelNameLow  =  channel.ToLower();
+            string channelNameLow  = address.channel.ToLower();
             if (channelNameLow == BotMain.CasinoChannelId)
             {
                 responseMessage = "Match vc casino.";
@@ -58,7 +59,7 @@ namespace FChatDicebot.BotCommands
             {
                 responseMessage += "\nSlots are not allowed under the settings for this channel.";
             }
-            bot.SendMessageInChannel(responseMessage, channel);
+            bot.SendMessageInChannel(responseMessage, address);
         }
     }
 }

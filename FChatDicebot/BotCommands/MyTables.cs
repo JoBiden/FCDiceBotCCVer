@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using FChatDicebot.BotCommands.Base;
+using FChatDicebot.Model;
 using FChatDicebot.SavedData;
 using Newtonsoft.Json;
 
@@ -20,33 +21,31 @@ namespace FChatDicebot.BotCommands
             LockCategory = CommandLockCategory.SavedTables;
         }
 
-        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
+        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, MessageAddress address, UserGeneratedCommand command)
         {
-            var thisCharacterTables = bot.SavedTables.Where(a => a.OriginCharacter == characterName);
+            var thisCharacterTables = bot.SavedTables.Where(a => a.OriginCharacter == address.character);
 
-            string sendMessage = "No tables found for " + Utils.GetCharacterUserTags(characterName);
+            string sendMessage = "No tables found for " + TextFormat.GetCharacterUserTags(address.character);
+            bool fromChannel = commandController.MessageCameFromChannel(address);
+            bool includeNsfw = fromChannel ? bot.GetChannelSettings(address).AllowNsfw : true;
+
             if (thisCharacterTables.Count() > 0)
             {
                 string tablesList = "";
                 foreach (SavedRollTable savedTable in thisCharacterTables)
                 {
-                    if (!string.IsNullOrEmpty(tablesList))
-                        tablesList += ", ";
+                    if (!(savedTable.Table != null && savedTable.Table.Nsfw) || includeNsfw)
+                    {
+                        if (!string.IsNullOrEmpty(tablesList))
+                            tablesList += ", ";
 
-                    tablesList += savedTable.TableId;
+                        tablesList += savedTable.TableId;
+                    }
                 }
-                sendMessage = "Tables found for " + Utils.GetCharacterUserTags(characterName) + ": " + tablesList;
+                sendMessage = "Tables found for " + TextFormat.GetCharacterUserTags(address.character) + ": " + tablesList;
             }
 
-            if (!commandController.MessageCameFromChannel(channel))
-            {
-                bot.SendPrivateMessage(sendMessage, characterName);
-            }
-            else
-            {
-                bot.SendMessageInChannel(sendMessage, channel);
-            }
-
+            SendMessageToChannelOrUser(bot, commandController, address, sendMessage);
         }
     }
 }

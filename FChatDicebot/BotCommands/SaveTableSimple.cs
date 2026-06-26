@@ -7,6 +7,7 @@ using FChatDicebot.BotCommands.Base;
 using FChatDicebot.SavedData;
 using Newtonsoft.Json;
 using FChatDicebot.DiceFunctions;
+using FChatDicebot.Model;
 
 namespace FChatDicebot.BotCommands
 {
@@ -21,7 +22,7 @@ namespace FChatDicebot.BotCommands
             LockCategory = CommandLockCategory.SavedTables;
         }
 
-        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
+        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, MessageAddress address, UserGeneratedCommand command)
         {
             string saveJson = Utils.GetFullStringOfInputs(rawTerms);
             string sendMessage = "";
@@ -63,24 +64,29 @@ namespace FChatDicebot.BotCommands
 
                         newSavedTable.Table = new DiceFunctions.RollTable();
                         newSavedTable.Table.Name = Utils.LimitStringToNCharacters(titleSplit[0], BotMain.MaximumCharactersTableName);
+
                         string newTableId = newSavedTable.Table.Name.Replace(" ", "").ToLower();
+                        if (string.IsNullOrEmpty(newSavedTable.Table.Name))
+                        {
+                            newSavedTable.Table.Name = newTableId;
+                        }
                         newSavedTable.Table.Description = "";
                         newSavedTable.Table.RollBonus = 0;
                         newSavedTable.Table.DieSides = entriesSplit.Length;
                         newSavedTable.DefaultTable = false;
-                        newSavedTable.OriginCharacter = characterName;
+                        newSavedTable.OriginCharacter = address.character;
 
                         newSavedTable.Table.TableEntries = entries;
 
                         SavedRollTable existingTable = Utils.GetTableFromId(bot.SavedTables, newTableId);
 
-                        var thisCharacterTables = bot.SavedTables.Where(a => a.OriginCharacter == characterName);
+                        var thisCharacterTables = bot.SavedTables.Where(a => a.OriginCharacter == address.character);
 
                         if (thisCharacterTables.Count() >= BotMain.MaximumSavedTablesPerCharacter && existingTable == null)
                         {
                             sendMessage = "Failed: A character can only save up to 3 tables at one time. Delete or overwrite old tables.";
                         }
-                        else if (existingTable != null && existingTable.OriginCharacter != characterName)
+                        else if (existingTable != null && existingTable.OriginCharacter != address.character)
                         {
                             sendMessage = "Failed: This table name is taken by a different character.";
                         }
@@ -111,7 +117,7 @@ namespace FChatDicebot.BotCommands
 
                             Utils.WriteToFileAsData(bot.SavedTables, Utils.GetTotalFileName(BotMain.FileFolder, BotMain.SavedTablesFileName));
 
-                            sendMessage = "[b]Success[/b]. Table saved by [user]" + characterName + "[/user]. Roll on this table using !rolltable " + newTableId;
+                            sendMessage = "[b]Success[/b]. Table saved by " + TextFormat.GetCharacterUserTags(address.character) + ". Roll on this table using !rolltable " + newTableId;
                         }
                     }
                 }
@@ -121,13 +127,13 @@ namespace FChatDicebot.BotCommands
                 sendMessage = "Failed to parse table entry data. Make sure the Json is correctly formatted.";
             }
 
-            if (!commandController.MessageCameFromChannel(channel))
+            if (!commandController.MessageCameFromChannel(address))
             {
-                bot.SendPrivateMessage(sendMessage, characterName);
+                bot.SendPrivateMessage(sendMessage, address);
             }
             else
             {
-                bot.SendMessageInChannel(sendMessage, channel);
+                bot.SendMessageInChannel(sendMessage, address);
             }
         }
     }

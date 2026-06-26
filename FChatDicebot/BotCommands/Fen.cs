@@ -11,6 +11,7 @@ using FChatDicebot.DiceFunctions;
 using System.Runtime.InteropServices;
 using System.Xml;
 using FChatDicebot.BotCommands.ChessFEN;
+using FChatDicebot.Model;
 
 namespace FChatDicebot.BotCommands
 {
@@ -21,30 +22,44 @@ namespace FChatDicebot.BotCommands
             Name = "fen";
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
-            RequireChannel = true;
+            RequireChannel = false;
             LockCategory = CommandLockCategory.NONE;
         }
 
-        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
+        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, MessageAddress address, UserGeneratedCommand command)
         {
-            ChannelSettings thisChannel = bot.GetChannelSettings(channel);
+            ChannelSettings thisChannel = bot.GetChannelSettings(address);
 
-            if (thisChannel.AllowChess)
+            if (thisChannel == null || thisChannel.AllowChess)
             {
-                bool useEicons = thisChannel.AllowChessEicons && (channel.ToLower() == BotMain.ChessClubChannelId || channel.ToLower() == BotMain.TestDicebotChannelId);
-            
+                string channelKey = address.GetChannelKey() == null? "" : address.GetChannelKey().ToLower();
+                bool useEicons = thisChannel == null || (thisChannel.AllowChessEicons && !(bot.AccountSettings.AllowedChessEiconChannels == null) && bot.AccountSettings.AllowedChessEiconChannels.Contains(address.GetChannelKey().ToLower()));
+                    //(channelKey == BotMain.ChessClubChannelId || channelKey == BotMain.TestDicebotChannelId));
+
                 string fenString = Utils.GetFullStringOfInputs(rawTerms);
+                bool setDescriptionOutput = false;
+
+                if (fenString.Contains("setdescription"))
+                {
+                    fenString = fenString.Replace("setdescription ", "").Replace(" setdescription", "");
+                    setDescriptionOutput = true;
+                }
+                fenString = fenString.Trim();
 
                 string sendMessage = "";
                 try
                 {
-                    Console.WriteLine("Hello, World!");
-                    if(fenString.ToLower() == "test" || fenString.ToLower() == "hello world")
+                    if (fenString.ToLower() == "test" || fenString.ToLower() == "hello world")
                     {
                         fenString = "rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2";
                     }
+                    else if (fenString.ToLower() == "starting" || fenString.ToLower() == "default" || fenString.ToLower() == "start")
+                    {
+                        fenString = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+                    }
 
-                    ChessFENPosition position = new ChessFENPosition();
+                    bool discord = Utils.IsDiscordMessage(command);
+                    ChessFENPosition position = new ChessFENPosition(discord);
                     position.loadFromFEN(fenString);
                     string bbcode = position.ToBBCode(useEicons);
                     Console.WriteLine(bbcode);
@@ -55,11 +70,41 @@ namespace FChatDicebot.BotCommands
                     sendMessage = "ERROR: " + exc.ToString();
                 }
 
-                bot.SendMessageInChannel(sendMessage, channel);
+                //bot.SendMessageInChannel(sendMessage, address);
+
+                //if (fromChannel)
+                //    Bot.SendMessageInChannel("Failed: " + TextFormat.GetCharacterUserTags(Bot.AccountSettings.CharacterName) + " needs to be a channel/ guild op to use this command (" + command.commandName + ").", address);
+                //else
+                //    Bot.SendPrivateMessage("Failed: " + TextFormat.GetCharacterUserTags(Bot.AccountSettings.CharacterName) + " needs to be a channel/ guild op to use this command (" + command.commandName + ").", address);
+                if (!commandController.MessageCameFromChannel(address))
+                {
+                    bot.SendPrivateMessage(sendMessage, address);
+                }
+                else
+                {
+                    if (setDescriptionOutput)
+                    {
+
+                        if (thisChannel != null && !thisChannel.AllowSettingChannelDescription && !Utils.IsCharacterAdmin(bot.AccountSettings.AdminCharacters, address.character))
+                        {
+                            bot.SendMessageInChannel(Name + " setting channel description is currently not allowed in this channel under " + TextFormat.GetCharacterUserTags(DiceBot.DiceBotCharacter) + "'s settings for this channel.", address);
+                            return;
+                        }
+                        else
+                        {
+                            bot.SetChannelDescription(address.GetChannelKey(), sendMessage);
+                            bot.SendMessageInChannel("Set channel description to chess position! [sub](if it fails, make sure " + TextFormat.GetCharacterUserTags(bot.AccountSettings.CharacterName) + " is a channel admin)[/sub]", address);
+                        }
+                    }
+                    else
+                    {
+                        bot.SendMessageInChannel(sendMessage, address);
+                    }
+                }
             }
             else
             {
-                bot.SendMessageInChannel(Name + " is currently not allowed in this channel under " + Utils.GetCharacterUserTags(DiceBot.DiceBotCharacter) + "'s settings for this channel.", channel);
+                bot.SendMessageInChannel(Name + " is currently not allowed in this channel under " + TextFormat.GetCharacterUserTags(DiceBot.DiceBotCharacter) + "'s settings for this channel.", address);
             }
         }
     }

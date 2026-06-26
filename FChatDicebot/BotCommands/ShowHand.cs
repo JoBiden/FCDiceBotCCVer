@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using FChatDicebot.BotCommands.Base;
 using FChatDicebot.DiceFunctions;
+using FChatDicebot.Model;
 
 namespace FChatDicebot.BotCommands
 {
@@ -19,17 +20,26 @@ namespace FChatDicebot.BotCommands
             LockCategory = CommandLockCategory.ChannelDecks;
         }
 
-        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
+        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, MessageAddress address, UserGeneratedCommand command)
         {
-            string characterDrawName = commandController.GetCharacterDrawNameFromCommandTerms(characterName, terms);
-
+            string characterDrawName = commandController.GetCharacterDrawNameFromCommandTerms(address.character, terms);
+            MessageAddress characterDrawAddress = new MessageAddress() { character = characterDrawName, channel = address.channel, guild = address.guild };
             string customDeckName = "";
             DeckType deckType = commandController.GetDeckTypeFromCommandTerms(terms, out customDeckName);
 
-            SavedData.ChannelSettings channelSettings = bot.GetChannelSettings(channel);
+            SavedData.ChannelSettings channelSettings = bot.GetChannelSettings(address);
             string deckTypeString = Utils.GetDeckTypeStringHidePlaying(deckType, customDeckName);
 
-            Hand h = bot.DiceBot.GetHand(channel, deckType, customDeckName, characterDrawName);
+            Deck deckInUse = bot.DiceBot.GetDeck(address, deckType, customDeckName);
+            string errorString = "";
+            if (channelSettings != null && Utils.GetNsfwError(channelSettings, deckInUse, out errorString))
+            {
+                //sendMessage set in error method
+                SendMessageToChannelOrUser(bot, commandController, address, errorString);
+                return;
+            }
+
+            Hand h = bot.DiceBot.GetHand(deckType, customDeckName, characterDrawAddress, null);
 
             string displayName = characterDrawName;
             if (displayName.Contains(DiceBot.PlaySuffix))
@@ -43,7 +53,7 @@ namespace FChatDicebot.BotCommands
             else if (characterDrawName == DiceBot.DiscardPlayerAlias)
                 outputString = "[i]" + deckTypeString + "Showing discarded cards: [/i]" + h.Print(false, channelSettings.CardPrintSetting);
 
-            bot.SendMessageInChannel(outputString, channel);
+            bot.SendMessageInChannel(outputString, address);
         }
     }
 }

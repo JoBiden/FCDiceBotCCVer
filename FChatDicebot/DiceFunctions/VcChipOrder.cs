@@ -1,4 +1,5 @@
-﻿using System;
+﻿using FChatDicebot.Model;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -10,6 +11,10 @@ namespace FChatDicebot.DiceFunctions
     {
         public string ChannelId;
         public string Character;
+        public MessageAddress GetMessageAddress()
+        {
+            return new MessageAddress() { channel = ChannelId, character = Character, guild = null };
+        }
         public int Chips = 0;
         public string TransactionId;
         public double Created;
