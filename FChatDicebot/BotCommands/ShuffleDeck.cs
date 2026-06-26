@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using FChatDicebot.BotCommands.Base;
 using FChatDicebot.DiceFunctions;
+using FChatDicebot.Model;
 
 namespace FChatDicebot.BotCommands
 {
@@ -19,21 +20,21 @@ namespace FChatDicebot.BotCommands
             LockCategory = CommandLockCategory.ChannelDecks;
         }
 
-        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
+        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, MessageAddress address, UserGeneratedCommand command)
         {
             bool fullShuffle = false;
             if (terms != null && terms.Length >= 1 && terms.Contains("eh"))
                 fullShuffle = true;
 
-            SavedData.ChannelSettings channelSettings = bot.GetChannelSettings(channel);
+            SavedData.ChannelSettings channelSettings = bot.GetChannelSettings(address);
 
             string customDeckName = "";
             DeckType deckType = commandController.GetDeckTypeFromCommandTerms(terms, out customDeckName);
 
-            string deckTypeString = Utils.GetDeckTypeStringHidePlaying(deckType, characterName);
+            string deckTypeString = Utils.GetDeckTypeStringHidePlaying(deckType, address.character);
 
-            bot.DiceBot.ShuffleDeck(bot.DiceBot.random, channel, channelSettings.CardPrintSetting, deckType, fullShuffle, customDeckName);
-            bot.SendMessageInChannel("[i]" + deckTypeString + "Channel deck shuffled. " + (fullShuffle ? "Hands emptied." : "") + "[/i]", channel);
+            bot.DiceBot.ShuffleDeck(bot.DiceBot.random, address, channelSettings.CardPrintSetting, deckType, fullShuffle, customDeckName);
+            bot.SendMessageInChannel("[i]" + deckTypeString + "Channel deck shuffled. " + (fullShuffle ? "Hands emptied." : "") + "[/i]", address);
         }
     }
 }

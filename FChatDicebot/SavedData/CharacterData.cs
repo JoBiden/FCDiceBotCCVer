@@ -1,4 +1,4 @@
-﻿using FChatDicebot.DiceFunctions;
+using FChatDicebot.DiceFunctions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,10 +22,21 @@ namespace FChatDicebot.SavedData
         public int TimesSlotsSpun;
         public int TimesLuckForecast;
         public int TimesPotionGenerated;
+        public int TimesDungeonDelved;
 
         public double LastSlotsSpin;// DateTime LastSlotsSpin;
         public double LastLuckForecastTime;
         public double LastWorkedTime;
         public double LastGreeted;
+        public double LastDungeonDelve;
+
+        public double LastCommand;
+        public double TimeoutStartTime;
+        public double TimeoutDuration;
+
+        public bool CharacterIsTimedOut()
+        {
+            return  TimeoutStartTime + TimeoutDuration > DoubleTime.GetCurrentTimestampSeconds();
+        }
     }
 }

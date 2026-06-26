@@ -7,6 +7,7 @@ using FChatDicebot.BotCommands.Base;
 using FChatDicebot.SavedData;
 using Newtonsoft.Json;
 using FChatDicebot.DiceFunctions;
+using FChatDicebot.Model;
 
 namespace FChatDicebot.BotCommands
 {
@@ -21,17 +22,17 @@ namespace FChatDicebot.BotCommands
             LockCategory = CommandLockCategory.NONE;
         }
 
-        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
+        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, MessageAddress address, UserGeneratedCommand command)
         {
-            ChannelSettings thisChannel = bot.GetChannelSettings(channel);
+            ChannelSettings thisChannel = bot.GetChannelSettings(address);
 
-            bool fromChannel = commandController.MessageCameFromChannel(channel);
+            bool fromChannel = commandController.MessageCameFromChannel(address);
 
             string messageString = "";
 
             if (fromChannel && thisChannel.AllowGames || !fromChannel)
             {
-                IGame gametype = commandController.GetGameTypeForCommand(bot.DiceBot, channel, terms, out messageString);
+                IGame gametype = commandController.GetGameTypeForCommand(bot.DiceBot, address, terms, out messageString);
 
                 if (gametype != null)
                 {
@@ -40,16 +41,16 @@ namespace FChatDicebot.BotCommands
             }
             else
             {
-                messageString = Name + " is currently not allowed in this channel under " + Utils.GetCharacterUserTags(DiceBot.DiceBotCharacter) + "'s settings for this channel.";
+                messageString = Name + " is currently not allowed in this channel under " + TextFormat.GetCharacterUserTags(DiceBot.DiceBotCharacter) + "'s settings for this channel.";
             }
 
             if(fromChannel)
             {
-                bot.SendMessageInChannel(messageString, channel);
+                bot.SendMessageInChannel(messageString, address);
             }
             else
             {
-                bot.SendPrivateMessage(messageString, characterName);
+                bot.SendPrivateMessage(messageString, address);
             }
         }
     }

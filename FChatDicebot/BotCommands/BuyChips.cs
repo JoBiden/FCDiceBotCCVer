@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using FChatDicebot.BotCommands.Base;
+using FChatDicebot.Model;
 using FChatDicebot.DiceFunctions;
 using FChatDicebot.SavedData;
 
@@ -20,9 +21,11 @@ namespace FChatDicebot.BotCommands
             LockCategory = CommandLockCategory.ChannelScores;
         }
 
-        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
+        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, MessageAddress address, UserGeneratedCommand command)
         {
-            ChannelSettings chan = bot.GetChannelSettings(channel);
+            string characterName = address.character;
+            string channel = address.channel;
+            ChannelSettings chan = bot.GetChannelSettings(address);
             string responseMessage = "";
             if(!chan.AllowChips)
             {
@@ -30,9 +33,9 @@ namespace FChatDicebot.BotCommands
             }
             else
             {
-                ChipPile pile = bot.DiceBot.GetChipPile(characterName, channel);
-                
-                VcChipOrder existingOrder = bot.DiceBot.GetVcChipOrder(characterName, channel);
+                ChipPile pile = bot.DiceBot.GetChipPile(address);
+
+                VcChipOrder existingOrder = bot.DiceBot.GetVcChipOrder(address);
 
                 if(pile == null)
                 {

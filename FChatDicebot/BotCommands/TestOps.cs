@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using FChatDicebot.BotCommands.Base;
 using FChatDicebot.DiceFunctions;
+using FChatDicebot.Model;
 
 namespace FChatDicebot.BotCommands
 {
@@ -19,16 +20,16 @@ namespace FChatDicebot.BotCommands
             LockCategory = CommandLockCategory.NONE;
         }
 
-        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
+        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, MessageAddress address, UserGeneratedCommand command)
         {
             if(command.ops == null)
             {
                 bot.RequestChannelOpListAndQueueFurtherRequest(new UserGeneratedCommand(){
-                    channel = channel,
+                    channel = address.GetChannelKey(),
                     terms = terms,
                     rawTerms = rawTerms,
                     ops = null,
-                    characterName = characterName,
+                    characterName = address.character,
                     commandName = Name
                 });
             }
@@ -44,10 +45,10 @@ namespace FChatDicebot.BotCommands
                 else
                 {
                     output = Utils.PrintList(opsList);
-                    output += " " + Utils.GetCharacterUserTags(characterName) + " is an op? " + opsList.Contains(characterName);
+                    output += " " + TextFormat.GetCharacterUserTags(address.character) + " is an op? " + opsList.Contains(address.character);
                 }
 
-                bot.SendMessageInChannel("[b][ADMIN] [/b]" + output, channel);
+                bot.SendMessageInChannel("[b][ADMIN] [/b]" + output, address);
             }
         }
     }

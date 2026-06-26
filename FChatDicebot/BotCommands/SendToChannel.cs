@@ -20,69 +20,47 @@ namespace FChatDicebot.BotCommands
             LockCategory = CommandLockCategory.NONE;
         }
 
-        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
+        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, MessageAddress address, UserGeneratedCommand command)
         {
-            string channelIdToSend = rawTerms[0];
-            string channelLower = channelIdToSend.ToLower();
-            string outputString = Utils.GetFullStringOfInputs(rawTerms);
-            outputString = outputString.Replace(channelIdToSend, "").Trim();
-            bool sendToChannel = false;
+            string resultMessageString = "Error: Command requires at least two parameters.";
 
-            switch(channelLower)
+            if (rawTerms.Length >= 2)
             {
-                case "casino":
-                case "vccasino":
-                    channelIdToSend = BotMain.CasinoChannelId;// "adh-3fe0682b9b6bbe0acb62";
-                    break;
-                case "breakerworld":
-                case "breaker":
-                    channelIdToSend = BotMain.BreakerWorldChannelId;
-                    break;
-                case "kowloon":
-                case "kcc":
-                    channelIdToSend = BotMain.KowloonChannelId;
-                    break;
-                case "fateroom":
-                case "fate":
-                    channelIdToSend = BotMain.SevenMinutesFateRoomId;
-                    break;
-                case "fategu":
-                case "suitengu":
-                    channelIdToSend = BotMain.SuitenGuFateRoomId;
-                    break;
-                case "chessclub":
-                case "chess":
-                    channelIdToSend = BotMain.ChessClubChannelId;
-                    break;
-                case "testroom":
-                case "testdicebot":
-                case "test":
-                    channelIdToSend = BotMain.TestDicebotChannelId;
-                    break;
+                string channelIdToSend = rawTerms[0];
+                string outputString = Utils.GetFullStringOfInputs(rawTerms);
+                outputString = outputString.Replace(channelIdToSend, "").Trim();
+
+                bool sendToChannel = false;
+
+                channelIdToSend = commandController.GetChannelFromInputs(rawTerms, out string errorMessage);
+
+                if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    //outputString = errorMessage;
+                    resultMessageString = errorMessage;
+                }
+                else
+                {
+                    sendToChannel = true;
+                    resultMessageString = "[b][ADMIN] Sending message to channel (" + channelIdToSend + "): [/b]" + outputString;
+                }
+
+
+                if (sendToChannel)
+                {
+                    bot.SendMessageInChannel(outputString, new MessageAddress() { channel = channelIdToSend, guild = address.guild, character = address.character });
+                }
             }
 
-            if (terms.Length < 2)
-                outputString = "Error: not enough parameters.";
-            else if (channelIdToSend == null || channelIdToSend.Length < 5)
-                outputString = "Error: invalid channel id. (casino, breakerworld, kowloon, fateroom, [channel id])";
-            else
-                sendToChannel = true;
-
-            string resultMessageString = "[b][ADMIN] Sending message to channel (" + channelIdToSend + "): [/b]" + outputString;
-            
-            if (!commandController.MessageCameFromChannel(channel))
+            if (!commandController.MessageCameFromChannel(address))
             {
-                bot.SendPrivateMessage(resultMessageString, characterName);
+                bot.SendPrivateMessage(resultMessageString, address);
             }
             else
             {
-                bot.SendMessageInChannel(resultMessageString, channel);
+                bot.SendMessageInChannel(resultMessageString, address);
             }
 
-            if(sendToChannel)
-            { 
-                bot.SendMessageInChannel(outputString, channelIdToSend);
-            }
 
         }
     }

@@ -15,13 +15,15 @@ namespace FChatDicebot.BotCommands.ChessFEN
         public bool WhiteCanCastleQueenside;
         public bool BlackCanCastleKingside;
         public bool BlackCanCastleQueenside;
+        public bool DiscordOutput;
         public ChessFENSquare EnPassantTargetSquare;
         public int HalfmoveClock;
         public int FullmoveNumber;
 
-        public ChessFENPosition()
+        public ChessFENPosition(bool discordOutput)
         {
             Board = new Tuple<Color, Piece>[64];
+            DiscordOutput = discordOutput;
         }
 
         void loadFenPiecePlacement(string placement)
@@ -138,7 +140,7 @@ namespace FChatDicebot.BotCommands.ChessFEN
 
         private string squareCharacters(Tuple<Color, Piece> square, bool darkSquare)
         {
-            bool includeColor = true;
+            bool includeColor = DiscordOutput? false : true;
             string bbcode = "";
             if (square == null)
             {
@@ -176,7 +178,7 @@ namespace FChatDicebot.BotCommands.ChessFEN
                             break;
 
                         case Piece.Pawn:
-                            bbcode += "♟";
+                            bbcode += DiscordOutput? "♟": "♙";//black pawn doesn't show the right size for some reason in some text and flist , ♟♙ so use white with color=black
                             break;
                     }
                     if (includeColor)
@@ -225,7 +227,7 @@ namespace FChatDicebot.BotCommands.ChessFEN
 
         private string squareBBCode(Tuple<Color, Piece> square, bool darkSquare)
         {
-            string bbcode = "[eicon]";
+            string bbcode = "";
 
             if (square == null)
             {
@@ -280,8 +282,8 @@ namespace FChatDicebot.BotCommands.ChessFEN
             {
                 bbcode += "l";
             }
-            bbcode += "[/eicon]";
-            return bbcode;
+
+            return TextFormat.Emoji(bbcode);
         }
 
         public string ToBBCode(bool eicons)

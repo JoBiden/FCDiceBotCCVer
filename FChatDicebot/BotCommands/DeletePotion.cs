@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using FChatDicebot.BotCommands.Base;
+using FChatDicebot.Model;
 using FChatDicebot.SavedData;
 using Newtonsoft.Json;
 
@@ -20,22 +21,22 @@ namespace FChatDicebot.BotCommands
             LockCategory = CommandLockCategory.SavedTables;
         }
 
-        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
+        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, MessageAddress address, UserGeneratedCommand command)
         {
             string potionName = Utils.GetFullStringOfInputs(rawTerms).Trim();
 
-            bool characterIsAdmin = Utils.IsCharacterAdmin(bot.AccountSettings.AdminCharacters, characterName);
-            var totalPotions = bot.SavedPotions.Where(a => a.OriginCharacter == characterName);
+            bool characterIsAdmin = Utils.IsCharacterAdmin(bot.AccountSettings.AdminCharacters, address.character);
+            var totalPotions = bot.SavedPotions.Where(a => a.OriginCharacter == address.character);
             SavedPotion deletePotion = totalPotions.FirstOrDefault(a => a.Enchantment.prefix.ToLower() == potionName.ToLower() || a.Enchantment.suffix.ToLower() == potionName.ToLower());
 
-            string sendMessage = "No potions found for " + Utils.GetCharacterUserTags(characterName) + " with prefix " + potionName;
+            string sendMessage = "No potions found for " + TextFormat.GetCharacterUserTags(address.character) + " with prefix " + potionName;
             if (deletePotion != null)
             {
-                if (characterName == deletePotion.OriginCharacter || characterIsAdmin)
+                if (address.character == deletePotion.OriginCharacter || characterIsAdmin)
                 {
                     bot.SavedPotions.Remove(deletePotion);
 
-                    sendMessage = "[b]" + deletePotion.Enchantment.prefix + "[/b] deleted by " + Utils.GetCharacterUserTags(characterName);
+                    sendMessage = "[b]" + deletePotion.Enchantment.prefix + "[/b] deleted by " + TextFormat.GetCharacterUserTags(address.character);
 
                     commandController.SavePotionDataToDisk();
                 }
@@ -45,13 +46,13 @@ namespace FChatDicebot.BotCommands
                 }
             }
 
-            if (!commandController.MessageCameFromChannel(channel))
+            if (!commandController.MessageCameFromChannel(address))
             {
-                bot.SendPrivateMessage(sendMessage, characterName);
+                bot.SendPrivateMessage(sendMessage, address);
             }
             else
             {
-                bot.SendMessageInChannel(sendMessage, channel);
+                bot.SendMessageInChannel(sendMessage, address);
             }
         }
     }

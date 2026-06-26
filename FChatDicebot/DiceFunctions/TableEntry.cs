@@ -27,13 +27,16 @@ namespace FChatDicebot.DiceFunctions
             {
                 foreach(TableRollTrigger t in Triggers)
                 {
+                    if (t == null)
+                        continue;
+
                     if (triggersAddition != "")
                         triggersAddition += ", ";
 
                     triggersAddition += t.ToString();
                 }
 
-                if(Triggers[0].Command.StartsWith("!"))
+                if(Triggers[0] != null && Triggers[0].Command != null && Triggers[0].Command.StartsWith("!"))
                 {
                     triggersAddition = " [i](perform: " + triggersAddition + ")[/i]";
                 }
@@ -45,7 +48,7 @@ namespace FChatDicebot.DiceFunctions
             }
             else
             {
-                rtnString += "[b]" + Name + ": [/b]" + Description + triggersAddition;
+                rtnString += "[b]" + Name + ":[/b] " + Description + triggersAddition;
             }
 
             return rtnString;

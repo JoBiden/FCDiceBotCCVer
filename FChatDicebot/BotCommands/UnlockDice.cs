@@ -7,6 +7,7 @@ using FChatDicebot.BotCommands.Base;
 using FChatDicebot.SavedData;
 using Newtonsoft.Json;
 using FChatDicebot.DiceFunctions;
+using FChatDicebot.Model;
 
 namespace FChatDicebot.BotCommands
 {
@@ -21,10 +22,10 @@ namespace FChatDicebot.BotCommands
             LockCategory = CommandLockCategory.CharacterInventories;
         }
 
-        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
+        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, MessageAddress address, UserGeneratedCommand command)
         {
 
-            string targetUserName = characterName;
+            string targetUserName = address.character;
 
             if(rawTerms != null && rawTerms.Length > 0)
             {
@@ -36,8 +37,9 @@ namespace FChatDicebot.BotCommands
                 unlock = false;
                 targetUserName = targetUserName.Replace("false", "").Replace("   "," ").Replace("  "," ").Trim();
             }
+            MessageAddress targetUserAddress = new MessageAddress() { character = targetUserName, channel = address.channel, guild = address.guild };
 
-            CharacterData data = bot.DiceBot.GetCharacterData(targetUserName, channel, false);
+            CharacterData data = bot.DiceBot.GetCharacterData(targetUserAddress, false);
 
             string output = "";
             if(data == null)
@@ -48,13 +50,13 @@ namespace FChatDicebot.BotCommands
             {
                 data.DiceUnlocked = unlock;
                 if (unlock)
-                    output = "Gold dice [eicon]dbgoldd6-1[/eicon] [eicon]dbgoldd10-9[/eicon] [color=yellow][b]unlocked[/b][/color] for " + Utils.GetCharacterUserTags(targetUserName) + " in this channel!";
+                    output = "Gold dice " + TextFormat.Emoji("dbgoldd6-1") + " " + TextFormat.Emoji("dbgoldd10-9") + " [color=yellow][b]unlocked[/b][/color] for " + TextFormat.GetCharacterUserTags(targetUserName) + " in this channel!";
                 else
-                    output = "Updated dice status for " + Utils.GetCharacterUserTags(targetUserName);
+                    output = "Updated dice status for " + TextFormat.GetCharacterUserTags(targetUserName);
                 bot.BotCommandController.SaveCharacterDataToDisk();
             }
 
-            bot.SendMessageInChannel(output, channel);
+            bot.SendMessageInChannel(output, address);
         }
     }
 }

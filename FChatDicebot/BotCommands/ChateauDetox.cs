@@ -36,8 +36,10 @@ namespace FChatDicebot.BotCommands
             LockCategory = CommandLockCategory.NONE;
         }
 
-        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
+        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, MessageAddress address, UserGeneratedCommand command)
         {
+            string characterName = address.character;
+            string channel = address.channel;
             string specifiedVice = commandController.GetIdentifierFromCommandTerms(rawTerms, "vice");
             DetoxResult result = ExecuteDetox(MonDB.GetDatabase(), characterName, specifiedVice);
 

@@ -23,7 +23,7 @@ namespace FChatDicebot.BotCommands
         //    LockCategory = CommandLockCategory.ChannelScores;
         //}
 
-        //public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
+        //public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, MessageAddress address, UserGeneratedCommand command)
         //{
         //    //special command: just listens for people referencing itembuy with velvetcuff. if it comes back successful, credit them the chips
 

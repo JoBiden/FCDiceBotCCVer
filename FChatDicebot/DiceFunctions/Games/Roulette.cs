@@ -1,4 +1,5 @@
-﻿using System;
+﻿using FChatDicebot.Model;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -55,7 +56,7 @@ namespace FChatDicebot.DiceFunctions
 
         public string GetStartingDisplay()
         {
-            return "[eicon]dbroulette1[/eicon][eicon]dbroulette2[/eicon]";
+            return TextFormat.Emoji("dbroulette1") + TextFormat.Emoji("dbroulette2");
         }
 
         public string GetEndingDisplay()
@@ -374,39 +375,39 @@ namespace FChatDicebot.DiceFunctions
 
             foreach(RouletteBetData bet in session.RouletteBets)
             {
+                if (!string.IsNullOrEmpty(characterBetsString))
+                {
+                    characterBetsString += "\n";
+                }
+
                 if (!playerNames.Contains(bet.characterName))
                 {
                     characterBetsString += bet.characterName + " not found.\n";
                     continue;
                 }
 
-                if (!string.IsNullOrEmpty(characterBetsString))
-                {
-                    characterBetsString += "\n";
-                }
-
                 string betstring = "";
-                
-                ChipPile pile = diceBot.GetChipPile(bet.characterName, session.ChannelId, false);
+
+                ChipPile pile = diceBot.GetChipPile(new MessageAddress(session.GetMessageAddress(), bet.characterName), false);
 
                 if(pile.Chips >= bet.amount)
                 {
                     bet.cannotAffordBet = false;
-                    betstring = diceBot.BetChips(bet.characterName, session.ChannelId, bet.amount, false);
+                    betstring = diceBot.BetChips(new MessageAddress(session.GetMessageAddress(), bet.characterName), bet.amount, false);
                     betstring += " Their money is on [b]" + Utils.GetRouletteBetString(bet.bet, bet.specificNumberBet) + "[/b]!";
 
                 }
                 else
                 {
                     bet.cannotAffordBet = true;
-                    betstring = Utils.GetCharacterUserTags(bet.characterName) + " can no longer afford their bet.";
+                    betstring = TextFormat.GetCharacterUserTags(bet.characterName) + " can no longer afford their bet.";
                 }
 
                 characterBetsString += betstring;
             }
 
-            ChipPile houseChipsPile = diceBot.GetChipPile(DiceBot.HousePlayerAlias, session.ChannelId, true);
-            string claimPotString = diceBot.ClaimPot(DiceBot.HousePlayerAlias, session.ChannelId, 1);
+            ChipPile houseChipsPile = diceBot.GetChipPile(new MessageAddress(session.GetMessageAddress(), DiceBot.HousePlayerAlias), true);
+            string claimPotString = diceBot.ClaimPot(new MessageAddress(session.GetMessageAddress(), DiceBot.HousePlayerAlias), 1);
 
             string betReturns = "";
 
@@ -419,7 +420,7 @@ namespace FChatDicebot.DiceFunctions
 
                 int betReturn = RouletteBetReturn(randomResult, redResults, blackResults, bet.bet, bet.specificNumberBet);
 
-                string winningsString = Utils.GetCharacterUserTags(bet.characterName) + " has [b]" + (betReturn > 0 ? "won" : "lost") + "![/b] ";
+                string winningsString = TextFormat.GetCharacterUserTags(bet.characterName) + " has [b]" + (betReturn > 0 ? "won" : "lost") + "![/b] ";
 
                 if(betReturn > 0)
                 {
@@ -427,10 +428,10 @@ namespace FChatDicebot.DiceFunctions
 
                     if (houseChipsPile.Chips < betWonAmount + 1)
                     {
-                        diceBot.AddChips(DiceBot.HousePlayerAlias, session.ChannelId, betWonAmount + 1, false);
+                        diceBot.AddChips(new MessageAddress(session.GetMessageAddress(), DiceBot.HousePlayerAlias), betWonAmount + 1 - houseChipsPile.Chips, false);
                     }
 
-                    winningsString += diceBot.GiveChips(DiceBot.HousePlayerAlias, bet.characterName, session.ChannelId, betWonAmount, false);
+                    winningsString += diceBot.GiveChips(new MessageAddress(session.GetMessageAddress(), DiceBot.HousePlayerAlias), bet.characterName, betWonAmount, false);
                 }
 
                 if (!string.IsNullOrEmpty(betReturns))
@@ -530,16 +531,22 @@ namespace FChatDicebot.DiceFunctions
             return 0;
         }
 
-        public string IssueGameCommand(DiceBot diceBot, BotMain botMain, string character, string channel, GameSession session, string[] terms, string[] rawTerms)
+        public string IssueGameCommand(DiceBot diceBot, BotMain botMain, MessageAddress address, GameSession session, string[] terms, string[] rawTerms)
         {
             string messageString = "";
             if(terms.Contains("addbet") || terms.Contains("bet"))
             {
                 int betAmount = Utils.GetNumberFromInputs(terms);
-                RouletteBetData rouletteBet = GetBetFromTerms(character, terms, betAmount, out messageString);
+
+
+                RouletteBetData rouletteBet = GetBetFromTerms(address.character, terms, betAmount, out messageString);
                 if (rouletteBet == null)
                 {
-                    messageString = "Error: roulette bet not found. " + messageString;
+                    messageString = "Failed: roulette bet not found in command. " + messageString;
+                }
+                else if (session.Players.Count(a => a.ToLower() == address.character.ToLower()) == 0)
+                {
+                    messageString = "Failed: " + TextFormat.GetCharacterUserTags(address.character) + " has not joined the game, so they cannot add an additional bet.";
                 }
                 else
                 {
@@ -547,7 +554,7 @@ namespace FChatDicebot.DiceFunctions
 
                     if (addDataSuccess)
                     {
-                        messageString = "Added bet for " + character;
+                        messageString = "Added bet for " + address.character;
                     }
                     else
                     {
@@ -555,6 +562,7 @@ namespace FChatDicebot.DiceFunctions
                     }
                 }
             }
+            else { messageString += "Failed: No such command exists for " + GetGameName(); }
 
             return messageString;
         }
@@ -570,7 +578,7 @@ namespace FChatDicebot.DiceFunctions
 
         public string GetBetString()
         {
-            return Utils.GetCharacterUserTags(characterName) + ": " + amount + " on " + Utils.GetRouletteBetString(bet, specificNumberBet);
+            return TextFormat.GetCharacterUserTags(characterName) + ": " + amount + " on " + Utils.GetRouletteBetString(bet, specificNumberBet);
         }
     }
 

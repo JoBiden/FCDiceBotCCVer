@@ -1,4 +1,5 @@
-﻿using System;
+﻿using FChatDicebot.Model;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -102,7 +103,7 @@ namespace FChatDicebot.DiceFunctions
 
                 foreach (string s in currentPlayerNames)
                 {
-                    DiceRoll d = new DiceRoll(s, session.ChannelId, diceBot) { DiceRolled = 1, DiceSides = 100 };
+                    DiceRoll d = new DiceRoll(new MessageAddress(session.GetMessageAddress(), s), botMain) { DiceRolled = 1, DiceSides = 100 };
 
                     d.Roll(r);
 
@@ -123,10 +124,10 @@ namespace FChatDicebot.DiceFunctions
 
                     if(!addedAntes && session.Ante > 0)
                     {
-                        betstring = diceBot.BetChips(currentPlayerNames[i], session.ChannelId, session.Ante, false) + "\n";
+                        betstring = diceBot.BetChips(new MessageAddress(session.GetMessageAddress(), currentPlayerNames[i]), session.Ante, false) + "\n";
                     }
 
-                    string thisPlayerRollString = betstring + "[i]" + Utils.GetCharacterUserTags(currentPlayerNames[i]) + "[/i] rolling: " + finishedRolls[i].ResultString();
+                    string thisPlayerRollString = betstring + "[i]" + TextFormat.GetCharacterUserTags(currentPlayerNames[i]) + "[/i] rolling: " + finishedRolls[i].ResultString();
                     outputString += thisPlayerRollString;
 
                     if (highestRoll < finishedRolls[i].Total)
@@ -173,10 +174,10 @@ namespace FChatDicebot.DiceFunctions
                     string finishingPrizeString = "";
                     if(session.Ante > 0)
                     {
-                        finishingPrizeString = "\n" + diceBot.ClaimPot(playerNameWinner, session.ChannelId, 1);//false, false);
+                        finishingPrizeString = "\n" + diceBot.ClaimPot(new MessageAddress(session.GetMessageAddress(), playerNameWinner), 1);//false, false);
                     }
 
-                    finishingPrizeString += "\n" + diceBot.AddChips(playerNameWinner, session.ChannelId, 1000, false);
+                    finishingPrizeString += "\n" + diceBot.AddChips(new MessageAddress(session.GetMessageAddress(), playerNameWinner), 1000, false);
 
                     smallPrizePlayerNames.Remove(playerNameWinner);
 
@@ -187,13 +188,13 @@ namespace FChatDicebot.DiceFunctions
                         {
                             if (pName != playerNameWinner)
                             {
-                                finishingPrizeString += "\n" + diceBot.AddChips(pName, session.ChannelId, 200, false);
+                                finishingPrizeString += "\n" + diceBot.AddChips(new MessageAddress(session.GetMessageAddress(), pName), 200, false);
                             }
                         }
                     }
 
 
-                    outputString += "\n[b]" + Utils.GetCharacterUserTags(playerNameWinner) + " wins![/b]" + finishingPrizeString;
+                    outputString += "\n[b]" + TextFormat.GetCharacterUserTags(playerNameWinner) + " wins![/b]" + finishingPrizeString;
                 }
             }
 
@@ -207,7 +208,7 @@ namespace FChatDicebot.DiceFunctions
 
         }
 
-        public string IssueGameCommand(DiceBot diceBot, BotMain botMain, string character, string channel, GameSession session, string[] terms, string[] rawTerms)
+        public string IssueGameCommand(DiceBot diceBot, BotMain botMain, MessageAddress address, GameSession session, string[] terms, string[] rawTerms)
         {
             return GetGameName() + " has no valid GameCommands";
         }

@@ -7,6 +7,7 @@ using FChatDicebot.BotCommands.Base;
 using FChatDicebot.SavedData;
 using Newtonsoft.Json;
 using FChatDicebot.DiceFunctions;
+using FChatDicebot.Model;
 
 namespace FChatDicebot.BotCommands
 {
@@ -21,26 +22,26 @@ namespace FChatDicebot.BotCommands
             LockCategory = CommandLockCategory.ChannelScores;
         }
 
-        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
+        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, MessageAddress address, UserGeneratedCommand command)
         {
-            ChannelSettings thisChannel = bot.GetChannelSettings(channel);
+            ChannelSettings thisChannel = bot.GetChannelSettings(address);
 
             if (thisChannel.AllowGames)
             {
                 string messageString = "";
 
-                IGame gametype = commandController.GetGameTypeForCommand(bot.DiceBot, channel, terms, out messageString);
+                IGame gametype = commandController.GetGameTypeForCommand(bot.DiceBot, address, terms, out messageString);
 
                 bool keepSession = terms.Contains("keepsession") || terms.Contains("keepgame");
                 bool endSession = terms.Contains("endsession") || terms.Contains("endgame");
 
                 if(gametype != null) //gametype can be set above after being null so this should no longer be 'else'
                 {
-                    GameSession sesh = bot.DiceBot.GetGameSession(channel, gametype);
+                    GameSession sesh = bot.DiceBot.GetGameSession(address, gametype);
 
                     if (sesh != null)
                     {
-                        ChipPile potChips = bot.DiceBot.GetChipPile(DiceBot.PotPlayerAlias, channel);
+                        ChipPile potChips = bot.DiceBot.GetChipPile( new MessageAddress() { character = DiceBot.PotPlayerAlias, channel = address.channel, guild = address.guild });
 
                         if(sesh.Ante > 0 && potChips.Chips > 0)
                         {
@@ -54,20 +55,44 @@ namespace FChatDicebot.BotCommands
                         {
                             messageString = "Cannot start " + sesh.CurrentGame.GetGameName() + " because the game is already in progress. Please finish the current round first.";
                         }
-                        else if (sesh.CurrentGame.GetType() == typeof(Roulette) && !bot.DiceBot.CountdownFinishedOrNotStarted(channel, sesh.CurrentGame.GetGameName()))
+                        else if (sesh.CurrentGame.GetType() == typeof(Roulette) && (thisChannel.LastRouletteSpinTime + thisChannel.SinglePlayerGameCooldownSeconds - DoubleTime.GetCurrentTimestampSeconds()) > 0)
                         {
-                            double secondsRemain = bot.DiceBot.GetSecondsRemainingOnCountdownTimer(channel, gametype.GetGameName());
-
-                            messageString = "Cannot start " + sesh.CurrentGame.GetGameName() + " because the starting countdown is not yet finished. [b]" + secondsRemain.ToString("N3") + " seconds [/b]remain.";
+                            double secondsRemain = thisChannel.LastRouletteSpinTime + thisChannel.SinglePlayerGameCooldownSeconds - DoubleTime.GetCurrentTimestampSeconds();
+                            messageString = "Cannot start " + sesh.CurrentGame.GetGameName() + " because the starting countdown is not yet finished. [b]" + secondsRemain.ToString("N0") + " seconds [/b]remain.";
                         }
+                        else if (sesh.CurrentGame.GetType() == typeof(Blackjack) && (thisChannel.LastBlackjackGameTime + thisChannel.SinglePlayerGameCooldownSeconds - DoubleTime.GetCurrentTimestampSeconds()) > 0)
+                        {
+                            double secondsRemain = thisChannel.LastBlackjackGameTime + thisChannel.SinglePlayerGameCooldownSeconds - DoubleTime.GetCurrentTimestampSeconds();
+                            messageString = "Cannot start " + sesh.CurrentGame.GetGameName() + " because the starting countdown is not yet finished. [b]" + secondsRemain.ToString("N0") + " seconds [/b]remain.";
+                        }
+                        //else if (sesh.CurrentGame.GetType() == typeof(Roulette) && !bot.DiceBot.CountdownFinishedOrNotStarted(address, sesh.CurrentGame.GetGameName()))
+                        //{
+                        //    double secondsRemain = bot.DiceBot.GetSecondsRemainingOnCountdownTimer(address, gametype.GetGameName());
+
+                        //    messageString = "Cannot start " + sesh.CurrentGame.GetGameName() + " because the starting countdown is not yet finished. [b]" + secondsRemain.ToString("N3") + " seconds [/b]remain.";
+                        //}
                         else
                         {
                             messageString = sesh.CurrentGame.GetStartingDisplay();
-                            messageString += "\n" + bot.DiceBot.StartGame(channel, characterName, gametype, bot, keepSession, endSession);
+                            messageString += "\n" + bot.DiceBot.StartGame(address, address.character, gametype, bot, keepSession, endSession);
 
-                            if (gametype.GetMinimumMsBetweenGames() > 0)
+                            //if (gametype.GetMinimumMsBetweenGames() > 0)
+                            //{
+                                //int minimumMs = thisChannel.SinglePlayerGameCooldownSeconds * 1000;
+                                //bot.DiceBot.StartCountdownTimer(address, gametype.GetGameName(), minimumMs);// gametype.GetMinimumMsBetweenGames());
+                            //}
+
+                            if (gametype.GetType() == typeof(Roulette))
                             {
-                                bot.DiceBot.StartCountdownTimer(channel, gametype.GetGameName(), characterName, gametype.GetMinimumMsBetweenGames());
+                                thisChannel.LastRouletteSpinTime = DoubleTime.GetCurrentTimestampSeconds();
+                            }
+                            else if (gametype.GetType() == typeof(Blackjack))
+                            {
+                                thisChannel.LastBlackjackGameTime = DoubleTime.GetCurrentTimestampSeconds();
+                            }
+                            else if (gametype.GetType() == typeof(DungeonDelve))
+                            {
+                                thisChannel.LastDungeonDelveTime = DoubleTime.GetCurrentTimestampSeconds();
                             }
 
                             commandController.SaveChipsToDisk("StartGame");
@@ -79,11 +104,11 @@ namespace FChatDicebot.BotCommands
                     }
                 }
 
-                bot.SendMessageInChannel(messageString, channel);
+                bot.SendMessageInChannel(messageString, address);
             }
             else
             {
-                bot.SendMessageInChannel(Name + " is currently not allowed in this channel under " + Utils.GetCharacterUserTags(DiceBot.DiceBotCharacter) + "'s settings for this channel.", channel);
+                bot.SendMessageInChannel(Name + " is currently not allowed in this channel under " + TextFormat.GetCharacterUserTags(DiceBot.DiceBotCharacter) + "'s settings for this channel.", address);
             }
         }
     }

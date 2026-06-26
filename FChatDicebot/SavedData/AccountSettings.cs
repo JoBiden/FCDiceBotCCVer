@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -14,7 +14,12 @@ namespace FChatDicebot.SavedData
         public string AccountPassword;
         public string CharacterName;
         public string CName;
+        public string DiscordBotToken;
+        public string MonsterGeneratorPresharedKey;
         public List<string> AdminCharacters;
         public List<ChannelCharacter> TrustedCharacters;
+        public List<string> AllowedChessEiconChannels;
+
+        public List<string> FullCosmeticsUnlockCharacters;
     }
 }

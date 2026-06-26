@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using FChatDicebot.BotCommands.Base;
 using FChatDicebot.DiceFunctions;
+using FChatDicebot.Model;
 
 namespace FChatDicebot.BotCommands
 {
@@ -19,21 +20,43 @@ namespace FChatDicebot.BotCommands
             LockCategory = CommandLockCategory.NONE;
         }
 
-        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
+        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, MessageAddress address, UserGeneratedCommand command)
         {
             int numberCharacters = 0;
-            if (terms.Length > 0)
-            {
-                int.TryParse(terms[0], out numberCharacters);
-            }
+            string output = "";
 
-            if (!commandController.MessageCameFromChannel(channel))
+            if (terms.Length > 2)
             {
-                bot.SendPrivateMessage("[b][ADMIN] [/b]" + Utils.GetStringOfNLength(numberCharacters), characterName);
+                output = "Failed: requires exactly 1 or 2 terms [# chars] [char to duplicate or nothing]";
             }
             else
             {
-                bot.SendMessageInChannel("[b][ADMIN] [/b]" + Utils.GetStringOfNLength(numberCharacters), channel);
+                if (terms.Length > 0)
+                {
+                    int.TryParse(terms[0], out numberCharacters);
+                }
+
+                if (numberCharacters <= 0)
+                {
+                    output = "Failed: requires exactly 1 or 2 terms [# chars] [char to duplicate or nothing]";
+                }
+                else if (terms.Length < 2)
+                {
+                    output = "[b][ADMIN] [/b]" + Utils.GetStringOfNLength(numberCharacters);
+                }
+                else if (terms.Length == 2)
+                {
+                    output = "[b][ADMIN] [/b]" + Utils.GetStringOfNLength(numberCharacters, terms[1]);
+                }
+            }
+
+            if (!commandController.MessageCameFromChannel(address))
+            {
+                bot.SendPrivateMessage(output, address);
+            }
+            else
+            {
+                bot.SendMessageInChannel(output, address);
             }
         }
     }

@@ -1,5 +1,6 @@
 using System;
 using FChatDicebot.BotCommands.Base;
+using FChatDicebot.Model;
 
 namespace FChatDicebot.BotCommands
 {
@@ -28,10 +29,12 @@ namespace FChatDicebot.BotCommands
             LockCategory = CommandLockCategory.NONE;
         }
 
-        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
+        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, MessageAddress address, UserGeneratedCommand command)
         {
+            string characterName = address.character;
+            string channel = address.channel;
             ChateauFeedback feedback = new ChateauFeedback();
-            feedback.Run(bot, commandController, rawTerms, terms, characterName, channel, command);
+            feedback.Run(bot, commandController, rawTerms, terms, address, command);
         }
     }
 }

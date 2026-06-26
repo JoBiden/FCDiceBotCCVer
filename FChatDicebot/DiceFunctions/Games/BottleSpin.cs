@@ -1,4 +1,5 @@
-﻿using System;
+﻿using FChatDicebot.Model;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -54,12 +55,12 @@ namespace FChatDicebot.DiceFunctions
 
         public string GetStartingDisplay()
         {
-            return "[eicon]dbbottle1[/eicon][eicon]dbbottle2[/eicon]";
+            return FChatDicebot.TextFormat.Emoji("dbbottle1") + FChatDicebot.TextFormat.Emoji("dbbottle2");
         }
 
         public string GetEndingDisplay()
         {
-            return "";//Round finished. Thank you for playing Bottle Spin using [user]Dice Bot[/user]!";
+            return "";
         }
 
         public string GameStatus(GameSession session)
@@ -148,10 +149,10 @@ namespace FChatDicebot.DiceFunctions
                     break;
             }
 
-            string outputString = "[color=yellow]Spinning...[/color]\nThe bottle " + spinText + " and " + faceText + " " + Utils.GetCharacterUserTags(selectedPlayer) + "!";
+            string outputString = "[color=yellow]Spinning...[/color]\nThe bottle " + spinText + " and " + faceText + " " + TextFormat.GetCharacterUserTags(selectedPlayer) + "!";
 
             session.State = DiceFunctions.GameState.Finished;
-            
+
             return outputString;
         }
 
@@ -162,15 +163,15 @@ namespace FChatDicebot.DiceFunctions
 
         public string GetLastPlayerSpun(GameSession session)
         {
-            return string.IsNullOrEmpty(session.RandomPlayerQueueData.LastPlayerSpun) ? "No players have been spun yet." : "The last player spun was " + Utils.GetCharacterUserTags(session.RandomPlayerQueueData.LastPlayerSpun) + ".";
+            return string.IsNullOrEmpty(session.RandomPlayerQueueData.LastPlayerSpun) ? "No players have been spun yet." : "The last player spun was " + TextFormat.GetCharacterUserTags(session.RandomPlayerQueueData.LastPlayerSpun) + ".";
         }
 
-        public string IssueGameCommand(DiceBot diceBot, BotMain botMain, string character, string channel, GameSession session, string[] terms, string[] rawTerms)
+        public string IssueGameCommand(DiceBot diceBot, BotMain botMain, MessageAddress address, GameSession session, string[] terms, string[] rawTerms)
         {
             string returnString = "";
             if (terms.Contains("lastspin") || terms.Contains("lastspun"))
                 returnString = GetLastPlayerSpun(session);
-            else { returnString += "Failed: No such command exists"; }
+            else { returnString += "Failed: No such command exists for " + GetGameName(); }
 
             return returnString;
         }

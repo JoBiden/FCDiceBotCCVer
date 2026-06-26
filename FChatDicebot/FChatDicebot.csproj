@@ -41,11 +41,32 @@
     <Reference Include="AWSSDK.SecurityToken, Version=3.3.0.0, Culture=neutral, PublicKeyToken=885c28607f98e604, processorArchitecture=MSIL">
       <HintPath>..\packages\AWSSDK.SecurityToken.3.7.103.21\lib\net45\AWSSDK.SecurityToken.dll</HintPath>
     </Reference>
+    <Reference Include="Discord.Net.Commands, Version=3.14.1.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Discord.Net.Commands.3.14.1\lib\net461\Discord.Net.Commands.dll</HintPath>
+    </Reference>
+    <Reference Include="Discord.Net.Core, Version=3.14.1.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Discord.Net.Core.3.14.1\lib\net461\Discord.Net.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="Discord.Net.Interactions, Version=3.14.1.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Discord.Net.Interactions.3.14.1\lib\net461\Discord.Net.Interactions.dll</HintPath>
+    </Reference>
+    <Reference Include="Discord.Net.Rest, Version=3.14.1.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Discord.Net.Rest.3.14.1\lib\net461\Discord.Net.Rest.dll</HintPath>
+    </Reference>
+    <Reference Include="Discord.Net.Webhook, Version=3.14.1.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Discord.Net.Webhook.3.14.1\lib\netstandard2.0\Discord.Net.Webhook.dll</HintPath>
+    </Reference>
+    <Reference Include="Discord.Net.WebSocket, Version=3.14.1.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Discord.Net.WebSocket.3.14.1\lib\net461\Discord.Net.WebSocket.dll</HintPath>
+    </Reference>
     <Reference Include="DnsClient, Version=1.7.0.0, Culture=neutral, PublicKeyToken=4574bb5573c51424, processorArchitecture=MSIL">
       <HintPath>..\packages\DnsClient.1.7.0\lib\net471\DnsClient.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Bcl.AsyncInterfaces, Version=7.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.Bcl.AsyncInterfaces.7.0.0\lib\net462\Microsoft.Bcl.AsyncInterfaces.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Extensions.DependencyInjection.Abstractions, Version=6.0.0.0, Culture=neutral, PublicKeyToken=adb9793829ddae60, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Extensions.DependencyInjection.Abstractions.6.0.0\lib\net461\Microsoft.Extensions.DependencyInjection.Abstractions.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Extensions.Logging.Abstractions, Version=7.0.0.1, Culture=neutral, PublicKeyToken=adb9793829ddae60, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.Extensions.Logging.Abstractions.7.0.1\lib\net462\Microsoft.Extensions.Logging.Abstractions.dll</HintPath>
@@ -78,8 +99,17 @@
     <Reference Include="System.Buffers, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>..\packages\System.Buffers.4.5.1\lib\net461\System.Buffers.dll</HintPath>
     </Reference>
+    <Reference Include="System.Collections.Immutable, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Collections.Immutable.6.0.0\lib\net461\System.Collections.Immutable.dll</HintPath>
+    </Reference>
     <Reference Include="System.ComponentModel.Composition" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Interactive.Async, Version=6.0.0.0, Culture=neutral, PublicKeyToken=94bc3704cddfc263, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Interactive.Async.6.0.1\lib\netstandard2.0\System.Interactive.Async.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Linq.Async, Version=6.0.0.0, Culture=neutral, PublicKeyToken=94bc3704cddfc263, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Linq.Async.6.0.1\lib\netstandard2.0\System.Linq.Async.dll</HintPath>
+    </Reference>
     <Reference Include="System.IO, Version=4.1.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>..\packages\System.IO.4.3.0\lib\net462\System.IO.dll</HintPath>
       <Private>True</Private>
@@ -101,6 +131,9 @@
       <HintPath>..\packages\System.Runtime.4.3.1\lib\net462\System.Runtime.dll</HintPath>
       <Private>True</Private>
       <Private>True</Private>
+    </Reference>
+    <Reference Include="System.Reactive, Version=6.0.0.0, Culture=neutral, PublicKeyToken=94bc3704cddfc263, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Reactive.6.0.0\lib\netstandard2.0\System.Reactive.dll</HintPath>
     </Reference>
     <Reference Include="System.Runtime.CompilerServices.Unsafe, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>..\packages\System.Runtime.CompilerServices.Unsafe.6.0.0\lib\net461\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
@@ -141,6 +174,9 @@
     </Reference>
     <Reference Include="System.Threading.Tasks.Extensions, Version=4.2.0.1, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>..\packages\System.Threading.Tasks.Extensions.4.5.4\lib\net461\System.Threading.Tasks.Extensions.dll</HintPath>
+    </Reference>
+    <Reference Include="System.ValueTuple, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.ValueTuple.4.5.0\lib\net461\System.ValueTuple.dll</HintPath>
     </Reference>
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
@@ -525,6 +561,90 @@
     <Compile Include="SavedData\StartingChannel.cs" />
     <Compile Include="Tests.cs" />
     <Compile Include="Utils.cs" />
+    <Compile Include="BotCommands\AuditChannels.cs" />
+    <Compile Include="BotCommands\ChateauBalance.cs" />
+    <Compile Include="BotCommands\ChateauBio.cs" />
+    <Compile Include="BotCommands\ChateauCommands.cs" />
+    <Compile Include="BotCommands\ChateauDress.cs" />
+    <Compile Include="BotCommands\ChateauHire.cs" />
+    <Compile Include="BotCommands\ChateauHug.cs" />
+    <Compile Include="BotCommands\ChateauIdentifiersAlias.cs" />
+    <Compile Include="BotCommands\ChateauMoney.cs" />
+    <Compile Include="BotCommands\ChateauStats.cs" />
+    <Compile Include="BotCommands\DeleteJobsList.cs" />
+    <Compile Include="BotCommands\Directory.cs" />
+    <Compile Include="BotCommands\GenerateMonster.cs" />
+    <Compile Include="BotCommands\JobsListJson.cs" />
+    <Compile Include="BotCommands\Lizard.cs" />
+    <Compile Include="BotCommands\MyDecks.cs" />
+    <Compile Include="BotCommands\RemoveAllChipsOverAmount.cs" />
+    <Compile Include="BotCommands\SaveJobsList.cs" />
+    <Compile Include="BotCommands\SetChannelDescription.cs" />
+    <Compile Include="BotCommands\ShowChannelsJoined.cs" />
+    <Compile Include="BotCommands\ShowLastRoll.cs" />
+    <Compile Include="BotCommands\ShowMonster.cs" />
+    <Compile Include="BotCommands\ShowPotion.cs" />
+    <Compile Include="BotCommands\ShowPotionMenu.cs" />
+    <Compile Include="BotCommands\ShowPotionPrices.cs" />
+    <Compile Include="BotCommands\Spock.cs" />
+    <Compile Include="BotCommands\TestDiscordEmote.cs" />
+    <Compile Include="BotCommands\Timeout.cs" />
+    <Compile Include="BotCommands\UnlockDiceAll.cs" />
+    <Compile Include="BotCommands\ViewStartupChannels.cs" />
+    <Compile Include="ChannelsAuditSession.cs" />
+    <Compile Include="DiceFunctions\Games\AlphaRoyale.cs" />
+    <Compile Include="DiceFunctions\Games\Chess.cs" />
+    <Compile Include="DiceFunctions\Games\CustomChessEngine\Board.cs" />
+    <Compile Include="DiceFunctions\Games\CustomChessEngine\ChessEngine.cs" />
+    <Compile Include="DiceFunctions\Games\CustomChessEngine\Evaluation.cs" />
+    <Compile Include="DiceFunctions\Games\CustomChessEngine\GameController.cs" />
+    <Compile Include="DiceFunctions\Games\CustomChessEngine\MatchRecording.cs" />
+    <Compile Include="DiceFunctions\Games\CustomChessEngine\Move.cs" />
+    <Compile Include="DiceFunctions\Games\CustomChessEngine\MoveGenerator.cs" />
+    <Compile Include="DiceFunctions\Games\CustomChessEngine\Piece.cs" />
+    <Compile Include="DiceFunctions\Games\CustomChessEngine\Ruleset.cs" />
+    <Compile Include="DiceFunctions\Games\CustomChessEngine\Search.cs" />
+    <Compile Include="DiceFunctions\Games\CustomChessEngine\TranspositionTable.cs" />
+    <Compile Include="DiceFunctions\Games\CustomChessEngine\Zobrist.cs" />
+    <Compile Include="DiceFunctions\Games\DungeonDelve.cs" />
+    <Compile Include="DiceFunctions\JobEntry.cs" />
+    <Compile Include="DiceFunctions\JobsList.cs" />
+    <Compile Include="DiceFunctions\TierEntry.cs" />
+    <Compile Include="DoubleTime.cs" />
+    <Compile Include="Model\CDSclient.cs" />
+    <Compile Include="Model\CDSserver.cs" />
+    <Compile Include="Model\ChatMessage.cs" />
+    <Compile Include="Model\DiscordSocketMessage.cs" />
+    <Compile Include="Model\GenerateMonsterRequest.cs" />
+    <Compile Include="Model\MGWebRequest.cs" />
+    <Compile Include="Model\MessageAddress.cs" />
+    <!-- Incomplete MonsterGenerator subsystem: these files live in the
+         MonsterGenerator2_Net47.Models.Data namespace and reference model types
+         (Alignment, Race, RandomGenerationTable, AbilityModel, FeatModel, etc.) that
+         were never ported into this repo, so they cannot compile. Nothing outside this
+         folder references them (the !monsterize command uses the Chateau interaction
+         system, not this code). Excluded from the build to unblock compilation; files
+         retained on disk so the feature can be completed later by adding the missing
+         MonsterGenerator2_Net47.Models definitions and re-enabling these Compile entries.
+    <Compile Include="Model\MonsterGenerator\Data\Alignments.cs" />
+    <Compile Include="Model\MonsterGenerator\Data\ChallengeRatings.cs" />
+    <Compile Include="Model\MonsterGenerator\Data\Feats.cs" />
+    <Compile Include="Model\MonsterGenerator\Data\MonsterAbilities.cs" />
+    <Compile Include="Model\MonsterGenerator\Data\MonsterAttacks.cs" />
+    <Compile Include="Model\MonsterGenerator\Data\MonsterBodyTypes.cs" />
+    <Compile Include="Model\MonsterGenerator\Data\MonsterOrganizations.cs" />
+    <Compile Include="Model\MonsterGenerator\Data\MonsterSizeCategories.cs" />
+    <Compile Include="Model\MonsterGenerator\Data\MonsterSubtypes.cs" />
+    <Compile Include="Model\MonsterGenerator\Data\MonsterTypes.cs" />
+    <Compile Include="Model\MonsterGenerator\Data\Races.cs" />
+    <Compile Include="Model\MonsterGenerator\Data\Skills.cs" />
+    <Compile Include="Model\MonsterGenerator\MonsterGeneratorModel.cs" />
+    <Compile Include="Model\MonsterGenerator\PrintMonster.cs" />
+    -->
+    <Compile Include="SavedData\Base\ICustomUserContent.cs" />
+    <Compile Include="SavedData\SavedJobsList.cs" />
+    <Compile Include="ShaUtility.cs" />
+    <Compile Include="TextFormat.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

@@ -25,8 +25,10 @@ namespace FChatDicebot.BotCommands
             LockCategory = CommandLockCategory.NONE;
         }
 
-        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
+        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, MessageAddress address, UserGeneratedCommand command)
         {
+            string characterName = address.character;
+            string channel = address.channel;
             string identifierType = "training";
             string recipient = commandController.GetUserNameFromCommandTerms(rawTerms);
             string training = commandController.GetIdentifierFromCommandTerms(rawTerms, identifierType);

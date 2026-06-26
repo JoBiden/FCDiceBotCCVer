@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using FChatDicebot.BotCommands.Base;
 using FChatDicebot.DiceFunctions;
+using FChatDicebot.Model;
 
 namespace FChatDicebot.BotCommands
 {
@@ -19,7 +20,7 @@ namespace FChatDicebot.BotCommands
             LockCategory = CommandLockCategory.NONE;
         }
 
-        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
+        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, MessageAddress address, UserGeneratedCommand command)
         {
             int numberRolled = Utils.GetNumberFromInputs(terms);
 
@@ -31,16 +32,16 @@ namespace FChatDicebot.BotCommands
             }
             else
             {
-                resultString = bot.DiceBot.RollFitD(numberRolled, channel, characterName);
+                resultString = bot.DiceBot.RollFitD(numberRolled, address);
             }
 
-            if (!commandController.MessageCameFromChannel(channel))
+            if (!commandController.MessageCameFromChannel(address))
             {
-                bot.SendPrivateMessage(resultString, characterName);
+                bot.SendPrivateMessage(resultString, address);
             }
             else
             {
-                bot.SendMessageInChannel(resultString, channel);
+                bot.SendMessageInChannel(resultString, address);
             }
         }
     }

@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using FChatDicebot.BotCommands.Base;
 using FChatDicebot.DiceFunctions;
+using FChatDicebot.Model;
 using FChatDicebot.SavedData;
 using Newtonsoft.Json;
 
@@ -21,11 +22,11 @@ namespace FChatDicebot.BotCommands
             LockCategory = CommandLockCategory.NONE;
         }
 
-        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
+        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, MessageAddress address, UserGeneratedCommand command)
         {
             System.Random r = new Random();
             PotionGenerator p = bot.DiceBot.PotionGenerator;
-            var all = p.GetAllEnchantments(bot, false, channel);
+            var all = p.GetAllEnchantments(bot, false, address);
             var common = p.GetCommonEnchantments();
             var words = p.GetTriggerWords();
 

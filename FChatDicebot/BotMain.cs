@@ -10,6 +10,9 @@ using Newtonsoft.Json;
 using FChatDicebot.DiceFunctions;
 using FChatDicebot.SavedData;
 using System.IO;
+using Discord.Net;
+using Discord.WebSocket;
+using Discord;
 
 namespace FChatDicebot
 {
@@ -25,7 +28,10 @@ namespace FChatDicebot
     public const bool _testVersion = false;
 #endif
         public const bool _returnAllRecievedChatMessagesFromChannels = false;
-        public const string Version = "0.9";
+        public const string Version = "1.62b";
+        public RunMode RunMode = RunMode.FlistPlusDiscord;// RunMode.FlistPlusDiscord; //RunMode.FlistPlusDiscord;// RunMode.FListOnly;// RunMode.DiscordOnly;
+
+        public const ChatRoom ChatRoom = FChatDicebot.ChatRoom.FChat; //currently little effect
 
         public const string FileFolder = "C:\\BotData\\DiceBot";
         public const string LogsFolder = "C:\\BotData\\DiceBot\\logs";
@@ -36,10 +42,12 @@ namespace FChatDicebot
         public const string SavedSlotsFileName = "saved_slots.txt";
         public const string SavedDecksFileName = "saved_decks.txt";
         public const string SavedPotionsFileName = "saved_potions.txt";
+        public const string SavedJobsListFileName = "saved_jobslists.txt";
         public const string ChannelSettingsFileName = "channel_settings.txt";
         public const string CharacterDataFileName = "character_data.txt";
         public const string VcChipOrdersFileName = "vc_chiporder_data.txt";
         public const string LogFileName = "outputlog.txt";
+        public const string ChannelAuditLogFileName = "channelauditlog.txt";
         public const string SavedChipsFileName = "saved_chipPiles.txt";
         public const string ChipsCouponsFileName = "coupons_active.txt";
         public const string ChipsCouponsInactiveFileName = "coupons_inactive.txt";
@@ -63,8 +71,16 @@ namespace FChatDicebot
         public const string KowloonChannelId = "adh-62144c7343711c3b838f";
         public const string SevenMinutesFateRoomId = "adh-0d4edcedd6eb4839f03b";
         public const string SuitenGuFateRoomId = "adh-f775cee8ae43d382eca8";
+        public const string SonicHeroesDarkestHourRoomId = "adh-050daa842918c249d1b4";
         public const string VelvetCuffBotName = "VelvetCuff";
+        public const string DiscordPmGuild = "_discordpm";
+        public const string CurrencyPlaceholder = "[CURRENCY]";
+        public const string CurrencyPlaceholderCapital = "[CURRENCYCAP]";
+        public const string DefaultCurrencyName = "chip";
+        public const string DefaultCurrencyNamePlural = "chips";
 
+        private static DiscordSocketClient _client;
+        private static List<SocketUser> _discordUsers;
         public BotWebRequests WebRequests;
         public VelvetcuffConnection VelvetcuffConnection;
         public BotMessageQueue MessageQueue;
@@ -76,6 +92,7 @@ namespace FChatDicebot
         public List<SavedSlotsSetting> SavedSlots;
         public List<SavedDeck> SavedDecks;
         public List<SavedPotion> SavedPotions;
+        public List<SavedJobsList> SavedJobsLists;
         public List<ChannelSettings> SavedChannelSettings;
         public List<ChipsCoupon> ChipsCoupons;
 
@@ -88,8 +105,12 @@ namespace FChatDicebot
         public const int MaximumRollTriggersPerEntry = 4;
         public const int MaximumSavedTablesPerCharacter = 4;
         public const int MaximumSavedPotionsPerCharacter = 40;//6;
+        public const int MaximumSavedJobListsPerCharacter = 3;//6;
+        public const int MaximumJobTiers = 10;
+        public const int MaximumSavedJobEntries = 100;
         public const int MaximumCharactersPotionDescription = 1000; //500 1.42c
         public const int MaximumCharactersPotionName = 100; //50 1.42c
+        public const int MaximumCharactersEiconName = 50; //50 1.42c
         public const int MaximumSavedEntriesPerTable = 50;
         public const int MaximumCardsInDeck = 200;
         public const int ReconnectTimeMs = 120000; //2 minutes reconnect time, was 5 in 1.42c
@@ -97,31 +118,42 @@ namespace FChatDicebot
         public const int SlotsSpinCooldownSeconds = 300; //5 minutes
         public const int LuckForecastCooldownSeconds = 3600; //60 minutes
         public const int WorkCooldownSeconds = 3600 * 20; //20 hours
+        public const int DungeonDelveCooldownSeconds = 60 * 30; //30 minutes
         public const int MaximumWorkMultiplier = 100000;
         public const int MaximumPotionCost = 100000000;
         public const int MaximumWorkTierRange = 1000;
         public const int MaximumWorkBaseAmount = 1000;
+        public const int MaximumSettingStringCharacters = 1000;
 
         public const int GreetCharacterCooldownSeconds = 7200;// 60 * 60 * 2;// Minutes = 120;
 
-        public const int MaximumCharsInMessage = 11000;
+        public const int MaximumCharsInMessageChannel = 4050; //maximum for channel message (4096 didn't work) (doesn't seem to count special characters like ♥♦♣ properly)
+        public const int MaximumCharsInMessagePrivate = 49050;
 
-        public double LoginTime;
+        public double FListLoginTime;
+        public double DiscordLoginTime;
         public const int TickTimeMiliseconds = 200;
         public int MinimumTimeBetweenMessages = 1500; //minimum 1 second between messages for FList bot rules
         public int ReconnectTimer = 0;
         public const double CheckinIntervalSeconds = 20;
+        public const double ChannelOpsRefreshSeconds = 60 * 60;
         public List<string> ChannelsJoined = new List<string>();
         public List<UserGeneratedCommand> WaitingChannelOpRequests = new List<UserGeneratedCommand>();
         public List<BuyCommand> WaitingBuyCommands = new List<BuyCommand>();
 
+        public object MessageQueueLock;
+
         public string LastMessageRecieved1 = "";
         public string LastMessageRecieved2 = "";
+        ChannelsAuditSession CurrentChannelsAuditSession;
 
         public delegate void BotCommandDelegate();
 
-        public void Run()
+        public void Run(RunMode runMode)
         {
+            if(runMode != RunMode.Default)
+                RunMode = runMode;
+
             BotCommandController = new BotCommandController(this);
 
             MonDB.Initialize("mongodb://localhost:27017", "ChateauDb");
@@ -142,17 +174,30 @@ namespace FChatDicebot
 
             LoadSavedDecks();
 
+            LoadJobsLists();
+
             MessageQueue = new BotMessageQueue();
             FutureMessages = new List<BotFutureMessage>();
+            MessageQueueLock = new object();
             WebRequests = new BotWebRequests();
+            _discordUsers = new List<SocketUser>();
             DiceBot = new DiceFunctions.DiceBot(this);
             VelvetcuffConnection = new FChatDicebot.VelvetcuffConnection(WebRequests, AccountSettings);
 
-            System.Threading.Thread th = new Thread(RunLoop);
-            th.IsBackground = true;
-            th.Start();
+            if(RunMode == RunMode.FListOnly || RunMode == RunMode.FlistPlusDiscord)
+            {
+                System.Threading.Thread th = new Thread(RunLoopFList);
+                th.IsBackground = true;
+                th.Start();
+            }
+            if (RunMode == RunMode.DiscordOnly || RunMode == RunMode.FlistPlusDiscord)
+            {
+                System.Threading.Thread th2 = new Thread(RunLoopDiscord);
+                th2.IsBackground = true;
+                th2.Start();
+            }
         }
-
+        #region load data
         private void LoadAccountSettings()
         {
             string settingsFile = AccountSettingsFileName;
@@ -243,6 +288,37 @@ namespace FChatDicebot
             catch (System.Exception exc)
             {
                 Console.WriteLine("Exception: Failed to load LoadSavedTables for " + path + "\n" + exc.ToString());
+            }
+        }
+
+        private void LoadJobsLists()
+        {
+            SavedJobsLists = new List<SavedJobsList>();
+            string path = Utils.GetTotalFileName(FileFolder, SavedJobsListFileName);
+            try
+            {
+                VerifyDirectoryExists();
+
+                if (File.Exists(path))
+                {
+                    string fileText = File.ReadAllText(path, Encoding.ASCII);
+
+                    if (_debug)
+                        Console.WriteLine("read " + path);
+
+                    SavedJobsLists = JsonConvert.DeserializeObject<List<SavedJobsList>>(fileText);
+
+                    if (_debug)
+                        Console.WriteLine("loaded JobsLists successfully.");
+                }
+                else
+                {
+                    Console.WriteLine("LoadJobsLists file does not exist.");
+                }
+            }
+            catch (System.Exception exc)
+            {
+                Console.WriteLine("Exception: Failed to load LoadJobsLists for " + path + "\n" + exc.ToString());
             }
         }
 
@@ -398,11 +474,12 @@ namespace FChatDicebot
             }
         }
 
+#endregion
         public int PinMessageSent = 0;
-        public void RunLoop()
+        public void RunLoopFList()
         {
             if(_debug)
-                Console.WriteLine("Runloop started");
+                Console.WriteLine("RunloopFlist started");
 
             int LastMessageSent = 0;
 
@@ -475,60 +552,71 @@ namespace FChatDicebot
                             LastMessageSent += TickTimeMiliseconds;
                             totalTicks++;
 
-                            if (MessageQueue.HasMessages())
+                            lock (MessageQueueLock)
                             {
-                                BotMessage nextMessagePeek = MessageQueue.Peek();
-
-                                if (nextMessagePeek != null && !Utils.BotMessageIsChatMessage(nextMessagePeek) || LastMessageSent >= MinimumTimeBetweenMessages)
+                                if (MessageQueue.HasMessages())
                                 {
-                                    BotMessage nextMessageToSend = MessageQueue.GetNextMessage();
+                                    BotMessage nextMessagePeek = MessageQueue.Peek();
 
-                                    if (nextMessageToSend != null)
+                                    if (nextMessagePeek != null && !nextMessagePeek.IsDiscordmessage() && (!Utils.BotMessageIsFListChatMessage(nextMessagePeek) || LastMessageSent >= MinimumTimeBetweenMessages))
                                     {
-                                        if (nextMessageToSend.messageType == "PIN")
+                                        BotMessage nextMessageToSend = MessageQueue.GetNextMessage();
+
+                                        if (nextMessageToSend != null)
+                                        //&& nextMessageToSend.messageType != BotMessageFactory.DiscordChannelMessage && nextMessageToSend.messageType != BotMessageFactory.DiscordPrivateMessage)
                                         {
-                                            PinMessageSent++;
-                                            if (PinMessageSent % 10 == 0)
+                                            string printedCommand = nextMessageToSend.PrintedCommand();
+                                            if (nextMessageToSend.messageType == "PIN")
                                             {
-                                                Console.WriteLine("sending: " + nextMessageToSend.PrintedCommand() + " (#" + PinMessageSent + ")");
+                                                PinMessageSent++;
+                                                if (PinMessageSent % 10 == 0)
+                                                {
+                                                    Console.WriteLine("sending: " + printedCommand + " (#" + PinMessageSent + ")");
+                                                }
                                             }
-                                        }
-                                        else
-                                        {
-                                            Console.WriteLine("sending: " + nextMessageToSend.PrintedCommand());
-                                            Utils.AddToLog("sending: " + nextMessageToSend.PrintedCommand(), nextMessageToSend);
-                                        }
+                                            else
+                                            {
+                                                Console.WriteLine("sending: " + printedCommand);
+                                                Utils.AddToLog("sending: " + printedCommand, nextMessageToSend);
+                                            }
 
-                                        ws.Send(nextMessageToSend.PrintedCommand());
-                                    }
-                                    if (Utils.BotMessageIsChatMessage(nextMessageToSend))
-                                    {
-                                        LastMessageSent = 0;
+                                            ws.Send(printedCommand);
+                                        }
+                                        if (Utils.BotMessageIsFListChatMessage(nextMessageToSend))
+                                        {
+                                            LastMessageSent = 0;
+                                        }
                                     }
                                 }
                             }
+
                             if (WaitingChannelOpRequests.Count > 0)
                             {
                                 if (_testVersion)
                                     Console.WriteLine("Channeloprequest found in queue");
 
-                                List<UserGeneratedCommand> finished = new List<UserGeneratedCommand>();
-                                foreach (UserGeneratedCommand req in WaitingChannelOpRequests)
+                                lock (BotCommandController.ModeratorRequestLock)
                                 {
-                                    if (req.ops != null)
+                                    List<UserGeneratedCommand> finished = new List<UserGeneratedCommand>();
+                                    foreach (UserGeneratedCommand req in WaitingChannelOpRequests)
                                     {
-                                        BotCommandController.RunChatBotCommand(req);
-                                        finished.Add(req);
+                                        if (req.ops != null)
+                                        {
+                                            BotCommandController.RunChatBotCommand(req);
+                                            finished.Add(req);
+                                        }
+                                    }
+                                    if (finished.Count > 0)
+                                    {
+                                        foreach (UserGeneratedCommand rFin in finished)
+                                        {
+                                            WaitingChannelOpRequests.Remove(rFin);
+                                        }
                                     }
                                 }
-                                if (finished.Count > 0)
-                                {
-                                    foreach (UserGeneratedCommand rFin in finished)
-                                    {
-                                        WaitingChannelOpRequests.Remove(rFin);
-                                    }
-                                }
+
                             }
+
                             HandleWaitingBuyCommands();
 
                         }catch(Exception exc)
@@ -562,6 +650,279 @@ namespace FChatDicebot
             }
         }
 
+        public void RunLoopDiscord()
+        {
+            if (_debug)
+                Console.WriteLine("RunloopDiscord started");
+
+            int LastMessageSent = 0;
+
+            // When working with events that have Cacheable<IMessage, ulong> parameters,
+            // you must enable the message cache in your config settings if you plan to
+            // use the cached message entity.
+            var _config = new DiscordSocketConfig { MessageCacheSize = 100 };
+            _config.GatewayIntents = GatewayIntents.AllUnprivileged | GatewayIntents.MessageContent;
+            // (Discord.GatewayIntents) 377957493824;
+
+            _client = new DiscordSocketClient(_config);
+
+            _client.Log += DiscordLog;
+
+            //  You can assign your bot token to a string, and pass that in to connect.
+            //  This is, however, insecure, particularly if you plan to have your code hosted in a public repository.
+            var token = "";
+            if (AccountSettings != null && !string.IsNullOrEmpty(AccountSettings.DiscordBotToken))
+                token = AccountSettings.DiscordBotToken;
+
+            // Some alternative options would be to keep your token in an Environment Variable or a standalone file.
+            // var token = Environment.GetEnvironmentVariable("NameOfYourEnvironmentVariable");
+            // var token = File.ReadAllText("token.txt");
+            // var token = JsonConvert.DeserializeObject<AConfigurationClass>(File.ReadAllText("config.json")).Token;
+
+            _client.LoginAsync(TokenType.Bot, token);
+            _client.StartAsync();
+
+            _client.MessageUpdated += MessageUpdated;
+            _client.Ready += () =>
+            {
+                Console.WriteLine("Bot is connected!");
+                return Task.CompletedTask;
+            };
+            _client.ChannelUpdated += (SocketChannel chan, SocketChannel chan2) =>
+            {
+                Console.WriteLine("Bot observed ChannelUpdated change to " + chan.ToString() + " " + chan.Id + " _ " + chan2.ToString() + " " + chan2.Id);
+                return Task.CompletedTask;
+            };
+            _client.UserUpdated += (SocketUser chan, SocketUser chan2) =>
+            {
+                Console.WriteLine("Bot observed UserUpdated change to " + chan.ToString() + " " + chan.Id + " _ " + chan2.ToString() + " " + chan2.Id);
+                return Task.CompletedTask;
+            };
+            _client.MessageReceived += RecieveDiscordMessage;
+
+            DiscordLoginTime = DoubleTime.GetCurrentTimestampSeconds();
+            int totalTicks = 0;
+
+            while (true)
+            {
+                //no VC orders
+                //no PIN(g) messages
+
+                if (_client.ConnectionState == ConnectionState.Connected)
+                {
+                    try
+                    {
+                        DiceBot.UpdateAllGames();
+                    }
+                    catch (Exception exc)
+                    {
+                        Console.WriteLine("exception on UpdateAllGames " + exc.ToString());
+                    }
+                    try
+                    {
+                        LastMessageSent += TickTimeMiliseconds;
+                        totalTicks++;
+
+                        lock (MessageQueueLock)
+                        {
+                            if (MessageQueue.HasMessages())
+                            {
+                                BotMessage nextMessagePeek = MessageQueue.Peek();
+
+                                if (nextMessagePeek != null && nextMessagePeek.IsDiscordmessage() && (!Utils.BotMessageIsFListChatMessage(nextMessagePeek) || LastMessageSent >= MinimumTimeBetweenMessages))
+                                {
+                                    BotMessage nextMessageToSend = MessageQueue.GetNextMessage();
+
+                                    if (nextMessageToSend != null)
+                                    {
+                                        string printedCommand = nextMessageToSend.PrintedCommand();
+
+                                        Console.WriteLine("sending to DISCORD: " + printedCommand);
+                                        Utils.AddToLog("sending to DISCORD: " + printedCommand, nextMessageToSend);
+
+                                        if (nextMessageToSend.MessageDataFormat != null && typeof(DiscordSocketMessage) == nextMessageToSend.MessageDataFormat.GetType())
+                                        {
+                                            DiscordSocketMessage discordMessageToSend = (DiscordSocketMessage)nextMessageToSend.MessageDataFormat;
+
+                                            //discord send raw here
+                                            ulong cid = 0;
+                                            ulong.TryParse(discordMessageToSend.channel, out cid);
+                                            ISocketMessageChannel discordChannel = _client.GetChannel(cid) as ISocketMessageChannel;// nextMessageToSend.MessageDataFormat..chan)
+
+                                            //find USER to send to
+                                            IUser user = GetDiscordUser(discordMessageToSend.character);
+
+                                            string convertedMessage = TextFormat.ChangeToDiscordText(discordMessageToSend.message, user);
+
+                                            if (nextMessageToSend.messageType == BotMessageFactory.DiscordChannelMessage)
+                                            {
+                                                discordChannel.SendMessageAsync(convertedMessage);
+                                            }
+                                            else if (nextMessageToSend.messageType == BotMessageFactory.DiscordPrivateMessage)
+                                            {
+
+                                                if (user != null)
+                                                {
+                                                    try
+                                                    {
+                                                        user.SendMessageAsync(convertedMessage);
+
+                                                        Console.WriteLine($"Sent a direct message to {user.Username} : {convertedMessage}");
+                                                    }
+                                                    catch (Exception ex)
+                                                    {
+                                                        Console.WriteLine($"Failed to send a direct message: {ex.Message}");
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    Console.WriteLine($"User {discordMessageToSend.character} was not found.");
+                                                }
+                                            }
+
+
+                                            //message.Channel.SendMessageAsync("I heard your message!");
+                                            //ws.Send(nextMessageToSend.PrintedCommand());
+
+                                        }
+                                    }
+                                    if (Utils.BotMessageIsFListChatMessage(nextMessageToSend))
+                                    {
+                                        LastMessageSent = 0;
+                                    }
+                                }
+                            }
+                        }
+
+                        if (WaitingChannelOpRequests.Count > 0)
+                        {
+                            if (_testVersion)
+                                Console.WriteLine("Channeloprequest found in queue");
+
+                            lock (BotCommandController.ModeratorRequestLock)
+                            {
+                                List<UserGeneratedCommand> finished = new List<UserGeneratedCommand>();
+                                foreach (UserGeneratedCommand req in WaitingChannelOpRequests)
+                                {
+                                    if (req.ops != null)
+                                    {
+                                        BotCommandController.RunChatBotCommand(req);
+                                        finished.Add(req);
+                                    }
+                                }
+                                if (finished.Count > 0)
+                                {
+                                    foreach (UserGeneratedCommand rFin in finished)
+                                    {
+                                        WaitingChannelOpRequests.Remove(rFin);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception exc)
+                    {
+                        Console.WriteLine("Exception inside ws.IsAlive: " + exc.ToString());
+                        Utils.AddToLog("Exception inside ws.IsAlive: " + exc.ToString(), exc.StackTrace);
+                    }
+                }
+                else
+                {
+                    //if (ReconnectTimer == 0)
+                    //{
+                    //    Console.WriteLine("Connection was lost.");
+                    //    Console.WriteLine("Waiting for " + (ReconnectTimeMs / 1000) + " seconds to reconnect.");
+                    //    Utils.AddToLog("Waiting for " + (ReconnectTimeMs / 1000) + " seconds to reconnect.", null);
+                    //}
+
+                    //ReconnectTimer += TickTimeMiliseconds;
+
+                    //if (ReconnectTimer > ReconnectTimeMs)
+                    //{
+                    //    BotMessage reconnectIdnRequest = GetIdentificationTicket();
+                    //    PerformStartupClientCommands(ws, reconnectIdnRequest, true);
+                    //    ReconnectTimer = 0;
+                    //}
+                }
+                HandleFutureMessagesTick(TickTimeMiliseconds);
+
+                Thread.Sleep(TickTimeMiliseconds);
+            }
+        }
+
+        public static IUser GetDiscordUser(string userName)
+        {
+            IUser user = _client.Guilds
+                .SelectMany(g => g.Users)
+                .FirstOrDefault(u => u.Username == userName);// _username && u.Discriminator == _discriminator);
+
+            if (user == null) //for messages that do not come from guilds, they are not stored in _client.Guilds but caught here
+                user = _discordUsers.FirstOrDefault(a => a.Username == userName);
+
+            return user;
+        }
+
+        private async Task RecieveDiscordMessage(SocketMessage message)
+        {
+            // Assuming 'message' is a SocketMessage object
+            // First, make sure the message was sent in a guild (server)
+            string guildName = "";
+            string guildId = "";
+            if (message.Channel is SocketGuildChannel guildChannel)
+            {
+                // Access the guild (server) associated with the channel
+                var guild = guildChannel.Guild;
+
+                // Now you can work with the guild object
+                // For example, you can get the guild's name:
+                //guildName = guild.Name;
+                guildId = guild.Id.ToString();
+                // Or any other properties or methods available in the IGuild interface
+            }
+            else
+            {
+                if(_discordUsers.Count(a => a.Username == message.Author.Username) == 0)
+                {
+                    _discordUsers.Add(message.Author);
+                }
+
+                guildId = DiscordPmGuild;
+            }
+
+            if(_debug)
+            Console.WriteLine("Bot observed MessageReceived " + message.Id
+                + "\nContent: " + message.Content + "\nChannel: " + message.Channel.Name
+                + "\nGuild Name: " + guildName + " " + guildId
+                + "\nAuthor: " + message.Author.Username + " global " + message.Author.GlobalName
+                + "\nApplication: " + message.Application?.Name + "\nSource: " + message.Source.ToString());
+
+                //MSGserver msgContent = JsonConvert.DeserializeObject<MSGserver>(trimmedChatCommand);
+                InterpretChatCommand(new ChatMessage(message, guildId));
+
+            //ISocketMessageChannel channel =
+            //message.Channel
+
+            if(_debug)
+                await message.Channel.SendMessageAsync("I heard your message!");
+
+        }
+
+        private static Task DiscordLog(LogMessage msg)
+        {
+            Console.WriteLine(msg.ToString());
+            return Task.CompletedTask;
+        }
+
+        private static async Task MessageUpdated(Cacheable<IMessage, ulong> before, SocketMessage after, ISocketMessageChannel channel)
+        {
+            if(_debug)
+                Console.WriteLine($"MessageUpdated recieved");
+            // If the message was not in the cache, downloading it will result in getting a copy of `after`.
+            var message = await before.GetOrDownloadAsync();
+            if(_debug)
+                Console.WriteLine($"{message} -> {after}");
+        }
+
         private BotMessage GetIdentificationTicket()
         {
             if(GetNewApiTicket())
@@ -574,26 +935,61 @@ namespace FChatDicebot
             }
         }
 
-        private void HandleFutureMessagesTick(int tickMs)
+        private void HandleWaitingBuyCommands()
         {
-            if (FutureMessages.Count > 0)
+            if (WaitingBuyCommands.Count > 0)
             {
-                foreach (BotFutureMessage mes in FutureMessages)
+                bool removeOne = false;
+                foreach (BuyCommand command in WaitingBuyCommands)
                 {
-                    if (mes.MsWait > 0)
-                        mes.MsWait -= tickMs;
-                    else if (!mes.Sent)
+                    if (PinMessageSent > command.PingCount + BuyCommand.PingCountAmount)
                     {
-                        if (mes.ChannelMessage)
-                            SendMessageInChannel(mes.MessageContent, mes.Channel);
-                        else
-                            SendPrivateMessage(mes.MessageContent, mes.Character);
-
-                        mes.Sent = true;
+                        command.Remove = true;
+                        removeOne = true;
+                        Console.WriteLine("removing waitingbuycommand for pings timeout");
+                    }
+                    if (command.Confirmed)
+                    {
+                        //add chips in casino
+                        int amount = command.GetChipsAmount();
+                        string chipsAdded = DiceBot.AddChips(new MessageAddress() { character = command.CharacterName, channel = CasinoChannelId }, amount, false);
+                        //send confirm message to casino
+                        SendMessageInChannel("Chips recorded in the VC Casino Channel: " + chipsAdded, new MessageAddress() { channel = command.ChannelName });
+                        //remove from waiting commands
+                        command.Remove = true;
+                        removeOne = true;
+                        Console.WriteLine("confirmed waitingbuycommand and added chips (" + amount + ")");
                     }
                 }
 
-                FutureMessages.RemoveAll(b => b.Sent);
+                if (removeOne)
+                    WaitingBuyCommands = WaitingBuyCommands.Where(a => !a.Remove).ToList();
+            }
+        }
+
+        private void HandleFutureMessagesTick(int tickMs)
+        {
+            lock (MessageQueueLock)
+            {
+                if (FutureMessages.Count > 0)
+                {
+                    foreach (BotFutureMessage mes in FutureMessages)
+                    {
+                        if (mes.MsWait > 0)
+                            mes.MsWait -= tickMs;
+                        else if (!mes.Sent)
+                        {
+                            if (mes.ChannelMessage)
+                                SendMessageInChannel(mes.MessageContent, mes.Address);// mes.Channel);
+                            else
+                                SendPrivateMessage(mes.MessageContent, mes.Address);
+
+                            mes.Sent = true;
+                        }
+                    }
+
+                    FutureMessages.RemoveAll(b => b.Sent);
+                }
             }
         }
 
@@ -610,7 +1006,7 @@ namespace FChatDicebot
 
             sock.Send(firstIdnRequest.PrintedCommand());
 
-            LoginTime = Utils.GetCurrentTimestampSeconds();
+            FListLoginTime = DoubleTime.GetCurrentTimestampSeconds();
 
             //required to wait for the server to stop sending startup messages, otherwise overflow occurs and ws closes
             Console.WriteLine("waiting for " + InitialWaitTime + "ms...");
@@ -633,11 +1029,21 @@ namespace FChatDicebot
 
             if (SavedChannelSettings.Count > 0)
             {
+                List<MessageAddress> messageAddresses = new List<MessageAddress>();
                 foreach (ChannelSettings channel in SavedChannelSettings)
                 {
-                    if(channel.StartupChannel)
-                        JoinChannel(channel.Name);
+                    if (channel.StartupChannel)
+                    {
+                        MessageAddress m = new MessageAddress() { channel = channel.Name };
+                        JoinChannel(m, true);
+                        messageAddresses.Add(m);
+                    }
                 }
+                //deactivated: it now uses the !auditchannels command to perform a full audit instead of justchannels joined
+                //JoinChannelsSession jchSesh = new JoinChannelsSession(messageAddresses);
+                //use CurrentChannelJoinSession until all join channel messages are resolved. track # sent.
+                //////////// ^
+                //CurrentChannelJoinSession = jchSesh;
             }
         }
 
@@ -681,38 +1087,6 @@ namespace FChatDicebot
             return new BotMessage() { MessageDataFormat = idn, messageType = "IDN" };
         }
 
-        private void HandleWaitingBuyCommands()
-        {
-            if (WaitingBuyCommands.Count > 0)
-            {
-                bool removeOne = false;
-                foreach (BuyCommand command in WaitingBuyCommands)
-                {
-                    if (PinMessageSent > command.PingCount + BuyCommand.PingCountAmount)
-                    {
-                        command.Remove = true;
-                        removeOne = true;
-                        Console.WriteLine("removing waitingbuycommand for pings timeout");
-                    }
-                    if (command.Confirmed)
-                    {
-                        //add chips in casino
-                        int amount = command.GetChipsAmount();
-                        string chipsAdded = DiceBot.AddChips(command.CharacterName, CasinoChannelId, amount, false);
-                        //send confirm message to casino
-                        SendMessageInChannel("Chips recorded in the VC Casino Channel: " + chipsAdded, command.ChannelName);
-                        //remove from waiting commands
-                        command.Remove = true;
-                        removeOne = true;
-                        Console.WriteLine("confirmed waitingbuycommand and added chips (" + amount + ")");
-                    }
-                }
-
-                if (removeOne)
-                    WaitingBuyCommands = WaitingBuyCommands.Where(a => !a.Remove).ToList();
-            }
-        }
-
         private void StackLastMessage(string messageData)
         {
             LastMessageRecieved2 = LastMessageRecieved1;
@@ -746,67 +1120,158 @@ namespace FChatDicebot
                     case "ICH": //initial channel users
                     case "LIS": //all online characters, gender, status
                         break;
-                    case "FRL": //friend list
-                        break;
-                    case "IGN": //ignore list
-                        break;
-                    case "ADL": //global admin list
-                    case "COL": //sent in response to join channel
+                    case "COL": //channel OP list, sent in response to join channel and when op list requested
                         COLserver colinfo = JsonConvert.DeserializeObject<COLserver>(trimmedChatCommand);
 
                         Console.WriteLine("Recieved: " + (data.Length > 300 ? data.Substring(0, 300) : data));
-                        UserGeneratedCommand req = WaitingChannelOpRequests.FirstOrDefault(b => b.channel == colinfo.channel);
+                        Utils.AddToLog("Recieved: " + (data.Length > 300 ? data.Substring(0, 300) : data), null);
+                        //UserGeneratedCommand req = WaitingChannelOpRequests.FirstOrDefault(b => b.channel == colinfo.channel);
+                        UserGeneratedCommand req = WaitingChannelOpRequests.FirstOrDefault(b => b.channelOpRequested == colinfo.channel);
 
                         if (req != null)
                         {
                             Console.WriteLine("channelops returned COL, channel ops returned");
                             req.ops = colinfo.oplist;
                         }
+
+                        if (colinfo != null && SavedChannelSettings != null && colinfo.channel != null)
+                        {
+                            var channelSettings = SavedChannelSettings.FirstOrDefault(a => a.Name.ToLower() == colinfo.channel.ToLower());
+                            if (channelSettings != null)
+                            {
+                                channelSettings.SetChannelOps(colinfo.oplist);
+                            }
+                        }
+
+                        //else
+                        //{
+                        //}
+                        //join audit
+                        if (colinfo == null)
+                        {
+
+                            Console.WriteLine("error: failed to parse colinfo: " + trimmedChatCommand);
+                            Utils.AddToLog("error: failed to parse colinfo: " + trimmedChatCommand, null);
+                        }
                         else
                         {
-                            ChannelsJoined.Add(colinfo.channel);
+                            if (CurrentChannelsAuditSession != null)
+                            {
+                                //mark channel as a channel that exists in data
+                                ResolveCompletedAudit(CurrentChannelsAuditSession.ChannelJoinResult(new MessageAddress() { channel = colinfo.channel, character = null, guild = null }, true));
+                            }
                         }
+                        break;
+                    case "CDS": //channel description, sent in response to successful join channel
+                        CDSserver cdsInfo = JsonConvert.DeserializeObject<CDSserver>(trimmedChatCommand);
+                        if (cdsInfo != null)
+                        {
+                            if(ChannelsJoined.Count(a => a == cdsInfo.channel) == 0)
+                                ChannelsJoined.Add(cdsInfo.channel);
+                        }
+                        //this is for the automatic channel join audit, which has been deactivated on startup. it requires the command to start. COL will work instead
+
+                        //if (cdsInfo == null)
+                        //{
+
+                        //    Console.WriteLine("error: failed to parse cdsInfo: " + trimmedChatCommand);
+                        //    Utils.AddToLog("error: failed to parse cdsInfo: " + trimmedChatCommand, null);
+                        //}
+                        //else
+                        //{
+                        //    if (CurrentChannelJoinSession != null)
+                        //    {
+                        //        //remove channel from data
+                        //        ResolveChannelJoinsAudit(CurrentChannelJoinSession.ChannelJoinResult(new MessageAddress() { channel = cdsInfo.channel, character = null, guild = null }, true));
+                        //    }
+                        //}
                         break;
                     case "JCH": //someone joined a channel the bot is in
                         JCHserver jchInfo = JsonConvert.DeserializeObject<JCHserver>(trimmedChatCommand);
 
-                        ChannelSettings s = GetChannelSettings(jchInfo.channel);
+                        MessageAddress address = new MessageAddress() { character = jchInfo.character.identity, channel = jchInfo.channel, guild = null };
+                        ChannelSettings s = GetChannelSettings( address );//jchInfo.channel, null);
 
                         if (s.GreetNewUsers)
                         {
-                            CharacterData thisCharacterData = DiceBot.GetCharacterData(jchInfo.character.identity, jchInfo.channel, true);
+                            CharacterData thisCharacterData = DiceBot.GetCharacterData(address, true);
+                                //jchInfo.character.identity, jchInfo.channel, true);
 
-                            double currentDoubleTime = Utils.GetCurrentTimestampSeconds();
+                            double currentDoubleTime = DoubleTime.GetCurrentTimestampSeconds();
                             double timeSinceGreet = currentDoubleTime - thisCharacterData.LastGreeted;
 
-                            if (timeSinceGreet < BotMain.GreetCharacterCooldownSeconds)
+                            if (timeSinceGreet < BotMain.GreetCharacterCooldownSeconds || (s.GreetUsersOnlyOnceEver && thisCharacterData.LastGreeted > 0))
                             {
                                 if (_debug)
-                                    SendMessageInChannel("DEBUG: Cooldown active for: Welcome to the channel, " + Utils.GetCharacterUserTags(jchInfo.character.identity) + "! " + timeSinceGreet + " seconds since last greet.", jchInfo.channel);
+                                    SendMessageInChannel("DEBUG: Cooldown active for: Welcome to the channel, " + TextFormat.GetCharacterUserTags(jchInfo.character.identity) + "! " + timeSinceGreet + " seconds since last greet.", address);
                             }
                             else
                             {
                                 thisCharacterData.LastGreeted = currentDoubleTime;
                                 BotCommandController.SaveCharacterDataToDisk();
-                                SendMessageInChannel("Welcome to the channel, " + Utils.GetCharacterUserTags(jchInfo.character.identity) + "!", jchInfo.channel);
+                                string greetingMessage = string.IsNullOrEmpty(s.GreetingMessage)? "Welcome to the channel, [CHARACTERNAME]!": s.GreetingMessage;
+                                greetingMessage = greetingMessage.Replace("[CHARACTERNAME]", TextFormat.GetCharacterUserTags(jchInfo.character.identity));
+
+                                SendMessageInChannel(greetingMessage, address);
                             }
                         }
                         break;
                     case "LCH"://someone left a channel the bot is in
                         break;
                     case "PIN": //ping from server. reply with ping
-                        MessageQueue.AddMessage(new BotMessage() { MessageDataFormat = null, messageType = "PIN" });
+                        lock (MessageQueueLock)
+                        {
+                            MessageQueue.AddMessage(new BotMessage() { MessageDataFormat = null, messageType = "PIN" });
+                        }
+                        break;
+                    case "ERR": //error from server. usually channel join issue
+                        Console.WriteLine("Recieved: " + (data.Length > 300 ? data.Substring(0, 400) : data));
+                        Utils.AddToLog("Recieved: " + (data.Length > 300 ? data.Substring(0, 400) : data), null);
+
+                        ERRserver errInfo = JsonConvert.DeserializeObject<ERRserver>(trimmedChatCommand);
+
+                        if (errInfo != null)
+                        {
+                            if (errInfo.number == 26) //channel not found
+                            {
+                                if (CurrentChannelsAuditSession != null)
+                                {
+                                    //mark failure to find channel
+                                    ResolveCompletedAudit(CurrentChannelsAuditSession.ChannelJoinResult(null, false));
+                                }
+                            }
+                            else if (errInfo.number == 28) //channel already joined
+                            {
+                                lock (MessageQueueLock)
+                                {
+                                    //stop joining channels
+                                    MessageQueue.RemoveAllChannelJoins();
+                                    CurrentChannelsAuditSession = null;
+                                }
+                            }
+                        }
+                        //if (CurrentChannelsAuditSession != null)
+                        //{
+                        //    if (data.Contains("Could not locate the requested channel."))
+                        //    {
+                        //    }
+                        //    else if (data.Contains("Already"))
+                        //    {
+                        //    }
+                        //}
+
                         break;
                     case "PRI": //private message from a user
                         PRICmd msgContentPri = JsonConvert.DeserializeObject<PRICmd>(trimmedChatCommand);
-                        InterpretChatCommand(new MSGserver() { character = msgContentPri.character, message = msgContentPri.message, channel = null });
+                        InterpretChatCommand(new ChatMessage() { character = msgContentPri.character, message = msgContentPri.message, channel = null, guild = null });
                         break;
                     case "MSG": //message sent in channel
                         MSGserver msgContent = JsonConvert.DeserializeObject<MSGserver>(trimmedChatCommand);
-                        InterpretChatCommand(msgContent);
+                        InterpretChatCommand(new ChatMessage(msgContent));
                         break;
                     default:
-                        Console.WriteLine("Recieved: " + (data.Length > 300 ? data.Substring(0, 300) : data));
+                        Utils.AddToLog("Recieved: " + (data.Length > 400 ? data.Substring(0, 300) : data), null);
+                        Console.WriteLine("Recieved: " + (data.Length > 400 ? data.Substring(0, 300) : data));
                         break;
                 }
             }catch(Exception exc)
@@ -816,38 +1281,44 @@ namespace FChatDicebot
             }
         }
 
-        public void InterpretChatCommand(MSGserver messageContent)
+        public void InterpretChatCommand(ChatMessage messageContent)
         {
             string prefixChar = "!";
-            if(!string.IsNullOrEmpty(messageContent.channel))
+            //set prefix char from settings if this is from a guild/ channel
+            MessageAddress newAddress = new MessageAddress(messageContent);
+            ChannelSettings channelSettings = null;
+            if(BotCommandController.MessageCameFromChannel(newAddress))//.add !string.IsNullOrEmpty(messageContent.channel))
             {
-                ChannelSettings set = GetChannelSettings(messageContent.channel);
-                prefixChar = set.CommandPrefix.ToString();
+                channelSettings = GetChannelSettings(new MessageAddress() { character = messageContent.character, channel = messageContent.channel, guild = messageContent.guild });
+                prefixChar = channelSettings.CommandPrefix.ToString();
             }
+            string[] channelOps = channelSettings != null ? channelSettings.GetChannelOps() : null;
 
-            if(string.IsNullOrEmpty(messageContent.message))
+            if (string.IsNullOrEmpty(messageContent.message))
             {
                 Console.WriteLine("empty message " + messageContent.channel + ", " + messageContent.character + ": " + messageContent.message);
                 return;
             }
 
+            //remove leading white spaces
             while(messageContent.message.StartsWith(" ") && messageContent.message.Length > 2)
             {
                 messageContent.message = messageContent.message.Substring(1);
             }
 
-            //bot commands in chat all start with '!'
+            //bot commands in chat all start with '!' (or prefix char)
             if (messageContent.message.StartsWith(prefixChar) && messageContent.message.Length > 1)
             {
                 string commandName = "";
                 string[] commandTerms = SeparateCommandTerms(messageContent.message, out commandName);
 
                 BotCommandController.RunChatBotCommand(new UserGeneratedCommand(){
-                    rawTerms = commandTerms, 
+                    rawTerms = commandTerms,
                     channel = messageContent.channel,
                     characterName = messageContent.character,
+                    guild = messageContent.guild,
                     commandName = commandName,
-                    ops = null,
+                    ops = channelOps,
                     terms = null
                 });
             }
@@ -871,15 +1342,18 @@ namespace FChatDicebot
 
             if (_returnAllRecievedChatMessagesFromChannels && !string.IsNullOrEmpty(messageContent.channel))
             {
-                MessageQueue.AddMessage(new BotMessage()
+                lock (MessageQueueLock)
                 {
-                    messageType = BotMessageFactory.MSG,
-                    MessageDataFormat = new MSGclient()
+                    MessageQueue.AddMessage(new BotMessage()
                     {
-                        channel = messageContent.channel,
-                        message = messageContent.channel + " " + messageContent.character + " " + messageContent.message
-                    }
-                });
+                        messageType = BotMessageFactory.MSG,
+                        MessageDataFormat = new MSGclient()
+                        {
+                            channel = messageContent.channel,
+                            message = messageContent.channel + " " + messageContent.character + " " + messageContent.message
+                        }
+                    });
+                }
             }
         }
 
@@ -891,53 +1365,297 @@ namespace FChatDicebot
             return commandTerms;
         }
 
+        public void SendMessageInChannel(string message, MessageAddress address)
+        {
+            ChannelSettings settings = GetChannelSettings(address);
+            message = TextFormat.ApplyNumberCommasIfNecessary(message, settings);
+            message = TextFormat.SubstituteInCurrencyName(message, settings);
+            message = TextFormat.SpoilerAllIfEnabled(message, settings);
+
+            lock (MessageQueueLock)
+            {
+                if (!string.IsNullOrEmpty(address.guild)) //discord message -- but guild would be null on private messages... (priv message other method)
+                {
+                    MessageQueue.AddMessage(BotMessageFactory.NewMessage(BotMessageFactory.DiscordChannelMessage, new DiscordSocketMessage() { channel = address.channel, guild = address.guild, character = address.character, message = message }));
+                }
+                else //flist message
+                {
+                    MessageQueue.AddMessage(BotMessageFactory.NewMessage(BotMessageFactory.MSG, new MSGclient() { channel = address.channel, message = message }));
+                }
+            }
+
+            settings.LastBotmessageToChannel = DoubleTime.GetCurrentTimestampSeconds();
+            settings.TotalBotMessages++;
+            BotCommandController.SaveChannelSettingsToDisk();
+        }
+
+        // Convenience overload for legacy string-channel callers (F-Chat Chateau commands).
+        // Wraps the channel id into a MessageAddress; guild stays null => F-Chat path.
         public void SendMessageInChannel(string message, string channel)
         {
-            MessageQueue.AddMessage(BotMessageFactory.NewMessage(BotMessageFactory.MSG, new MSGclient() { channel = channel, message = message }));
+            SendMessageInChannel(message, new MessageAddress() { channel = channel });
         }
 
-        public void SendFutureMessage(string message, string channel, string recipient, bool channelMessage, int waitMs)
+        public void SendFutureMessage(string message, MessageAddress address, bool channelMessage, int waitMs)
         {
-            FutureMessages.Add(new BotFutureMessage()
+            lock (MessageQueueLock)
             {
-                Channel = channel,
-                Character = recipient,
-                MessageContent = message,
-                ChannelMessage = channelMessage,
-                MsWait = waitMs
-            });
+                FutureMessages.Add(new BotFutureMessage()
+                {
+                    Address = address,
+                    //Channel = channel,
+                    //Guild = guild,
+                    //Character = recipient,
+                    MessageContent = message,
+                    ChannelMessage = channelMessage,
+                    MsWait = waitMs
+                });
+            }
         }
 
+        public void SendPrivateMessage(string message, MessageAddress address)// string recipient)
+        {
+            ChannelSettings settings = GetChannelSettings(address);
+            message = TextFormat.ApplyNumberCommasIfNecessary(message, settings);
+            message = TextFormat.SubstituteInCurrencyName(message, settings);
+            message = TextFormat.SpoilerAllIfEnabled(message, settings);
+
+            lock (MessageQueueLock)
+            {
+                if (Utils.IsDiscordMessage(address))
+                {
+                    MessageQueue.AddMessage(BotMessageFactory.NewMessage(BotMessageFactory.DiscordPrivateMessage, new DiscordSocketMessage() { channel = address.channel, guild = address.guild, character = address.character, message = message }));
+                }
+                else //flist message
+                {
+                    MessageQueue.AddMessage(BotMessageFactory.NewMessage(BotMessageFactory.PRI, new PRIclient() { recipient = address.character, message = message }));
+                }
+            }
+        }
+
+        // Convenience overload for legacy string-recipient callers (F-Chat Chateau commands).
         public void SendPrivateMessage(string message, string recipient)
         {
-            MessageQueue.AddMessage(BotMessageFactory.NewMessage(BotMessageFactory.PRI, new PRIclient() { recipient = recipient, message = message }));
+            SendPrivateMessage(message, new MessageAddress() { character = recipient });
         }
 
-        public void JoinChannel(string channel)
+        public void JoinChannel(MessageAddress address, bool startupJoin) //FList only
         {
-            MessageQueue.AddMessage(BotMessageFactory.NewMessage(BotMessageFactory.JCH, new JCHclient() { channel = channel }));
+            lock (MessageQueueLock)
+            {
+                MessageQueue.AddMessage(BotMessageFactory.NewMessage(BotMessageFactory.JCH, new JCHclient() { channel = address.channel }));
+                if (startupJoin && CurrentChannelsAuditSession != null)
+                {
+                    CurrentChannelsAuditSession.AttemptToJoin(address);
+                }
+            }
         }
 
-        public void LeaveChannel(string channel)
+
+        public void BeginChannelAudit()
         {
-            MessageQueue.AddMessage(BotMessageFactory.NewMessage(BotMessageFactory.LCH, new LCHclient() { channel = channel }));
+            lock (MessageQueueLock)
+            {
+                if (MessageQueue.HasMessages())
+                {
+                    Console.WriteLine("Error: message queue has values. cannot safely perform channel audit. try again when there are no queued messages");
+                    return;
+                }
+            }
+            ChannelsJoined = new List<string>();
+
+            List<MessageAddress> messageAddresses = new List<MessageAddress>();
+
+            foreach (ChannelSettings channel in SavedChannelSettings)
+            {
+                lock (MessageQueueLock)
+                {
+                    if (!channel.IsDiscordChannel())
+                    {
+                        MessageAddress address = new MessageAddress() { channel = channel.Name };
+                        MessageQueue.AddMessage(BotMessageFactory.NewMessage(BotMessageFactory.COL, new COLclient() { channel = address.channel }));
+
+                        messageAddresses.Add(address);
+                    }
+                }
+            }
+            ChannelsAuditSession jchSesh = new ChannelsAuditSession(messageAddresses);
+            CurrentChannelsAuditSession = jchSesh;
+        }
+
+
+        private void ResolveCompletedAudit(List<MessageAddress> deleteableAddresses)
+        {
+            if (deleteableAddresses != null)
+            {
+                //careful about deleting ones that are discord servers...
+                Console.WriteLine("Deletable addresses was not null, count " + deleteableAddresses.Count + "\n");
+                Utils.AddToChannelAuditLog("Deletable addresses was not null, count " + deleteableAddresses.Count + "\n", deleteableAddresses);
+                int countBefore = SavedChannelSettings.Count;
+                List<ChannelSettings> removedChannelsSettings = new List<ChannelSettings>();
+                foreach (MessageAddress address in deleteableAddresses)
+                {
+                    ChannelSettings s = GetChannelSettings(address);
+                    if (!s.IsDiscordChannel())
+                    {
+                        removedChannelsSettings.Add(s);
+                        SavedChannelSettings.RemoveAll(a => a.Name.ToLower() == address.channel.ToLower());
+                    }
+                }
+                int countAfter = SavedChannelSettings.Count;
+                string channelsList = Utils.PrintList(deleteableAddresses.Select(a => a.channel).ToList());
+
+                string channelSettingsList = "";// Utils.PrintList(SavedChannelSettings.Select(a => a. deleteableAddresses.Select(a => a.channel).ToList());
+                foreach (ChannelSettings thisSettings in removedChannelsSettings)
+                {
+                    channelSettingsList += "\n" + JsonConvert.SerializeObject(thisSettings);
+                }
+                string outputChannelsInfo = "ResolveChannelJoinsAudit Removed deletable channels from settings. Before: " + countBefore + " After: " + countAfter + " List: " + channelsList + " \nchannels Infos: " + channelSettingsList;
+                Console.WriteLine(outputChannelsInfo);
+                Utils.AddToChannelAuditLog(outputChannelsInfo, null);
+                BotCommandController.SaveChannelSettingsToDisk();
+
+                countBefore = DiceBot.ChipPiles.Count;
+                List<ChipPile> removedChipPiles = new List<ChipPile>();
+                foreach (MessageAddress addr in deleteableAddresses)
+                {
+                    List<ChipPile> channelPiles = DiceBot.ChipPiles.Where(a => a.ChannelId.ToLower() == addr.GetChannelKey().ToLower()).ToList();
+                    removedChipPiles.AddRange(channelPiles);
+                    if (channelPiles != null && channelPiles.Count > 0)
+                    {
+                        foreach (ChipPile p in channelPiles)
+                        {
+                            DiceBot.ChipPiles.Remove(p);
+                        }
+                    }
+                }
+
+                countAfter = DiceBot.ChipPiles.Count;
+                string chipPilesList = "";// Utils.PrintList(deleteableAddresses.Select(a => a.channel).ToList());
+                foreach (ChipPile thisPile in removedChipPiles)
+                {
+                    chipPilesList += "\n" + JsonConvert.SerializeObject(thisPile);
+                }
+                string outputChipPilesInfo = "ResolveChannelJoinsAudit Removed chipPiles for deleted channels. Before: " + countBefore + " After: " + countAfter + " \nList: " + chipPilesList;
+                Console.WriteLine(outputChipPilesInfo);
+                Utils.AddToChannelAuditLog(outputChipPilesInfo, null);
+
+                countBefore = DiceBot.ChipPiles.Count;
+                removedChipPiles = new List<ChipPile>();
+                foreach (ChipPile p in DiceBot.ChipPiles)
+                {
+                    if (SavedChannelSettings.Count(a => a.Name.ToLower() == p.ChannelId.ToLower()) == 0)
+                    {
+                        removedChipPiles.Add(p);
+                    }
+                }
+                chipPilesList = "";
+                foreach (ChipPile thisPile in removedChipPiles)
+                {
+                    DiceBot.ChipPiles.Remove(thisPile);
+                    chipPilesList += "\n" + JsonConvert.SerializeObject(thisPile);
+                }
+                countAfter = DiceBot.ChipPiles.Count;
+                outputChipPilesInfo = "ResolveChannelJoinsAudit Removed chipPiles with no channel recorded. Before: " + countBefore + " After: " + countAfter + " \nList: " + chipPilesList;
+                Console.WriteLine(outputChipPilesInfo);
+                Utils.AddToChannelAuditLog(outputChipPilesInfo, null);
+
+                BotCommandController.SaveChipsToDisk("removechanneljoinsaudit");
+
+
+
+                countBefore = DiceBot.CharacterDatas.Count;
+                List<CharacterData> removedCharacterDatas = new List<CharacterData>();
+
+                List<CharacterData> nullChannels = DiceBot.CharacterDatas.Where(a => a.Channel == null).ToList();// new List<CharacterData>();
+
+                foreach (CharacterData p in DiceBot.CharacterDatas)
+                {
+                    if (p.Channel == null || SavedChannelSettings.Count(a => a.Name.ToLower() == p.Channel.ToLower()) == 0)
+                    {
+                        removedCharacterDatas.Add(p);
+                    }
+                }
+                string characterDataList = "";
+                foreach (CharacterData thisPile in removedCharacterDatas)
+                {
+                    DiceBot.CharacterDatas.Remove(thisPile);
+                    characterDataList += "\n" + JsonConvert.SerializeObject(thisPile);
+                }
+                countAfter = DiceBot.CharacterDatas.Count;
+                string outputCharacterDatasInfo = "ResolveChannelJoinsAudit Removed character datas with no channel recorded. Before: " + countBefore + " After: " + countAfter + " \nList: " + characterDataList;
+                Console.WriteLine(outputCharacterDatasInfo);
+                Utils.AddToChannelAuditLog(outputCharacterDatasInfo, null);
+
+                BotCommandController.SaveCharacterDataToDisk();
+
+                CurrentChannelsAuditSession = null;
+            }
+        }
+
+        public void LeaveChannel(MessageAddress address) //FList only
+        {
+            lock (MessageQueueLock)
+            {
+                ChannelsJoined.Remove(address.channel);
+                MessageQueue.AddMessage(BotMessageFactory.NewMessage(BotMessageFactory.LCH, new LCHclient() { channel = address.channel }));
+            }
         }
 
         public void SetStatus(string status, string message)
         {
-            MessageQueue.AddMessage(BotMessageFactory.NewMessage(BotMessageFactory.STA, new STAclient() { status = status, statusmsg = message }));
+            lock (MessageQueueLock)
+            {
+                MessageQueue.AddMessage(BotMessageFactory.NewMessage(BotMessageFactory.STA, new STAclient() { status = status, statusmsg = message }));
+            }
+        }
+
+        public void SetChannelDescription(string channel, string description)//only fchat viable
+        {
+            lock (MessageQueueLock)
+            {
+                ChannelSettings set = GetChannelSettings(new MessageAddress() { channel = channel }, false);
+                if (set != null && set.AllowSettingChannelDescription)
+                {
+                    MessageQueue.AddMessage(BotMessageFactory.NewMessage(BotMessageFactory.CDS, new CDSclient() { channel = channel, description = description }));
+                }
+            }
         }
 
         public void RequestChannelOpListAndQueueFurtherRequest(UserGeneratedCommand command)
         {
-            WaitingChannelOpRequests.Add(command);
-            MessageQueue.AddMessage(BotMessageFactory.NewMessage(BotMessageFactory.COL, new COLclient() { channel = command.channel } ));
+            if(!Utils.IsDiscordMessage(command))
+                RequestChannelOpListAndQueueFurtherRequest(command, command.channel);
+            else
+                Console.WriteLine("Attempted channeloplist from discord message " + command.channel + ", " + command.commandName);
+            //lock (BotCommandController.ModeratorRequestLock)
+            //{
+            //    WaitingChannelOpRequests.Add(command);
+            //    lock (MessageQueueLock)
+            //    {
+            //        MessageQueue.AddMessage(BotMessageFactory.NewMessage(BotMessageFactory.COL, new COLclient() { channel = command.channel }));
+            //    }
+            //}
         }
 
-        public List<Enchantment> GetChannelPotions(string channel)
+        public void RequestChannelOpListAndQueueFurtherRequest(UserGeneratedCommand command, string checkChannelId)
         {
-            if (string.IsNullOrEmpty(channel))
+            lock (BotCommandController.ModeratorRequestLock)
+            {
+                command.channelOpRequested = checkChannelId;
+                WaitingChannelOpRequests.Add(command);
+                lock (MessageQueueLock)
+                {
+                    MessageQueue.AddMessage(BotMessageFactory.NewMessage(BotMessageFactory.COL, new COLclient() { channel = checkChannelId }));
+                }
+            }
+        }
+
+        public List<Enchantment> GetChannelPotions(MessageAddress address)
+        {
+            if (string.IsNullOrEmpty(address.channel))
                 return null;
+            string channelKey = address.GetChannelKey();
 
             if(SavedPotions == null)
             {
@@ -946,7 +1664,7 @@ namespace FChatDicebot
             }
             else
             {
-                return SavedPotions.Where(a => a.Channel == channel).Select(a => a.Enchantment).ToList();
+                return SavedPotions.Where(a => a.Channel.ToLower() == channelKey.ToLower()).Select(a => a.Enchantment).ToList();
             }
         }
 
@@ -966,24 +1684,45 @@ namespace FChatDicebot
             }
         }
 
-        public ChannelSettings GetChannelSettings(string channel)
+        public List<JobsList> GetCharacterTotalJobsLists(string characterName)
         {
-            if (string.IsNullOrEmpty(channel))
+            if (string.IsNullOrEmpty(characterName))
                 return null;
 
-            ChannelSettings set =  SavedChannelSettings.FirstOrDefault(a => a.Name.ToLower() == channel.ToLower());
+            if (SavedPotions == null)
+            {
+                Console.WriteLine("Error: savedpotions null");
+                return null;
+            }
+            else
+            {
+                return SavedJobsLists.Where(a => a.OriginCharacter == characterName).Select(a => a.JobsList).ToList();
+            }
+        }
 
-            if(set == null)
+        public ChannelSettings GetChannelSettings(MessageAddress address, bool makeIfNull = true)
+        {
+            if (string.IsNullOrEmpty(address.channel) || address.guild == BotMain.DiscordPmGuild)
+                return null;
+
+            bool discordGuild = !string.IsNullOrEmpty(address.guild);
+            string channelKey = address.GetChannelKey();
+            ChannelSettings set =  SavedChannelSettings.FirstOrDefault(a => a.Name.ToLower() == channelKey.ToLower());
+
+            if(set == null && makeIfNull)
             {
                 set = new ChannelSettings()
                 {
-                    Name = channel,
+                    Name = channelKey,
                     AllowCustomTableRolls = true,
                     AllowTableRolls = true,
                     AllowTableInfo = true,
                     AllowChips = true,
                     AllowGames = true,
+                    AllowSettingChannelDescription = false,
                     AllowSlots = true,
+                    AllowRPG = true,
+                    AllowNsfw = !discordGuild,
                     SlotsMultiplierLimit = 1000,
                     WorkMultiplier = 100,
                     WorkTierRange = 5,
@@ -991,8 +1730,41 @@ namespace FChatDicebot
                     StartingChips = 0,
                     UseDefaultPotions = true,
                     PotionChipsCost = 0,
+                    LuckForecastChipsCost = 10, //was 200
                     CommandPrefix = '!',
-                    ChipsClearance = ChipsClearanceLevel.NONE
+                    ChipsClearance = ChipsClearanceLevel.ChannelOp,//.NONE,
+                    CardPrintSetting = new PrintSetting() { SortCards = true, UsePlayingCardEmotes = true },
+                    OnlyOpViewOthersChips = false,
+                    WorkCooldownSeconds = BotMain.WorkCooldownSeconds,
+                    SlotsCooldownSeconds = BotMain.SlotsSpinCooldownSeconds,
+                    LuckForecastCooldownSeconds = BotMain.LuckForecastCooldownSeconds,
+                    DungeonDelveCooldownSeconds = BotMain.DungeonDelveCooldownSeconds,
+                    AllowChess = true,
+                    AllowChessEicons = false,
+                    AllowWork = true,
+                    DefaultSlotsType = discordGuild ? SlotsType.Fruit : SlotsType.Bondage,
+                    ShowCommasInNumbers = false,
+                    CurrencyName = BotMain.DefaultCurrencyName,
+                    CurrencyNamePlural = BotMain.DefaultCurrencyNamePlural,
+                    SinglePlayerGameCooldownSeconds = 300,
+                    GreetingMessage = "Welcome to the channel, [CHARACTERNAME]!",
+                    GreetUsersOnlyOnceEver = false,
+                    WorkCommandAlias = "work",
+                    TotalBotMessages = 0,
+                    LastBotmessageToChannel = 0,
+                    LastBlackjackGameTime = 0,
+                    LastRouletteSpinTime = 0,
+                    ChannelDisplayName = "NoName",
+                    DirectoryListing = "Join our channel!",
+                    ShowInDirectory = true,
+                    PotionCommandsAlias = "potion",
+                    ShowSpoilerSlots = true,
+                    SpoilerAllOutputs = false,
+                    CreationDate = DoubleTime.GetCurrentTimestampSeconds(),
+
+                    LastChannelOpsRequestTime = 0,
+                    //ChannelOps = null,
+                    ChannelOpsDirty = true
                 };
 
                 SavedChannelSettings.Add(set);
@@ -1008,5 +1780,14 @@ namespace FChatDicebot
         Tls = 192,
         Tls11 = 768,
         Tls12 = 3072
+    }
+
+    public enum RunMode
+    {
+        NONE,
+        FListOnly,
+        DiscordOnly,
+        FlistPlusDiscord,
+        Default
     }
 }

@@ -32,8 +32,10 @@ namespace FChatDicebot.BotCommands
             LockCategory = CommandLockCategory.NONE;
         }
 
-        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, string characterName, string channel, UserGeneratedCommand command)
+        public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, MessageAddress address, UserGeneratedCommand command)
         {
+            string characterName = address.character;
+            string channel = address.channel;
             string targetProfile = commandController.GetUserNameFromCommandTerms(rawTerms);
             string newUserName = commandController.GetQuotedTextFromCommandTerms(rawTerms);
             Profile oldProfile = MonDB.getProfile(targetProfile);

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using FChatDicebot.SavedData;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,13 +7,14 @@ using System.Threading.Tasks;
 
 namespace FChatDicebot.DiceFunctions
 {
-    public class RollTable
+    public class RollTable : ICustomUserContent
     {
         public int RollBonus = 0;
         public int DieSides = 0;
         public string Name;
         public string Description;
         public bool OnlyShowResultDescription;
+        public bool Nsfw;
 
         public List<TableEntry> TableEntries;
 
@@ -89,6 +91,11 @@ namespace FChatDicebot.DiceFunctions
                 }
             }
             return rtnString;
+        }
+
+        public bool IsNsfw()
+        {
+            return Nsfw;
         }
     }
 
