@@ -10,6 +10,7 @@ Self-contained design specs for **upcoming** Chateau Contract community, relatio
 |------|------|
 | [Bond-Tree](Bond-Tree.md) | `!bondtree` and `!familytree`, read-only commands that walk the bond graph and render everyone connected to a resident within N degrees of separation. (B10) |
 | [Random-Events](Random-Events.md) | An ambient event system: the bot periodically fires a random event into opted-in channels; residents join with the new `!random` command (with an optional anti-snipe argument) for a chance at currency, titles, training, corruption/purity, curses, or flavor. (B12) |
+| [Achievement-Titles](Achievement-Titles.md) | System titles beyond "one number crosses one threshold": combo/set-completion, meta (title count), wild-state, variety/breadth, relationship depth, streaks, and narrative arcs — seven new check methods layered onto `ChateauSystemTitles`. (Owner request, not a B-number.) |
 
 > **B11** (resurface chips/poker/other dicebot games over which Chateau Work was layered) stays parked pending the original dicebot developer pushing their latest changes to Git, for ease of merging — not specced here.
 
