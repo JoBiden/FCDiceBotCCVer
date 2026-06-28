@@ -13,11 +13,11 @@ namespace FChatDicebot.BotCommands
             Aliases = new string[] { };
             Category = "Commitment Interaction";
             ShortDescription = "Breed another resident with new monster life";
-            LongDescription = "Breed a willing host. The host must !consent. Gestation duration varies per species. Multiple pregnancies can be carried at once. Once gestation completes, the host may give !birth at any time. Cooldowns are per breeder/bred pair - you can impregnate other people or be bred by others without waiting.";
+            LongDescription = "Breed a willing host. The host must !consent. Gestation duration varies per species. Multiple pregnancies can be carried at once. Once gestation completes, the host may give !birth at any time. The cooldown is per breeding direction - impregnating someone doesn't stop you breeding others, being bred by others, or even breeding that same partner back.";
             Usage = "!breed [noparse][user]NameInUserTag[/user][/noparse] {monster}";
             RelatedCommands = new string[] { "birth", "monsterize", "consent", "dossier" };
             CooldownDuration = "1 Day";
-            CooldownAppliesTo = "both";
+            CooldownAppliesTo = "initiator (per recipient)";
             IdentifierCategory = "monster";
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
@@ -46,15 +46,14 @@ namespace FChatDicebot.BotCommands
                 return;
             }
 
-            string pairKey = BreedProcessor.PairTimerKey(recipient);
-            if (initiatorProfile.timers.ContainsKey(pairKey)
-                && initiatorProfile.timers[pairKey].timerEnd.CompareTo(DateTime.UtcNow) > 0)
+            string directionKey = BreedProcessor.DirectionTimerKey(recipient);
+            if (initiatorProfile.timers.ContainsKey(directionKey)
+                && initiatorProfile.timers[directionKey].timerEnd.CompareTo(DateTime.UtcNow) > 0)
             {
-                string remaining = Utils.GetTimeSpanPrint(initiatorProfile.timers[pairKey].timerEnd - DateTime.UtcNow);
+                string remaining = Utils.GetTimeSpanPrint(initiatorProfile.timers[directionKey].timerEnd - DateTime.UtcNow);
                 bot.SendPrivateMessage(
-                    "You've already bred " + recipientProfile.displayName + " too recently. Please respect that 'Commitment' interactions are meant to be meaningful, and not spammed. " + recipientProfile.displayName + " will be available to bred by you again in " + remaining,
+                    "You've already bred " + recipientProfile.displayName + " too recently. Please respect that 'Commitment' interactions are meant to be meaningful, and not spammed. You'll be able to breed " + recipientProfile.displayName + " again in " + remaining,
                     characterName);
-                //test comment to confirm Claude sees this edit
                 return;
             }
 

@@ -169,9 +169,11 @@ namespace FChatDicebot.InteractionProcessors.Commitment
             }
             recipientProfile.pregnancies.Add(pregnancy);
 
-            CoolDown pairTimer = new CoolDown { timerEnd = now.AddDays(1) };
-            initiatorProfile.timers[PairTimerKey(recipient)] = pairTimer;
-            recipientProfile.timers[PairTimerKey(initiator)] = pairTimer;
+            // Per-direction daily lock — stamped on the breeder only and scoped to the
+            // resident they bred, so being bred by someone (including breeding them back)
+            // is unaffected.
+            CoolDown directionTimer = new CoolDown { timerEnd = now.AddDays(1) };
+            initiatorProfile.timers[DirectionTimerKey(recipient)] = directionTimer;
 
             Database.SetProfile(initiator, initiatorProfile);
             Database.SetProfile(recipient, recipientProfile);
@@ -214,7 +216,9 @@ namespace FChatDicebot.InteractionProcessors.Commitment
         public static readonly CooldownSpec Cooldown = new CooldownSpec
         {
             Kind = CooldownKind.Cooldown,
-            Binds = CooldownBinds.Both,
+            // Per-direction: the breeder is locked against the specific resident they bred,
+            // so they can still be bred by others or breed that resident back the same day.
+            Binds = CooldownBinds.Initiator,
             PeriodDays = 1
         };
 
@@ -227,7 +231,7 @@ namespace FChatDicebot.InteractionProcessors.Commitment
                 : string.Empty;
 
             string seriousness = ConsentWarningText.Block(
-                ConsentWarningText.FrequencyBoth("breed", Cooldown.PeriodDays));
+                ConsentWarningText.FrequencyPerAxis(initiatorProfile.displayName, "breed you", Cooldown.PeriodDays));
 
             return initiatorProfile.displayName + " wants to breed " + recipientProfile.displayName
                 + " with new " + identifier + " life! " + seriousness
@@ -235,9 +239,14 @@ namespace FChatDicebot.InteractionProcessors.Commitment
                 + " Do you !consent to being bred?";
         }
 
-        public static string PairTimerKey(string otherUser)
+        /// <summary>
+        /// Key for the per-direction daily lock, stamped on the breeder only and scoped to
+        /// the resident they bred: alice has <c>breed_give_Bob</c> after breeding Bob.
+        /// Living only on the breeder's side means being bred back the same day is allowed.
+        /// </summary>
+        public static string DirectionTimerKey(string recipientUser)
         {
-            return "breed_pair_" + otherUser;
+            return "breed_give_" + recipientUser;
         }
 
         /// <summary>

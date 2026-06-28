@@ -7,14 +7,14 @@ namespace FChatDicebot.BotCommands
 {
     /// <summary>
     /// Milk a specific substance out of another resident. Produces 1–3 tagged bottles
-    /// (rolled at consent) in the initiator's milk inventory. One milking per pair per
-    /// day, regardless of substance. The Chateau provides the empties; no inventory
-    /// precondition.
+    /// (rolled at consent) in the initiator's milk inventory. One milking per direction
+    /// per day, regardless of substance — milking someone doesn't stop them milking you
+    /// back today. The Chateau provides the empties; no inventory precondition.
     ///
     /// Self-target is a shortcut: bypasses the consent flow and the milkInventory entry,
     /// instantly crediting the initiator with 1 copper + 1 bottle-currency (the same
     /// effective payout as milking and then immediately !selling one bottle of a
-    /// common-tier substance). Still consumes the daily pair-lock against yourself.
+    /// common-tier substance). Still consumes the daily self-direction lock.
     /// </summary>
     public class ChateauMilk : ChatBotCommand
     {
@@ -27,8 +27,8 @@ namespace FChatDicebot.BotCommands
             LongDescription = "Milk a specified substance from another resident, gaining 1 to 3 bottles. The bottles might be pure or corrupted based on who was milked. You can only milk a specified resident once per day.";
             Usage = "!milk [noparse][user]NameInUserTag[/user][/noparse] {substance}";
             RelatedCommands = new string[] { "sell", "feed", "golden", "consent", "dossier" };
-            CooldownDuration = "1 day, per-pair";
-            CooldownAppliesTo = "both initiator and recipient";
+            CooldownDuration = "1 day, per-direction";
+            CooldownAppliesTo = "initiator (per recipient)";
             IdentifierCategory = "substance";
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
@@ -71,10 +71,10 @@ namespace FChatDicebot.BotCommands
                     bot.SendPrivateMessage(ChateauInteractionHandler.typeNotFoundText(identifierType), characterName);
                     return;
                 }
-                if (MilkProcessor.HasActivePairLock(initiatorProfile, characterName))
+                if (MilkProcessor.HasActiveDirectionLock(initiatorProfile, characterName))
                 {
                     bot.SendPrivateMessage(
-                        MilkProcessor.PairLockMessage(initiatorProfile.displayName, isSelf: true),
+                        MilkProcessor.DirectionLockMessage(initiatorProfile.displayName, isSelf: true),
                         characterName);
                     return;
                 }
@@ -83,7 +83,7 @@ namespace FChatDicebot.BotCommands
                 {
                     initiatorProfile.timers = new System.Collections.Generic.Dictionary<string, CoolDown>();
                 }
-                initiatorProfile.timers[MilkProcessor.PairTimerKey(characterName)] = new CoolDown
+                initiatorProfile.timers[MilkProcessor.DirectionTimerKey(characterName)] = new CoolDown
                 {
                     timerEnd = DateTime.UtcNow.Date.AddDays(1)
                 };

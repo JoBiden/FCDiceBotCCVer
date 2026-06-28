@@ -236,7 +236,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
         }
 
         [Fact]
-        public void ProcessInteraction_SetsSymmetricPairCooldown()
+        public void ProcessInteraction_SetsDirectionCooldownOnInitiatorOnly()
         {
             new ProfileBuilder().WithUserName("Alice").WithDisplayName("Alice").BuildAndSave(_database);
             new ProfileBuilder().WithUserName("Bob").WithDisplayName("Bob").BuildAndSave(_database);
@@ -248,9 +248,11 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
 
             var alice = _database.GetProfile("Alice");
             var bob = _database.GetProfile("Bob");
-            Assert.True(alice.timers.ContainsKey(BreedProcessor.PairTimerKey("Bob")));
-            Assert.True(bob.timers.ContainsKey(BreedProcessor.PairTimerKey("Alice")));
-            Assert.True(alice.timers[BreedProcessor.PairTimerKey("Bob")].timerEnd > DateTime.UtcNow);
+            // Only the breeder (Alice) is locked against the bred resident (Bob).
+            Assert.True(alice.timers.ContainsKey(BreedProcessor.DirectionTimerKey("Bob")));
+            Assert.True(alice.timers[BreedProcessor.DirectionTimerKey("Bob")].timerEnd > DateTime.UtcNow);
+            // Bob is NOT locked against Alice — he can breed her back the same day.
+            Assert.False(bob.timers != null && bob.timers.ContainsKey(BreedProcessor.DirectionTimerKey("Alice")));
         }
 
         [Fact]

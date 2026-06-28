@@ -8,10 +8,11 @@ namespace FChatDicebot.InteractionProcessors.Involved
 {
     /// <summary>
     /// Processor for <c>!milk</c>. Produces 1–3 tagged bottles (rolled at process time)
-    /// in the initiator's <see cref="Profile.milkInventory"/> and applies a symmetric
-    /// 24-hour daily pair lock so the same (initiator, recipient) pair can only milk
-    /// once per Chateau day, regardless of substance. The Chateau provides the empty
-    /// bottles — no precondition on the initiator's inventory.
+    /// in the initiator's <see cref="Profile.milkInventory"/> and applies a 24-hour daily
+    /// per-direction lock so a given milker can only milk a given resident once per
+    /// Chateau day, regardless of substance. The lock is directional: it does not stop
+    /// the recipient from milking the initiator back the same day. The Chateau provides
+    /// the empty bottles — no precondition on the initiator's inventory.
     ///
     /// Self-target is allowed but handled inline by <see cref="BotCommands.ChateauMilk"/>
     /// as a special-cased self-sale: the consent flow is skipped and the initiator
@@ -54,33 +55,35 @@ namespace FChatDicebot.InteractionProcessors.Involved
         }
 
         /// <summary>
-        /// Key used for the symmetric per-pair daily lock. Same shape on both profiles:
-        /// alice has <c>milk_pair_Bob</c>, bob has <c>milk_pair_Alice</c>. For
-        /// self-milking the key is <c>milk_pair_&lt;self&gt;</c> on the single profile.
+        /// Key used for the per-direction daily lock, stamped on the milker (initiator)
+        /// only and scoped to the resident they milked: alice has <c>milk_give_Bob</c>
+        /// after milking Bob. Because it lives only on the milker's side, Bob milking
+        /// Alice back the same day is unaffected. For self-milking the key is
+        /// <c>milk_give_&lt;self&gt;</c> on the single profile.
         /// </summary>
-        public static string PairTimerKey(string otherUser) => "milk_pair_" + otherUser;
+        public static string DirectionTimerKey(string recipientUser) => "milk_give_" + recipientUser;
 
         /// <summary>
-        /// True when <paramref name="profile"/> has an active milk-pair lock against
-        /// <paramref name="otherUser"/>. Used by both the command's pre-check and the
-        /// processor's TOCTOU recheck.
+        /// True when <paramref name="profile"/> (the prospective milker) has already milked
+        /// <paramref name="recipientUser"/> today. Used by both the command's pre-check and
+        /// the processor's TOCTOU recheck.
         /// </summary>
-        public static bool HasActivePairLock(Profile profile, string otherUser)
+        public static bool HasActiveDirectionLock(Profile profile, string recipientUser)
         {
             if (profile?.timers == null) return false;
-            string key = PairTimerKey(otherUser);
+            string key = DirectionTimerKey(recipientUser);
             if (!profile.timers.TryGetValue(key, out var timer)) return false;
             return DateTime.UtcNow < timer.timerEnd;
         }
 
         /// <summary>
-        /// Channel-facing wording for the once-per-day pair lock. Centralized so the
-        /// command's pre-check and the (unlikely) TOCTOU path don't drift. Pass
+        /// Channel-facing wording for the once-per-day per-direction lock. Centralized so
+        /// the command's pre-check and the (unlikely) TOCTOU path don't drift. Pass
         /// <paramref name="isSelf"/>=true for the self-milk shortcut path so the message
         /// reads "You've already milked yourself" instead of the awkward
         /// "You've already milked &lt;your display name&gt;".
         /// </summary>
-        public static string PairLockMessage(string recipientDisplayOrName, bool isSelf = false)
+        public static string DirectionLockMessage(string recipientDisplayOrName, bool isSelf = false)
         {
             DateTime now = DateTime.UtcNow;
             string untilReset = Utils.GetTimeSpanPrint(now.Date.AddDays(1) - now);
@@ -132,11 +135,11 @@ namespace FChatDicebot.InteractionProcessors.Involved
             }
 
             Profile initiatorProfile = Database.GetProfile(initiator);
-            if (HasActivePairLock(initiatorProfile, recipient))
+            if (HasActiveDirectionLock(initiatorProfile, recipient))
             {
                 Profile recipientProfile = Database.GetProfile(recipient);
                 string recipientDisplay = recipientProfile?.displayName ?? recipient;
-                return ValidationResult.Failure(PairLockMessage(recipientDisplay));
+                return ValidationResult.Failure(DirectionLockMessage(recipientDisplay));
             }
 
             // Break gating by substance → bodypart map. BreakStatusContributor doesn't see
@@ -206,11 +209,11 @@ namespace FChatDicebot.InteractionProcessors.Involved
             Profile recipientProfile = Database.GetProfile(recipient);
 
             // TOCTOU recheck. Between !milk being typed and consent being given, another
-            // pending milk against the same recipient could have landed. If the pair lock
-            // is now active, stamp produced=0 and let GetCompletionMessage suppress
+            // pending milk against the same recipient could have landed. If the direction
+            // lock is now active, stamp produced=0 and let GetCompletionMessage suppress
             // channel output.
             int produced = 0;
-            if (!HasActivePairLock(initiatorProfile, recipient))
+            if (!HasActiveDirectionLock(initiatorProfile, recipient))
             {
                 int rolled = Rng.Next(ChateauCurrency.MilkRollMin, ChateauCurrency.MilkRollMax + 1);
                 // The Chateau provides empty bottles — no clamp against initiator inventory.
@@ -234,16 +237,13 @@ namespace FChatDicebot.InteractionProcessors.Involved
                 }
                 initiatorProfile.milkInventory.Add(bottle);
 
-                // Symmetric 24h pair lock — until the *next* day-boundary regardless of
-                // time-of-day. Same shape both sides so either party's command-time check
-                // catches a re-milk attempt.
-                var pairTimer = new CoolDown { timerEnd = DateTime.UtcNow.Date.AddDays(1) };
+                // Per-direction 24h lock — until the *next* day-boundary regardless of
+                // time-of-day. Stamped on the milker only and scoped to the milked
+                // resident, so the recipient can still milk the initiator back today.
+                var directionTimer = new CoolDown { timerEnd = DateTime.UtcNow.Date.AddDays(1) };
                 if (initiatorProfile.timers == null)
                     initiatorProfile.timers = new Dictionary<string, CoolDown>();
-                if (recipientProfile.timers == null)
-                    recipientProfile.timers = new Dictionary<string, CoolDown>();
-                initiatorProfile.timers[PairTimerKey(recipient)] = pairTimer;
-                recipientProfile.timers[PairTimerKey(initiator)] = pairTimer;
+                initiatorProfile.timers[DirectionTimerKey(recipient)] = directionTimer;
             }
 
             // Stamp the truthful produced quantity onto the in-memory PendingCommand so

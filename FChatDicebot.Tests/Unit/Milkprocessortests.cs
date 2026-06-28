@@ -153,12 +153,12 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
         }
 
         [Fact]
-        public void ValidateInteraction_PairLockActive_Fails()
+        public void ValidateInteraction_DirectionLockActive_Fails()
         {
             // Alice already milked Bob today — the timer on her side should block.
             new ProfileBuilder()
                 .WithUserName("Alice")
-                .WithTimer(MilkProcessor.PairTimerKey("Bob"), DateTime.UtcNow.AddHours(2))
+                .WithTimer(MilkProcessor.DirectionTimerKey("Bob"), DateTime.UtcNow.AddHours(2))
                 .BuildAndSave(_database);
             new ProfileBuilder().WithUserName("Bob").BuildAndSave(_database);
 
@@ -169,16 +169,32 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
         }
 
         [Fact]
-        public void ValidateInteraction_ExpiredPairLock_Allowed()
+        public void ValidateInteraction_ExpiredDirectionLock_Allowed()
         {
             // Timer is past — should be ignored.
             new ProfileBuilder()
                 .WithUserName("Alice")
-                .WithTimer(MilkProcessor.PairTimerKey("Bob"), DateTime.UtcNow.AddHours(-2))
+                .WithTimer(MilkProcessor.DirectionTimerKey("Bob"), DateTime.UtcNow.AddHours(-2))
                 .BuildAndSave(_database);
             new ProfileBuilder().WithUserName("Bob").BuildAndSave(_database);
 
             var result = _processor.ValidateInteraction("Alice", "Bob", "cum");
+
+            Assert.True(result.IsValid);
+        }
+
+        [Fact]
+        public void ValidateInteraction_RecipientCanMilkBack_SameDay()
+        {
+            // Alice milked Bob (so Alice holds the give-lock against Bob). The lock is
+            // directional, so Bob milking Alice back the same day must still be allowed.
+            new ProfileBuilder()
+                .WithUserName("Alice")
+                .WithTimer(MilkProcessor.DirectionTimerKey("Bob"), DateTime.UtcNow.AddHours(2))
+                .BuildAndSave(_database);
+            new ProfileBuilder().WithUserName("Bob").BuildAndSave(_database);
+
+            var result = _processor.ValidateInteraction("Bob", "Alice", "cum");
 
             Assert.True(result.IsValid);
         }
@@ -227,7 +243,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
         }
 
         [Fact]
-        public void ProcessInteraction_SetsSymmetricPairLock()
+        public void ProcessInteraction_SetsDirectionLockOnInitiatorOnly()
         {
             new ProfileBuilder().WithUserName("Alice").BuildAndSave(_database);
             new ProfileBuilder().WithUserName("Bob").BuildAndSave(_database);
@@ -236,12 +252,13 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
 
             var alice = _database.GetProfile("Alice");
             var bob = _database.GetProfile("Bob");
-            Assert.True(alice.timers.ContainsKey(MilkProcessor.PairTimerKey("Bob")));
-            Assert.True(bob.timers.ContainsKey(MilkProcessor.PairTimerKey("Alice")));
+            // Only the milker (Alice) is locked against the milked resident (Bob).
+            Assert.True(alice.timers.ContainsKey(MilkProcessor.DirectionTimerKey("Bob")));
+            // Bob is NOT locked against Alice — he can milk her back the same day.
+            Assert.False(bob.timers != null && bob.timers.ContainsKey(MilkProcessor.DirectionTimerKey("Alice")));
             // Locks until the next day boundary.
             DateTime expected = DateTime.UtcNow.Date.AddDays(1);
-            Assert.Equal(expected, alice.timers[MilkProcessor.PairTimerKey("Bob")].timerEnd);
-            Assert.Equal(expected, bob.timers[MilkProcessor.PairTimerKey("Alice")].timerEnd);
+            Assert.Equal(expected, alice.timers[MilkProcessor.DirectionTimerKey("Bob")].timerEnd);
         }
 
         [Fact]
@@ -470,21 +487,21 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
         }
 
         [Fact]
-        public void PairLockMessage_IncludesTimeUntilNextDay()
+        public void DirectionLockMessage_IncludesTimeUntilNextDay()
         {
             // Sanity check that we mention "in <time>" wording and avoid "UTC".
-            string message = MilkProcessor.PairLockMessage("Bob");
+            string message = MilkProcessor.DirectionLockMessage("Bob");
             Assert.Contains("already milked Bob today", message);
             Assert.Contains("milk them again in", message);
             Assert.DoesNotContain("UTC", message);
         }
 
         [Fact]
-        public void PairLockMessage_SelfVariant_UsesYourselfWording()
+        public void DirectionLockMessage_SelfVariant_UsesYourselfWording()
         {
             // Self-milk shortcut shouldn't read "You've already milked <your name>" — it
             // should say "yourself" both as the target and in the retry hint.
-            string message = MilkProcessor.PairLockMessage("Alice", isSelf: true);
+            string message = MilkProcessor.DirectionLockMessage("Alice", isSelf: true);
             Assert.Contains("already milked yourself today", message);
             Assert.Contains("milk yourself again in", message);
             Assert.DoesNotContain("Alice", message);

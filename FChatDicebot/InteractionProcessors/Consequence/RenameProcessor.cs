@@ -21,6 +21,15 @@ namespace FChatDicebot.InteractionProcessors.Consequence
         {
         }
 
+        // The recipient's display name *before* the rename, captured during
+        // ProcessInteraction. By the time GetCompletionMessage runs, the profile's
+        // displayName has already been overwritten with the "[s]old[/s] new"
+        // strikethrough form, so we stash the clean old name here to render the
+        // "OLD is to be known as NEW" sentence. Mirrors the _lastInitiatorPrivateMessage
+        // instance-state idiom: ChateauConsent reuses the same processor instance for
+        // ProcessInteraction and the completion message within a single consent.
+        private string _lastOldDisplayName = string.Empty;
+
         public override ValidationResult ValidateInteraction(string initiator, string recipient, string identifier)
         {
             var baseValidation = base.ValidateInteraction(initiator, recipient, identifier);
@@ -45,6 +54,10 @@ namespace FChatDicebot.InteractionProcessors.Consequence
             // Get the recipient's profile
             Profile recipientProfile = Database.GetProfile(recipient);
 
+            // Capture the old name before we overwrite it, so the completion message
+            // can read "OLD is to be known as NEW" cleanly.
+            _lastOldDisplayName = recipientProfile.displayName;
+
             // Create the new display name with strikethrough of old name
             string newName = command.pendingInteraction.extraParameters.FirstOrDefault().AsString;
             recipientProfile.displayName = "[s]" + recipient + "[/s] " + newName;
@@ -65,8 +78,12 @@ namespace FChatDicebot.InteractionProcessors.Consequence
 
         public override string GetCompletionMessage(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
-            string newName = identifier; // The new name should be passed as identifier in this context
-            return initiatorProfile.displayName + " has made it known that " + recipientProfile.displayName + " is to be known as " + newName + " henceforth! All occurences of their name in our records will be changed to reflect their new identity.";
+            // The new name arrives via identifier. The recipient profile's displayName has
+            // already been rewritten to the "[s]old[/s] new" strikethrough form by
+            // ProcessInteraction, so we use the old name captured before that overwrite.
+            string newName = identifier;
+            string oldName = !string.IsNullOrEmpty(_lastOldDisplayName) ? _lastOldDisplayName : recipientProfile.displayName;
+            return initiatorProfile.displayName + " has made it known that " + oldName + " is to be known as " + newName + " henceforth! All occurrences of their name in our records will be changed to reflect their new identity.";
         }
 
         public override CooldownSpec CooldownRule => Cooldown;
