@@ -79,6 +79,9 @@ namespace FChatDicebot.BotCommands
                 rename.type = "rename";
                 rename.investmentLevel = "consequence";
                 rename.interactionTime = DateTime.UtcNow;
+                // Carry the new name in both identifier (read by the completion message)
+                // and extraParameters (read by ProcessInteraction when applying the rename).
+                rename.identifier = newName;
                 rename.extraParameters = new MongoDB.Bson.BsonArray
                 {
                     newName

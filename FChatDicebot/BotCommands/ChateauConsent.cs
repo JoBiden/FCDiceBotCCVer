@@ -332,7 +332,7 @@ namespace FChatDicebot.BotCommands
                     returnString = initiatorProfile.displayName + " takes " + recipientProfile.displayName + " by the collar and " + bullyDescriptors[random.Next(bullyDescriptors.Count)];
                     break;
                 case "rename":
-                    returnString = initiatorProfile.displayName + " has made it known that " + recipientProfile.displayName + " is to be known as " + recipientProfile.displayName + " henceforth! All occurences of their name in our records will be changed to reflect their new identity.";
+                    returnString = initiatorProfile.displayName + " has made it known that " + recipientProfile.displayName + " is to be known as " + recipientProfile.displayName + " henceforth! All occurrences of their name in our records will be changed to reflect their new identity.";
                     break;
                 case "monsterize":
                     identifier = Utils.AnOrA(identifier) + " " + identifier;

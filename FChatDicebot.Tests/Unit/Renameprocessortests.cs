@@ -154,6 +154,50 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
         }
 
         [Fact]
+        public void GetCompletionMessage_AfterProcess_ShowsOldNameThenNewName()
+        {
+            // Arrange
+            var initiator = new ProfileBuilder()
+                .WithUserName("Alice")
+                .WithDisplayName("Alice the Adventurer")
+                .BuildAndSave(_database);
+
+            var recipient = new ProfileBuilder()
+                .WithUserName("Bob")
+                .WithDisplayName("Bob the Bold")
+                .BuildAndSave(_database);
+
+            var pendingCommand = new PendingCommand
+            {
+                Id = ObjectId.GenerateNewId(),
+                pendingInteraction = new Interaction
+                {
+                    initiator = "Alice",
+                    recipient = "Bob",
+                    type = "rename",
+                    identifier = "Sir Reginald",
+                    investmentLevel = "consequence",
+                    extraParameters = new BsonArray { "Sir Reginald" }
+                }
+            };
+
+            _database.AddPendingCommand(pendingCommand);
+
+            // Act: process applies the rename (mutating displayName to the strikethrough
+            // form), then the completion message is generated on the same instance.
+            _processor.ProcessInteraction(pendingCommand);
+            var recipientAfter = _database.GetProfile("Bob");
+            string message = _processor.GetCompletionMessage(initiator, recipientAfter, "Sir Reginald");
+
+            // Assert: clean old name in slot 1, new name in slot 2 — no blank, no
+            // strikethrough leaking into the "old name" slot.
+            Assert.Equal(
+                "Alice the Adventurer has made it known that Bob the Bold is to be known as Sir Reginald henceforth! All occurrences of their name in our records will be changed to reflect their new identity.",
+                message);
+            Assert.DoesNotContain("[s]", message);
+        }
+
+        [Fact]
         public void ValidateInteraction_BothUsersExist_ReturnsSuccess()
         {
             // Arrange
