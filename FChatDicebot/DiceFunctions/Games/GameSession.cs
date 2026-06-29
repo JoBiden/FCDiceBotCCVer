@@ -44,6 +44,22 @@ namespace FChatDicebot.DiceFunctions
         public int Ante;
         public bool AnteSet = false;
 
+        // ---- Chateau currency wagering (replaces the chip ante for converted games) ----
+        // Per-player declared stake (character name -> {currency, amount}), recorded at join and
+        // committed to escrow at game start. Empty for friendly / non-wager games.
+        public Dictionary<string, Wager.WagerStakeEntry> WagerStakes = new Dictionary<string, Wager.WagerStakeEntry>();
+        // A cross-currency stake awaiting another player's !accept; null when none pending.
+        public Wager.WagerProposal PendingWager = null;
+
+        public bool HasWagerStakes => WagerStakes != null && WagerStakes.Count > 0;
+
+        // Escrow namespace for this table: channel + game, so a player's stakes in different
+        // games never collide. Sanitized into a Mongo-safe label by WagerEscrow.
+        public string GetWagerGameKey()
+        {
+            return GetChannelKey() + "#" + (CurrentGame != null ? CurrentGame.GetGameName() : "game");
+        }
+
         public int MinimumBetIncrement;
         public ulong DiscordMessageId; //for use with description editing / message editing
 

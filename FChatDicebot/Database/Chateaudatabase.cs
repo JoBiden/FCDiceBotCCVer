@@ -287,21 +287,25 @@ namespace FChatDicebot.Database
 
         public void ChangeCurrency(string userName, string currencyLabel, int changeAmount)
         {
+            // Server-side atomic $inc (not a read-modify-write ReplaceOne). This matters for the
+            // wager economy: a player can be in two games at once, and a payout can race a bet on
+            // the same profile. $inc upserts the currency key if missing, so it preserves the old
+            // "create on first credit" behavior. The userName filter means an unknown profile is a
+            // no-op, exactly as the previous `document == null` guard.
             var collection = Database.GetCollection<Profile>("RegisteredProfiles");
             var filter = Builders<Profile>.Filter.Eq("userName", userName);
-            var document = collection.Find(filter).FirstOrDefault();
+            var update = Builders<Profile>.Update.Inc("currencies." + currencyLabel, changeAmount);
+            collection.UpdateOne(filter, update);
+        }
 
-            if (document == null) return;
-
-            if (document.currencies.ContainsKey(currencyLabel))
-            {
-                document.currencies[currencyLabel] += changeAmount;
-            }
-            else
-            {
-                document.currencies.Add(currencyLabel, changeAmount);
-            }
-            collection.ReplaceOne(filter, document);
+        public void ChangeEscrow(string userName, string escrowLabel, int changeAmount)
+        {
+            // Atomic $inc on the wager-escrow sub-field, same contract as ChangeCurrency. The
+            // escrowLabel is expected to already be Mongo-safe (no '.'/'$'); see WagerEscrow.Key.
+            var collection = Database.GetCollection<Profile>("RegisteredProfiles");
+            var filter = Builders<Profile>.Filter.Eq("userName", userName);
+            var update = Builders<Profile>.Update.Inc("escrow." + escrowLabel, changeAmount);
+            collection.UpdateOne(filter, update);
         }
 
         public void ChangeJobExperience(string userName, string jobLabel, int changeAmount)
@@ -712,6 +716,24 @@ namespace FChatDicebot.Database
                 .Inc(s => s.OffspringCount, offspringDelta);
             var options = new UpdateOptions { IsUpsert = true };
             collection.UpdateOne(filter, update, options);
+        }
+
+        public int GetSlotsJackpot(string key)
+        {
+            if (string.IsNullOrEmpty(key)) return -1;
+            var collection = Database.GetCollection<SlotsJackpot>("SlotsJackpots");
+            var filter = Builders<SlotsJackpot>.Filter.Eq(s => s.Id, key);
+            var doc = collection.Find(filter).FirstOrDefault();
+            return doc == null ? -1 : doc.Amount;
+        }
+
+        public void SetSlotsJackpot(string key, int amount)
+        {
+            if (string.IsNullOrEmpty(key)) return;
+            var collection = Database.GetCollection<SlotsJackpot>("SlotsJackpots");
+            var filter = Builders<SlotsJackpot>.Filter.Eq(s => s.Id, key);
+            var update = Builders<SlotsJackpot>.Update.Set(s => s.Amount, amount);
+            collection.UpdateOne(filter, update, new UpdateOptions { IsUpsert = true });
         }
 
         // Mod Message Operations

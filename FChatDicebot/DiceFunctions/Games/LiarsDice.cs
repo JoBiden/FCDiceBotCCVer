@@ -387,22 +387,13 @@ namespace FChatDicebot.DiceFunctions
             }
 
             string anteString = "";
-            if (session.Ante > 0 && !session.LiarsDiceData.AnteCollected)
+            if (session.HasWagerStakes && !session.LiarsDiceData.AnteCollected)
             {
-                anteString = "\n";
                 session.LiarsDiceData.AnteCollected = true;
-                for (int i = 0; i < session.Players.Count; i++)
+                string commitError;
+                if (!Wager.WagerGameSupport.CommitAllStakes(botMain.DiceBot, session, out commitError))
                 {
-                    if (!string.IsNullOrEmpty(anteString))
-                    {
-                        anteString += "\n";
-                    }
-
-                    string betstring = "";
-
-                    betstring = botMain.DiceBot.BetChips(new MessageAddress(session.GetMessageAddress(), session.Players[i]), session.Ante, false);
-
-                    anteString += betstring;
+                    anteString = "\n" + commitError;
                 }
             }
 
@@ -878,9 +869,10 @@ namespace FChatDicebot.DiceFunctions
                 returnString += "\n\n[b]Liar's Dice[/b]: The game has finished. " + TextFormat.GetCharacterUserTags(winner.PlayerName) + " wins!";
 
             MessageAddress address = new MessageAddress(session.GetMessageAddress(), winner.PlayerName);
-            if (session.Ante > 0)
+            if (session.HasWagerStakes && winner != null)
             {
-                returnString += "\n" + diceBot.ClaimPot(address, 1);
+                string award = Wager.WagerGameSupport.AwardPotToWinner(diceBot, session, winner.PlayerName);
+                if (!string.IsNullOrEmpty(award)) returnString += "\n" + award;
             }
 
             diceBot.RemoveGameSession(address, session.CurrentGame);

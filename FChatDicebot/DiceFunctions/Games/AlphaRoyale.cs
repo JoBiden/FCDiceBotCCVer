@@ -160,36 +160,13 @@ namespace FChatDicebot.DiceFunctions
             }
 
             string bettingString = "";
-            if (session.Ante > 0)
+            // Commit every player's stake into the bag up front (all-or-nothing; affordability
+            // was already checked at join).
+            if (session.HasWagerStakes)
             {
-                for (int i = 0; i < session.AlphaRoyaleData.AlphaRoyalePlayers.Count; i++)
-                {
-                    //if (!string.IsNullOrEmpty(bettingString))
-                    //{
-                    //    bettingString += "\n";
-                    //}
-
-                    AlphaRoyalePlayer currentPlayer = session.AlphaRoyaleData.AlphaRoyalePlayers[i];
-
-                    string betstring = "";
-
-                    MessageAddress playerChipPileAddress = new MessageAddress() { character = currentPlayer.PlayerName, channel = session.ChannelId, guild = session.GuildId };
-                    ChipPile playerPile = diceBot.GetChipPile(playerChipPileAddress);//playerChipPileAddress currentPlayerScore.PlayerName, session.ChannelId) ;
-                    if (playerPile.Chips >= session.Ante)
-                        betstring = diceBot.BetChips(playerChipPileAddress, session.Ante, false);// + "\n";
-                    else
-                    {
-                        currentPlayer.CannotAfford = true;
-                        currentPlayer.Placement = 99;
-                        betstring = TextFormat.GetCharacterUserTags(currentPlayer.PlayerName) + " cannot afford the ante to join and has been removed.";
-                        //currentPlayerScore.PlayerScore = -1;
-                    }
-
-                    string thisPlayerRollString = (string.IsNullOrEmpty(betstring) ? TextFormat.GetCharacterUserTags(currentPlayer.PlayerName) : betstring);
-
-                    bettingString += thisPlayerRollString;
-                    bettingString += "\n";
-                }
+                string commitError;
+                if (!Wager.WagerGameSupport.CommitAllStakes(diceBot, session, out commitError))
+                    bettingString = commitError + "\n";
             }
 
             string allFaces = session.AlphaRoyaleData.GetRemainingPlayersIcons();
@@ -539,7 +516,17 @@ namespace FChatDicebot.DiceFunctions
             //session.AlphaRoyaleData.Scores = session.HighRollData.Scores.OrderByDescending(a => a.PlayerScore).ToList();
 
             string resultsString = "\n[color=yellow][b]Results:[/b][/color]";
-            int originalPot = diceBot.GetChipPile(new MessageAddress() { character = DiceBot.PotPlayerAlias, channel = session.ChannelId, guild = session.GuildId }).Chips;// DiceBot.PotPlayerAlias, session.ChannelId).Chips;
+
+            // Award the bag to the top finishers, splitting each currency column by PotSplits.
+            Dictionary<string, string> awarded = null;
+            if (session.HasWagerStakes)
+            {
+                var winners = new List<string>();
+                for (int i = 0; i < playersRanked.Count && i < session.AlphaRoyaleData.PotSplits.Count; i++)
+                    winners.Add(playersRanked[i].PlayerName);
+                awarded = Wager.WagerGameSupport.AwardPotSplit(diceBot, session, winners, session.AlphaRoyaleData.PotSplits);
+            }
+
             for (int i = 0; i < playersRanked.Count && i < 4; i++)
             {
                 string placeString = "first place!";
@@ -549,22 +536,12 @@ namespace FChatDicebot.DiceFunctions
                     case 2: placeString = "third place"; break;
                     case 3: placeString = "fourth place"; break;
                 }
-                if (i < playersRanked.Count)// - 1)
-                {
-                    AlphaRoyalePlayer player = playersRanked[i];
-                    string betstring = "";
-                    string eliminationsString = player.PlayersEliminated > 0? " with [b]" + player.PlayersEliminated + "[/b] elimination" + TextFormat.SIfPlural(player.PlayersEliminated) : "";
-                    if (session.Ante > 0)
-                    {
-                        if (session.AlphaRoyaleData.PotSplits.Count() >= i + 1)
-                        {
-                            int amount = (int)Math.Ceiling(originalPot * ((double)session.AlphaRoyaleData.PotSplits[i]) / 100);
-                            MessageAddress addr = new MessageAddress() { character = player.PlayerName, channel = session.ChannelId, guild = session.GuildId };
-                            betstring = " " + diceBot.ClaimPot(addr, 1, amount);
-                        }
-                    }
-                    resultsString += "\n[b]" + TextFormat.GetCharacterUserTags(player.PlayerName) + " got " + placeString + "[/b]" + eliminationsString + "." + betstring;
-                }
+                AlphaRoyalePlayer player = playersRanked[i];
+                string betstring = "";
+                string eliminationsString = player.PlayersEliminated > 0? " with [b]" + player.PlayersEliminated + "[/b] elimination" + TextFormat.SIfPlural(player.PlayersEliminated) : "";
+                if (awarded != null && awarded.TryGetValue(player.PlayerName, out string won))
+                    betstring = " (won " + won + ")";
+                resultsString += "\n[b]" + TextFormat.GetCharacterUserTags(player.PlayerName) + " got " + placeString + "[/b]" + eliminationsString + "." + betstring;
             }
 
             if (playersRanked.Count >= 6)

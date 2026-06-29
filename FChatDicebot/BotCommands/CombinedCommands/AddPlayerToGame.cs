@@ -58,6 +58,25 @@ namespace FChatDicebot.BotCommands.Base
                 {
                     GameSession sesh = bot.DiceBot.GetGameSession(address, gametype);
 
+                    // Currency-wagered games run entirely on the global Chateau wallet via the
+                    // wager flow (open / match / propose), not the legacy per-channel chip ante.
+                    if (sesh != null && DiceFunctions.Wager.WagerGameSupport.IsCurrencyWager(gametype))
+                    {
+                        string wagerMessage = DiceFunctions.Wager.WagerGameSupport.HandleWagerJoin(bot, commandController, address, sesh, gametype, terms, rawTerms);
+                        if (!string.IsNullOrEmpty(wagerMessage))
+                            bot.SendMessageInChannel(wagerMessage, address);
+                        return;
+                    }
+
+                    // Odds-vs-house games (Roulette): place a named-currency bet; burn/mint at spin.
+                    if (sesh != null && DiceFunctions.Wager.WagerGameSupport.IsOddsGame(gametype))
+                    {
+                        string oddsMessage = DiceFunctions.Wager.WagerGameSupport.HandleOddsJoin(bot, commandController, address, sesh, gametype, terms, rawTerms);
+                        if (!string.IsNullOrEmpty(oddsMessage))
+                            bot.SendMessageInChannel(oddsMessage, address);
+                        return;
+                    }
+
                     if (sesh != null)
                     {
                         ChipPile characterChips = bot.DiceBot.GetChipPile(address);

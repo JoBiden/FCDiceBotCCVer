@@ -12,7 +12,9 @@ namespace FChatDicebot.BotCommands
     {
         public Help()
         {
-            Name = "help";
+            // Renamed from "help" -> "dicehelp": the Chateau deployment's canonical !help is
+            // ChateauHelp. This legacy DiceBot command surface stays reachable as !dicehelp.
+            Name = "dicehelp";
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
             RequireChannel = false;

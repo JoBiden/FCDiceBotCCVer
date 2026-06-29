@@ -83,6 +83,20 @@ namespace FChatDicebot.DiceFunctions
             return betString;
         }
 
+        // Find the currency named in a bet command by matching a term against the registered
+        // "currency" identifier category.
+        private string GetCurrencyFromTerms(string[] terms)
+        {
+            var currencyIds = MonDB.getIdentifiers("currency");
+            if (currencyIds == null) return null;
+            foreach (string t in terms)
+            {
+                if (currencyIds.Any(id => string.Equals(id.type, t, StringComparison.OrdinalIgnoreCase)))
+                    return t.ToLower();
+            }
+            return null;
+        }
+
         private RouletteBetData GetBetFromTerms(string characterName, string[] terms, int betAmount, out string messageString)
         {
             RouletteBet betType = RouletteBet.NONE;
@@ -304,13 +318,20 @@ namespace FChatDicebot.DiceFunctions
             }
             else
             {
+                string currency = GetCurrencyFromTerms(terms);
+                if (string.IsNullOrEmpty(currency))
+                {
+                    messageString = "Name a currency for your bet, e.g. [b]!joingame " + GetGameName() + " 10 copper red[/b].";
+                    return null;
+                }
                 messageString = "";
                 return new RouletteBetData()
                 {
                     bet = betType,
                     specificNumberBet = betNumber,
                     characterName = characterName,
-                    amount = betAmount
+                    amount = betAmount,
+                    currency = currency
                 };
             }
         }
@@ -372,80 +393,46 @@ namespace FChatDicebot.DiceFunctions
             string rouletteRollString = "[color=yellow]The dealer tosses in the ball! The wheel is spinning...[/color]\n[color=yellow]...[/color]\n[color=yellow]The ball landed on [/color]" + rollResult + "!";
 
             string characterBetsString = "";
+            string betReturns = "";
+            var bank = diceBot.WagerBank;
 
             foreach(RouletteBetData bet in session.RouletteBets)
             {
-                if (!string.IsNullOrEmpty(characterBetsString))
-                {
-                    characterBetsString += "\n";
-                }
-
                 if (!playerNames.Contains(bet.characterName))
                 {
-                    characterBetsString += bet.characterName + " not found.\n";
+                    if (!string.IsNullOrEmpty(characterBetsString)) characterBetsString += "\n";
+                    characterBetsString += bet.characterName + " not found.";
                     continue;
                 }
 
-                string betstring = "";
-
-                ChipPile pile = diceBot.GetChipPile(new MessageAddress(session.GetMessageAddress(), bet.characterName), false);
-
-                if(pile.Chips >= bet.amount)
-                {
-                    bet.cannotAffordBet = false;
-                    betstring = diceBot.BetChips(new MessageAddress(session.GetMessageAddress(), bet.characterName), bet.amount, false);
-                    betstring += " Their money is on [b]" + Utils.GetRouletteBetString(bet.bet, bet.specificNumberBet) + "[/b]!";
-
-                }
-                else
+                int held = bank.BalanceOf(bet.characterName, bet.currency);
+                if (held < bet.amount)
                 {
                     bet.cannotAffordBet = true;
-                    betstring = TextFormat.GetCharacterUserTags(bet.characterName) + " can no longer afford their bet.";
-                }
-
-                characterBetsString += betstring;
-            }
-
-            ChipPile houseChipsPile = diceBot.GetChipPile(new MessageAddress(session.GetMessageAddress(), DiceBot.HousePlayerAlias), true);
-            string claimPotString = diceBot.ClaimPot(new MessageAddress(session.GetMessageAddress(), DiceBot.HousePlayerAlias), 1);
-
-            string betReturns = "";
-
-            foreach (RouletteBetData bet in session.RouletteBets)
-            {
-                if (!playerNames.Contains(bet.characterName) || bet.cannotAffordBet)
-                {
+                    if (!string.IsNullOrEmpty(characterBetsString)) characterBetsString += "\n";
+                    characterBetsString += TextFormat.GetCharacterUserTags(bet.characterName) + " can no longer afford their bet.";
                     continue;
                 }
 
+                bet.cannotAffordBet = false;
+                if (!string.IsNullOrEmpty(characterBetsString)) characterBetsString += "\n";
+                characterBetsString += TextFormat.GetCharacterUserTags(bet.characterName) + " put [b]" + bet.amount + " " + bet.currency + "[/b] on [b]" + Utils.GetRouletteBetString(bet.bet, bet.specificNumberBet) + "[/b]!";
+
+                // Resolve against the (minting) house: stake burned, stake*multiplier minted on a win.
                 int betReturn = RouletteBetReturn(randomResult, redResults, blackResults, bet.bet, bet.specificNumberBet);
+                int payout = Wager.WagerHouse.Resolve(bank, bet.characterName, bet.currency, bet.amount, betReturn);
 
-                string winningsString = TextFormat.GetCharacterUserTags(bet.characterName) + " has [b]" + (betReturn > 0 ? "won" : "lost") + "![/b] ";
-
-                if(betReturn > 0)
-                {
-                    int betWonAmount = bet.amount * betReturn;
-
-                    if (houseChipsPile.Chips < betWonAmount + 1)
-                    {
-                        diceBot.AddChips(new MessageAddress(session.GetMessageAddress(), DiceBot.HousePlayerAlias), betWonAmount + 1 - houseChipsPile.Chips, false);
-                    }
-
-                    winningsString += diceBot.GiveChips(new MessageAddress(session.GetMessageAddress(), DiceBot.HousePlayerAlias), bet.characterName, betWonAmount, false);
-                }
-
-                if (!string.IsNullOrEmpty(betReturns))
-                {
-                    betReturns += "\n";
-                }
-
-                betReturns += winningsString;
+                if (!string.IsNullOrEmpty(betReturns)) betReturns += "\n";
+                if (payout > 0)
+                    betReturns += TextFormat.GetCharacterUserTags(bet.characterName) + " has [b]won![/b] " + payout + " " + bet.currency + " [sub](net +" + (payout - bet.amount) + ")[/sub].";
+                else
+                    betReturns += TextFormat.GetCharacterUserTags(bet.characterName) + " has [b]lost![/b] [sub](-" + bet.amount + " " + bet.currency + ")[/sub].";
             }
 
             session.State = DiceFunctions.GameState.Finished;
 
-            string outputString = characterBetsString + "\n" + claimPotString + "\n" + rouletteRollString + "\n" + betReturns;
-            
+            string outputString = characterBetsString + "\n" + rouletteRollString + "\n" + betReturns;
+
             return outputString;
         }
 
@@ -572,6 +559,7 @@ namespace FChatDicebot.DiceFunctions
     {
         public string characterName;
         public int amount;
+        public string currency;
         public int specificNumberBet;
         public RouletteBet bet;
         public bool cannotAffordBet;

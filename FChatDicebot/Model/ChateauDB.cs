@@ -21,6 +21,13 @@ namespace FChatDicebot.Model
         public Dictionary<string, List<string>> lists { get; set; } = new Dictionary<string, List<string>>();
         public Dictionary<string, CoolDown> timers { get; set; } = new Dictionary<string, CoolDown>();
         public Dictionary<string, int> currencies { get; set; } = new Dictionary<string, int>();
+        // Currency committed to an in-flight wager game, debited out of `currencies` at commit
+        // time so it can't be double-spent across tables and can be exactly refunded on
+        // abandon/crash. Key is a Mongo-safe "{gameKey}|{currency}" label (see WagerEscrow.Key);
+        // value is the amount of that currency staked into that game. Entries are cleared when
+        // the pot is awarded or refunded. Mutated atomically via IChateauDatabase.ChangeEscrow.
+        [BsonIgnoreIfNull]
+        public Dictionary<string, int> escrow { get; set; } = new Dictionary<string, int>();
         public Dictionary<string, int> jobExperience { get; set; } = new Dictionary<string, int>();
         public List<Title> titles { get; set; } = new List<Title>();
         public int[] displayedTitleSlots { get; set; } = new int[9] { -1, -1, -1, -1, -1, -1, -1, -1, -1 };
@@ -98,6 +105,18 @@ namespace FChatDicebot.Model
         public string Id { get; set; } // e.g. "monster:lamia" or "category:snake"
         public int PregnancyCount { get; set; }
         public int OffspringCount { get; set; }
+    }
+
+    /// <summary>
+    /// Persistent per-(machine, currency) slots jackpot. Grows by each spin's contribution and
+    /// resets to the machine's StartingJackpotAmount when won. Stored outside Profile so it never
+    /// counts as resident wealth in !economics / !populations. Id is "{machineName}|{currency}".
+    /// </summary>
+    public class SlotsJackpot
+    {
+        [BsonId]
+        public string Id { get; set; }
+        public int Amount { get; set; }
     }
 
     public class Title
