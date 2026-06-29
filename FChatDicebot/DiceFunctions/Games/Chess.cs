@@ -147,9 +147,10 @@ namespace FChatDicebot.DiceFunctions
 
                     string potClaim = "";
                     var winner = whiteWon ? whitePlayer : blackPlayer;
-                    if (session.Ante > 0 && winner != null && !winner.IsBot)
+                    if (session.HasWagerStakes && winner != null && !winner.IsBot)
                     {
-                        potClaim = "\n" + botMain.DiceBot.ClaimPot(new MessageAddress(session.GetMessageAddress(), winner.Name), 1.0);
+                        string award = Wager.WagerGameSupport.AwardPotToWinner(botMain.DiceBot, session, winner.Name);
+                        if (!string.IsNullOrEmpty(award)) potClaim = "\n" + award;
                     }
 
                     session.State = GameState.Finished;
@@ -195,24 +196,23 @@ namespace FChatDicebot.DiceFunctions
             }
 
             string anteString = "";
-            if (session.Ante > 0)
+            if (playerNames.Count == 1)
             {
-                foreach (string player in playerNames)
+                // vs the computer: no wager — there's no human to stake against, so void any
+                // stake the opener declared while waiting for an opponent.
+                if (session.HasWagerStakes)
                 {
-                    ChipPile playerPile = diceBot.GetChipPile(new MessageAddress(session.GetMessageAddress(), player), true);
-                    if (playerPile.Chips < session.Ante)
-                    {
-                        session.State = GameState.Unstarted;
-                        return $"Session for Chess failed to start: {TextFormat.GetCharacterUserTags(player)} cannot afford the ante of {session.Ante} {BotMain.CurrencyPlaceholder}s. ({playerPile.Chips} held)";
-                    }
+                    Wager.WagerGameSupport.RefundAll(diceBot, session);
+                    anteString = "[sub]No stakes when playing the automaton[/sub]";
                 }
-
-                foreach (string player in playerNames)
+            }
+            else if (session.HasWagerStakes)
+            {
+                string commitError;
+                if (!Wager.WagerGameSupport.CommitAllStakes(diceBot, session, out commitError))
                 {
-                    string betstring = diceBot.BetChips(new MessageAddress(session.GetMessageAddress(), player), session.Ante, false);
-                    if (!string.IsNullOrEmpty(anteString))
-                        anteString += "\n";
-                    anteString += betstring;
+                    session.State = GameState.Unstarted;
+                    return "Session for Chess failed to start: " + commitError;
                 }
             }
 
@@ -951,9 +951,9 @@ namespace FChatDicebot.DiceFunctions
         {
             session.State = GameState.Finished;
             var winner = whiteWon ? session.ChessData.WhitePlayer : session.ChessData.BlackPlayer;
-            if (session.Ante > 0 && winner != null && !winner.IsBot)
+            if (session.HasWagerStakes && winner != null && !winner.IsBot)
             {
-                diceBot.ClaimPot(new MessageAddress(session.GetMessageAddress(), winner.Name), 1.0);
+                Wager.WagerGameSupport.AwardPotToWinner(diceBot, session, winner.Name);
             }
             diceBot.RemoveGameSession(session.GetMessageAddress(), session.CurrentGame);
         }
@@ -961,23 +961,10 @@ namespace FChatDicebot.DiceFunctions
         private void FinishGameDraw(GameSession session, DiceBot diceBot)
         {
             session.State = GameState.Finished;
-            if (session.Ante > 0)
+            // A draw returns every staked currency to whoever staked it (no exchange, no contest).
+            if (session.HasWagerStakes)
             {
-                var p1 = session.ChessData.WhitePlayer;
-                var p2 = session.ChessData.BlackPlayer;
-                if (p1 != null && !p1.IsBot && p2 != null && !p2.IsBot)
-                {
-                    diceBot.ClaimPot(new MessageAddress(session.GetMessageAddress(), p1.Name), 0.5);
-                    diceBot.ClaimPot(new MessageAddress(session.GetMessageAddress(), p2.Name), 1.0);
-                }
-                else if (p1 != null && !p1.IsBot)
-                {
-                    diceBot.ClaimPot(new MessageAddress(session.GetMessageAddress(), p1.Name), 1.0);
-                }
-                else if (p2 != null && !p2.IsBot)
-                {
-                    diceBot.ClaimPot(new MessageAddress(session.GetMessageAddress(), p2.Name), 1.0);
-                }
+                Wager.WagerGameSupport.RefundAll(diceBot, session);
             }
             diceBot.RemoveGameSession(session.GetMessageAddress(), session.CurrentGame);
         }

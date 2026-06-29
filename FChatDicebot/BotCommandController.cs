@@ -72,13 +72,29 @@ namespace FChatDicebot
             }
         }
 
+        // Resolve a command by name deterministically. Commands are loaded by reflection
+        // (LoadChatBotCommands), so when a legacy DiceBot command and a Chateau command share a
+        // Name (historically "work" = Work/ChateauWork, "help" = DiceHelp/ChateauHelp), a plain
+        // FirstOrDefault picked a non-deterministic winner by metadata-token order. The Chateau
+        // command is always the intended one in this deployment, so on a collision we prefer the
+        // class whose type name is the Chateau implementation.
+        public ChatBotCommand FindCommandByName(string commandName)
+        {
+            var matches = BotCommands.Where(a => a.Name == commandName).ToList();
+            if (matches.Count <= 1)
+                return matches.FirstOrDefault();
+
+            return matches.FirstOrDefault(a => a.GetType().Name.StartsWith("Chateau", StringComparison.Ordinal))
+                ?? matches[0];
+        }
+
         public void RunChatBotCommand(UserGeneratedCommand command)
         {
             MessageAddress address = new MessageAddress() { character = command.characterName, channel = command.channel, guild = command.guild };
 
             ChannelSettings settings = Bot.GetChannelSettings(address);
 
-            ChatBotCommand c = BotCommands.FirstOrDefault(a => a.Name == command.commandName);
+            ChatBotCommand c = FindCommandByName(command.commandName);
 
             if (c == null && settings != null)
             {

@@ -29,7 +29,12 @@ namespace FChatDicebot.BotCommands
 
             if (thisChannel.AllowChips)
             {
+                // The currency to bet (e.g. !slots copper x10, or !slots fancymachine copper).
+                string currency = commandController.GetIdentifierFromCommandTerms(rawTerms, "currency");
                 string slotsName = commandController.GetNonNumberWordFromCommandTerms(terms);
+                // If the only non-number word was the currency itself, fall back to the default machine.
+                if (!string.IsNullOrEmpty(currency) && string.Equals(slotsName, currency, System.StringComparison.OrdinalIgnoreCase))
+                    slotsName = "";
 
                 SavedSlotsSetting savedSlots = Utils.GetSlotsFromId(bot.SavedSlots, slotsName);
 
@@ -121,30 +126,32 @@ namespace FChatDicebot.BotCommands
                             errorMessage = "The multiplier given (" + betMultiplier + ") is higher than this channel's maximum slots multiplier (" + thisChannel.SlotsMultiplierLimit + ").";
                         }
 
-                        ChipPile thisCharacterPile = bot.DiceBot.GetChipPile(address);
-
                         string sendMessage = "";
                         int usedNumber = usedSlots.MinimumBet * betMultiplier;
-                        
+                        int heldCurrency = string.IsNullOrEmpty(currency) ? 0 : bot.DiceBot.WagerBank.BalanceOf(address.character, currency);
+
                         if(!string.IsNullOrEmpty(errorMessage))
                         {
                             sendMessage = errorMessage;
                         }
-                        else if(thisCharacterPile.Chips < usedNumber)
+                        else if(string.IsNullOrEmpty(currency))
                         {
-                            sendMessage = "You don't have enough " + BotMain.CurrencyPlaceholder + "s to spin. Held: (" + thisCharacterPile.Chips + ") required: (" + usedNumber + ")";
+                            sendMessage = "Name a currency to feed the machine, e.g. [b]!slots " + (string.IsNullOrEmpty(slotsName) ? "" : slotsName + " ") + "copper[/b] (or [b]x10 copper[/b] to raise the bet).";
+                        }
+                        else if(heldCurrency < usedNumber)
+                        {
+                            sendMessage = "You don't have enough " + currency + " to spin. Held: (" + heldCurrency + ") required: (" + usedNumber + ")";
                         }
                         else
                         {
                             //spin slots for 3 results
-                            sendMessage = bot.DiceBot.SpinSlots(usedSlots, address, betMultiplier, testCommand);
+                            sendMessage = bot.DiceBot.SpinSlotsCurrency(usedSlots, address, betMultiplier, currency, testCommand);
                             if(thisChannel.ShowSpoilerSlots)
                             {
                                 sendMessage = "Slots Spin for " +  TextFormat.GetCharacterUserTags(address.character) + ": [spoiler]" + sendMessage + "[/spoiler]";
                             }
                             thisCharacterData.LastSlotsSpin = DoubleTime.GetCurrentTimestampSeconds();
                             thisCharacterData.TimesSlotsSpun += 1;
-                            commandController.SaveChipsToDisk("Slots");
                             commandController.SaveCharacterDataToDisk();
                         }
 

@@ -137,33 +137,31 @@ namespace FChatDicebot.DiceFunctions
 
         public string PlayerLeftGame(BotMain botMain, GameSession session, string characterName)
         {
-            string returnString = "A player left the game, resetting the round.";
+            if (session.HasWagerStakes)
+            {
+                Wager.WagerGameSupport.RefundAll(botMain.DiceBot, session);
+                ResetGameRound(session);
+                return "A player left. The wager is off, and all stakes have been returned.";
+            }
 
             ResetGameRound(session);
-            return returnString;
+            return "A player left the game, resetting the round.";
         }
 
         public string RunGame(System.Random r, String executingPlayer, List<String> playerNames, DiceBot diceBot, BotMain botMain, GameSession session)
         {
-            if(session.Ante > 0)
+            if (session.PendingWager != null)
             {
-                string outputErrorAnte = "";
-                foreach(string player in session.Players)
-                {
-                    ChipPile playerPile = diceBot.GetChipPile(new MessageAddress(session.GetMessageAddress(), player), true);
-                    if(playerPile.Chips < session.Ante)
-                    {
-                        if(!string.IsNullOrEmpty(outputErrorAnte))
-                        {
-                            outputErrorAnte += ", ";
-                        }
-                        outputErrorAnte = TextFormat.GetCharacterUserTags(player) + " cannot afford the ante of " + session.Ante + " " + BotMain.CurrencyPlaceholder + "s. (" + playerPile.Chips + " held)";
-                    }
-                }
-                if(!string.IsNullOrEmpty(outputErrorAnte))
+                session.State = GameState.Unstarted;
+                return "Can't start " + GetGameName() + " yet — a wager proposal is still awaiting acceptance.";
+            }
+            if (session.HasWagerStakes)
+            {
+                string commitError;
+                if (!Wager.WagerGameSupport.CommitAllStakes(diceBot, session, out commitError))
                 {
                     session.State = GameState.Unstarted;
-                    return "Session for SlamRoll failed to start: " + outputErrorAnte;
+                    return "Session for SlamRoll failed to start: " + commitError;
                 }
             }
 
@@ -204,14 +202,7 @@ namespace FChatDicebot.DiceFunctions
 
                 playerIntrosOutput += TextFormat.GetCharacterIconTags(playerName) + " has [b]entered the ring[/b]! ";
 
-                string betstring = "";
-
-                if (session.Ante > 0)
-                {
-                    betstring = diceBot.BetChips(new MessageAddress(session.GetMessageAddress(), playerName), session.Ante, false) + "\n";
-                }
-
-                playerIntrosOutput += betstring;
+                // Stakes were already committed up front by WagerGameSupport.CommitAllStakes.
 
                 session.SlamRollData.SlamRollPlayers.Add(p);
             }
@@ -416,9 +407,11 @@ namespace FChatDicebot.DiceFunctions
 
             output += " " + GetFlavorTextForMatch(bot.random, finishedByElimination);
 
-            if(session.Ante > 0)
+            if(session.HasWagerStakes)
             {
-                output += "\n" + bot.ClaimPot(new MessageAddress(session.GetMessageAddress(), winner.Name), 1);
+                string award = Wager.WagerGameSupport.AwardPotToWinner(bot, session, winner.Name);
+                if (!string.IsNullOrEmpty(award))
+                    output += "\n" + award;
             }
 
             session.State = GameState.Finished;

@@ -45,6 +45,7 @@ namespace FChatDicebot.Tests.Fixtures
             Database.ClearCollection("Pledges");
             Database.ClearCollection("MonsterStats");
             Database.ClearCollection("Feedback");
+            Database.ClearCollection("SlotsJackpots");
         }
 
         /// <summary>

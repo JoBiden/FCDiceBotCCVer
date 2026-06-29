@@ -42,6 +42,16 @@ namespace FChatDicebot.BotCommands
         {
             string characterName = address.character;
             string channel = address.channel;
+
+            // A game wager proposal awaiting this player is declined here first; otherwise !no is
+            // the ordinary "decline a pending interaction" command.
+            string wagerResult = DiceFunctions.Wager.WagerGameSupport.TryDeclineWager(bot, address);
+            if (wagerResult != null)
+            {
+                bot.SendMessageInChannel(wagerResult, address);
+                return;
+            }
+
             var database = MonDB.GetDatabase();
             int pendingMinutesKeep = InteractionProcessors.GroupInteractionResolver.PendingMinutesKeep;
             string channelMessage = string.Empty;

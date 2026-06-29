@@ -123,6 +123,18 @@ namespace FChatDicebot.DiceFunctions
 
             string outputString = "";
 
+            // Commit every player's stake into the bag up front (affordability was checked at
+            // join; if anyone can no longer cover it, abort and refund rather than half-collect).
+            if (session.HasWagerStakes)
+            {
+                string commitError;
+                if (!Wager.WagerGameSupport.CommitAllStakes(diceBot, session, out commitError))
+                {
+                    session.State = GameState.Unstarted;
+                    return "Session for HighRoll failed to start: " + commitError;
+                }
+            }
+
             foreach (HighRollScore playerScore in session.HighRollData.Scores)
             {
                 DiceRoll d = new DiceRoll(new MessageAddress() { character = playerScore.PlayerName, channel = session.ChannelId, guild = session.GuildId }, botMain) { DiceRolled = 1, DiceSides = dieSides };
@@ -141,22 +153,9 @@ namespace FChatDicebot.DiceFunctions
 
                 HighRollScore currentPlayerScore =  session.HighRollData.Scores[i];
 
+                // Stakes were already committed up front by CommitAllStakes.
                 string betstring = "";
                 bool successfulBet = true;
-                if(session.Ante > 0)
-                {
-                    MessageAddress playerChipPileAddress = new MessageAddress() { character = currentPlayerScore.PlayerName, channel = session.ChannelId, guild = session.GuildId };
-                    ChipPile playerPile = diceBot.GetChipPile(playerChipPileAddress);//playerChipPileAddress currentPlayerScore.PlayerName, session.ChannelId) ;
-                    if(playerPile.Chips >= session.Ante)
-                        betstring = diceBot.BetChips(playerChipPileAddress, session.Ante, false);// + "\n";
-                    else
-                    {
-                        successfulBet = false;
-                        currentPlayerScore.CannotAfford = true;
-                        betstring = TextFormat.GetCharacterUserTags(currentPlayerScore.PlayerName) + " cannot afford the ante to join and has not rolled.";
-                        currentPlayerScore.PlayerScore = -1;
-                    }
-                }
 
                 string thisPlayerRollString = (string.IsNullOrEmpty(betstring) ? TextFormat.GetCharacterUserTags(currentPlayerScore.PlayerName) : betstring) ;
 
@@ -213,7 +212,17 @@ namespace FChatDicebot.DiceFunctions
             session.HighRollData.Scores = session.HighRollData.Scores.OrderByDescending(a => a.PlayerScore).ToList();
 
             string resultsString = "\n[color=yellow][b]Results:[/b][/color]";
-            int originalPot = diceBot.GetChipPile(new MessageAddress() { character = DiceBot.PotPlayerAlias, channel = session.ChannelId, guild = session.GuildId }).Chips;// DiceBot.PotPlayerAlias, session.ChannelId).Chips;
+
+            // Award the bag to the top finishers, splitting each currency column by PotSplits.
+            Dictionary<string, string> awarded = null;
+            if (session.HasWagerStakes)
+            {
+                var winners = new List<string>();
+                for (int i = 0; i < session.HighRollData.Scores.Count && i < session.HighRollData.PotSplits.Count; i++)
+                    winners.Add(session.HighRollData.Scores[i].PlayerName);
+                awarded = Wager.WagerGameSupport.AwardPotSplit(diceBot, session, winners, session.HighRollData.PotSplits);
+            }
+
             for (int i = 0; i < session.HighRollData.Scores.Count && i < 3; i++)
             {
                 string placeString = "first place!";
@@ -222,20 +231,10 @@ namespace FChatDicebot.DiceFunctions
                     case 1: placeString = "second place."; break;
                     case 2: placeString = "third place."; break;
                 }
-                if(i < session.HighRollData.Scores.Count)// - 1)
-                {
-                    string betstring = "";
-                    if(session.Ante > 0)
-                    {
-                        if (session.HighRollData.PotSplits.Count() >= i + 1)
-                        {
-                            int amount = (int) Math.Ceiling(originalPot * ((double)session.HighRollData.PotSplits[i]) / 100);
-                            MessageAddress addr = new MessageAddress() { character = session.HighRollData.Scores[i].PlayerName, channel = session.ChannelId, guild = session.GuildId };
-                            betstring = " " + diceBot.ClaimPot(addr, 1, amount);
-                        }
-                    }
-                    resultsString += "\n[b]" + TextFormat.GetCharacterUserTags(session.HighRollData.Scores[i].PlayerName) + " got " + placeString + "[/b]" + betstring;
-                }
+                string betstring = "";
+                if (awarded != null && awarded.TryGetValue(session.HighRollData.Scores[i].PlayerName, out string won))
+                    betstring = " (won " + won + ")";
+                resultsString += "\n[b]" + TextFormat.GetCharacterUserTags(session.HighRollData.Scores[i].PlayerName) + " got " + placeString + "[/b]" + betstring;
             }
 
             if(session.HighRollData.Scores.Count >= 6)

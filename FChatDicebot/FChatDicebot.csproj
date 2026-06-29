@@ -305,7 +305,6 @@
     <Compile Include="BotCommands\TestExtractPotions.cs" />
     <Compile Include="BotCommands\TestResetCooldowns.cs" />
     <Compile Include="BotCommands\RestrictChips.cs" />
-    <Compile Include="BotCommands\Work.cs" />
     <Compile Include="BotCommands\LuckForecast.cs" />
     <Compile Include="BotCommands\CancelBuyChips.cs" />
     <Compile Include="BotCommands\BuyChips.cs" />
@@ -500,6 +499,12 @@
     <Compile Include="DiceFunctions\DiceBot.cs" />
     <Compile Include="DiceFunctions\DiceRoll.cs" />
     <Compile Include="DiceFunctions\ChipPile.cs" />
+    <Compile Include="DiceFunctions\Wager\WagerEscrow.cs" />
+    <Compile Include="DiceFunctions\Wager\IWagerBank.cs" />
+    <Compile Include="DiceFunctions\Wager\ChateauWagerBank.cs" />
+    <Compile Include="DiceFunctions\Wager\WagerStake.cs" />
+    <Compile Include="DiceFunctions\Wager\WagerGameSupport.cs" />
+    <Compile Include="DiceFunctions\Wager\WagerHouse.cs" />
     <Compile Include="DiceFunctions\CountdownTimer.cs" />
     <Compile Include="DiceFunctions\Base\IInventoryItem.cs" />
     <Compile Include="DiceFunctions\Games\Blackjack.cs" />

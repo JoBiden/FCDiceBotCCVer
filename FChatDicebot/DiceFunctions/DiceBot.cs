@@ -54,6 +54,10 @@ namespace FChatDicebot.DiceFunctions
 
         public List<IGame> PossibleGames;
 
+        // Money mover for currency-wagered games (the global-wallet replacement for the chip
+        // pot helpers). Parallels how games reach BetChips/ClaimPot through this DiceBot.
+        public Wager.ChateauWagerBank WagerBank;
+
         //characters that might be useful for printouts
         //⚀⚁⚂⚃⚄⚅ 🎲
 
@@ -63,6 +67,7 @@ namespace FChatDicebot.DiceFunctions
             random = new System.Random();
             DiceBotCharacter = sourceBot.AccountSettings.CharacterName;
 
+            WagerBank = new Wager.ChateauWagerBank();
             ChannelDecks = new List<Deck>();
             Hands = new List<Hand>();
             ChipPiles = new List<ChipPile>();
@@ -80,6 +85,20 @@ namespace FChatDicebot.DiceFunctions
             LoadChipPilesFromDisk(BotMain.FileFolder, BotMain.SavedChipsFileName);
             LoadCharacterDataFromDisk(BotMain.FileFolder, BotMain.CharacterDataFileName);
             LoadVcChipOrderDataFromDisk(BotMain.FileFolder, BotMain.VcChipOrdersFileName);
+
+            // Startup-only: refund any wager escrow stranded by a restart mid-game (the in-memory
+            // game sessions are gone, so these stakes can never resolve on their own). Guarded so a
+            // database hiccup can't stop the bot from starting.
+            try
+            {
+                int refunded = WagerBank.ReconcileAllEscrow();
+                if (refunded > 0)
+                    Console.WriteLine("Wager escrow reconcile: refunded " + refunded + " stranded stake(s) on startup.");
+            }
+            catch (System.Exception escrowExc)
+            {
+                Console.WriteLine("Wager escrow reconcile failed on startup (non-fatal): " + escrowExc.Message);
+            }
 
             Utils.AddToLog(" ", "FINISHED " + DiceBotCharacter + " LOAD :: Chip Piles found " + ChipPiles.Count() + "... Character Datas found " + CharacterDatas.Count());
             Console.WriteLine("FINISHED " + DiceBotCharacter + " LOAD :: Chip Piles found " + ChipPiles.Count() + "... Character Datas found " + CharacterDatas.Count() );
@@ -756,6 +775,45 @@ namespace FChatDicebot.DiceFunctions
         {
             ChannelDiceRoll cdr = LastRolls.FirstOrDefault(a => a.Channel.ToLower() == address.GetChannelKey().ToLower());
             return cdr;
+        }
+
+        // Currency version of SpinSlots: bet/win in a named Chateau currency against the virtual
+        // minting house. The jackpot is tracked persistently per (machine, currency) so it grows
+        // from everything lost to that machine in that currency, and resets when won.
+        public string SpinSlotsCurrency(SlotsSetting slotsSetting, MessageAddress address, int betMultiplier, string currency, FChatDicebot.BotCommands.SlotsTestCommand testCommand)
+        {
+            int betAmount = betMultiplier * slotsSetting.MinimumBet;
+            if (betAmount < slotsSetting.MinimumBet)
+                betAmount = slotsSetting.MinimumBet;
+            int rewardMultiplier = betMultiplier;
+
+            if (betAmount <= 0)
+                return "Error: Slots requires a bet greater than 0.";
+
+            int held = WagerBank.BalanceOf(address.character, currency);
+            if (held < betAmount)
+                return "Error: " + TextFormat.GetCharacterUserTags(address.character) + " does not have enough " + currency + " (" + betAmount + " needed, " + held + " held).";
+
+            // Load this machine's running jackpot for this currency (floored at the starting amount).
+            string jackpotKey = slotsSetting.Name + "|" + currency;
+            int storedJackpot = MonDB.GetDatabase().GetSlotsJackpot(jackpotKey);
+            int jackpot = storedJackpot >= slotsSetting.StartingJackpotAmount ? storedJackpot : slotsSetting.StartingJackpotAmount;
+
+            var result = slotsSetting.GetSpinResult(random, betAmount, rewardMultiplier, jackpot, testCommand);
+
+            // Persist the jackpot's new running total (grows from losses, resets on a jackpot win).
+            MonDB.GetDatabase().SetSlotsJackpot(jackpotKey, result.NewJackpotAmount);
+
+            // Stake to the house, winnings minted back — both in the bet currency.
+            WagerBank.Burn(address.character, currency, betAmount);
+            if (result.Winnings > 0)
+                WagerBank.PayWinner(address.character, currency, result.Winnings);
+
+            int net = result.Winnings - betAmount;
+            string betBonusString = betMultiplier > 1 ? "(x" + betMultiplier + ")" : "";
+            string netString = "\n[sub]Net " + (net >= 0 ? "+" : "") + net + " " + currency + ".[/sub]";
+            string slotsSpinText = TextFormat.Emoji("dbslots1") + TextFormat.Emoji("dbslots2") + " " + TextFormat.GetCharacterIconTags(address.character) + " is spinning the [b]" + slotsSetting.Name + "[/b] slot machine! " + betBonusString + "\n[sub]Putting in " + betAmount + " " + currency + " and pulling the lever...[/sub] " + result.GetJackpotString();
+            return slotsSpinText + "\n" + result.ToString() + netString;
         }
 
         public string SpinSlots(SlotsSetting slotsSetting, MessageAddress address, int betMultiplier, FChatDicebot.BotCommands.SlotsTestCommand testCommand)
@@ -2054,8 +2112,18 @@ namespace FChatDicebot.DiceFunctions
             string output = "";
             if (sesh != null)
             {
-                RemoveGameSession(address, gameType);
-                output = "Session for " + sesh.CurrentGame.GetGameName() + " cancelled.";
+                if (Wager.WagerGameSupport.IsCurrencyWager(gameType))
+                {
+                    // Return any committed stakes before tearing the table down.
+                    Wager.WagerGameSupport.RefundAll(this, sesh);
+                    RemoveGameSession(address, gameType);
+                    output = "The " + sesh.CurrentGame.GetGameName() + " game is off.";
+                }
+                else
+                {
+                    RemoveGameSession(address, gameType);
+                    output = "Session for " + sesh.CurrentGame.GetGameName() + " cancelled.";
+                }
             }
             else
             {

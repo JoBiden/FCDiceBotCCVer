@@ -232,21 +232,13 @@ namespace FChatDicebot.DiceFunctions
             }
 
             string anteString = "";
-            if(session.Ante > 0 && !session.RockPaperScissorsData.CollectedAnte)
+            if(session.HasWagerStakes && !session.RockPaperScissorsData.CollectedAnte)
             {
                 session.RockPaperScissorsData.CollectedAnte = true;
-                for (int i = 0; i < session.Players.Count; i++)
+                string commitError;
+                if (!Wager.WagerGameSupport.CommitAllStakes(botMain.DiceBot, session, out commitError))
                 {
-                    if (!string.IsNullOrEmpty(anteString))
-                    {
-                        anteString += "\n";
-                    }
-
-                    string betstring = "";
-
-                    betstring = botMain.DiceBot.BetChips(new MessageAddress(session.GetMessageAddress(), session.Players[i]), session.Ante, false);
-
-                    anteString += betstring;
+                    anteString = commitError;
                 }
             }
 
@@ -583,9 +575,10 @@ namespace FChatDicebot.DiceFunctions
             if (winner != null)
                 returnString += "\n[b]Rock Paper Scissors[/b]: The game has finished. " + TextFormat.GetCharacterUserTags(winner.PlayerName) + " wins!";
 
-            if (session.Ante > 0)
+            if (session.HasWagerStakes && winner != null)
             {
-                returnString += "\n" + diceBot.ClaimPot(new Model.MessageAddress(session.GetMessageAddress(), winner.PlayerName), 1);
+                string award = Wager.WagerGameSupport.AwardPotToWinner(diceBot, session, winner.PlayerName);
+                if (!string.IsNullOrEmpty(award)) returnString += "\n" + award;
             }
 
             session.State = DiceFunctions.GameState.Finished;

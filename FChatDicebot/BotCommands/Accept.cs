@@ -26,6 +26,16 @@ namespace FChatDicebot.BotCommands
         {
             string characterName = address.character;
             string channel = address.channel;
+
+            // A game wager proposal awaiting this player takes priority; otherwise !accept is the
+            // ordinary alias for !consent.
+            string wagerResult = DiceFunctions.Wager.WagerGameSupport.TryAcceptWager(bot, address);
+            if (wagerResult != null)
+            {
+                bot.SendMessageInChannel(wagerResult, address);
+                return;
+            }
+
             ChateauConsent accept = new ChateauConsent();
             accept.Run(bot, commandController, rawTerms, terms, address, command);
         }

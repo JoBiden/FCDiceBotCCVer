@@ -27,6 +27,7 @@ namespace FChatDicebot.Database
         void RemoveFromList(string userName, string listLabel, string listValue);
         void SetTimer(string userName, string timerLabel, CoolDown timer);
         void ChangeCurrency(string userName, string currencyLabel, int changeAmount);
+        void ChangeEscrow(string userName, string escrowLabel, int changeAmount);
         void ChangeJobExperience(string userName, string jobLabel, int changeAmount);
 
         // Profile Query Operations (optimized queries that don't fetch entire profile)
@@ -79,6 +80,10 @@ namespace FChatDicebot.Database
         MonsterStats GetMonsterStats(string key);
         List<MonsterStats> GetAllMonsterStats();
         void IncrementMonsterStats(string key, int pregnancyDelta, int offspringDelta);
+
+        // Slots jackpot persistence (per "{machine}|{currency}"); -1 when unset.
+        int GetSlotsJackpot(string key);
+        void SetSlotsJackpot(string key, int amount);
 
         // Mod Message Operations
         string GetModMessage(string messageLabel);
