@@ -593,6 +593,24 @@ namespace FChatDicebot.Database
             collection.DeleteOne(filter);
         }
 
+        // Random Event Operations (read-only in-bot; seeded externally like Duties)
+        public List<RandomEvent> GetRandomEvents()
+        {
+            var collection = Database.GetCollection<BsonDocument>("RandomEvents");
+            var documents = collection.Find(Builders<BsonDocument>.Filter.Empty).ToList();
+
+            return documents.Select(doc => BsonSerializer.Deserialize<RandomEvent>(doc)).ToList();
+        }
+
+        public List<RandomEvent> GetRandomEventsByCategory(string category)
+        {
+            var collection = Database.GetCollection<BsonDocument>("RandomEvents");
+            var filter = Builders<BsonDocument>.Filter.AnyEq("categories", category);
+            var documents = collection.Find(filter).ToList();
+
+            return documents.Select(doc => BsonSerializer.Deserialize<RandomEvent>(doc)).ToList();
+        }
+
         // Command Operations
         public Command GetCommand(string commandName)
         {

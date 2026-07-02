@@ -7,6 +7,6 @@ Features and changes, big and small, that have been proposed but not thoroughly 
 * !cancel and !decline (initiator and recipient geared 'remove pending interaction' commands) on top of existing time out parameters.
 * additional casual commands. lapsit, boobhat, lick, possibly more. Will it take up too much dossier space? Do they have reasonable titles to accrue?
 * Some way to resurface chips, poker, other games from the underlying dicebot functionality (currently, Chateau Work has overwritten the dicebot work). Save this for after original dice bot developer pushes their most recent dicebot changes to Git, for ease of merging
-* Random events, to encourage spontaneous chat activity. Responding to a random event would always start !random but might also require an additional argument, to slow down campers/snipers
 * Audit existing commands for sensible new aliases (and check for collisions before adding any). Surfaced while speccing !refuse/!withdraw, whose short aliases !r and !w need a collision check against the live command table.
+* Author more !random events (see `wiki-docs/specs/Future-Social/Random-Events.md`). The engine/scheduler shipped 2026-06-29 but only one starter event ("Cutie says {word}") exists in the `RandomEvents` collection so far — needs a real pool (varied response types, winner rules, and reward types) so the ambient events don't feel repetitive.
 

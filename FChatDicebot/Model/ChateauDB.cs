@@ -277,6 +277,50 @@ namespace FChatDicebot.Model
         public int value { get; set; }
     }
 
+    /// <summary>
+    /// A seeded, data-authored ambient channel event (the B12 "random events" system). Lives in
+    /// the read-only <c>RandomEvents</c> collection and mirrors the <see cref="Duty"/> /
+    /// <see cref="DutyResult"/> / <see cref="Reward"/> authoring shape so new events ship without
+    /// a deploy. The bot fires one of these into an opted-in channel every several hours; residents
+    /// join with <c>!random</c>; after the response window resolves, the bot announces the chosen
+    /// outcome and grants its rewards to the winner(s). See
+    /// <c>BotCommands.Support.RandomEventEngine</c> for selection/validation/resolution.
+    /// </summary>
+    public class RandomEvent
+    {
+        [BsonId]
+        [BsonRepresentation(BsonType.ObjectId)]
+        public ObjectId Id { get; set; }
+        public string label { get; set; }
+        public string[] categories { get; set; }
+        public int weight { get; set; }                // selection weight among eligible events
+        public string announceText { get; set; }       // posted to the channel when the event fires
+        public string responseType { get; set; }       // "none" | "keyword" | "challenge"
+        public int responseWindowSeconds { get; set; } // how long !random is accepted (0 => engine default)
+        public string winnerRule { get; set; }         // "firstValid" | "allInWindow" | "nth" | "random"
+        public int winnerN { get; set; }               // for "nth": which valid responder wins (1-based)
+        public List<EventOutcome> outcomes { get; set; } = new List<EventOutcome>(); // weighted roll on resolve
+    }
+
+    public class EventOutcome
+    {
+        public int weight { get; set; }        // weighted pick among the event's outcomes
+        // Announced when this outcome is granted. May include a {winners} placeholder (e.g.
+        // "{winners} are now glowing purple.") substituted with every winner's [user] tag —
+        // lets a multi-winner outcome (allInWindow/etc.) carry its own combined flavor instead
+        // of a generic engine-authored line.
+        public string resultText { get; set; }
+        public List<EventReward> rewards { get; set; } = new List<EventReward>(); // applied to winner(s)
+    }
+
+    public class EventReward
+    {
+        public string type { get; set; } // "currency" | "title" | "training" | "corruption" | "purity" | "curse" | "none"
+        public string key { get; set; }  // currency name / title text / training skill / curse id (unused for corruption/purity/none)
+        public int min { get; set; }     // magnitude/amount low  (currency, training, corruption, purity)
+        public int max { get; set; }     // magnitude/amount high
+    }
+
     public class Pledge
     {
         [BsonId]

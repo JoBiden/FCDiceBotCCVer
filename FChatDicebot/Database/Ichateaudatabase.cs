@@ -67,6 +67,10 @@ namespace FChatDicebot.Database
         void SetPendingDuty(PendingDuty updatedDuty);
         void DeletePendingDuty(ObjectId dutyId);
 
+        // Random Event Operations (read-only in-bot; seeded externally like Duties)
+        List<RandomEvent> GetRandomEvents();
+        List<RandomEvent> GetRandomEventsByCategory(string category);
+
         // Command Operations
         Command GetCommand(string commandName);
         List<Command> GetAllCommands();
