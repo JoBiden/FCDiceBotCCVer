@@ -1,7 +1,9 @@
 # Random Events — ambient channel events + `!random`
 
-**Status:** Proposed (design-complete, owner-reviewed 2026-06-21).
+**Status:** ✅ SHIPPED 2026-06-29, wording pass + design tweak 2026-07-01 (owner review). Per-event `announceText` / `resultText` and reward magnitudes are authored data in the seeded `RandomEvents` collection; a single starter event ("Cutie says {word}") has been authored — see *Seed data* below.
 **Feature-Requests source:** "Random events, to encourage spontaneous chat activity. Responding to a random event would always start !random but might also require an additional argument, to slow down campers/snipers" (B12).
+
+> **Note on paths:** this spec was written before the latest Dice Bot integration flattened `FChatDicebot/FChatDicebot/…` to `FChatDicebot/…`. The links below predate that move; the as-built files are: model in [Model/ChateauDB.cs](../../../FChatDicebot/Model/ChateauDB.cs), engine in [BotCommands/Support/RandomEventEngine.cs](../../../FChatDicebot/BotCommands/Support/RandomEventEngine.cs), command in [BotCommands/ChateauRandom.cs](../../../FChatDicebot/BotCommands/ChateauRandom.cs), scheduler in [BotMain.cs](../../../FChatDicebot/BotMain.cs) (`HandleRandomEventsTick`), DB in [Database/Chateaudatabase.cs](../../../FChatDicebot/Database/Chateaudatabase.cs), tests in `FChatDicebot.Tests/Unit/Randomeventenginetests.cs`. Discord is intentionally excluded — the tick is wired into `RunLoopFList` only (the deployment is F-Chat / Chateau-only).
 
 > This is the largest of the Social/events specs. It has three buildable chunks that can land incrementally: **(1)** the event data model + seeded collection, **(2)** the `!random` participation command + active-event lifecycle, **(3)** the tick-driven scheduler. The bulk of the work is wiring the **six reward types** to existing grant mechanisms (below).
 
@@ -31,7 +33,7 @@ public class RandomEvent
     public string[] categories { get; set; }
     public int weight { get; set; }              // selection weight among eligible events
     public string announceText { get; set; }      // posted to the channel when the event fires
-    public string responseType { get; set; }      // "none" | "keyword" | "challenge" | "delay"
+    public string responseType { get; set; }      // "none" | "keyword" | "challenge"
     public int responseWindowSeconds { get; set; } // how long !random is accepted (e.g. 60)
     public string winnerRule { get; set; }         // "firstValid" | "allInWindow" | "nth" | "random"
     public int winnerN { get; set; }               // for "nth": which responder wins (e.g. 4)
@@ -41,7 +43,7 @@ public class RandomEvent
 public class EventOutcome
 {
     public int weight { get; set; }       // weighted pick among the event's outcomes
-    public string resultText { get; set; } // announced when this outcome is granted
+    public string resultText { get; set; } // announced when this outcome is granted; may use {winners}
     public List<EventReward> rewards { get; set; } = new List<EventReward>(); // applied to winner(s)
 }
 
@@ -57,8 +59,11 @@ public class EventReward
 **Response types (B12.3 — "depends on the event, could be any of the three"):**
 - `none` — `!random` with no arg participates.
 - `keyword` — `announceText` instructs the user to include a token; only `!random <token>` (matched case-insensitively) counts. The token is chosen per-fire (so it can be randomized) and held in the active-event state. Defeats pre-typed snipes.
-- `challenge` — a tiny generated problem (e.g. a small sum or a die to "roll"); the user submits the answer as the arg. Generated per-fire; expected answer held in active-event state.
-- `delay` — `!random` with no arg, but responses are only accepted after a randomized minimum delay from the fire (held in active-event state); earlier `!random`s are ignored (silently or with a "too eager" nudge), slowing campers.
+- `challenge` — a tiny generated problem (e.g. a small sum); the user submits the answer as the arg. Generated per-fire; expected answer held in active-event state.
+
+> **As-built design change (owner, 2026-07-01): the third response type ("delay" — reject responses before a randomized minimum time after the fire) was dropped.** The anti-snipe protection is entirely the keyword/challenge itself — you can't pre-type an answer you don't yet know. A pure time-gate would instead penalize residents who genuinely react fast and correctly, which isn't the goal. So `responseType` is now exactly `none` | `keyword` | `challenge`, and an invalid response is always just nudged (never time-gated) with no attempt consumed.
+
+> **As-built authoring note — `announceText` placeholders.** Because the keyword/challenge are randomized per-fire, the engine substitutes them into `announceText` at fire time: `{keyword}` → the chosen token, `{challenge}` → the generated problem (e.g. `3 + 7`), `{window}`/`{seconds}` → the response-window length. So a `keyword` event authors `"…shout the word {keyword} to be counted!"`. If a `keyword`/`challenge` event's `announceText` omits the placeholder, the engine appends a generated `[sub]Quick, !random {token}…[/sub]` instruction line so it's never unanswerable. `none` events ignore these placeholders.
 
 **Winner rules (B12.4 — "depends on the event"):**
 - `firstValid` — first valid responder wins; resolve immediately on that response.
@@ -102,11 +107,11 @@ New `ChatBotCommand` [ChateauRandom.cs](../../../FChatDicebot/BotCommands/Chatea
 | `CooldownDuration` | `null` (participation is gated by the event/window, not a timer) |
 
 **Behavior:**
-1. No active event in this channel → short reply, e.g. *(owner review)* `"There's nothing happening right now. Stick around — something might."`
-2. Active event → validate per `responseType` (token/answer match; delay elapsed); on invalid, a brief nudge (wrong/early) without consuming their one shot, or consume it — owner's call (see open items).
-3. Record the responder once (ignore duplicate `!random` from the same user in the same event).
-4. Resolve per `winnerRule`: `firstValid` resolves immediately; the others accumulate and resolve when the window closes (handled by the scheduler tick).
-5. On resolution, post the chosen outcome's `resultText` + a generated reward summary to the channel, and grant rewards to the winner(s).
+1. No active event in this channel → short reply (PM'd): `"There's no random event for you to respond to right now. When there is, everyone will be explicitly prompted."`
+2. Active event → validate per `responseType` (token/answer match); on invalid, a brief nudge, PM'd, **without consuming their one shot** — the resident can just try again.
+3. Record the responder once (ignore duplicate `!random` from the same user in the same event; PM'd "can't participate twice" nudge).
+4. Resolve per `winnerRule`: `firstValid` resolves immediately; the others accumulate (each accepted attempt gets a PM'd "you're in, results once everyone's had a chance to join") and resolve when the window closes (handled by the scheduler tick).
+5. On resolution, post the chosen outcome's `resultText` to the channel — substituting `{winners}` with every winner's `[user]` tag if present, so multi-winner outcomes can carry their own combined flavor (e.g. `"{winners} are now glowing purple."`) instead of a generic engine-authored line — followed by one combined reward line per distinct reward grant (winners who received identical rewards are grouped onto a single "X and Y receive Z!" line rather than repeated per person), and grants the rewards to the winner(s).
 
 ---
 
@@ -117,7 +122,7 @@ Per-channel opt-in + a tick handler parallel to `HandleFutureMessagesTick`:
 - **Opt-in:** new `ChannelSettings.AllowRandomEvents` flag (default `false`), matching the existing per-channel toggles (`AllowWork`, `AllowGames`, …) in [ChannelSettings.cs](../../../FChatDicebot/SavedData/ChannelSettings.cs). Only opted-in joined channels are eligible.
 - **Cadence:** about **one event per 6–8 hours per channel**, with jitter. Track a per-channel `nextFireUtc`; when reached, attempt a fire, then schedule the next at `now + random(6h, 8h)`.
 - **Activity gate:** to "encourage spontaneous chat activity" rather than spam dead rooms, only fire if the channel saw a human message within the last ~15 minutes. Record a per-channel `lastActivityUtc` in `HandleMessage` (where channel messages are already processed). If a fire is due but the channel is quiet, **skip and reschedule** (don't fire into an empty room).
-- **Fire:** pick a `RandomEvent` by `weight` (optionally filtered by category), materialize per-fire state (token/challenge/delay), post `announceText` to the channel, and open the active event with `windowEnd = now + responseWindowSeconds`.
+- **Fire:** pick a `RandomEvent` by `weight` (optionally filtered by category), materialize per-fire state (token/challenge), post `announceText` to the channel, and open the active event with `windowEnd = now + responseWindowSeconds`.
 - **Resolve:** each tick, close any active events whose window has elapsed (for non-`firstValid` rules) and emit the outcome.
 - **One at a time (B12.6):** at most one active event per channel; if one is active, a due fire is skipped (events are far enough apart that this is rare anyway).
 
@@ -154,9 +159,10 @@ Per-channel opt-in + a tick handler parallel to `HandleFutureMessagesTick`:
 ## Tests
 
 - **Selection:** weighted event pick is deterministic under a seeded RNG; category filter respected.
-- **Response validation:** `keyword` accepts only the matching token (case-insensitive) and rejects others; `challenge` accepts only the correct answer; `delay` rejects responses before the min delay and accepts after; `none` accepts a bare `!random`.
+- **Response validation:** `keyword` accepts only the matching token (case-insensitive) and rejects others; `challenge` accepts only the correct answer; `none` accepts a bare `!random`.
 - **Winner rules:** `firstValid` resolves on the first valid response; `nth` selects exactly the N-th; `allInWindow` grants every valid responder; `random` picks among valid responders (seeded); duplicate responses from one user ignored.
 - **Reward application:** each `type` mutates the right store by the rolled amount (currency add; training clamp 0–100; title added once; corruption up / purity down; curse added; `none` no write); profile saved once.
+- **Multi-winner resolution:** an outcome's `{winners}` placeholder substitutes every winner's tag with no reward line appended when nothing was granted; winners who receive identical reward fragments are combined onto one grouped line with the correct singular/plural verb.
 - **Scheduler:** a due fire into an active channel opens an event and reschedules; a due fire into a quiet channel skips + reschedules without posting; only one active event per channel; window elapse resolves non-`firstValid` events.
 
 ---
@@ -165,18 +171,34 @@ Per-channel opt-in + a tick handler parallel to `HandleFutureMessagesTick`:
 
 - **B12.1** `!random` is a **new command**; payoffs span **currency, title, training, corruption/purity, curse, or flavor**. The bot occasionally fires an event; users join with `!random {optional event-requested arg}`; the bot announces the outcome.
 - **B12.2** Per-channel timer into opted-in channels, **activity-gated**, ~**once per 6–8 hours** with jitter, open response window.
-- **B12.3** Anti-snipe arg is **per-event** — `keyword`, `challenge`, or `delay`.
+- **B12.3** Anti-snipe arg is **per-event** — `keyword` or `challenge` (a bare-`!random` "none" is also available for events that don't need one). A third `delay` type — gating on elapsed time rather than a code — was considered and dropped 2026-07-01 (owner): it would penalize a genuinely fast, correct response, and the keyword/challenge already supplies all the anti-snipe value.
 - **B12.4** Winner selection is **per-event** — first-come, all-in-window, exact Nth responder, or random.
 - **B12.5** Events authored in a **seeded collection**.
 - **B12.6** **One event at a time** per channel.
 
-## Open items
+## As-built defaults (owner-reviewed 2026-07-01)
 
-- All **framework** user-facing strings (no-event reply, too-early/wrong-answer nudge, window-closed/no-winner, generic win confirmation, reward-summary phrasing) pending owner wording approval. Per-event `announceText` / `resultText` are authored data, not code.
-- Exact tuning numbers: jitter bounds within 6–8h, activity-gate window (~15 min?), default `responseWindowSeconds`, per-reward magnitude ranges — owner to set when authoring events.
-- Whether an invalid/early `!random` **consumes** the user's one attempt or not.
-- Category-based event selection (seasonal/themed pools) — schema supports it; wire if wanted.
-- Whether to persist `nextFireUtc` across restarts (spec keeps it in-memory for simplicity).
+All framework strings live as `const`s on `RandomEventEngine` (search `// Framework user-facing strings`); tuning numbers are `const`s near the top of the same class.
+
+- **Framework user-facing strings** — final wording:
+  - *No active event* (`NoEventMessage`): "There's no random event for you to respond to right now. When there is, everyone will be explicitly prompted."
+  - *Wrong keyword* (`WrongArgMessage`, keyword type): "That's not the word this one's looking for. Try again!"
+  - *Wrong answer* (`WrongArgMessage`, challenge type): "That's not quite the answer this one's looking for. Give it another read and try again!"
+  - *Already responded* (`AlreadyRespondedMessage`): "You can't participate twice! Wait for next event."
+  - *Accepted, waiting* (`AcceptedWaitMessage`, PM'd, non-firstValid): "You're in! We'll announce the results once everyone has had some time to join."
+  - *No winner / window closed* (`NoWinnerMessage`): "Time's up for now. Until next time~"
+  - *Auto-appended anti-snipe hint* (when `announceText` omits the `{keyword}`/`{challenge}` placeholder): `[sub]Quick, [b]!random rose[/b] to take part![/sub]`
+  - *Win line*: `[user]Name[/user] receives [b]5 rosequartz[/b] and the title ·Lucky·!` for a single winner. Beyond this, all other resolution text is event-authored — see *Multi-winner resolution* below.
+- **Tuning numbers** (all `const` on `RandomEventEngine`): jitter `IntervalMinHours=6`/`IntervalMaxHours=8`; `ActivityWindowMinutes=15`; `DefaultResponseWindowSeconds=60` (used only when an event leaves `responseWindowSeconds` at 0). Per-reward magnitude ranges are authored per-event (engine just rolls `min..max` inclusive). Scheduler scan throttle `BotMain.RandomEventScanIntervalSeconds=10`.
+- **Invalid `!random` does NOT consume the attempt** — a wrong keyword/answer gets a PM nudge and the resident can retry immediately. There is no time-based rejection (see the dropped `delay` type above): the anti-snipe value is entirely in needing the right token/answer, so a genuinely quick, correct response should never be filtered out.
+- **Pending accepts are PM'd, not announced** — only the fire announcement and the resolution are public; accept/nudge/no-event replies go to the responder privately, keeping the channel clean (still TOS-safe since `!random` is user-invoked).
+- **Multi-winner resolution.** One outcome is rolled per event; its `resultText` is the header, with an optional `{winners}` placeholder substituted with every winner's `[user]` tag (joined "A, B and C") — this is how an author gives a multi-winner outcome its own combined flavor (e.g. `"{winners} are now glowing purple."`) instead of the engine inventing a generic per-person line. Each reward is then re-rolled and applied per winner (so `allInWindow` winners can receive varying amounts); winners who ended up with byte-identical reward fragments are grouped onto one line each (`"[user]Alice[/user] and [user]Bob[/user] receive [b]3 rosequartz[/b]!"`, singular "receives" for one winner); a winner granted nothing (a `none` reward, an already-maxed stat, a duplicate title, etc.) gets no reward line — the `{winners}` header is expected to already cover them.
+- **Category-based selection: NOT wired into the scheduler** — it weights across *all* events. `GetRandomEventsByCategory` exists (mirrors `GetDutiesByCategory`) for future seasonal/themed pools.
+- **`nextFireUtc` stays in-memory** — resets on restart; each eligible channel re-seeds its first fire at `now + random(6–8h)` on the first tick, so events don't all fire at once after a restart.
+
+## Seed data
+
+One starter event, **"Cutie says {word}"**, has been authored (owner inserted the document directly into the `RandomEvents` collection; it isn't tracked in this repo since events are pure Mongo data, not code). It's a `keyword`/`allInWindow` event: every resident who repeats Cutie's randomly-chosen word back within the window is granted the `Cutie` title, using the `{winners}` placeholder to greet everyone who caught it in one line. Authoring more events is tracked as a to-do (see `wiki-docs/Feature-Requests.md`) — write additional `RandomEvent` documents in the same shape; the scheduler picks among all of them by `weight` automatically, no code change needed.
 
 ## Assumptions
 

@@ -40,11 +40,11 @@ namespace FChatDicebot.BotCommands
                 thisChannel.AllowGames, thisChannel.AllowSettingChannelDescription, "", "", thisChannel.AllowChess, thisChannel.AllowChessEicons, thisChannel.CommandPrefix.ToString(), thisChannel.SinglePlayerGameCooldownSeconds,
                 thisChannel.CardPrintSetting != null && thisChannel.CardPrintSetting.FourColorPlayingCards, thisChannel.CardPrintSetting != null && thisChannel.CardPrintSetting.SortCards, thisChannel.CardPrintSetting != null && thisChannel.CardPrintSetting.TarotIcons, thisChannel.CardPrintSetting != null && thisChannel.CardPrintSetting.UsePlayingCardEmotes, thisChannel.UseDefaultPotions, thisChannel.PotionChipsCost, thisChannel.PotionCommandsAlias
                 );
-            string settingsPart1b = string.Format("[b]AllowWork:[/b] {0}, [b]WorkMultiplier:[/b] {1}, [b]WorkTierRange:[/b] {2}, [b]WorkBaseAmount:[/b] {3}, [b]WorkCommandAlias:[/b] {4}{5}{6}{7}{8}{9}{10}{11}{12}{13}{14}{15}{16}{17}{18}{19}\n" +
+            string settingsPart1b = string.Format("[b]AllowWork:[/b] {0}, [b]WorkMultiplier:[/b] {1}, [b]WorkTierRange:[/b] {2}, [b]WorkBaseAmount:[/b] {3}, [b]WorkCommandAlias:[/b] {4}, [b]AllowRandomEvents:[/b] {5}{6}{7}{8}{9}{10}{11}{12}{13}{14}{15}{16}{17}{18}{19}\n" +
                 "[b]OnlyOpViewOthersChips:[/b] {20}, [b]SlotsCooldownSeconds:[/b] {21}, [b]WorkCooldownSeconds:[/b] {22}, [b]ShowSpoilerSlots:[/b] {23}, [b]SpoilerAllOutputs:[/b] {24}, [b]DungeonDelveCooldownSeconds:[/b] {25}{26}{27}{28}{29}\n" +
                 "[b]AllowNsfw:[/b] {30}, [b]AllowRpg:[/b] {31}, [b]ShowCommasInNumbers:[/b] {32}, [b]CurrencyName:[/b] {33}, [b]CurrencyNamePlural:[/b] {34}{35}{36}\n"
                 ,
-                thisChannel.AllowWork, thisChannel.WorkMultiplier, thisChannel.WorkTierRange, thisChannel.WorkBaseAmount, string.IsNullOrEmpty(thisChannel.WorkCommandAlias) ? "(null)" : thisChannel.WorkCommandAlias, "","", "", "", "", "", "", "", "", "", "", "", "", "", "",
+                thisChannel.AllowWork, thisChannel.WorkMultiplier, thisChannel.WorkTierRange, thisChannel.WorkBaseAmount, string.IsNullOrEmpty(thisChannel.WorkCommandAlias) ? "(null)" : thisChannel.WorkCommandAlias, thisChannel.AllowRandomEvents,"", "", "", "", "", "", "", "", "", "", "", "", "", "",
                 thisChannel.OnlyOpViewOthersChips, thisChannel.SlotsCooldownSeconds, thisChannel.WorkCooldownSeconds, thisChannel.ShowSpoilerSlots, thisChannel.SpoilerAllOutputs, thisChannel.DungeonDelveCooldownSeconds, "","","","",
                 thisChannel.AllowNsfw, thisChannel.AllowRPG, thisChannel.ShowCommasInNumbers, thisChannel.CurrencyName, thisChannel.CurrencyNamePlural, "", ""
                 );

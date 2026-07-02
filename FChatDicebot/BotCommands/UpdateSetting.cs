@@ -91,6 +91,8 @@ namespace FChatDicebot.BotCommands
                     changed = SettingType.CommandPrefix;
                 if (terms.Contains("allowwork"))
                     changed = SettingType.AllowWork;
+                if (terms.Contains("allowrandomevents"))
+                    changed = SettingType.AllowRandomEvents;
                 if (terms.Contains("workmultiplier"))
                     changed = SettingType.WorkMultiplier;
                 if (terms.Contains("worktierrange"))
@@ -309,6 +311,9 @@ namespace FChatDicebot.BotCommands
                         }
                     }
                     break;
+                case SettingType.AllowRandomEvents:
+                    thisChannel.AllowRandomEvents = setValue;
+                    break;
                 case SettingType.WorkMultiplier:
                     if (setNumber < 0)
                         setNumber = 0;
@@ -518,6 +523,7 @@ namespace FChatDicebot.BotCommands
         SlotsMultiplierLimit,
         StartingChips,
         AllowWork,
+        AllowRandomEvents,
         WorkMultiplier,
         WorkTierRange,
         WorkBaseAmount,

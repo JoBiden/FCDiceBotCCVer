@@ -38,6 +38,9 @@ namespace FChatDicebot.SavedData
         public bool UseVcAccountForChips;
         public bool StartupChannel;
         public bool AllowWork;
+        // Opt-in for ambient random events (B12). Default false; the scheduler only fires into
+        // joined channels that have this enabled.
+        public bool AllowRandomEvents;
         public int WorkMultiplier;
         public int WorkTierRange;
         public int WorkBaseAmount;

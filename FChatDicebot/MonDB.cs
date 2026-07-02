@@ -140,6 +140,16 @@ namespace FChatDicebot
             return GetDatabase().GetDutiesByCategory(category);
         }
 
+        internal static List<RandomEvent> getRandomEvents()
+        {
+            return GetDatabase().GetRandomEvents();
+        }
+
+        internal static List<RandomEvent> getRandomEventsByCategory(string category)
+        {
+            return GetDatabase().GetRandomEventsByCategory(category);
+        }
+
         internal static List<Identifier> getIdentifiers(string category)
         {
             return GetDatabase().GetIdentifiersByCategory(category);

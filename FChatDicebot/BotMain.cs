@@ -87,6 +87,9 @@ namespace FChatDicebot
         public List<BotFutureMessage> FutureMessages;
         public BotCommandController BotCommandController;
         public DiceBot DiceBot;
+        // Ambient "random events" scheduler/resolver (B12). In-memory per-channel state; created
+        // in Run() once the database is initialized. Profile reads/writes go through MonDB.
+        public BotCommands.Support.RandomEventEngine RandomEventEngine;
         public AccountSettings AccountSettings;
         public List<SavedRollTable> SavedTables;
         public List<SavedSlotsSetting> SavedSlots;
@@ -137,6 +140,9 @@ namespace FChatDicebot
         public int ReconnectTimer = 0;
         public const double CheckinIntervalSeconds = 20;
         public const double ChannelOpsRefreshSeconds = 60 * 60;
+        // How often the random-events scheduler scans eligible channels (seconds). Events are
+        // hours apart, so a coarse scan is plenty and keeps the 200ms tick loop cheap.
+        public const double RandomEventScanIntervalSeconds = 10;
         public List<string> ChannelsJoined = new List<string>();
         public List<UserGeneratedCommand> WaitingChannelOpRequests = new List<UserGeneratedCommand>();
         public List<BuyCommand> WaitingBuyCommands = new List<BuyCommand>();
@@ -182,6 +188,7 @@ namespace FChatDicebot
             WebRequests = new BotWebRequests();
             _discordUsers = new List<SocketUser>();
             DiceBot = new DiceFunctions.DiceBot(this);
+            RandomEventEngine = new BotCommands.Support.RandomEventEngine(MonDB.getProfile, MonDB.setProfile);
             VelvetcuffConnection = new FChatDicebot.VelvetcuffConnection(WebRequests, AccountSettings);
 
             if(RunMode == RunMode.FListOnly || RunMode == RunMode.FlistPlusDiscord)
@@ -644,6 +651,7 @@ namespace FChatDicebot
                         }
                     }
                     HandleFutureMessagesTick(TickTimeMiliseconds);
+                    HandleRandomEventsTick(TickTimeMiliseconds);
 
                     Thread.Sleep(TickTimeMiliseconds);
                 }
@@ -993,6 +1001,46 @@ namespace FChatDicebot
             }
         }
 
+        // Heartbeat for the ambient random-events scheduler (B12), sibling to
+        // HandleFutureMessagesTick. The per-channel scan is throttled to RandomEventScanIntervalSeconds
+        // so we don't hammer the loop or Mongo: most ticks do nothing, and the event list is only
+        // loaded when an event is actually about to fire. Only opted-in, currently-joined channels
+        // are eligible. Wrapped per-channel so one bad channel can't abort the others.
+        private double _lastRandomEventScanSeconds = 0;
+        private void HandleRandomEventsTick(int tickMs)
+        {
+            if (RandomEventEngine == null || SavedChannelSettings == null)
+                return;
+
+            double nowSeconds = DoubleTime.GetCurrentTimestampSeconds();
+            if (nowSeconds - _lastRandomEventScanSeconds < RandomEventScanIntervalSeconds)
+                return;
+            _lastRandomEventScanSeconds = nowSeconds;
+
+            DateTime utcNow = DateTime.UtcNow;
+            List<ChannelSettings> eligible = SavedChannelSettings
+                .Where(cs => cs != null && cs.AllowRandomEvents && ChannelsJoined != null && ChannelsJoined.Contains(cs.Name))
+                .ToList();
+
+            foreach (ChannelSettings cs in eligible)
+            {
+                try
+                {
+                    List<string> messages = RandomEventEngine.Tick(cs.Name, utcNow, () => MonDB.getRandomEvents());
+                    foreach (string m in messages)
+                    {
+                        if (!string.IsNullOrEmpty(m))
+                            SendMessageInChannel(m, cs.Name);
+                    }
+                }
+                catch (Exception exc)
+                {
+                    Console.WriteLine("Exception in HandleRandomEventsTick for " + cs.Name + ": " + exc.ToString());
+                    Utils.AddToLog("Exception in HandleRandomEventsTick for " + cs.Name + ": " + exc.ToString(), null);
+                }
+            }
+        }
+
         private void PerformStartupClientCommands(WebSocket sock, BotMessage firstIdnRequest, bool reconnect)
         {
             if (firstIdnRequest == null)
@@ -1293,6 +1341,16 @@ namespace FChatDicebot
                 prefixChar = channelSettings.CommandPrefix.ToString();
             }
             string[] channelOps = channelSettings != null ? channelSettings.GetChannelOps() : null;
+
+            // Activity gate for ambient random events (B12): any human message in a channel keeps
+            // it "awake" so the scheduler only fires into rooms with live chatter. The bot's own
+            // posts are excluded so they can't keep a dead room artificially alive.
+            if (RandomEventEngine != null
+                && BotCommandController.MessageCameFromChannel(newAddress)
+                && (AccountSettings == null || !string.Equals(messageContent.character, AccountSettings.CharacterName, StringComparison.OrdinalIgnoreCase)))
+            {
+                RandomEventEngine.RecordActivity(messageContent.channel, DateTime.UtcNow);
+            }
 
             if (string.IsNullOrEmpty(messageContent.message))
             {
