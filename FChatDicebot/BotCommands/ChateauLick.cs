@@ -58,6 +58,7 @@ namespace FChatDicebot.BotCommands
                 lick.recipient = recipient;
                 lick.type = "lick";
                 lick.investmentLevel = "casual";
+                lick.interactionTime = DateTime.UtcNow;
 
                 PendingCommand pendingLick = new PendingCommand();
                 pendingLick.pendingInteraction = lick;

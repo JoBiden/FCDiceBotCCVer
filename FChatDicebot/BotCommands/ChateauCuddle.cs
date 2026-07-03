@@ -58,6 +58,7 @@ namespace FChatDicebot.BotCommands
                 cuddle.recipient = recipient;
                 cuddle.type = "cuddle";
                 cuddle.investmentLevel = "casual";
+                cuddle.interactionTime = DateTime.UtcNow;
 
                 PendingCommand pendingCuddle = new PendingCommand();
                 pendingCuddle.pendingInteraction = cuddle;

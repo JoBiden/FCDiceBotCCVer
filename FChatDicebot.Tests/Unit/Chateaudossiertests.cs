@@ -603,6 +603,106 @@ namespace FChatDicebot.Tests.Unit
 
         #endregion
 
+        #region BuildLastSeenSection Tests (disposition #3 / L2)
+
+        [Fact]
+        public void BuildLastSeenSection_NoInteractions_ReturnsEmpty()
+        {
+            new ProfileBuilder().WithUserName("Target").WithDisplayName("Target").BuildAndSave(_fixture.Database);
+
+            string result = InvokeBuildLastSeenSection("Target");
+
+            Assert.Empty(result);
+        }
+
+        [Fact]
+        public void BuildLastSeenSection_OnlyCasualInteractions_ReturnsEmpty()
+        {
+            // A casual-only history must not surface a "Last seen" line at all — casuals
+            // are excluded entirely, not merely outranked by something more recent.
+            new ProfileBuilder().WithUserName("Alice").WithDisplayName("Alice").BuildAndSave(_fixture.Database);
+            new ProfileBuilder().WithUserName("Target").WithDisplayName("Target").BuildAndSave(_fixture.Database);
+
+            _fixture.Database.AddInteraction(new Interaction
+            {
+                initiator = "Alice",
+                recipient = "Target",
+                type = "kiss",
+                investmentLevel = "casual",
+                interactionTime = DateTime.UtcNow
+            });
+
+            string result = InvokeBuildLastSeenSection("Target");
+
+            Assert.Empty(result);
+        }
+
+        [Fact]
+        public void BuildLastSeenSection_NewerCasualDoesNotOverrideOlderNonCasual()
+        {
+            // Regression test for disposition #3 / L2: a more recent casual interaction
+            // (e.g. a kiss) must not bury an older but more meaningful interaction (e.g. a
+            // feed) in the "Last seen" line.
+            new ProfileBuilder().WithUserName("Alice").WithDisplayName("Alice").BuildAndSave(_fixture.Database);
+            new ProfileBuilder().WithUserName("Target").WithDisplayName("Target").BuildAndSave(_fixture.Database);
+
+            _fixture.Database.AddInteraction(new Interaction
+            {
+                initiator = "Alice",
+                recipient = "Target",
+                type = "feed",
+                identifier = "cake",
+                investmentLevel = "involved",
+                interactionTime = DateTime.UtcNow.AddDays(-1)
+            });
+            _fixture.Database.AddInteraction(new Interaction
+            {
+                initiator = "Alice",
+                recipient = "Target",
+                type = "kiss",
+                investmentLevel = "casual",
+                interactionTime = DateTime.UtcNow
+            });
+
+            string result = InvokeBuildLastSeenSection("Target");
+
+            Assert.Contains("fed", result);
+        }
+
+        [Fact]
+        public void BuildLastSeenSection_PicksMostRecentNonCasual()
+        {
+            new ProfileBuilder().WithUserName("Alice").WithDisplayName("Alice").BuildAndSave(_fixture.Database);
+            new ProfileBuilder().WithUserName("Bob").WithDisplayName("Bob").BuildAndSave(_fixture.Database);
+            new ProfileBuilder().WithUserName("Target").WithDisplayName("Target").BuildAndSave(_fixture.Database);
+
+            _fixture.Database.AddInteraction(new Interaction
+            {
+                initiator = "Alice",
+                recipient = "Target",
+                type = "feed",
+                identifier = "cake",
+                investmentLevel = "involved",
+                interactionTime = DateTime.UtcNow.AddDays(-2)
+            });
+            _fixture.Database.AddInteraction(new Interaction
+            {
+                initiator = "Bob",
+                recipient = "Target",
+                type = "feed",
+                identifier = "pie",
+                investmentLevel = "involved",
+                interactionTime = DateTime.UtcNow.AddDays(-1)
+            });
+
+            string result = InvokeBuildLastSeenSection("Target");
+
+            Assert.Contains("Bob", result);
+            Assert.Contains("pie", result);
+        }
+
+        #endregion
+
         #region Helper Methods for Reflection
 
         private string InvokeBuildJobSection(Profile profile)
@@ -657,6 +757,13 @@ namespace FChatDicebot.Tests.Unit
         private string InvokeBuildSiredSection(string targetUser)
         {
             var method = typeof(ChateauDossier).GetMethod("BuildSiredSection",
+                BindingFlags.NonPublic | BindingFlags.Instance);
+            return (string)method.Invoke(_dossier, new object[] { targetUser });
+        }
+
+        private string InvokeBuildLastSeenSection(string targetUser)
+        {
+            var method = typeof(ChateauDossier).GetMethod("BuildLastSeenSection",
                 BindingFlags.NonPublic | BindingFlags.Instance);
             return (string)method.Invoke(_dossier, new object[] { targetUser });
         }

@@ -865,7 +865,16 @@ namespace FChatDicebot.BotCommands
         /// </summary>
         private string BuildLastSeenSection(string targetUser)
         {
-            List<Interaction> receivedInteractions = _database.GetInteractionsByRecipient(targetUser);
+            // Casual interactions (kiss, cuddle, spank, ...) are high-frequency and
+            // low-stakes by design — they shouldn't bury a meaningful "Last seen" entry
+            // (a mark, a breed, a payment) under whichever casual happened most recently.
+            // Explicitly excluding casual-tier interactions here (rather than the old
+            // approach of persisting a DateTime.MinValue timestamp for some casuals so
+            // they'd always lose the "most recent" comparison) means every interaction can
+            // carry its real timestamp for other features to use.
+            List<Interaction> receivedInteractions = _database.GetInteractionsByRecipient(targetUser)
+                ?.Where(i => !string.Equals(i.investmentLevel, "casual", StringComparison.OrdinalIgnoreCase))
+                .ToList();
             if (receivedInteractions == null || receivedInteractions.Count == 0)
             {
                 return string.Empty;

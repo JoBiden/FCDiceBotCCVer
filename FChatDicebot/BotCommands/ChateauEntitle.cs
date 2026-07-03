@@ -80,6 +80,7 @@ namespace FChatDicebot.BotCommands
             entitleInteraction.type = "entitle";
             entitleInteraction.identifier = titleText;
             entitleInteraction.investmentLevel = "commitment";
+            entitleInteraction.interactionTime = DateTime.UtcNow;
 
             PendingCommand pendingEntitle = new PendingCommand();
             pendingEntitle.pendingInteraction = entitleInteraction;

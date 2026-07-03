@@ -58,6 +58,7 @@ namespace FChatDicebot.BotCommands
                 bully.recipient = recipient;
                 bully.type = "bully";
                 bully.investmentLevel = "casual";
+                bully.interactionTime = DateTime.UtcNow;
 
                 PendingCommand pendingBully = new PendingCommand();
                 pendingBully.pendingInteraction = bully;
