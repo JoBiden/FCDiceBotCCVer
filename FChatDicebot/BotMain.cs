@@ -679,8 +679,22 @@ namespace FChatDicebot
                             ReconnectTimer = 0;
                         }
                     }
-                    HandleFutureMessagesTick(TickTimeMiliseconds);
-                    HandleRandomEventsTick(TickTimeMiliseconds);
+                    try
+                    {
+                        // Neither call was inside any try/catch here before: an uncaught
+                        // throw from either one (e.g. HandleRandomEventsTick's channel scan
+                        // racing the websocket thread's ChannelsJoined/SavedChannelSettings
+                        // mutations) would propagate out of RunLoopFList and silently kill
+                        // this background thread for good — no crash, no restart, just a
+                        // bot that stops processing future messages and random events.
+                        HandleFutureMessagesTick(TickTimeMiliseconds);
+                        HandleRandomEventsTick(TickTimeMiliseconds);
+                    }
+                    catch (Exception exc)
+                    {
+                        Console.WriteLine("Exception in future-messages/random-events tick: " + exc.ToString());
+                        Utils.AddToLog("Exception in future-messages/random-events tick: " + exc.ToString(), exc.StackTrace);
+                    }
 
                     Thread.Sleep(TickTimeMiliseconds);
                 }
@@ -747,13 +761,22 @@ namespace FChatDicebot
 
                 if (_client.ConnectionState == ConnectionState.Connected)
                 {
-                    try
+                    // In FlistPlusDiscord mode both RunLoopFList and RunLoopDiscord run as
+                    // concurrent background threads. UpdateAllGames (over the unlocked
+                    // GameSessions list) and the future-messages tick below are shared,
+                    // mode-independent work, so RunLoopFList already owns them; running them
+                    // here too used to race UpdateAllGames and double-tick future messages
+                    // (they'd count down twice as fast as intended).
+                    if (RunMode != RunMode.FlistPlusDiscord)
                     {
-                        DiceBot.UpdateAllGames();
-                    }
-                    catch (Exception exc)
-                    {
-                        Console.WriteLine("exception on UpdateAllGames " + exc.ToString());
+                        try
+                        {
+                            DiceBot.UpdateAllGames();
+                        }
+                        catch (Exception exc)
+                        {
+                            Console.WriteLine("exception on UpdateAllGames " + exc.ToString());
+                        }
                     }
                     try
                     {
@@ -881,7 +904,11 @@ namespace FChatDicebot
                     //    ReconnectTimer = 0;
                     //}
                 }
-                HandleFutureMessagesTick(TickTimeMiliseconds);
+                // Owned by RunLoopFList in FlistPlusDiscord mode; see the comment above.
+                if (RunMode != RunMode.FlistPlusDiscord)
+                {
+                    HandleFutureMessagesTick(TickTimeMiliseconds);
+                }
 
                 Thread.Sleep(TickTimeMiliseconds);
             }
