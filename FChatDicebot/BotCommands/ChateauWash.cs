@@ -126,7 +126,11 @@ namespace FChatDicebot.BotCommands
             }
             else
             {
-                target.RemainingMentions = target.Layers * OdorizeProcessor.MentionsPerLayer;
+                // Clamp, never extend (L9): resetting to a full fresh allotment for the new
+                // (lower) layer count could make a nearly-faded scent (e.g. 1 mention left on
+                // a 2-layer stack) linger longer after a wash than before it.
+                int fullAllotmentForRemainingLayers = target.Layers * OdorizeProcessor.MentionsPerLayer;
+                target.RemainingMentions = Math.Min(target.RemainingMentions, fullAllotmentForRemainingLayers);
             }
 
             ScentLayer.SaveAll(caller, layers);

@@ -89,6 +89,12 @@ namespace FChatDicebot.BotCommands
             { "pledge", "Pledging" },
             { "dressupgive", "Beautifying" },
             { "dressuptake", "Dressup" },
+            // climaxgive/climaxtake are shared between !climax and !climaxfor — both route
+            // through the single ClimaxforProcessor instance (see InteractionProcessorRegistry),
+            // which swaps which party gets credited give vs. take depending on which verb was
+            // typed (climaxtake = the climaxer, climaxgive = their partner). L4: if either verb's
+            // crediting logic changes, keep it in sync with the other or these specialist counts
+            // (and this dossier readout) will mis-attribute one side's history to the other.
             { "climaxgive", "Climax Claiming" },
             { "climaxtake", "Climaxing" }
         };
@@ -455,7 +461,14 @@ namespace FChatDicebot.BotCommands
             sb.Append("[b]Active Scents:[/b]");
             foreach (var s in scents)
             {
-                sb.Append("\n[u]").Append(Utils.Capitalize(s.Scent ?? string.Empty)).Append(":[/u] ")
+                // Route through the SSOT scent-phrase helper (same one !odorize itself uses)
+                // instead of rendering the raw scent identifier token (L11) — a "personal"
+                // or "scentof"-category scent renders as "Alice's musk" rather than "Musk".
+                Identifier scentIdentifier = _database.GetIdentifier(s.Scent);
+                string appliedByDisplay = _database.GetDisplayName(s.AppliedBy) ?? s.AppliedBy;
+                string scentPhrase = ScentText.ScentPhrase(scentIdentifier, s.Scent, appliedByDisplay);
+
+                sb.Append("\n[u]").Append(Utils.Capitalize(scentPhrase)).Append(":[/u] ")
                   .Append(s.Layers).Append(s.Layers == 1 ? " layer" : " layers");
             }
             sb.Append('\n');
@@ -865,7 +878,16 @@ namespace FChatDicebot.BotCommands
         /// </summary>
         private string BuildLastSeenSection(string targetUser)
         {
-            List<Interaction> receivedInteractions = _database.GetInteractionsByRecipient(targetUser);
+            // Casual interactions (kiss, cuddle, spank, ...) are high-frequency and
+            // low-stakes by design — they shouldn't bury a meaningful "Last seen" entry
+            // (a mark, a breed, a payment) under whichever casual happened most recently.
+            // Explicitly excluding casual-tier interactions here (rather than the old
+            // approach of persisting a DateTime.MinValue timestamp for some casuals so
+            // they'd always lose the "most recent" comparison) means every interaction can
+            // carry its real timestamp for other features to use.
+            List<Interaction> receivedInteractions = _database.GetInteractionsByRecipient(targetUser)
+                ?.Where(i => !string.Equals(i.investmentLevel, "casual", StringComparison.OrdinalIgnoreCase))
+                .ToList();
             if (receivedInteractions == null || receivedInteractions.Count == 0)
             {
                 return string.Empty;

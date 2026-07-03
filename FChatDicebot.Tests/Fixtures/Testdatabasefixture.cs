@@ -5,6 +5,16 @@ using MongoDB.Driver;
 using System;
 using Xunit;
 
+// InteractionProcessorRegistry and MonDB are both process-wide static singletons: the registry
+// constructs every processor exactly once (on first GetProcessor call) bound to whatever
+// MonDB.GetDatabase() returns AT THAT MOMENT, and that binding can't be changed afterwards. Xunit
+// runs different test collections in parallel by default, so a collection with no [Collection]
+// attribute (e.g. one that only touches the registry, never the database) can race ahead of the
+// "Database" collection's fixture and lock every processor onto MonDB's lazy production-database
+// default before TestDatabaseFixture ever calls MonDB.Initialize. Disabling parallelization makes
+// that ordering deterministic instead of a flaky race.
+[assembly: CollectionBehavior(DisableTestParallelization = true)]
+
 namespace FChatDicebot.Tests.Fixtures
 {
     /// <summary>
@@ -17,6 +27,14 @@ namespace FChatDicebot.Tests.Fixtures
 
         public TestDatabaseFixture()
         {
+            // Also point the static MonDB adapter at the test database. Code obtained through
+            // InteractionProcessorRegistry (e.g. GroupInteractionResolver, ChateauConsent) is
+            // constructed via processors' legacy parameterless constructor, which reads its
+            // IChateauDatabase from MonDB.GetDatabase() rather than from this fixture's Database
+            // property. Without this, that path would silently fall back to MonDB's lazy
+            // production-database default and never see any data seeded through Database below.
+            FChatDicebot.MonDB.Initialize(TestConfiguration.TestConnectionString, TestConfiguration.TestDatabaseName);
+
             // Create test database instance
             Database = new ChateauDatabase(
                 TestConfiguration.TestConnectionString,

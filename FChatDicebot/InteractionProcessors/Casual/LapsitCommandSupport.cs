@@ -1,5 +1,6 @@
 using FChatDicebot.BotCommands.Support;
 using FChatDicebot.Model;
+using System;
 
 namespace FChatDicebot.InteractionProcessors.Casual
 {
@@ -44,7 +45,8 @@ namespace FChatDicebot.InteractionProcessors.Casual
                 // wording.
                 type = typedVerb,
                 identifier = typedVerb,
-                investmentLevel = "casual"
+                investmentLevel = "casual",
+                interactionTime = DateTime.UtcNow
             };
 
             var pending = new PendingCommand

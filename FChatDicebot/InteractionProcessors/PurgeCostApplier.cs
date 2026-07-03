@@ -88,7 +88,9 @@ namespace FChatDicebot.InteractionProcessors
             var pick = PickAndApplyRandomBreak(database, callerProfile, rng);
             if (pick == null)
             {
-                // No break catalog — degrade to MissedWork so the cost still bites.
+                // No break catalog, or every breakable part is already broken at least as
+                // severely as any roll could produce — degrade to MissedWork so the cost
+                // still bites rather than silently doing nothing (L8).
                 return ApplyMissedWork(database, callerProfile);
             }
             string daysWord = pick.Days == 1 ? "day" : "days";
@@ -105,6 +107,12 @@ namespace FChatDicebot.InteractionProcessors
         /// the break to the caller's profile. Returns the (part, days) tuple for the caller
         /// to use in its description, or null if no break catalog exists. Mutates and
         /// persists the profile.
+        ///
+        /// BreakProcessor.ApplyBreak only raises severity to the max of the roll and any
+        /// existing break on that part — a roll for an already-more-severely-broken part is
+        /// a silent no-op (L8), letting the cost land for free. Retries with a fresh part
+        /// (excluding ones already tried) until a roll actually raises severity, or gives up
+        /// after trying every breakable part (falls back to MissedWork via the null return).
         /// </summary>
         private static BreakPick PickAndApplyRandomBreak(IChateauDatabase database, Profile callerProfile, Random rng)
         {
@@ -112,14 +120,32 @@ namespace FChatDicebot.InteractionProcessors
                 ?? new List<Identifier>();
             if (breakables.Count == 0) return null;
 
-            Identifier picked = breakables[rng.Next(breakables.Count)];
-            int days = rng.Next(RandomBreakMinDays, RandomBreakMaxDays + 1);
-            BreakProcessor.ApplyBreak(callerProfile, picked.type, days, "Withdrawal");
-            if (database != null && !string.IsNullOrEmpty(callerProfile.userName))
+            var existingSeverityByPart = BreakInstance.LoadAllWithTick(callerProfile)
+                .ToDictionary(b => b.Part, b => b.Severity, StringComparer.OrdinalIgnoreCase);
+
+            var remaining = new List<Identifier>(breakables);
+            while (remaining.Count > 0)
             {
-                database.SetProfile(callerProfile.userName, callerProfile);
+                int index = rng.Next(remaining.Count);
+                Identifier picked = remaining[index];
+                remaining.RemoveAt(index);
+
+                int days = rng.Next(RandomBreakMinDays, RandomBreakMaxDays + 1);
+                int existingSeverity = existingSeverityByPart.TryGetValue(picked.type, out var sev) ? sev : 0;
+                if (days <= existingSeverity)
+                {
+                    continue; // would be a no-op; try a different part
+                }
+
+                BreakProcessor.ApplyBreak(callerProfile, picked.type, days, "Withdrawal");
+                if (database != null && !string.IsNullOrEmpty(callerProfile.userName))
+                {
+                    database.SetProfile(callerProfile.userName, callerProfile);
+                }
+                return new BreakPick { Part = picked.type, Days = days };
             }
-            return new BreakPick { Part = picked.type, Days = days };
+
+            return null; // every breakable part was already broken at least as severely
         }
 
         private class BreakPick

@@ -32,8 +32,16 @@ namespace FChatDicebot
         {
             if (_database == null)
             {
-                // Default to production database if not initialized
-                Initialize("mongodb://localhost:27017", "ChateauDb");
+                // Used to silently default to the production database on first touch. That's
+                // a foot-gun: a script or test that forgets to call Initialize (or a test that
+                // isn't wired into TestDatabaseFixture) would transparently start reading/writing
+                // real production data instead of failing loudly. BotMain.Initialize is always
+                // called at real startup, so a live bot never hits this.
+                throw new InvalidOperationException(
+                    "MonDB.GetDatabase() was called before MonDB.Initialize(...). "
+                    + "Call Initialize with an explicit connection string first — this used to "
+                    + "silently default to the production database, which is exactly the kind "
+                    + "of accident this exception exists to prevent.");
             }
             return _database;
         }
@@ -182,11 +190,6 @@ namespace FChatDicebot
         internal static void removePendingInteraction(ObjectId idToRemove)
         {
             GetDatabase().DeletePendingCommand(idToRemove);
-        }
-
-        internal static void getInteractions(string location)
-        {
-            throw new System.NotImplementedException();
         }
 
         internal static List<Interaction> getInteractionsByInitiator(string initiator)

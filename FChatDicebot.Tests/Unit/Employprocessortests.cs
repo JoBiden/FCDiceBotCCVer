@@ -37,6 +37,38 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
         }
 
         [Fact]
+        public void ValidateInteraction_RecipientEmployedTooRecently_ReturnsFailure()
+        {
+            // Regression test for M9: the recheck was never wired, so a recipient could be
+            // re-employed (job/employer swapped) an unlimited number of times per day.
+            new ProfileBuilder().WithUserName("Alice").WithDisplayName("Alice").BuildAndSave(_database);
+            new ProfileBuilder()
+                .WithUserName("Bob")
+                .WithDisplayName("Bob")
+                .WithTimer("employ", DateTime.UtcNow.AddHours(12))
+                .BuildAndSave(_database);
+
+            var result = _processor.ValidateInteraction("Alice", "Bob", "butler");
+
+            Assert.False(result.IsValid);
+        }
+
+        [Fact]
+        public void ValidateInteraction_RecipientEmployCooldownExpired_ReturnsSuccess()
+        {
+            new ProfileBuilder().WithUserName("Alice").WithDisplayName("Alice").BuildAndSave(_database);
+            new ProfileBuilder()
+                .WithUserName("Bob")
+                .WithDisplayName("Bob")
+                .WithTimer("employ", DateTime.UtcNow.AddHours(-1))
+                .BuildAndSave(_database);
+
+            var result = _processor.ValidateInteraction("Alice", "Bob", "butler");
+
+            Assert.True(result.IsValid);
+        }
+
+        [Fact]
         public void ProcessInteraction_SetsJobAndEmployer()
         {
             // Arrange

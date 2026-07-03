@@ -78,6 +78,7 @@ namespace FChatDicebot.BotCommands
                         if (interaction.identifier == location)
                         {
                             Profile statue = MonDB.getProfile(interaction.recipient);
+                            if (statue == null) continue; // petrified resident's profile no longer exists (L13)
                             returnText += "\n" + statue.displayName;
                             if (statue.characteristics.ContainsKey("monster"))
                             {

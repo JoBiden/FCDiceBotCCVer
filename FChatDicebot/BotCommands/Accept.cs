@@ -24,18 +24,9 @@ namespace FChatDicebot.BotCommands
 
         public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, MessageAddress address, UserGeneratedCommand command)
         {
-            string characterName = address.character;
-            string channel = address.channel;
-
-            // A game wager proposal awaiting this player takes priority; otherwise !accept is the
-            // ordinary alias for !consent.
-            string wagerResult = DiceFunctions.Wager.WagerGameSupport.TryAcceptWager(bot, address);
-            if (wagerResult != null)
-            {
-                bot.SendMessageInChannel(wagerResult, address);
-                return;
-            }
-
+            // !accept is the ordinary alias for !consent, which itself checks for a pending
+            // targeted wager proposal first (disposition #2) — no need to duplicate that
+            // check here too.
             ChateauConsent accept = new ChateauConsent();
             accept.Run(bot, commandController, rawTerms, terms, address, command);
         }

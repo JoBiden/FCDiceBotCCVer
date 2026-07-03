@@ -101,6 +101,37 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
             Assert.False(_database.GetProfile("Dave").counts.ContainsKey("licktake"));
         }
 
+        // ---- Enforcement spine (H2, group side): a re-validation failure drops the seat ----
+
+        [Fact]
+        public void ConsentedSeat_FailsRevalidation_DroppedFromMomentButOthersStillResolve()
+        {
+            SeedProfiles("Alice", "Bob", "Carol");
+            var seats = CreateGroup("Alice", "cuddle", null, "Bob", "Carol");
+
+            var carolProfile = _database.GetProfile("Carol");
+            BreakInstance.SaveAll(carolProfile, new List<BreakInstance>
+            {
+                new BreakInstance { Part = "torso", Severity = 5, BrokenBy = "TestSetter", BrokenAt = DateTime.UtcNow, LastTickedAt = DateTime.UtcNow.Date }
+            });
+            _database.SetProfile("Carol", carolProfile);
+
+            ConsentInOrder(seats); // Bob then Carol
+
+            var result = GroupInteractionResolver.CheckAndResolve(_database, seats[0].groupId);
+
+            Assert.True(result.Resolved); // Bob's seat still completes
+            Assert.Single(result.Dropped);
+            Assert.Equal("Carol", result.Dropped[0].Participant);
+            Assert.Contains("torso", result.Dropped[0].Reason);
+
+            // Only Alice + Bob counted (M=2) — Carol excluded entirely from the math.
+            Assert.Equal(1, _database.GetProfile("Alice").counts["cuddle"]);
+            Assert.Equal(1, _database.GetProfile("Bob").counts["cuddle"]);
+            Assert.False(_database.GetProfile("Carol").counts.ContainsKey("cuddle"));
+            Assert.Empty(_database.GetPendingCommandsByGroupId(seats[0].groupId));
+        }
+
         [Fact]
         public void ZeroConsent_AllExpired_GroupDiesSilently()
         {

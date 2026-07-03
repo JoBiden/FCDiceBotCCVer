@@ -306,26 +306,33 @@ namespace FChatDicebot.BotCommands.Support
                 WindowEndUtc = utcNow.AddSeconds(windowSeconds),
             };
 
-            string announce = chosen.announceText ?? "";
+            string template = chosen.announceText ?? "";
+            string announce;
             string type = (chosen.responseType ?? ResponseTypeNone).ToLowerInvariant();
             switch (type)
             {
                 case ResponseTypeKeyword:
                     ae.Keyword = KeywordPool[_rng.Next(KeywordPool.Length)];
-                    announce = Substitute(announce, ae.Keyword, "", windowSeconds);
-                    if (!announce.Contains(ae.Keyword))
+                    announce = Substitute(template, ae.Keyword, "", windowSeconds);
+                    // Check whether the *template* actually used the {keyword} placeholder
+                    // (B12-4), not whether the substituted output happens to contain the
+                    // keyword string — the announce text's unrelated flavor wording could
+                    // coincidentally contain the same word (or a case-different form of it,
+                    // since this used to be a case-sensitive Contains), silently suppressing
+                    // the "Quick, !random X" instruction players need to see to participate.
+                    if (!template.Contains("{keyword}"))
                         announce += "\n[sub]Quick, [b]!random " + ae.Keyword + "[/b] to take part![/sub]";
                     break;
                 case ResponseTypeChallenge:
                     string problem;
                     GenerateChallenge(_rng, out problem, out string answer);
                     ae.ChallengeAnswer = answer;
-                    announce = Substitute(announce, "", problem, windowSeconds);
-                    if (!announce.Contains(problem))
+                    announce = Substitute(template, "", problem, windowSeconds);
+                    if (!template.Contains("{challenge}"))
                         announce += "\n[sub]Quick, [b]!random " + problem + " = ?[/b] to take part![/sub]";
                     break;
                 default:
-                    announce = Substitute(announce, "", "", windowSeconds);
+                    announce = Substitute(template, "", "", windowSeconds);
                     break;
             }
 

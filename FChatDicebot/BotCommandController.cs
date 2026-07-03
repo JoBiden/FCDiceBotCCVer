@@ -109,8 +109,20 @@ namespace FChatDicebot
                         a => a // Original command object
                     );
 
-                if(!string.IsNullOrEmpty(settings.WorkCommandAlias))
-                    alteredCommandMap.Add(settings.WorkCommandAlias, BotCommands.FirstOrDefault(a => a.Name == ("work")));
+                if (!string.IsNullOrEmpty(settings.WorkCommandAlias))
+                {
+                    // Indexer assignment (last-wins), not Dictionary.Add: a channel admin's
+                    // configured alias (currency name, work alias, potion alias) can collide
+                    // with another alias in this same map (e.g. a currency named "potion"
+                    // colliding with the derived "showpotions" alias). Add() throws
+                    // ArgumentException on a colliding key, which previously disabled all
+                    // alias dispatch in that channel until the config was fixed.
+                    if (alteredCommandMap.ContainsKey(settings.WorkCommandAlias))
+                    {
+                        Console.WriteLine("Alias collision: WorkCommandAlias '" + settings.WorkCommandAlias + "' already maps to another command in channel " + address.channel + ".");
+                    }
+                    alteredCommandMap[settings.WorkCommandAlias] = BotCommands.FirstOrDefault(a => a.Name == ("work"));
+                }
 
                 if (!string.IsNullOrEmpty(settings.PotionCommandsAlias))
                 {
@@ -123,7 +135,11 @@ namespace FChatDicebot
                         );
                     foreach (var pot in alteredCommandMapPotions)
                     {
-                        alteredCommandMap.Add(pot.Key, pot.Value);
+                        if (alteredCommandMap.ContainsKey(pot.Key))
+                        {
+                            Console.WriteLine("Alias collision: PotionCommandsAlias '" + pot.Key + "' already maps to another command in channel " + address.channel + ".");
+                        }
+                        alteredCommandMap[pot.Key] = pot.Value;
                     }
                 }
 

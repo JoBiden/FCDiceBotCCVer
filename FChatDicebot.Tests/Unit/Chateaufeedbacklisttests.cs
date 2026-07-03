@@ -160,6 +160,21 @@ namespace FChatDicebot.Tests.Unit
             Assert.DoesNotContain("User9", output);
         }
 
+        [Fact]
+        public void BuildFeedbackList_NewestEntryAloneExceedsCap_TruncatesThatEntryInstead()
+        {
+            // Regression test for L14: the truncation guard only fired when shown > 0, so
+            // a single newest entry longer than maxChars was appended in full unconditionally
+            // — an over-cap message the caller's PM layer would silently drop entirely.
+            DateTime now = DateTime.UtcNow;
+            var huge = MakeEntry("Alice", "Alice", "general", new string('x', 5000), now);
+
+            string output = ChateauFeedbackList.BuildFeedbackList(new List<FeedbackEntry> { huge }, now, maxChars: 300);
+
+            Assert.True(output.Length <= 350); // some slack for the prefix/notice text
+            Assert.Contains("(truncated)", output);
+        }
+
         #endregion
 
         #region AddFeedback / GetRecentFeedback

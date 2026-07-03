@@ -52,10 +52,20 @@ namespace FChatDicebot.BotCommands
                 bot.SendPrivateMessage(ChateauInteractionHandler.typeNotFoundText(identifierType), characterName);
                 valid = false;
             }
+
+            var processor = InteractionProcessors.InteractionProcessorRegistry.GetProcessor("employ");
+            if (valid)
+            {
+                var validation = processor.ValidateInteraction(characterName, recipient, job);
+                if (!validation.IsValid)
+                {
+                    bot.SendPrivateMessage(validation.ErrorMessage, characterName);
+                    valid = false;
+                }
+            }
             if (valid)
             {
                 // Delegate consent wording to the processor so it stays in one place.
-                var processor = InteractionProcessors.InteractionProcessorRegistry.GetProcessor("employ");
                 string message = processor.GetConsentWarning(initiatorProfile, recipientProfile, job);
 
                 Interaction employInteraction = new Interaction();

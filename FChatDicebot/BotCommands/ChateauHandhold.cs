@@ -58,6 +58,7 @@ namespace FChatDicebot.BotCommands
                 handhold.recipient = recipient;
                 handhold.type = "handhold";
                 handhold.investmentLevel = "casual";
+                handhold.interactionTime = DateTime.UtcNow;
 
                 PendingCommand pendingHandhold = new PendingCommand();
                 pendingHandhold.pendingInteraction = handhold;

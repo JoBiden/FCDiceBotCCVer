@@ -58,6 +58,7 @@ namespace FChatDicebot.BotCommands
                 spank.recipient = recipient;
                 spank.type = "spank";
                 spank.investmentLevel = "casual";
+                spank.interactionTime = DateTime.UtcNow;
 
                 PendingCommand pendingSpank = new PendingCommand();
                 pendingSpank.pendingInteraction = spank;

@@ -41,6 +41,11 @@ namespace FChatDicebot.BotCommands
                 bot.SendPrivateMessage(ChateauInteractionHandler.notFoundText(recipient), characterName);
                 return;
             }
+            if (string.Equals(recipient, characterName, StringComparison.OrdinalIgnoreCase))
+            {
+                bot.SendPrivateMessage("You can't odorize yourself. Ask someone else to give you a proper new smell.", characterName);
+                return;
+            }
             if (scent == null)
             {
                 bot.SendPrivateMessage(ChateauInteractionHandler.typeNotFoundText(identifierType), characterName);

@@ -35,6 +35,17 @@ namespace FChatDicebot.BotCommands
         {
             string characterName = address.character;
             string channel = address.channel;
+
+            // A targeted game-wager proposal awaiting this player takes priority, exactly as
+            // !accept already handles it (disposition #2) — !consent and !accept should be
+            // interchangeable for accepting a wager, not just the latter.
+            string wagerResult = DiceFunctions.Wager.WagerGameSupport.TryAcceptWager(bot, address);
+            if (wagerResult != null)
+            {
+                bot.SendMessageInChannel(wagerResult, address);
+                return;
+            }
+
             var database = MonDB.GetDatabase();
             int pendingMinutesKeep = InteractionProcessors.GroupInteractionResolver.PendingMinutesKeep;
             int maxNoSpoilerLength = 500;
@@ -116,6 +127,14 @@ namespace FChatDicebot.BotCommands
             foreach (string groupId in touchedGroups)
             {
                 var resolution = InteractionProcessors.GroupInteractionResolver.CheckAndResolve(database, groupId);
+
+                // Privately notify anyone dropped by a failed re-validation (H2), regardless
+                // of whether the rest of the group still resolved.
+                foreach (var dropped in resolution.Dropped)
+                {
+                    bot.SendPrivateMessage(dropped.Reason, dropped.Participant);
+                }
+
                 if (resolution.Resolved && !string.IsNullOrEmpty(resolution.ChannelMessage))
                 {
                     string groupMessage = resolution.ChannelMessage;
@@ -163,27 +182,59 @@ namespace FChatDicebot.BotCommands
             var processor = InteractionProcessors.InteractionProcessorRegistry.GetProcessor(toConsent.pendingInteraction.type);
             if (processor != null)
             {
-                // Process the interaction (saves to DB, updates profiles)
-                processor.ProcessInteraction(toConsent);
+                // Enforcement spine: re-validate at consent time, not just at request time.
+                // ValidateInteraction is side-effect free and already runs the status-effect
+                // blocker pipeline (break/curse) plus any processor-specific self-gating
+                // (train/golden), none of which was ever being checked here before.
+                var validation = processor.ValidateInteraction(
+                    toConsent.pendingInteraction.initiator,
+                    toConsent.pendingInteraction.recipient,
+                    toConsent.pendingInteraction.identifier);
+                if (!validation.IsValid)
+                {
+                    MonDB.removePendingInteraction(toConsent.Id);
+                    bot.SendPrivateMessage(validation.ErrorMessage, toConsent.awaitingConsentFrom);
+                    return channelMessage;
+                }
 
-                Profile initProfile = MonDB.getProfile(toConsent.pendingInteraction.initiator);
-                Profile recipProfile = MonDB.getProfile(toConsent.pendingInteraction.recipient);
-                channelMessage += processor.GetCompletionMessageWithStatusEffects(initProfile, recipProfile, toConsent.pendingInteraction.identifier);
-                channelMessage += CheckRateLimitsAndGetMessage(toConsent.pendingInteraction);
+                // Process the interaction (saves to DB, updates profiles)
+                string result = processor.ProcessInteraction(toConsent);
 
                 // Drain any out-of-band private note the processor wants sent to the
-                // initiator (e.g. corrupt/purify's TOCTOU exhaustion notice).
+                // initiator (e.g. corrupt/purify's TOCTOU exhaustion notice, or payment's
+                // insufficient-funds-at-consent-time notice).
                 string initiatorPrivate = processor.GetAndClearInitiatorPrivateMessage();
                 if (!string.IsNullOrEmpty(initiatorPrivate))
                 {
                     bot.SendPrivateMessage(initiatorPrivate, toConsent.pendingInteraction.initiator);
                 }
+
+                if (result == "NoInteraction")
+                {
+                    // The processor aborted (e.g. a queued payment whose payer can no longer
+                    // afford it). Nothing happened, so there's nothing to announce in-channel.
+                    return channelMessage;
+                }
+
+                // If this pending was a !fulfill of a pledge, mark it fulfilled now that it
+                // actually landed on the real consent path (H3 — this was previously only
+                // reachable via ChateauInteractionHandler.addInteraction's processor==null
+                // fallback, which every registered interaction type bypasses).
+                ChateauInteractionHandler.TryMarkPledgeFulfilled(toConsent);
+
+                Profile initProfile = MonDB.getProfile(toConsent.pendingInteraction.initiator);
+                Profile recipProfile = MonDB.getProfile(toConsent.pendingInteraction.recipient);
+                channelMessage += processor.GetCompletionMessageWithStatusEffects(initProfile, recipProfile, toConsent.pendingInteraction.identifier);
+                channelMessage += processor.GetAndClearRateLimitMessage();
             }
             else
             {
-                // Fallback for non-migrated interactions
-                ChateauInteractionHandler.addInteraction(toConsent);
-                channelMessage += CheckRateLimitsAndGetMessage(toConsent.pendingInteraction);
+                // Every registered interaction type has a processor; reaching here means the
+                // pending's type string doesn't match anything in InteractionProcessorRegistry
+                // (e.g. a corrupted/stale document). Drop it rather than silently doing nothing.
+                Console.WriteLine("ProcessOneToOneSeat: no processor registered for interaction type '"
+                    + toConsent.pendingInteraction.type + "' — dropping pending " + toConsent.Id);
+                MonDB.removePendingInteraction(toConsent.Id);
             }
 
             channelMessage = CheckAchievementsAndAppendToMessage(channelMessage, toConsent.pendingInteraction.initiator);
@@ -223,168 +274,5 @@ namespace FChatDicebot.BotCommands
 
             return message;
         }
-
-        private string CheckRateLimitsAndGetMessage(Interaction interaction)
-        {
-            string initiator = interaction.initiator;
-            string recipient = interaction.recipient;
-            string type = interaction.type;
-
-            // Determine count keys based on interaction type
-            (string initKey, string recKey) = GetCountKeys(type);
-
-            bool initLimited = MonDB.IsCountRateLimited(initiator, initKey);
-            bool recLimited = MonDB.IsCountRateLimited(recipient, recKey);
-
-            if (!initLimited && !recLimited) return string.Empty;
-
-            Profile initProfile = MonDB.getProfile(initiator);
-            Profile recProfile = MonDB.getProfile(recipient);
-
-            if (initLimited && recLimited)
-            {
-                return $"\n\n[sub]Looks like that didn't make it into either dossier though... The clerks were probably still busy processing their last {type}(s).[/sub]";
-            }
-            else if (initLimited)
-            {
-                return $"\n\n[sub]Looks like that didn't make it into {initProfile.displayName}'s dossier though... The clerks were probably still busy processing their last {type}.[/sub]";
-            }
-            else
-            {
-                return $"\n\n[sub]Looks like that didn't make it into {recProfile.displayName}'s dossier though... The clerks were probably still busy processing their last {type}.[/sub]";
-            }
-        }
-
-        private (string, string) GetCountKeys(string interactionType)
-        {
-            switch (interactionType.ToLower())
-            {
-                case "kiss": return ("kiss", "kiss");
-                case "cuddle": return ("cuddle", "cuddle");
-                case "handhold": return ("handhold", "handhold");
-                case "spank": return ("spankgive", "spanktake");
-                case "bully": return ("bullygive", "bullytake");
-                case "boobhat": return ("boobhatgive", "boobhattake");
-                case "lick": return ("lickgive", "licktake");
-                // lapsit: !lap → initiator is the lap (lapsittake), recipient sits (lapsitgive)
-                case "lap": return ("lapsittake", "lapsitgive");
-                // !sit → initiator sits (lapsitgive), recipient is the lap (lapsittake)
-                case "sit": return ("lapsitgive", "lapsittake");
-                case "feed": return ("feedgive", "feedtake");
-                case "golden": return ("goldengive", "goldentake");
-                case "dressup": return ("dressupgive", "dressuptake");
-                // climaxfor: initiator = climaxer = climaxtake; recipient = partner = climaxgive
-                case "climaxfor": return ("climaxtake", "climaxgive");
-                // climax: roles are inverted from climaxfor (recipient is the climaxer)
-                case "climax": return ("climaxgive", "climaxtake");
-                default: return (string.Empty, string.Empty);
-            }
-        }
-
-
-        //theoretically now defunct, but keeping around for fallback safety
-        public string getInteractionMessage(string interactionType, string identifier, string initiator, string recipient)
-        {
-            Profile initiatorProfile = MonDB.getProfile(initiator);
-            Profile recipientProfile = MonDB.getProfile(recipient);
-            string returnString = string.Empty;
-            var random = new Random();
-            switch (interactionType)
-            {
-                case "kiss":
-                    var kissDescriptors = new List<String> { "cute.", "that's kind of lewd...", "so salatious.", "hot!", "it sounded quite wet.", "short and sweet.", "slow and sensual.", "just a casual peck.", "doki..." };
-                    returnString = "Mwah! " + initiatorProfile.displayName + " and " + recipientProfile.displayName + " share a kiss, " + kissDescriptors[random.Next(kissDescriptors.Count)];
-                    if (initiator == "Queen Contract")
-                    {
-                        returnString += "[eicon]qckiss[/eicon]";
-                    }
-                    break;
-
-                case "handhold":
-                    var handholdDescriptors = new List<String> { "Cute.", "That's kind of lewd...", "So salatious.", "Hot!", "When's the wedding?", "The forbidden act, out in the open..." };
-                    returnString = "Ooh, " + initiatorProfile.displayName + " and " + recipientProfile.displayName + " hold hands! " + handholdDescriptors[random.Next(handholdDescriptors.Count)];
-                    break;
-                case "cuddle":
-                    var cuddleDescriptors = new List<String> { "Cute.", "That's kind of lewd...", "So salatious.", "Hot!", "Looks cozy!", "Is there room for one more?", initiatorProfile.displayName + " is definitely the big spoon.", recipientProfile.displayName + " is definitely the little spoon." };
-                    returnString = initiatorProfile.displayName + " and " + recipientProfile.displayName + " cuddle up together. " + cuddleDescriptors[random.Next(cuddleDescriptors.Count)];
-                    if (initiator == "Queen Contract" || recipient == "Queen Contract")
-                    {
-                        if (initiator == "The Corrupted Rin" || recipient == "The Corrupted Rin")
-                        {
-                            returnString += " [eicon]rin_lap[/eicon]";
-                        }
-                        else
-                        {
-                            returnString += " [eicon]qchug[/eicon]";
-                        }
-                    }
-                    break;
-                case "spank":
-                    var spankDescriptors = new List<String> { "a sharp spank!", "a love tap to the ass.", "a smack that will leave a mark.", "a red imprint on their derriere.", "a surprisingly loving booty grope.", "an impact with enough force to cook a lesser being." };
-                    returnString = initiatorProfile.displayName + " winds up and gives " + recipientProfile.displayName + " " + spankDescriptors[random.Next(spankDescriptors.Count)];
-                    if (recipient == "Queen Contract")
-                    {
-                        returnString += " [eicon]qcass[eicon]";
-                    }
-                    break;
-                case "bully":
-                    var bullyDescriptors = new List<String> { "boolies them into submission!", "shows them whose boss!", "applies excessive force to their victim!", "spins them right round!", "establishes the pecking order!", "instills fear..." };
-                    returnString = initiatorProfile.displayName + " takes " + recipientProfile.displayName + " by the collar and " + bullyDescriptors[random.Next(bullyDescriptors.Count)];
-                    break;
-                case "rename":
-                    returnString = initiatorProfile.displayName + " has made it known that " + recipientProfile.displayName + " is to be known as " + recipientProfile.displayName + " henceforth! All occurrences of their name in our records will be changed to reflect their new identity.";
-                    break;
-                case "monsterize":
-                    identifier = Utils.AnOrA(identifier) + " " + identifier;
-                    returnString = initiatorProfile.displayName + " has bolstered monsterkind by turning " + recipientProfile.displayName + " into " + identifier + "! We welcome all monsters to our Chateau, no matter what your origins. Enjoy your new life as " + identifier + "~";
-                    break;
-                case "petrify":
-                    returnString = initiatorProfile.displayName + " has petrified " + recipientProfile.displayName + " " + Utils.LocationToText(identifier, initiator, recipient) + "! They might be stuck there for quite awhile... hopefully visitors enjoy the pose they're stuck in.";
-                    break;
-                case "plant":
-                    identifier = Utils.AnOrA(identifier) + " " + identifier;
-                    returnString = initiatorProfile.displayName + " has grown the garden by turning " + recipientProfile.displayName + " into " + identifier + "! They might stay planted for quite awhile... surely the gardeners will take good care of them.";
-                    break;
-                case "objectify":
-                    identifier = Utils.AnOrA(identifier) + " " + identifier;
-                    returnString = initiatorProfile.displayName + " has made " + recipientProfile.displayName + " into some sort of " + identifier + "! Who knows what's in store for them, but they'll be stuck with their fate for quite awhile...";
-                    break;
-                case "dressup":
-                    returnString = initiatorProfile.displayName + " has dressed up " + recipientProfile.displayName + " in " + Utils.AttireToText(identifier) + "! Do a spin for everyone, let them admire your new garb!";
-                    break;
-                case "feed":
-                    returnString = initiatorProfile.displayName + " has fed " + recipientProfile.displayName + " some " + Utils.SubstanceToText(identifier) + "! Was it yummy? I bet it was.";
-                    break;
-                case "golden":
-                    returnString = initiatorProfile.displayName + " breathes a sigh of relief as a golden fluid pours over " + recipientProfile.displayName + "'s " + Utils.BodypartToText(identifier) + ".";
-                    break;
-                case "consume":
-                    returnString = initiatorProfile.displayName + " consumes " + recipientProfile.displayName + ", and they were never heard from again... or at least, it will be quite some time before they manage to escape, reform, or otherwise recover their strength.";
-                    break;
-                case "mark":
-                    returnString = initiatorProfile.displayName + " emblazons their mark upon " + recipientProfile.displayName + "'s " + Utils.BodypartToText(identifier) + ". Wear it with pride~ " + initiatorProfile.characteristics["mark"];
-                    break;
-                case "employ":
-                    returnString = initiatorProfile.displayName + " has given " + recipientProfile.displayName + " the esteemed position of " + Utils.JobToText(identifier) + "! Enjoy your new job everytime you !work (and don't forget you can still !volunteer to see what other jobs are like.)";
-                    break;
-                case "bond":
-                    returnString = initiatorProfile.displayName + " is now " + recipientProfile.displayName + "'s " + Utils.BondToText(identifier, false) + ", and " + recipientProfile.displayName + " is now their " + Utils.BondToText(identifier, true) + "! May you enjoy a bright future together.";
-                    break;
-                case "paymentGive":
-                    returnString = initiatorProfile.displayName + " has paid " + recipientProfile.displayName + " in " + identifier + "! How generous!";
-                    break;
-                case "paymentReceive":
-                    returnString = initiatorProfile.displayName + " has received a payment from " + recipientProfile.displayName + " in " + identifier + "! How generous!";
-                    break;
-                default:
-                    returnString = "What type of interaction was that? " + interactionType + "? For some reason, I don't recognize it... tell [user]Queen Contract[/user] to check the 'ChateauConsent' code for me if you get a chance.";
-                    break;
-
-            }
-            returnString += "[noparse=usingOldInteractionMessage][/noparse]";
-            return returnString;
-        }
     }
-
-
 }

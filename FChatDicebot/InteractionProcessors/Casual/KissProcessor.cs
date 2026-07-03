@@ -53,7 +53,7 @@ namespace FChatDicebot.InteractionProcessors.Casual
             string recipient = command.pendingInteraction.recipient;
 
             // Increment counts for both participants
-            IncrementBothCountsWithRateLimit(initiator, recipient, "kiss", RateLimit);
+            _lastRateLimitMessage = IncrementBothCountsWithRateLimit(initiator, recipient, "kiss", RateLimit);
 
             // Remove the pending interaction
             Database.DeletePendingCommand(command.Id);

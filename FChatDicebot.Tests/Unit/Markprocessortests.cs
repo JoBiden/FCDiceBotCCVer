@@ -112,6 +112,88 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
         }
 
         [Fact]
+        public void ValidateInteraction_RecipientMarkedTooRecently_ReturnsFailure()
+        {
+            // Regression test for M7: the recheck was never wired, so a recipient could be
+            // marked an unlimited number of times per day via multiple queued pendings.
+            var initiator = new ProfileBuilder()
+                .WithUserName("Alice")
+                .WithDisplayName("Alice")
+                .WithCharacteristic("mark", "♥")
+                .BuildAndSave(_database);
+
+            var recipient = new ProfileBuilder()
+                .WithUserName("Bob")
+                .WithDisplayName("Bob")
+                .WithTimer("mark", DateTime.UtcNow.AddHours(12))
+                .BuildAndSave(_database);
+
+            var result = _processor.ValidateInteraction("Alice", "Bob", "neck");
+
+            Assert.False(result.IsValid);
+        }
+
+        [Fact]
+        public void ValidateInteraction_RecipientMarkCooldownExpired_ReturnsSuccess()
+        {
+            var initiator = new ProfileBuilder()
+                .WithUserName("Alice")
+                .WithDisplayName("Alice")
+                .WithCharacteristic("mark", "♥")
+                .BuildAndSave(_database);
+
+            var recipient = new ProfileBuilder()
+                .WithUserName("Bob")
+                .WithDisplayName("Bob")
+                .WithTimer("mark", DateTime.UtcNow.AddHours(-1))
+                .BuildAndSave(_database);
+
+            var result = _processor.ValidateInteraction("Alice", "Bob", "neck");
+
+            Assert.True(result.IsValid);
+        }
+
+        [Fact]
+        public void ProcessInteraction_SameInitiatorMarksSameBodypartTwice_DoesNotDuplicateListEntry()
+        {
+            // Regression test: re-marking the same bodypart (after the cooldown expires)
+            // shouldn't leave a duplicate entry in the marks list for the same initiator.
+            var initiator = new ProfileBuilder()
+                .WithUserName("Alice")
+                .WithDisplayName("Alice")
+                .WithCharacteristic("mark", "♥")
+                .BuildAndSave(_database);
+
+            var recipient = new ProfileBuilder()
+                .WithUserName("Bob")
+                .WithDisplayName("Bob")
+                .BuildAndSave(_database);
+
+            var pendingCommand1 = new PendingCommand
+            {
+                Id = ObjectId.GenerateNewId(),
+                pendingInteraction = new Interaction { initiator = "Alice", recipient = "Bob", type = "mark", identifier = "neck", investmentLevel = "commitment" }
+            };
+            _database.AddPendingCommand(pendingCommand1);
+            _processor.ProcessInteraction(pendingCommand1);
+
+            var bobProfile = _database.GetProfile("Bob");
+            bobProfile.timers["mark"] = new CoolDown { timerEnd = DateTime.UtcNow.AddDays(-1) };
+            _database.SetProfile("Bob", bobProfile);
+
+            var pendingCommand2 = new PendingCommand
+            {
+                Id = ObjectId.GenerateNewId(),
+                pendingInteraction = new Interaction { initiator = "Alice", recipient = "Bob", type = "mark", identifier = "neck", investmentLevel = "commitment" }
+            };
+            _database.AddPendingCommand(pendingCommand2);
+            _processor.ProcessInteraction(pendingCommand2);
+
+            bobProfile = _database.GetProfile("Bob");
+            Assert.Equal(1, bobProfile.lists["neckmarks"].Count(n => n == "Alice"));
+        }
+
+        [Fact]
         public void ProcessInteraction_AddsInitiatorToMarkList()
         {
             // Arrange

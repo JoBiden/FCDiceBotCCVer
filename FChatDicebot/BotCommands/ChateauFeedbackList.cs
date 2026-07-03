@@ -77,6 +77,20 @@ namespace FChatDicebot.BotCommands
                 string name = string.IsNullOrEmpty(e.submitterDisplayName) ? e.submitterUserName : e.submitterDisplayName;
                 string block = "\n" + relative + " — [b]" + name + "[/b] ([i]" + cat + "[/i]): " + e.text + "\n";
 
+                if (shown == 0 && block.Length > maxChars)
+                {
+                    // The newest entry alone exceeds the cap (L14): the old `shown > 0` guard
+                    // let this through unconditionally, producing an over-cap message the
+                    // caller's PM layer would silently drop entirely. Truncate this entry's
+                    // own text instead of skipping straight to "nothing shown".
+                    string prefix = "\n" + relative + " — [b]" + name + "[/b] ([i]" + cat + "[/i]): ";
+                    int textBudget = Math.Max(0, maxChars - prefix.Length - "\n(truncated)\n".Length);
+                    string truncatedText = e.text.Length > textBudget ? e.text.Substring(0, textBudget) : e.text;
+                    sb.Append(prefix).Append(truncatedText).Append("\n(truncated)\n");
+                    shown++;
+                    continue;
+                }
+
                 if (shown > 0 && sb.Length + block.Length > maxChars)
                 {
                     sb.Append("\n…(output truncated — showing the ").Append(shown)

@@ -165,6 +165,35 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
         }
 
         [Fact]
+        public void ProcessInteraction_SecondCuddleWithinRateLimit_PopulatesRateLimitMessage()
+        {
+            // Regression test (R1): CuddleProcessor captured IncrementBothCountsWithRateLimit's
+            // return value into a local variable but never stored it in _lastRateLimitMessage,
+            // so the "clerks were busy" note was silently lost.
+            var initiator = new ProfileBuilder().WithUserName("Alice").WithDisplayName("Alice").BuildAndSave(_database);
+            var recipient = new ProfileBuilder().WithUserName("Bob").WithDisplayName("Bob").BuildAndSave(_database);
+
+            var first = new PendingCommand
+            {
+                Id = ObjectId.GenerateNewId(),
+                pendingInteraction = new Interaction { initiator = "Alice", recipient = "Bob", type = "cuddle", identifier = "", investmentLevel = "casual" }
+            };
+            _database.AddPendingCommand(first);
+            _processor.ProcessInteraction(first);
+            Assert.Equal(string.Empty, _processor.GetAndClearRateLimitMessage());
+
+            var second = new PendingCommand
+            {
+                Id = ObjectId.GenerateNewId(),
+                pendingInteraction = new Interaction { initiator = "Alice", recipient = "Bob", type = "cuddle", identifier = "", investmentLevel = "casual" }
+            };
+            _database.AddPendingCommand(second);
+            _processor.ProcessInteraction(second);
+
+            Assert.NotEmpty(_processor.GetAndClearRateLimitMessage());
+        }
+
+        [Fact]
         public void ProcessInteraction_DeletesPendingCommand()
         {
             // Arrange

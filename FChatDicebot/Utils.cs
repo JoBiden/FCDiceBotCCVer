@@ -451,7 +451,7 @@ namespace FChatDicebot
                     break;
                 //consequence
                 case "break":
-                    returnText = initiator.displayName + " utterly broke " + ".";
+                    returnText = initiator.displayName + " utterly broke " + recipient.displayName + "'s " + Utils.BodypartToText(interaction.identifier) + ".";
                     break;
                 case "curse":
                     returnText = initiator.displayName + " cursed " + recipient.displayName + ".";
@@ -528,8 +528,9 @@ namespace FChatDicebot
             };
         }
 
-        public static string Capitalize(string toCapitalize) 
+        public static string Capitalize(string toCapitalize)
             {
+            if (string.IsNullOrEmpty(toCapitalize)) return string.Empty;
             return toCapitalize.Substring(0, 1).ToUpper() + toCapitalize.Substring(1);
             }
 
@@ -1107,8 +1108,20 @@ namespace FChatDicebot
               .Select(s => s[rnd.Next(s.Length)]).ToArray());
         }
 
+        // Words that start with a vowel *letter* but a consonant *sound* ("yoo-"), so
+        // "a unicorn" is correct even though "u" is a vowel. Checked by whole-word prefix
+        // (case-insensitive) so "unicorn"/"unicycle"/"unicorns" all match but "under" doesn't.
+        private static readonly List<string> ConsonantSoundingVowelWords = new List<string>() { "unicorn", "unicycle", "university", "unique", "union", "unit", "euro" };
+
         public static string AnOrA(string needsAnOrA)
         {
+            if (string.IsNullOrEmpty(needsAnOrA)) return "a";
+
+            if (ConsonantSoundingVowelWords.Any(w => needsAnOrA.StartsWith(w, StringComparison.OrdinalIgnoreCase)))
+            {
+                return "a";
+            }
+
             List<string> vowels = new List<string>() { "a", "e", "i", "o", "u", "A", "E", "I", "O", "U"};
             if (vowels.Contains(needsAnOrA.Substring(0, 1))) //string starts with a vowel
             {
@@ -1419,7 +1432,7 @@ namespace FChatDicebot
                 // Consequence interactions
                 { "break", pastTense ? "broke" : "break" },
                 { "curse", pastTense ? "cursed" : "curse" },
-                { "dose", pastTense ? "dosed" : "dosed" },
+                { "dose", pastTense ? "dosed" : "dose" },
                 { "infest", pastTense ? "infested" : "infest" },
                 { "odorize", pastTense ? "odorized" : "odorize" },
                 { "rename", pastTense ? "renamed" : "rename" }

@@ -60,7 +60,11 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
         [Fact]
         public void ProcessInteraction_TransfersCurrencyFromRecipientToInitiator()
         {
-            // Arrange
+            // paymentReceive means the initiator is billing the recipient, i.e. the
+            // recipient pays. ChateauPay only ever creates this type with a negative
+            // paymentAmount (the "requesting funds" branch), so the real invocation always
+            // passes a negative magnitude here — Alice (initiator) is requesting 30 gold
+            // from Bob (recipient).
             var initiator = new ProfileBuilder()
                 .WithUserName("Alice")
                 .WithDisplayName("Alice")
@@ -83,21 +87,58 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
                     type = "paymentReceive",
                     identifier = "gold",
                     investmentLevel = "involved",
-                    extraParameters = new BsonArray { 30 }
+                    extraParameters = new BsonArray { -30 }
                 }
             };
 
             _database.AddPendingCommand(pendingCommand);
 
             // Act
-            _processor.ProcessInteraction(pendingCommand);
+            string result = _processor.ProcessInteraction(pendingCommand);
 
             // Assert
+            Assert.Equal("paymentReceive", result);
             var aliceProfile = _database.GetProfile("Alice");
             var bobProfile = _database.GetProfile("Bob");
 
-            Assert.Equal(20, aliceProfile.currencies["gold"]); // 50 - 30
-            Assert.Equal(130, bobProfile.currencies["gold"]); // 100 + 30
+            Assert.Equal(80, aliceProfile.currencies["gold"]); // 50 + 30
+            Assert.Equal(70, bobProfile.currencies["gold"]); // 100 - 30
+        }
+
+        [Fact]
+        public void ProcessInteraction_BilledPartyLacksFunds_FailsWithoutMintingOrOverdrawing()
+        {
+            var initiator = new ProfileBuilder()
+                .WithUserName("Alice")
+                .WithDisplayName("Alice")
+                .BuildAndSave(_database);
+
+            var recipient = new ProfileBuilder()
+                .WithUserName("Bob")
+                .WithDisplayName("Bob")
+                .WithCurrency("gold", 10)
+                .BuildAndSave(_database);
+
+            var pendingCommand = new PendingCommand
+            {
+                Id = ObjectId.GenerateNewId(),
+                pendingInteraction = new Interaction
+                {
+                    initiator = "Alice",
+                    recipient = "Bob",
+                    type = "paymentReceive",
+                    identifier = "gold",
+                    investmentLevel = "involved",
+                    extraParameters = new BsonArray { -30 }
+                }
+            };
+            _database.AddPendingCommand(pendingCommand);
+
+            string result = _processor.ProcessInteraction(pendingCommand);
+
+            Assert.Equal("NoInteraction", result);
+            Assert.False(_database.GetProfile("Alice").currencies.ContainsKey("gold"));
+            Assert.Equal(10, _database.GetProfile("Bob").currencies["gold"]);
         }
 
         [Fact]

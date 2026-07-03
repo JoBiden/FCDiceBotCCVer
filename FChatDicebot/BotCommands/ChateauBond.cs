@@ -46,7 +46,12 @@ namespace FChatDicebot.BotCommands
             {
                 bot.SendPrivateMessage(ChateauInteractionHandler.notFoundText(recipient), characterName);
                 valid = false;
-            } 
+            }
+            else if (string.Equals(recipient, characterName, StringComparison.OrdinalIgnoreCase))
+            {
+                bot.SendPrivateMessage("You can't bond with yourself. Bonds are between two people.", characterName);
+                valid = false;
+            }
             else if (bond == null)
             {
                 bot.SendPrivateMessage(ChateauInteractionHandler.typeNotFoundText(identifierType), characterName);

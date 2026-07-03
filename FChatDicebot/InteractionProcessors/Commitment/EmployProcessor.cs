@@ -33,6 +33,23 @@ namespace FChatDicebot.InteractionProcessors.Consequence
                 return ValidationResult.Failure(ChateauInteractionHandler.typeNotFoundText("job"));
             }
 
+            // Recipient employed too recently (M9): rejection lives here (not just the
+            // command) so a stray pending that races past the command-time check still
+            // gets gated at consent time, mirroring Objectify/Entitle. Without this, the
+            // same recipient could be re-employed (job/employer swapped) any number of
+            // times per day.
+            Profile recipientProfile = Database.GetProfile(recipient);
+            if (recipientProfile?.timers != null
+                && recipientProfile.timers.TryGetValue("employ", out var employTimer)
+                && employTimer.timerEnd > DateTime.UtcNow)
+            {
+                string recipientName = recipientProfile.displayName ?? recipient;
+                TimeSpan remaining = employTimer.timerEnd - DateTime.UtcNow;
+                return ValidationResult.Failure(
+                    recipientName + " has already changed jobs too recently! Please respect that 'Commitment' interactions are meant to be meaningful, and not spammed. "
+                    + "You'll be able to employ them again in " + Utils.GetTimeSpanPrint(remaining) + ".");
+            }
+
             return ValidationResult.Success();
         }
 

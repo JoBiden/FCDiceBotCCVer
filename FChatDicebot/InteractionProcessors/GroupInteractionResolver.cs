@@ -92,6 +92,32 @@ namespace FChatDicebot.InteractionProcessors
                 return result;
             }
 
+            // Enforcement spine (H2), group side: a seat that was fine at request time can
+            // have picked up a break/curse blocker (or any other ValidateInteraction failure)
+            // by the time the group actually resolves. Drop those seats from the moment
+            // instead of force-processing them; the command layer privately notifies each
+            // dropped participant with the reason (this helper stays BotMain-free).
+            var validatedSeats = new List<PendingCommand>();
+            foreach (var seat in consented)
+            {
+                var seatValidation = processor.ValidateInteraction(initiator, seat.awaitingConsentFrom, identifier);
+                if (!seatValidation.IsValid)
+                {
+                    result.Dropped.Add(new GroupValidationDrop { Participant = seat.awaitingConsentFrom, Reason = seatValidation.ErrorMessage });
+                    continue;
+                }
+                validatedSeats.Add(seat);
+            }
+
+            if (validatedSeats.Count == 0)
+            {
+                // Everyone who consented got blocked between request and resolution — the
+                // moment never happens, but every seat still needs clearing.
+                DeleteAllSeats(database, groupId);
+                return result;
+            }
+
+            consented = validatedSeats;
             var consenterNames = consented.Select(s => s.awaitingConsentFrom).ToList();
 
             // History: record one interaction per consenting recipient, mirroring N
@@ -166,5 +192,20 @@ namespace FChatDicebot.InteractionProcessors
         /// the database during resolution; the command layer only formats the notifications.
         /// </summary>
         public List<GroupTitleGrant> GroupTitleGrants { get; set; } = new List<GroupTitleGrant>();
+
+        /// <summary>
+        /// Consented seats that failed <c>ValidateInteraction</c> at resolution time (e.g. a
+        /// break/curse blocker landed between request and resolution) and were excluded from
+        /// the moment. The command layer privately notifies each of these — this list is
+        /// populated even when the group as a whole did not resolve (everyone dropped).
+        /// </summary>
+        public List<GroupValidationDrop> Dropped { get; set; } = new List<GroupValidationDrop>();
+    }
+
+    /// <summary>One participant dropped from a group resolution by a failed ValidateInteraction.</summary>
+    public class GroupValidationDrop
+    {
+        public string Participant { get; set; }
+        public string Reason { get; set; }
     }
 }

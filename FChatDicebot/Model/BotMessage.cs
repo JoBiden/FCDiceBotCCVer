@@ -35,11 +35,15 @@ namespace FChatDicebot.Model
                 }
                 else if (MessageDataFormat.GetType() == typeof(CDSclient))
                 {
-                    MSGclient ms = (MSGclient)MessageDataFormat;
-                    int messageLengthBefore = ms.message.Length;
-                    ms.message = Utils.LimitStringToNCharacters(ms.message, maxLength);
-                    if (ms.message.Length < messageLengthBefore)
-                        ms.message += "(maximum message length reached)";
+                    // CDSclient carries a channel description, not a MSGclient chat message —
+                    // casting to MSGclient here threw InvalidCastException, which silently
+                    // dropped the whole CDS update for any description long enough to hit
+                    // this length-limiting branch.
+                    CDSclient ms = (CDSclient)MessageDataFormat;
+                    int messageLengthBefore = ms.description.Length;
+                    ms.description = Utils.LimitStringToNCharacters(ms.description, maxLength);
+                    if (ms.description.Length < messageLengthBefore)
+                        ms.description += "(maximum message length reached)";
                 }
                 else if (MessageDataFormat.GetType() == typeof(MSGclient))
                 {

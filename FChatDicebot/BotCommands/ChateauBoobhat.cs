@@ -58,6 +58,7 @@ namespace FChatDicebot.BotCommands
                 boobhat.recipient = recipient;
                 boobhat.type = "boobhat";
                 boobhat.investmentLevel = "casual";
+                boobhat.interactionTime = DateTime.UtcNow;
 
                 PendingCommand pendingBoobhat = new PendingCommand();
                 pendingBoobhat.pendingInteraction = boobhat;

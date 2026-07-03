@@ -10,79 +10,52 @@ namespace FChatDicebot
     {
 
 
-        public static string addInteraction(PendingCommand toPlay)
+
+        /// <summary>
+        /// If <paramref name="toPlay"/> is tagged as a pledge fulfillment (ChateauFulfill
+        /// stamps a <c>{ "pledgeId": ... }</c> BsonDocument as the first extraParameter),
+        /// mark that pledge fulfilled — and honored, incrementing the pledger's
+        /// <c>pledgesfulfilled</c> count, when it landed a day or more after the pledge was
+        /// made. Called from the real success path in ChateauConsent.ProcessOneToOneSeat
+        /// (H3) as well as this class's own processor branch above.
+        /// </summary>
+        public static void TryMarkPledgeFulfilled(PendingCommand toPlay)
         {
-            string initiator = toPlay.pendingInteraction.initiator;
-            string recipient = toPlay.pendingInteraction.recipient;
-            string returnString = "NoInteraction";
-
-            // NEW: Try to use the new processor system first
-            var processor = InteractionProcessors.InteractionProcessorRegistry.GetProcessor(toPlay.pendingInteraction.type);
-            if (processor != null)
+            if (toPlay.pendingInteraction.extraParameters == null || toPlay.pendingInteraction.extraParameters.Count == 0)
             {
-                returnString = processor.ProcessInteraction(toPlay);
+                return;
+            }
 
-                // Check if this interaction fulfilled a pledge
-                if (returnString != "NoInteraction" && toPlay.pendingInteraction.extraParameters != null && toPlay.pendingInteraction.extraParameters.Count > 0)
+            try
+            {
+                var firstParam = toPlay.pendingInteraction.extraParameters[0].AsBsonDocument;
+                if (!firstParam.Contains("pledgeId")) return;
+
+                string pledgeIdStr = firstParam["pledgeId"].AsString;
+                ObjectId pledgeId = ObjectId.Parse(pledgeIdStr);
+
+                var pledge = MonDB.getPledge(pledgeId);
+                if (pledge == null || !pledge.IsActive) return;
+
+                // Mark pledge as fulfilled
+                pledge.status = "fulfilled";
+                pledge.fulfilledTime = DateTime.UtcNow;
+
+                // Check if pledge was honored (fulfilled 1+ days after creation)
+                TimeSpan timeSincePledge = pledge.fulfilledTime.Value - pledge.pledgeTime;
+                if (timeSincePledge.TotalDays >= 1)
                 {
-                    try
-                    {
-                        var firstParam = toPlay.pendingInteraction.extraParameters[0].AsBsonDocument;
-                        if (firstParam.Contains("pledgeId"))
-                        {
-                            string pledgeIdStr = firstParam["pledgeId"].AsString;
-                            ObjectId pledgeId = ObjectId.Parse(pledgeIdStr);
-
-                            var pledge = MonDB.getPledge(pledgeId);
-                            if (pledge != null && pledge.IsActive)
-                            {
-                                // Mark pledge as fulfilled
-                                pledge.status = "fulfilled";
-                                pledge.fulfilledTime = DateTime.UtcNow;
-
-                                // Check if pledge was honored (fulfilled 1+ days after creation)
-                                TimeSpan timeSincePledge = pledge.fulfilledTime.Value - pledge.pledgeTime;
-                                if (timeSincePledge.TotalDays >= 1)
-                                {
-                                    pledge.pledgeHonored = true;
-                                    MonDB.incrementCount(pledge.pledger, "pledgesfulfilled");
-                                }
-
-                                MonDB.updatePledge(pledge);
-                            }
-                        }
-                    }
-                    catch
-                    {
-                        // If there's any error processing pledge fulfillment, don't fail the interaction
-                        // Just continue without marking the pledge as fulfilled
-                    }
+                    pledge.pledgeHonored = true;
+                    MonDB.incrementCount(pledge.pledger, "pledgesfulfilled");
                 }
 
-                return returnString;
+                MonDB.updatePledge(pledge);
             }
-
-            // FALLBACK: Use old switch statement for interactions not yet migrated
-            // All current interactions have been migrated to the new processor system!
-            // This switch is kept as a fallback for any future legacy interactions
-            switch (toPlay.pendingInteraction.type)
+            catch
             {
-                // All interactions have been migrated to processors:
-                // - Casual: kiss, cuddle, handhold, spank, bully
-                // - Involved: feed, golden, dressup
-                // - Commitment: mark, entitle
-                // - Consequence: rename, monsterize, petrify, plant, objectify, consume, employ, bond
-                // - Transaction: paymentGive, paymentReceive
-
-                default:
-                    returnString = "NoInteraction";
-                    break;
-            };
-            if (returnString != "NoInteraction")
-            {
-                MonDB.removePendingInteraction(toPlay.Id);
+                // extraParameters[0] wasn't a pledge-shaped BsonDocument (e.g. it's a plain
+                // int payload like payment's amount) — not a pledge fulfillment, ignore.
             }
-            return returnString;
         }
 
         public static string noJobText()

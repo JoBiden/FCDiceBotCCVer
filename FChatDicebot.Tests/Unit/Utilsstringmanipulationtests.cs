@@ -183,6 +183,21 @@ namespace FChatDicebot.Tests.Unit
             Assert.Equal("A", result);
         }
 
+        [Fact]
+        public void Capitalize_EmptyString_ReturnsEmptyRatherThanThrowing()
+        {
+            // Regression test for L12: Substring(0, 1) on an empty string threw
+            // ArgumentOutOfRangeException, reachable from the dossier with an empty
+            // scent/curse name and crashing the whole dossier readout.
+            Assert.Equal(string.Empty, Utils.Capitalize(""));
+        }
+
+        [Fact]
+        public void Capitalize_Null_ReturnsEmptyRatherThanThrowing()
+        {
+            Assert.Equal(string.Empty, Utils.Capitalize(null));
+        }
+
         #endregion
 
         #region LimitStringToNCharacters Tests
@@ -262,6 +277,16 @@ namespace FChatDicebot.Tests.Unit
         {
             Assert.Equal("a", Utils.AnOrA("Banana"));
             Assert.Equal("a", Utils.AnOrA("Cat"));
+        }
+
+        [Fact]
+        public void AnOrA_ConsonantSoundingVowelWords_ReturnsA()
+        {
+            // Regression test for L10: "unicorn" starts with the vowel letter "u" but the
+            // consonant sound "yoo-", so "a unicorn" is correct, not "an unicorn".
+            Assert.Equal("a", Utils.AnOrA("unicorn"));
+            Assert.Equal("a", Utils.AnOrA("Unicorn"));
+            Assert.Equal("a", Utils.AnOrA("unicycle"));
         }
 
         #endregion

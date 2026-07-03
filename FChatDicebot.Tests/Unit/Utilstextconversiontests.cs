@@ -402,5 +402,18 @@ namespace FChatDicebot.Tests.Unit
         //}
 
         //#endregion
+
+        #region interactionToVerb Tests
+
+        [Fact]
+        public void InteractionToVerb_Dose_PastAndPresentTensesDiffer()
+        {
+            // Regression test for L15: both tenses returned "dosed", producing sentences
+            // like "Pledged to dosed X" for the present/infinitive form.
+            Assert.Equal("dose", Utils.interactionToVerb("dose", false));
+            Assert.Equal("dosed", Utils.interactionToVerb("dose", true));
+        }
+
+        #endregion
     }
 }

@@ -119,31 +119,12 @@ namespace FChatDicebot.Tests.Integration
 
             _database.AddPendingCommand(pendingCommand);
 
-            // Act - Process the interaction (simulating consent)
+            // Act - drive the real consent-path sequence: ProcessInteraction, then the
+            // shared pledge-fulfillment helper ChateauConsent.ProcessOneToOneSeat calls on
+            // its success path (H3 — this used to be hand-reimplemented in this test file,
+            // which is exactly why the dead-code bug went unnoticed).
             string result = _feedProcessor.ProcessInteraction(pendingCommand);
-
-            // Manually handle pledge fulfillment logic
-            var firstParam = pendingCommand.pendingInteraction.extraParameters[0].AsBsonDocument;
-            if (firstParam.Contains("pledgeId"))
-            {
-                string pledgeIdStr = firstParam["pledgeId"].AsString;
-                ObjectId pledgeId = ObjectId.Parse(pledgeIdStr);
-
-                var pledgeToUpdate = _database.GetPledge(pledgeId);
-                if (pledgeToUpdate != null && pledgeToUpdate.IsActive)
-                {
-                    pledgeToUpdate.status = "fulfilled";
-                    pledgeToUpdate.fulfilledTime = DateTime.UtcNow;
-
-                    TimeSpan timeSincePledge = pledgeToUpdate.fulfilledTime.Value - pledgeToUpdate.pledgeTime;
-                    if (timeSincePledge.TotalDays >= 1)
-                    {
-                        pledgeToUpdate.pledgeHonored = true;
-                    }
-
-                    _database.UpdatePledge(pledgeToUpdate);
-                }
-            }
+            ChateauInteractionHandler.TryMarkPledgeFulfilled(pendingCommand);
 
             // Assert
             var updatedPledge = _database.GetPledge(pledge.Id);
@@ -211,29 +192,7 @@ namespace FChatDicebot.Tests.Integration
 
             // Act
             _feedProcessor.ProcessInteraction(pendingCommand);
-
-            // Manually handle pledge fulfillment logic
-            var firstParam = pendingCommand.pendingInteraction.extraParameters[0].AsBsonDocument;
-            if (firstParam.Contains("pledgeId"))
-            {
-                string pledgeIdStr = firstParam["pledgeId"].AsString;
-                ObjectId pledgeId = ObjectId.Parse(pledgeIdStr);
-
-                var pledgeToUpdate = _database.GetPledge(pledgeId);
-                if (pledgeToUpdate != null && pledgeToUpdate.IsActive)
-                {
-                    pledgeToUpdate.status = "fulfilled";
-                    pledgeToUpdate.fulfilledTime = DateTime.UtcNow;
-
-                    TimeSpan timeSincePledge = pledgeToUpdate.fulfilledTime.Value - pledgeToUpdate.pledgeTime;
-                    if (timeSincePledge.TotalDays >= 1)
-                    {
-                        pledgeToUpdate.pledgeHonored = true;
-                    }
-
-                    _database.UpdatePledge(pledgeToUpdate);
-                }
-            }
+            ChateauInteractionHandler.TryMarkPledgeFulfilled(pendingCommand);
 
             // Assert
             var updatedPledge = _database.GetPledge(pledge.Id);
@@ -294,29 +253,7 @@ namespace FChatDicebot.Tests.Integration
 
             // Act
             _feedProcessor.ProcessInteraction(pendingCommand);
-
-            // Manually handle pledge fulfillment logic
-            var firstParam = pendingCommand.pendingInteraction.extraParameters[0].AsBsonDocument;
-            if (firstParam.Contains("pledgeId"))
-            {
-                string pledgeIdStr = firstParam["pledgeId"].AsString;
-                ObjectId pledgeId = ObjectId.Parse(pledgeIdStr);
-
-                var pledgeToUpdate = _database.GetPledge(pledgeId);
-                if (pledgeToUpdate != null && pledgeToUpdate.IsActive)
-                {
-                    pledgeToUpdate.status = "fulfilled";
-                    pledgeToUpdate.fulfilledTime = DateTime.UtcNow;
-
-                    TimeSpan timeSincePledge = pledgeToUpdate.fulfilledTime.Value - pledgeToUpdate.pledgeTime;
-                    if (timeSincePledge.TotalDays >= 1)
-                    {
-                        pledgeToUpdate.pledgeHonored = true;
-                    }
-
-                    _database.UpdatePledge(pledgeToUpdate);
-                }
-            }
+            ChateauInteractionHandler.TryMarkPledgeFulfilled(pendingCommand);
 
             // Assert
             var updatedPledge = _database.GetPledgesByPledger("Alice").FirstOrDefault();
@@ -482,40 +419,12 @@ namespace FChatDicebot.Tests.Integration
 
             _database.AddPendingCommand(pendingCommand);
 
-            // Act & Assert - Should not throw
+            // Act & Assert - Should not throw. TryMarkPledgeFulfilled catches internally
+            // (an "invalid-id" string fails ObjectId.Parse), so no wrapping try/catch needed.
             var exception = Record.Exception(() =>
             {
                 _feedProcessor.ProcessInteraction(pendingCommand);
-
-                // Try to process pledge fulfillment even with invalid ID
-                try
-                {
-                    var firstParam = pendingCommand.pendingInteraction.extraParameters[0].AsBsonDocument;
-                    if (firstParam.Contains("pledgeId"))
-                    {
-                        string pledgeIdStr = firstParam["pledgeId"].AsString;
-                        ObjectId pledgeId = ObjectId.Parse(pledgeIdStr);
-
-                        var pledgeToUpdate = _database.GetPledge(pledgeId);
-                        if (pledgeToUpdate != null && pledgeToUpdate.IsActive)
-                        {
-                            pledgeToUpdate.status = "fulfilled";
-                            pledgeToUpdate.fulfilledTime = DateTime.UtcNow;
-
-                            TimeSpan timeSincePledge = pledgeToUpdate.fulfilledTime.Value - pledgeToUpdate.pledgeTime;
-                            if (timeSincePledge.TotalDays >= 1)
-                            {
-                                pledgeToUpdate.pledgeHonored = true;
-                            }
-
-                            _database.UpdatePledge(pledgeToUpdate);
-                        }
-                    }
-                }
-                catch
-                {
-                    // Ignore pledge processing errors
-                }
+                ChateauInteractionHandler.TryMarkPledgeFulfilled(pendingCommand);
             });
             Assert.Null(exception);
         }
@@ -562,36 +471,7 @@ namespace FChatDicebot.Tests.Integration
             var exception = Record.Exception(() =>
             {
                 _feedProcessor.ProcessInteraction(pendingCommand);
-
-                // Try to process pledge fulfillment
-                try
-                {
-                    var firstParam = pendingCommand.pendingInteraction.extraParameters[0].AsBsonDocument;
-                    if (firstParam.Contains("pledgeId"))
-                    {
-                        string pledgeIdStr = firstParam["pledgeId"].AsString;
-                        ObjectId pledgeId = ObjectId.Parse(pledgeIdStr);
-
-                        var pledgeToUpdate = _database.GetPledge(pledgeId);
-                        if (pledgeToUpdate != null && pledgeToUpdate.IsActive)
-                        {
-                            pledgeToUpdate.status = "fulfilled";
-                            pledgeToUpdate.fulfilledTime = DateTime.UtcNow;
-
-                            TimeSpan timeSincePledge = pledgeToUpdate.fulfilledTime.Value - pledgeToUpdate.pledgeTime;
-                            if (timeSincePledge.TotalDays >= 1)
-                            {
-                                pledgeToUpdate.pledgeHonored = true;
-                            }
-
-                            _database.UpdatePledge(pledgeToUpdate);
-                        }
-                    }
-                }
-                catch
-                {
-                    // Ignore pledge processing errors
-                }
+                ChateauInteractionHandler.TryMarkPledgeFulfilled(pendingCommand);
             });
             Assert.Null(exception);
         }

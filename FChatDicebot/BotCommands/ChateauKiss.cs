@@ -56,6 +56,7 @@ namespace FChatDicebot.BotCommands
             kiss.recipient = recipient;
             kiss.type = "kiss";
             kiss.investmentLevel = "casual";
+            kiss.interactionTime = DateTime.UtcNow;
 
             PendingCommand pendingKiss = new PendingCommand();
             pendingKiss.pendingInteraction = kiss;
