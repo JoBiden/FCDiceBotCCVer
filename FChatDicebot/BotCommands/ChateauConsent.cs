@@ -214,13 +214,14 @@ namespace FChatDicebot.BotCommands
                 Profile initProfile = MonDB.getProfile(toConsent.pendingInteraction.initiator);
                 Profile recipProfile = MonDB.getProfile(toConsent.pendingInteraction.recipient);
                 channelMessage += processor.GetCompletionMessageWithStatusEffects(initProfile, recipProfile, toConsent.pendingInteraction.identifier);
-                channelMessage += CheckRateLimitsAndGetMessage(toConsent.pendingInteraction);
+                channelMessage += processor.GetAndClearRateLimitMessage();
             }
             else
             {
-                // Fallback for non-migrated interactions
+                // Fallback for non-migrated interactions (every currently-registered type has
+                // a processor, so this path is unreachable today; kept as a safety net for a
+                // future interaction type that hasn't been migrated yet).
                 ChateauInteractionHandler.addInteraction(toConsent);
-                channelMessage += CheckRateLimitsAndGetMessage(toConsent.pendingInteraction);
             }
 
             channelMessage = CheckAchievementsAndAppendToMessage(channelMessage, toConsent.pendingInteraction.initiator);
@@ -260,64 +261,6 @@ namespace FChatDicebot.BotCommands
 
             return message;
         }
-
-        private string CheckRateLimitsAndGetMessage(Interaction interaction)
-        {
-            string initiator = interaction.initiator;
-            string recipient = interaction.recipient;
-            string type = interaction.type;
-
-            // Determine count keys based on interaction type
-            (string initKey, string recKey) = GetCountKeys(type);
-
-            bool initLimited = MonDB.IsCountRateLimited(initiator, initKey);
-            bool recLimited = MonDB.IsCountRateLimited(recipient, recKey);
-
-            if (!initLimited && !recLimited) return string.Empty;
-
-            Profile initProfile = MonDB.getProfile(initiator);
-            Profile recProfile = MonDB.getProfile(recipient);
-
-            if (initLimited && recLimited)
-            {
-                return $"\n\n[sub]Looks like that didn't make it into either dossier though... The clerks were probably still busy processing their last {type}(s).[/sub]";
-            }
-            else if (initLimited)
-            {
-                return $"\n\n[sub]Looks like that didn't make it into {initProfile.displayName}'s dossier though... The clerks were probably still busy processing their last {type}.[/sub]";
-            }
-            else
-            {
-                return $"\n\n[sub]Looks like that didn't make it into {recProfile.displayName}'s dossier though... The clerks were probably still busy processing their last {type}.[/sub]";
-            }
-        }
-
-        private (string, string) GetCountKeys(string interactionType)
-        {
-            switch (interactionType.ToLower())
-            {
-                case "kiss": return ("kiss", "kiss");
-                case "cuddle": return ("cuddle", "cuddle");
-                case "handhold": return ("handhold", "handhold");
-                case "spank": return ("spankgive", "spanktake");
-                case "bully": return ("bullygive", "bullytake");
-                case "boobhat": return ("boobhatgive", "boobhattake");
-                case "lick": return ("lickgive", "licktake");
-                // lapsit: !lap → initiator is the lap (lapsittake), recipient sits (lapsitgive)
-                case "lap": return ("lapsittake", "lapsitgive");
-                // !sit → initiator sits (lapsitgive), recipient is the lap (lapsittake)
-                case "sit": return ("lapsitgive", "lapsittake");
-                case "feed": return ("feedgive", "feedtake");
-                case "golden": return ("goldengive", "goldentake");
-                case "dressup": return ("dressupgive", "dressuptake");
-                // climaxfor: initiator = climaxer = climaxtake; recipient = partner = climaxgive
-                case "climaxfor": return ("climaxtake", "climaxgive");
-                // climax: roles are inverted from climaxfor (recipient is the climaxer)
-                case "climax": return ("climaxgive", "climaxtake");
-                default: return (string.Empty, string.Empty);
-            }
-        }
-
 
         //theoretically now defunct, but keeping around for fallback safety
         public string getInteractionMessage(string interactionType, string identifier, string initiator, string recipient)

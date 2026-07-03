@@ -83,6 +83,16 @@ namespace FChatDicebot.InteractionProcessors
         /// </summary>
         string GetAndClearInitiatorPrivateMessage();
 
+        /// <summary>
+        /// Drain the "clerks were too busy" rate-limit note a processor's
+        /// <see cref="ProcessInteraction"/> populated via <c>IncrementBothCountsWithRateLimit</c>
+        /// / <c>IncrementDifferentCountsWithRateLimit</c>. Returns empty string when the
+        /// interaction wasn't rate-limited (or carries no count-based rate limit at all).
+        /// The consent handler calls this once per processed interaction and appends any
+        /// non-empty result to the channel completion message.
+        /// </summary>
+        string GetAndClearRateLimitMessage();
+
         // --- Group interaction support (B4). Non-group-capable processors return a null
         // GroupSpec; the other members are only invoked once a group has been resolved. ---
 

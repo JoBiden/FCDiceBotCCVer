@@ -55,7 +55,7 @@ namespace FChatDicebot.InteractionProcessors.Casual
 
             TimeSpan rateLimit = TimeSpan.FromMinutes(60);
 
-            string rateLimitMessage = IncrementBothCountsWithRateLimit(initiator, recipient, "cuddle", RateLimit);
+            _lastRateLimitMessage = IncrementBothCountsWithRateLimit(initiator, recipient, "cuddle", RateLimit);
             Database.DeletePendingCommand(command.Id);
 
             return "cuddle";

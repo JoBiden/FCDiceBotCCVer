@@ -208,7 +208,8 @@ namespace FChatDicebot.Database
 
             if (profile.timers != null && profile.timers.ContainsKey(timerKey))
             {
-                return DateTime.UtcNow > profile.timers[timerKey].timerEnd;
+                // Rate-limited means the timer hasn't expired yet (now is before timerEnd).
+                return DateTime.UtcNow < profile.timers[timerKey].timerEnd;
             }
 
             return false; // No timer exists, so not rate limited
