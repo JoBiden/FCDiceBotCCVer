@@ -52,15 +52,25 @@ namespace FChatDicebot.BotCommands
                 bot.SendPrivateMessage(ChateauInteractionHandler.typeNotFoundText(identifierType), characterName);
                 valid = false;
             }
-            else if (!initiatorProfile.characteristics.ContainsKey("mark")) 
+            else if (!initiatorProfile.characteristics.ContainsKey("mark"))
             {
                 bot.SendPrivateMessage(ChateauInteractionHandler.markNotSetText(), characterName);
                 valid = false;
             }
+
+            var processor = InteractionProcessors.InteractionProcessorRegistry.GetProcessor("mark");
+            if (valid)
+            {
+                var validation = processor.ValidateInteraction(characterName, recipient, bodypart);
+                if (!validation.IsValid)
+                {
+                    bot.SendPrivateMessage(validation.ErrorMessage, characterName);
+                    valid = false;
+                }
+            }
             if (valid)
             {
                 // Delegate consent wording to the processor so it stays in one place.
-                var processor = InteractionProcessors.InteractionProcessorRegistry.GetProcessor("mark");
                 string message = processor.GetConsentWarning(initiatorProfile, recipientProfile, bodypart);
 
                 Interaction markInteraction = new Interaction();

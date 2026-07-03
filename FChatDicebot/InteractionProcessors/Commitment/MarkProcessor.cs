@@ -50,6 +50,21 @@ namespace FChatDicebot.InteractionProcessors.Commitment
                 return ValidationResult.Failure(ChateauInteractionHandler.typeNotFoundText("bodypart"));
             }
 
+            // Recipient marked too recently (M7): rejection lives here (not just the
+            // command) so a stray pending that races past the command-time check still
+            // gets gated at consent time, mirroring Objectify/Entitle.
+            Profile recipientProfile = Database.GetProfile(recipient);
+            if (recipientProfile?.timers != null
+                && recipientProfile.timers.TryGetValue("mark", out var markTimer)
+                && markTimer.timerEnd > DateTime.UtcNow)
+            {
+                string recipientName = recipientProfile.displayName ?? recipient;
+                TimeSpan remaining = markTimer.timerEnd - DateTime.UtcNow;
+                return ValidationResult.Failure(
+                    recipientName + " has already been marked too recently! Please respect that 'Commitment' interactions are meant to be meaningful, and not spammed. "
+                    + "You'll be able to mark them again in " + Utils.GetTimeSpanPrint(remaining) + ".");
+            }
+
             return ValidationResult.Success();
         }
 
@@ -72,7 +87,10 @@ namespace FChatDicebot.InteractionProcessors.Commitment
             {
                 markList = recipientProfile.lists[listname];
             }
-            markList.Add(initiator);
+            if (!markList.Contains(initiator))
+            {
+                markList.Add(initiator);
+            }
             recipientProfile.lists[listname] = markList;
 
             // Special handling for Queen Contract's mark

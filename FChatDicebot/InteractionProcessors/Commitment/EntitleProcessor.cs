@@ -125,6 +125,15 @@ namespace FChatDicebot.InteractionProcessors.Commitment
             return $"{initiatorProfile.displayName} has bestowed the title \"{identifier}\" upon {recipientProfile.displayName}! May they wear it with pride!";
         }
 
+        public override CooldownSpec CooldownRule => Cooldown;
+
+        public static readonly CooldownSpec Cooldown = new CooldownSpec
+        {
+            Kind = CooldownKind.Cooldown,
+            Binds = CooldownBinds.Recipient,
+            PeriodDays = 1
+        };
+
         public override string GetConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
             return $"{initiatorProfile.displayName} wants to grant you the title \"{identifier}\". [b]Custom titles cannot be received frequently, so be sure this is an important title for you.[/b] Do you !consent to receiving this title?";
