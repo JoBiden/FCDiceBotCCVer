@@ -251,7 +251,32 @@ namespace FChatDicebot
                     if (_debug)
                         Console.WriteLine("read " + path);
 
-                    SavedChannelSettings = JsonConvert.DeserializeObject<List<ChannelSettings>>(fileText);
+                    try
+                    {
+                        SavedChannelSettings = JsonConvert.DeserializeObject<List<ChannelSettings>>(fileText);
+                    }
+                    catch (System.Exception parseExc)
+                    {
+                        // A corrupt/truncated file used to leave SavedChannelSettings null,
+                        // which crash-loops the bot the moment any code touches the list
+                        // (e.g. the random-events tick, or the next channel join). Back up
+                        // the bad file so it isn't silently overwritten by the next save,
+                        // and fall back to an empty list so startup can proceed.
+                        Console.WriteLine("Exception: Failed to parse " + path + " — starting with an empty channel settings list.\n" + parseExc.ToString());
+                        try
+                        {
+                            File.Copy(path, path + ".corrupt-" + DateTime.UtcNow.Ticks, overwrite: false);
+                        }
+                        catch (System.Exception backupExc)
+                        {
+                            Console.WriteLine("Exception: Failed to back up corrupt " + path + "\n" + backupExc.ToString());
+                        }
+                    }
+
+                    if (SavedChannelSettings == null)
+                    {
+                        SavedChannelSettings = new List<ChannelSettings>();
+                    }
 
                     if (_debug)
                         Console.WriteLine("loaded LoadChannelSettings successfully.");
@@ -265,6 +290,10 @@ namespace FChatDicebot
             catch (System.Exception exc)
             {
                 Console.WriteLine("Exception: Failed to load LoadChannelSettings for " + path + "\n" + exc.ToString());
+                if (SavedChannelSettings == null)
+                {
+                    SavedChannelSettings = new List<ChannelSettings>();
+                }
             }
         }
 
@@ -1099,6 +1128,12 @@ namespace FChatDicebot
         private bool GetNewApiTicket()
         {
             CurrentApiKey = null;
+            // Clear any previous (now stale/expired) ticket before requesting a new one. The
+            // loop below only waits while ApiTicketResult is null — on reconnect it would
+            // otherwise still be holding the old ticket, so the wait loop skips entirely and
+            // callers reuse the expired ticket until the async login response eventually
+            // catches up on its own.
+            WebRequests.ApiTicketResult = null;
             WebRequests.LoginToServerPublic(AccountSettings);
 
             int timeout = 100000;
@@ -1106,7 +1141,7 @@ namespace FChatDicebot
             {
                 timeout -= TickTimeMiliseconds;
                 Thread.Sleep(TickTimeMiliseconds);
-                if (TickTimeMiliseconds <= 0)
+                if (timeout <= 0)
                 {
                     Console.WriteLine("Timeout on acquiring new API ticket");
                     return false;
@@ -1290,12 +1325,12 @@ namespace FChatDicebot
                             }
                             else if (errInfo.number == 28) //channel already joined
                             {
-                                lock (MessageQueueLock)
-                                {
-                                    //stop joining channels
-                                    MessageQueue.RemoveAllChannelJoins();
-                                    CurrentChannelsAuditSession = null;
-                                }
+                                // This is a duplicate-join response for whichever channel join
+                                // was just sent — it doesn't mean every other still-queued
+                                // channel join is bad, so don't purge the whole queue over it
+                                // (that used to silently drop every other pending startup/audit
+                                // channel join whenever one channel was already joined).
+                                CurrentChannelsAuditSession = null;
                             }
                         }
                         //if (CurrentChannelsAuditSession != null)
