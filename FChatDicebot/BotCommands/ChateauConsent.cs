@@ -205,6 +205,12 @@ namespace FChatDicebot.BotCommands
                     return channelMessage;
                 }
 
+                // If this pending was a !fulfill of a pledge, mark it fulfilled now that it
+                // actually landed on the real consent path (H3 — this was previously only
+                // reachable via ChateauInteractionHandler.addInteraction's processor==null
+                // fallback, which every registered interaction type bypasses).
+                ChateauInteractionHandler.TryMarkPledgeFulfilled(toConsent);
+
                 Profile initProfile = MonDB.getProfile(toConsent.pendingInteraction.initiator);
                 Profile recipProfile = MonDB.getProfile(toConsent.pendingInteraction.recipient);
                 channelMessage += processor.GetCompletionMessageWithStatusEffects(initProfile, recipProfile, toConsent.pendingInteraction.identifier);
