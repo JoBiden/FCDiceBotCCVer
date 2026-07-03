@@ -371,22 +371,13 @@ The intent: casual interactions must not overwrite the dossier's "Last seen / re
 
 ---
 
-## Phase 8 — Wager ↔ consent integration (disposition #2)
+## Phase 8 — Wager ↔ consent integration (disposition #2) — CLOSED 2026-07-03
 
 **Closes:** disposition #2 — the audit's "consent-vs-wager INTENT" question (`results-commands-layer.json`).
 
-Owner decision: a **targeted** game wager should be acceptable via `!consent`/`!c` (aligned with `!accept`); an **untargeted/open-to-room** wager gets a **dedicated command** instead of routing through consent.
+**Targeted wagers → `!consent`:** done. `ChateauConsent.Run` now calls `WagerGameSupport.TryAcceptWager` first, exactly mirroring what `Accept.cs` already did — so `!consent`/`!c`/`!accept` are all interchangeable for accepting a targeted wager proposal. `Accept.cs` simplified to a pure delegate now that the check lives in one place.
 
-- **Targeted wagers → `!consent`:** teach the `!consent` grammar to recognize a pending *targeted wager* seat alongside interaction pendings, and resolve it through the existing wager-accept path (`!accept`'s handler), not `ProcessOneToOneSeat`. Reuse the wager engine's accept logic verbatim — do **not** re-implement stake handling in the consent layer (the wager engine is the audited-sound part; keep it the single source of truth). `!accept` remains as an alias.
-- **Untargeted wagers → new command:** add a dedicated command (e.g. `!takebet` / `!callbet` — name to confirm) that claims an open-to-room wager. This keeps room-open bets out of the per-recipient consent queue.
-
-**Decision to confirm:** the untargeted-claim command name and whether open wagers should be first-come (one claimant) or multi-seat.
-
-**Files:** `BotCommands/ChateauConsent.cs` (recognize targeted-wager seats), the wager accept handler (expose a reusable entry point), new `BotCommands/Chateau<TakeBet>.cs`, `BotCommandController` registration.
-
-**Tests to add:** targeted wager + `!consent` resolves identically to `!accept`; untargeted wager is **not** claimable via `!consent` but is via the new command; stake accounting matches the wager-engine tests (no double-commit).
-
-**Risk:** medium; touches the money-adjacent wager path. Mitigated by reusing the existing accept logic rather than duplicating it.
+**Untargeted/open-to-room wagers → already covered, no new command needed.** Owner clarified the intended scenario ("Alice opens {game} and stakes 7 copper, who wants to join?") and confirmed it: `!joingame {gametype}` already lets any player join and automatically match the opener's declared stake with no named opponent and no consent-queue involvement at all (`WagerGameSupport.HandleWagerJoin`, the `myStake.Matches(openerStake)` branch). The `!accept`/`!consent` targeted flow only exists for the different case — a second player proposing a *different* stake, which needs the opener's explicit accept. There is no "open wager anyone can claim without matching the stake" concept in the current design, so no dedicated command was needed.
 
 ---
 
