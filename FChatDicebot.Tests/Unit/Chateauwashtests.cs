@@ -62,6 +62,26 @@ namespace FChatDicebot.Tests.Unit.BotCommands
         }
 
         [Fact]
+        public void ExecuteWash_NearlyFadedScent_DoesNotExtendRemainingMentions()
+        {
+            // Regression test for L9: resetting RemainingMentions to a full fresh
+            // allotment for the new (lower) layer count could make a nearly-faded scent
+            // linger longer after a wash than before it. Here the 2-layer stack has only
+            // 1 mention left (about to disappear); washing down to 1 layer must not bump
+            // that back up to a full 3.
+            SeedBobWithScents(
+                new ScentLayer { Scent = "musk", Layers = 2, RemainingMentions = 1, AppliedBy = "Alice", LastAppliedAt = DateTime.UtcNow });
+
+            ChateauWash.ExecuteWash(_database, "Bob", "musk");
+
+            var bob = _database.GetProfile("Bob");
+            var layers = ScentLayer.LoadAll(bob);
+            Assert.Single(layers);
+            Assert.Equal(1, layers[0].Layers);
+            Assert.Equal(1, layers[0].RemainingMentions); // NOT reset to 3
+        }
+
+        [Fact]
         public void ExecuteWash_NoArgument_PicksHighestSaturation()
         {
             SeedBobWithScents(

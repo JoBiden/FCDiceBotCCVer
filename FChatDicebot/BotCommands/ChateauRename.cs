@@ -51,21 +51,27 @@ namespace FChatDicebot.BotCommands
                 bot.SendPrivateMessage(ChateauInteractionHandler.needsQuotedText(), characterName);
                 valid = false;
             }
-            else if (recipientProfile.timers.ContainsKey("rename")) { 
-
-                if (recipientProfile.timers["rename"].timerEnd.CompareTo(DateTime.UtcNow) > 0) //recipient was renamed too recently
+            else
+            {
+                // These two checks must run independently, not as an else-if chain: an
+                // expired-but-still-present "rename" timer key used to satisfy the
+                // ContainsKey branch and skip the length check entirely, letting a player
+                // whose cooldown had lapsed submit a name over the 100-character limit (M10).
+                if (recipientProfile.timers.ContainsKey("rename")
+                    && recipientProfile.timers["rename"].timerEnd.CompareTo(DateTime.UtcNow) > 0) //recipient was renamed too recently
                 {
                     string tooSoonText = "You're trying to rename " + recipientProfile.displayName + " but they only recently received the name they have! Please respect that 'Consequence' interactions are also a Commitment. Wait a little longer before you change their name again. \n\n"
                       + recipientProfile.displayName + " will be available for a name change in " + Utils.GetTimeSpanPrint(recipientProfile.timers["rename"].timerEnd - DateTime.UtcNow);
                     bot.SendPrivateMessage(tooSoonText, characterName);
                     valid = false;
                 }
-            } 
-            else if (newName.Length > 100)
-            {
-                string textTooLong = "That new name is way too long! Names often need to be used multiple times in a message, and the character limit in room is only 4096. Your name can be up to 100 characters long, to leave room for tags. Please do your best to have less than 50 visible characters so the name doesn't take up more than one line on mobile. \n\nThe name you submitted was [b]" + newName.Length + "[/b] characters long.";
-                bot.SendPrivateMessage(textTooLong, characterName);
-                valid = false;
+
+                if (newName.Length > 100)
+                {
+                    string textTooLong = "That new name is way too long! Names often need to be used multiple times in a message, and the character limit in room is only 4096. Your name can be up to 100 characters long, to leave room for tags. Please do your best to have less than 50 visible characters so the name doesn't take up more than one line on mobile. \n\nThe name you submitted was [b]" + newName.Length + "[/b] characters long.";
+                    bot.SendPrivateMessage(textTooLong, characterName);
+                    valid = false;
+                }
             }
             if (valid)
             {

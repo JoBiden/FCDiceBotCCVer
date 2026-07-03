@@ -11,12 +11,15 @@ namespace FChatDicebot.Migration
     /// <summary>
     /// One-time migration script to backfill interaction counts into user profiles.
     /// This populates the counts dictionary with historical interaction data from the Interactions collection.
-    /// 
+    ///
     /// HOW TO USE:
     /// 1. Add this file to your project
     /// 2. Call BackfillInteractionCounts() from your main program or a test harness
     /// 3. Review the console output to verify counts
-    /// 4. The script can be safely run multiple times (it adds to existing counts)
+    /// 4. Run exactly ONCE. This is NOT idempotent (L3): it always re-derives every count
+    ///    from the full Interactions collection and adds the result to whatever's already
+    ///    in profile.counts, so a second run double-counts everything. If you need to
+    ///    re-run it, restore from a backup first — don't run it again on live data.
     /// </summary>
     public class InteractionCountMigration
     {
@@ -164,6 +167,28 @@ namespace FChatDicebot.Migration
                 case "bully":
                     result.Add((initiator, "bullygive"));
                     result.Add((recipient, "bullytake"));
+                    break;
+
+                case "boobhat":
+                    result.Add((initiator, "boobhatgive"));
+                    result.Add((recipient, "boobhattake"));
+                    break;
+
+                case "lick":
+                    result.Add((initiator, "lickgive"));
+                    result.Add((recipient, "licktake"));
+                    break;
+
+                // lapsit: !lap → initiator is the lap (lapsittake), recipient sits (lapsitgive)
+                case "lap":
+                    result.Add((initiator, "lapsittake"));
+                    result.Add((recipient, "lapsitgive"));
+                    break;
+
+                // !sit → initiator sits (lapsitgive), recipient is the lap (lapsittake)
+                case "sit":
+                    result.Add((initiator, "lapsitgive"));
+                    result.Add((recipient, "lapsittake"));
                     break;
 
                 // INVOLVED INTERACTIONS - give/take variants

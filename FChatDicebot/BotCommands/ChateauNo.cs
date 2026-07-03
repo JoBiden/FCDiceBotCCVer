@@ -133,11 +133,19 @@ namespace FChatDicebot.BotCommands
                 if (resolution.Resolved && !string.IsNullOrEmpty(resolution.ChannelMessage))
                 {
                     string groupMessage = resolution.ChannelMessage;
+
+                    // Mirror ChateauConsent's banner (M12): fold the resolved group-
+                    // achievement grants (by size / lap-stack position) in with each
+                    // participant's lifetime-count title wins, instead of using the 1:1
+                    // CheckAndGrantTitles path which never even looks at GroupTitleGrants.
+                    var allTitleGrants = new List<InteractionProcessors.GroupTitleGrant>(resolution.GroupTitleGrants);
                     foreach (string participant in resolution.Participants)
                     {
-                        string titles = ChateauSystemTitles.CheckAndGrantTitles(participant);
-                        if (!string.IsNullOrEmpty(titles)) groupMessage += titles;
+                        var countGrant = ChateauSystemTitles.CheckAndGrantCountTitles(participant);
+                        if (countGrant != null) allTitleGrants.Add(countGrant);
                     }
+                    groupMessage += ChateauSystemTitles.FormatGroupTitleNotification(allTitleGrants);
+
                     if (!string.IsNullOrEmpty(channelMessage)) channelMessage += "\n\n";
                     channelMessage += groupMessage;
                 }

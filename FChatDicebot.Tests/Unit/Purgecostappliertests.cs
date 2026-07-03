@@ -197,6 +197,31 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
             Assert.True(reloaded.timers.ContainsKey("work"));
         }
 
+        [Fact]
+        public void Apply_RandomBreak_OnlyCatalogPartAlreadyMaxSeverity_DegradesToMissedWork()
+        {
+            // Regression test for L8: rolling a part that's already broken at least as
+            // severely as the roll used to be a silent no-op — the "reversal cost" landed
+            // for free. With the catalog's only part ("arm") already at max severity, no
+            // roll (1-3 days) can ever raise it, so this must fall back to MissedWork
+            // instead of reporting Applied=true with nothing actually having changed.
+            var bob = MakeBob();
+            BreakInstance.SaveAll(bob, new List<BreakInstance>
+            {
+                new BreakInstance { Part = "arm", Severity = PurgeCostApplier.RandomBreakMaxDays, BrokenBy = "Test", BrokenAt = DateTime.UtcNow, LastTickedAt = DateTime.UtcNow.Date }
+            });
+            _database.SetProfile("Bob", bob);
+
+            var result = PurgeCostApplier.Apply(_database, bob, PurgeCostType.RandomBreak, new Random(1));
+
+            Assert.True(result.Applied);
+            Assert.Contains("!work", result.Description);
+            var reloaded = _database.GetProfile("Bob");
+            var breaks = BreakInstance.LoadAllWithTick(reloaded);
+            Assert.Single(breaks);
+            Assert.Equal(PurgeCostApplier.RandomBreakMaxDays, breaks[0].Severity); // unchanged
+        }
+
         private Profile MakeBob()
         {
             new ProfileBuilder().WithUserName("Bob").WithDisplayName("Bob").BuildAndSave(_database);

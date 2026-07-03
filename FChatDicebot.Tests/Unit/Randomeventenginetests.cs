@@ -105,6 +105,36 @@ namespace FChatDicebot.Tests.Unit
         }
 
         [Fact]
+        public void OpenEventLocked_FlavorTextCoincidentallyContainsKeyword_StillShowsInstruction()
+        {
+            // Regression test for B12-4: the old check re-scanned the *substituted output*
+            // for the keyword string, so flavor text that happened to mention the chosen
+            // keyword word (unrelated to any {keyword} placeholder) suppressed the "Quick,
+            // !random X" instruction players need to see to participate. The fix checks
+            // whether the *template* actually used the {keyword} placeholder instead.
+            var engine = NewEngine();
+            var ev = new RandomEvent
+            {
+                label = "test",
+                weight = 1,
+                // Contains every possible KeywordPool word, so whichever one gets rolled is
+                // "coincidentally" present here even though there's no {keyword} placeholder.
+                announceText = "The air smells of rose, velvet, candle, satin, amber, ivory, ribbon, lace, ember, petal, feather, crimson, violet, honey, pearl, and thorn.",
+                responseType = RandomEventEngine.ResponseTypeKeyword,
+                responseWindowSeconds = 60,
+                winnerRule = RandomEventEngine.WinnerRuleFirstValid,
+                outcomes = new List<EventOutcome>
+                {
+                    new EventOutcome { weight = 1, resultText = "Resolved!", rewards = new List<EventReward>() }
+                }
+            };
+
+            var ae = engine.ForceOpen(Channel, ev, DateTime.UtcNow);
+
+            Assert.Contains("!random " + ae.Keyword, ae.AnnounceText);
+        }
+
+        [Fact]
         public void Validation_Challenge_AcceptsOnlyCorrectAnswer()
         {
             var engine = NewEngine();

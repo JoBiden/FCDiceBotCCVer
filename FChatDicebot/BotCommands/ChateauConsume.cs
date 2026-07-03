@@ -51,7 +51,7 @@ namespace FChatDicebot.BotCommands
                 if (recipientProfile.timers[timerString].timerEnd.CompareTo(DateTime.UtcNow) > 0) //recipient was plantified too recently
                 {
                     string tooSoonText = "You're trying to consume " + recipientProfile.displayName + " but they were recently consumed! Please respect that 'Commitment' interactions are meant to be just that - a commitment. Wait a little longer for them to recover before you consume them again. \n\n"
-                      + recipientProfile.displayName + " will be available to consume in " + Utils.GetTimeSpanPrint(recipientProfile.timers["consume"].timerEnd - DateTime.UtcNow);
+                      + recipientProfile.displayName + " will be available to consume in " + Utils.GetTimeSpanPrint(recipientProfile.timers[timerString].timerEnd - DateTime.UtcNow);
                     bot.SendPrivateMessage(tooSoonText, characterName);
                     valid = false;
                 } 

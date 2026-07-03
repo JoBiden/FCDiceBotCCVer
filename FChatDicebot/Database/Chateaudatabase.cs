@@ -455,7 +455,10 @@ namespace FChatDicebot.Database
 
         public long GetTypeCount(string profileName, string identifierType, string initiatorRecipientOrBoth)
         {
-            identifierType = identifierType.ToLower();
+            // Interaction.type is stored with its canonical case (e.g. "paymentGive",
+            // "paymentReceive") and Mongo string equality is case-sensitive, so lowercasing
+            // it here meant this query could never match those camelCase types — silently
+            // zeroing out any specialist count derived from them (M4).
             initiatorRecipientOrBoth = initiatorRecipientOrBoth.ToLower();
 
             switch (initiatorRecipientOrBoth)

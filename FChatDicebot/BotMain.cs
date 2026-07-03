@@ -1075,7 +1075,12 @@ namespace FChatDicebot
 
             DateTime utcNow = DateTime.UtcNow;
             List<ChannelSettings> eligible = SavedChannelSettings
-                .Where(cs => cs != null && cs.AllowRandomEvents && ChannelsJoined != null && ChannelsJoined.Contains(cs.Name))
+                // Ordinal-ignore-case (B12-3): the rest of the codebase treats channel names
+                // case-insensitively (e.g. BotMain.cs's own .ToLower() comparisons elsewhere);
+                // a plain Contains here would silently disable random events in a channel the
+                // moment its recorded casing drifted from ChannelsJoined's.
+                .Where(cs => cs != null && cs.AllowRandomEvents && ChannelsJoined != null
+                    && ChannelsJoined.Contains(cs.Name, StringComparer.OrdinalIgnoreCase))
                 .ToList();
 
             foreach (ChannelSettings cs in eligible)
