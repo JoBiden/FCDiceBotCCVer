@@ -49,7 +49,7 @@ namespace FChatDicebot.BotCommands
             }
             else if (string.Equals(recipient, characterName, StringComparison.OrdinalIgnoreCase))
             {
-                bot.SendPrivateMessage("You can't bond with yourself — a bond needs two.", characterName);
+                bot.SendPrivateMessage("You can't bond with yourself. Bonds are between two people.", characterName);
                 valid = false;
             }
             else if (bond == null)

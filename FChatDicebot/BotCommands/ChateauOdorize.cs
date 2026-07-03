@@ -43,7 +43,7 @@ namespace FChatDicebot.BotCommands
             }
             if (string.Equals(recipient, characterName, StringComparison.OrdinalIgnoreCase))
             {
-                bot.SendPrivateMessage("You can't saturate yourself with a scent — that's just perfume.", characterName);
+                bot.SendPrivateMessage("You can't odorize yourself. Ask someone else to give you a proper new smell.", characterName);
                 return;
             }
             if (scent == null)

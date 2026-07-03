@@ -51,7 +51,7 @@ namespace FChatDicebot.BotCommands
             }
             else if (string.Equals(recipient, characterName, StringComparison.OrdinalIgnoreCase))
             {
-                bot.SendPrivateMessage("You can't pay yourself — that's just moving money from one pocket to the other.", characterName);
+                bot.SendPrivateMessage("You can't pay yourself. You can !volunteer and even !employ yourself or others, then !work for money.", characterName);
                 valid = false;
             }
             else if (currency == null)
