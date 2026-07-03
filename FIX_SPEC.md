@@ -11,17 +11,17 @@ _Companion to [`AUDIT_REPORT.md`](AUDIT_REPORT.md). Every finding ID (C1, H2, M7
 
 ## Sequencing at a glance
 
-| Phase | Theme | Closes | Est. size | Gate before ship |
-|-------|-------|--------|-----------|------------------|
-| **1** | Economy integrity (atomic guarded debit + zero-floor) | C1, C2, H1, M5, M6, L5, L6, B12-2† | ~1 day | new + existing money tests green |
-| **2** | Consent enforcement spine | H2, H3, H4, M7, M8, M9 | ~1 day | consent-path tests green |
-| **3** | Rate-limit note correctness | H5, R1 | ~2 hr | rate-limit tests green |
-| **4** | Startup / connection hardening | M1, M2, M3, M14 | ~half day | manual reconnect + corrupt-file drills |
-| **5** | Runtime / dispatch robustness | M13, M15, M16, L1, B12-1† | ~half day | prod-mode smoke |
-| **6** | Dossier & data quality | disp. 3, M4, M10, M12, M17, L2–L4, L8–L15, B12-3†, B12-4† | ~1 day | dossier tests |
-| **7** | Mongo document validation | disp. 5 | ~2 hr | stale-doc drill |
-| **8** | Wager ↔ consent integration | disp. 2 | ~1 day | wager-accept tests |
-| **9** | Cleanup / dead code / reuse (optional, do alongside) | R2–R6, dead code, `MonDB` foot-gun | ongoing | build green |
+| Phase | Theme | Closes | Est. size | Status |
+|-------|-------|--------|-----------|--------|
+| **1** | Economy integrity (atomic guarded debit + zero-floor) | C1, C2, H1, M5, M6, L5, L6, B12-2† | ~1 day | ✅ Done |
+| **2** | Consent enforcement spine | H2, H3, H4, M7, M8, M9 | ~1 day | ✅ Done |
+| **3** | Rate-limit note correctness | H5, R1 | ~2 hr | ✅ Done |
+| **4** | Startup / connection hardening | M1, M2, M3, M14 | ~half day | ✅ Done |
+| **5** | Runtime / dispatch robustness | M13, M15, M16, L1, B12-1† | ~half day | ✅ Done |
+| **6** | Dossier & data quality | disp. 3, M4, M10, M12, M17, L2–L4, L8–L15, B12-3†, B12-4† | ~1 day | ✅ Done |
+| **7** | Mongo document validation | disp. 5 | ~2 hr | ✅ Done |
+| **8** | Wager ↔ consent integration | disp. 2 | ~1 day | ✅ Done (untargeted case already covered by `!joingame`, no new command needed) |
+| **9** | Cleanup / dead code / reuse (optional, do alongside) | R2–R6, dead code, `MonDB` foot-gun | ongoing | ⚠️ **Partially done** — dead code + `MonDB` foot-gun fixed; **R4/R5/R6 reuse consolidations still need implementation** (see Phase 9 section) |
 
 **Do Phase 1 first and alone** — it's the only set of bugs that mints currency, it's independently shippable, and it's the highest-confidence change. Phases 2 and 3 can land in either order after it. 4–8 are independent of each other.
 
@@ -385,26 +385,26 @@ The intent: casual interactions must not overwrite the dossier's "Last seen / re
 
 Not bugs on their own, but they're *why* the bugs happened; clearing them prevents recurrence. None are urgent; fold each into whichever phase touches the same file.
 
-**Dead code / artifacts to delete:**
-- `ChateauInteractionHandler_depreciated.cs` (271 lines, same class+namespace as the live file — re-adding it breaks the build).
-- `ChateauConsent.getInteractionMessage` (self-labeled defunct; [ChateauConsent.cs:286](FChatDicebot/BotCommands/ChateauConsent.cs:286)).
-- The write-only `_lastRateLimitMessage`/`GetAndClearRateLimitMessage` **duplicate path** is *resolved into use* by Phase 3 — after that, the dead half is `CheckRateLimitsAndGetMessage`/`GetCountKeys`; delete those.
-- `MonDB.getInteractions` (`NotImplementedException`).
-- Root `Tests.cs` (437 lines compiled into the production exe).
-- `FChatDiceBot.zip` (16 MB), `libmongocrypt.dylib`/`.so` at repo root.
-- The `processor == null` fallback in `ProcessOneToOneSeat` (every registered type has a processor) — delete after Phase 2d moves pledge marking out of it.
+**Dead code / artifacts to delete — ✅ DONE (2026-07-03):**
+- `ChateauInteractionHandler_depreciated.cs` (271 lines, same class+namespace as the live file — re-adding it breaks the build). **Deleted.**
+- `ChateauConsent.getInteractionMessage` (self-labeled defunct). **Deleted.**
+- The write-only `_lastRateLimitMessage`/`GetAndClearRateLimitMessage` duplicate path: `CheckRateLimitsAndGetMessage`/`GetCountKeys` **deleted** in Phase 3 (also fixed Kiss/Cuddle/Handhold, which turned out to never populate `_lastRateLimitMessage` at all — see Phase 3 commit).
+- `MonDB.getInteractions` (`NotImplementedException`). **Deleted.**
+- Root `Tests.cs` (437 lines compiled into the production exe). **Deleted.**
+- `FChatDiceBot.zip` (16 MB), `libmongocrypt.dylib`/`.so` at repo root. **Deleted** (the real Windows `mongocrypt.dll` stays — it's already correctly wired).
+- The `processor == null` fallback in `ProcessOneToOneSeat` and the now-fully-unreachable `ChateauInteractionHandler.addInteraction` it called. **Deleted**; the fallback branch now logs and drops a pending whose type doesn't resolve to a processor at all (e.g. a corrupted document) instead of calling into ~30 lines of dead legacy code.
 
-**Foot-gun:** `MonDB.GetDatabase()` silently connects to the **production** DB when uninitialized. Make it **throw** when uninitialized so a script/test can't accidentally touch prod.
+**Foot-gun — ✅ DONE:** `MonDB.GetDatabase()` used to silently connect to the **production** DB when uninitialized. It now **throws** `InvalidOperationException` instead. Verified the full test suite still passes (it goes through `TestDatabaseFixture`, which calls `MonDB.Initialize`) and that `BotMain`'s constructor always calls `MonDB.Initialize` at real startup, so a live bot is unaffected.
 
-**Reuse consolidations (R2–R6), each removes a class of future drift:**
-- **R2** — one cooldown gate + "too recently" text (delivered by Phase 2b's `CooldownGate`); migrate the ~20 hand-copied checks onto it, including `!rename` (M10).
-- **R3** — consent-warning text: route the ~11 hand-rolled command warnings through the processor's `GetConsentWarning`.
-- **R4** — merge `PaymentGive`/`PaymentReceive` into one processor (delivered/enabled by Phase 1b).
-- **R5** — generic `ProfileListStore<T>` to replace the five near-identical `Model/*Instance` JSON-in-`lists` load/save copies (~250 lines → ~40).
-- **R6** — one time-remaining formatter so `!work` and `!rest` render the same timer identically.
+**Reuse consolidations (R2–R6) — ⚠️ STILL NEED IMPLEMENTATION.** Each removes a class of future drift, but none of them fix a live bug, so they were deliberately left for a dedicated pass rather than folded in here:
+- **R2** — one cooldown gate + "too recently" text. **Not delivered as a shared class.** M7/M9's missing rechecks were fixed in Phase 2b by adding the recheck directly to `MarkProcessor`/`EmployProcessor.ValidateInteraction`, mirroring the pattern `ObjectifyProcessor`/`EntitleProcessor` already used — i.e. the *bugs* are closed, but the ~20 hand-copied cooldown checks across the codebase (including `!rename`, M10) are still hand-copied, not routed through one shared gate. Revisit only if the duplication itself starts causing drift.
+- **R3** — **not started.** Consent-warning text: route the ~11 hand-rolled command warnings through the processor's `GetConsentWarning` instead of each command re-deriving its own wording.
+- **R4** — **not started.** Merge `PaymentGive`/`PaymentReceive` into one processor (they're ~identical after Phase 1b's atomic rewrite — same debit/credit logic, just payer/payee swapped). Real regression surface here since Phase 1 just carefully re-verified this exact code path; do this as its own reviewed change with the full Phase-1 test suite (`Trydebitcurrencytests.cs`, `Paymentgiveprocessortests.cs`, `Paymentreceiveprocessortests.cs`) re-run against it, not folded into an unrelated commit.
+- **R5** — **not started.** Generic `ProfileListStore<T>` to replace the five near-identical `Model/*Instance` JSON-in-`lists` load/save copies (~250 lines → ~40).
+- **R6** — **not started.** One time-remaining formatter so `!work` and `!rest` render the same timer identically.
 - **Do NOT consolidate** (intentional): per-processor flavor wording, alias command classes (your policy), per-processor cooldown-key helpers, the `MonDB` static shim.
 
-**Build hygiene:** consider migrating the main `.csproj` from explicit `<Compile Include>` to SDK-style globbing (the test project already is) to end the "new `.cs` silently not built" trap. (Until then, remember: new main-project files must be added to `FChatDicebot.csproj`.)
+**Build hygiene — not started.** Consider migrating the main `.csproj` from explicit `<Compile Include>` to SDK-style globbing (the test project already is) to end the "new `.cs` silently not built" trap. (Until then, remember: new main-project files must be added to `FChatDicebot.csproj`.)
 
 ---
 
@@ -418,11 +418,11 @@ The audit's core test finding: the injected-`IChateauDatabase` layer is well tes
 
 ---
 
-## Open decisions to confirm before implementing
+## Open decisions — resolved 2026-07-03 (kept for history)
 
-1. **`nothing` currency floor (Phase 1a):** default keeps `nothing` exempt from the zero-floor (preserves the existing joke-currency behavior). Confirm, or floor it too. (`ious` is exempt per your disposition either way.)
-2. **Failed-consent UX (Phase 2a):** default sends the block/cooldown reason **privately** to the consenter and drops the pending. Confirm, or surface it as an in-channel `[sub]` note.
-3. **Untargeted-wager command (Phase 8):** name (`!takebet`? `!callbet`?) and whether an open wager is first-come single-claimant or multi-seat.
-4. **Payment twin merge (Phase 1b / R4):** merge `PaymentGive`/`PaymentReceive` into one processor now, or keep them separate and just fix both. (Recommendation: merge — they're identical after the atomic rewrite.)
+1. **`nothing` currency floor (Phase 1a):** ✅ resolved — kept `nothing` exempt from the zero-floor, per the default (`ious` exempt either way).
+2. **Failed-consent UX (Phase 2a):** ✅ resolved — sends the block/cooldown reason privately to the consenter and drops the pending, per the default.
+3. **Untargeted-wager command (Phase 8):** ✅ resolved — no new command needed. Owner clarified the scenario ("Alice opens {game} and stakes 7 copper, who wants to join?"), which `!joingame {gametype}` already handles.
+4. **Payment twin merge (Phase 1b / R4):** ⚠️ **still open / not implemented.** Kept `PaymentGive`/`PaymentReceive` as two separate (but now both correctly atomic) processors. The merge itself — collapsing them into one `PaymentProcessor` with an `isGive` flag — is real but purely cosmetic reuse work with no bug value, and touches the same money path Phase 1 just carefully fixed and tested. Do it as its own reviewed change, not folded into something else. See Phase 9's R4 entry.
 
 Nothing here changes the two **no-change** dispositions: the profile gate (disposition #4) stays, and the `!rename` strikethrough `userName` (M11) stays.
