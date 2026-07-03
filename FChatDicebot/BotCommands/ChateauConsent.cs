@@ -116,6 +116,14 @@ namespace FChatDicebot.BotCommands
             foreach (string groupId in touchedGroups)
             {
                 var resolution = InteractionProcessors.GroupInteractionResolver.CheckAndResolve(database, groupId);
+
+                // Privately notify anyone dropped by a failed re-validation (H2), regardless
+                // of whether the rest of the group still resolved.
+                foreach (var dropped in resolution.Dropped)
+                {
+                    bot.SendPrivateMessage(dropped.Reason, dropped.Participant);
+                }
+
                 if (resolution.Resolved && !string.IsNullOrEmpty(resolution.ChannelMessage))
                 {
                     string groupMessage = resolution.ChannelMessage;
@@ -163,6 +171,21 @@ namespace FChatDicebot.BotCommands
             var processor = InteractionProcessors.InteractionProcessorRegistry.GetProcessor(toConsent.pendingInteraction.type);
             if (processor != null)
             {
+                // Enforcement spine: re-validate at consent time, not just at request time.
+                // ValidateInteraction is side-effect free and already runs the status-effect
+                // blocker pipeline (break/curse) plus any processor-specific self-gating
+                // (train/golden), none of which was ever being checked here before.
+                var validation = processor.ValidateInteraction(
+                    toConsent.pendingInteraction.initiator,
+                    toConsent.pendingInteraction.recipient,
+                    toConsent.pendingInteraction.identifier);
+                if (!validation.IsValid)
+                {
+                    MonDB.removePendingInteraction(toConsent.Id);
+                    bot.SendPrivateMessage(validation.ErrorMessage, toConsent.awaitingConsentFrom);
+                    return channelMessage;
+                }
+
                 // Process the interaction (saves to DB, updates profiles)
                 string result = processor.ProcessInteraction(toConsent);
 
