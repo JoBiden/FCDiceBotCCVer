@@ -164,20 +164,28 @@ namespace FChatDicebot.BotCommands
             if (processor != null)
             {
                 // Process the interaction (saves to DB, updates profiles)
-                processor.ProcessInteraction(toConsent);
-
-                Profile initProfile = MonDB.getProfile(toConsent.pendingInteraction.initiator);
-                Profile recipProfile = MonDB.getProfile(toConsent.pendingInteraction.recipient);
-                channelMessage += processor.GetCompletionMessageWithStatusEffects(initProfile, recipProfile, toConsent.pendingInteraction.identifier);
-                channelMessage += CheckRateLimitsAndGetMessage(toConsent.pendingInteraction);
+                string result = processor.ProcessInteraction(toConsent);
 
                 // Drain any out-of-band private note the processor wants sent to the
-                // initiator (e.g. corrupt/purify's TOCTOU exhaustion notice).
+                // initiator (e.g. corrupt/purify's TOCTOU exhaustion notice, or payment's
+                // insufficient-funds-at-consent-time notice).
                 string initiatorPrivate = processor.GetAndClearInitiatorPrivateMessage();
                 if (!string.IsNullOrEmpty(initiatorPrivate))
                 {
                     bot.SendPrivateMessage(initiatorPrivate, toConsent.pendingInteraction.initiator);
                 }
+
+                if (result == "NoInteraction")
+                {
+                    // The processor aborted (e.g. a queued payment whose payer can no longer
+                    // afford it). Nothing happened, so there's nothing to announce in-channel.
+                    return channelMessage;
+                }
+
+                Profile initProfile = MonDB.getProfile(toConsent.pendingInteraction.initiator);
+                Profile recipProfile = MonDB.getProfile(toConsent.pendingInteraction.recipient);
+                channelMessage += processor.GetCompletionMessageWithStatusEffects(initProfile, recipProfile, toConsent.pendingInteraction.identifier);
+                channelMessage += CheckRateLimitsAndGetMessage(toConsent.pendingInteraction);
             }
             else
             {

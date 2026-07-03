@@ -79,15 +79,13 @@ namespace FChatDicebot.BotCommands
                     return;
                 }
 
-                if (initiatorProfile.timers == null)
-                {
-                    initiatorProfile.timers = new System.Collections.Generic.Dictionary<string, CoolDown>();
-                }
-                initiatorProfile.timers[MilkProcessor.DirectionTimerKey(characterName)] = new CoolDown
+                // Targeted timer write (re-fetches fresh at call time) rather than a
+                // whole-profile SetProfile, so it can't revert a concurrent currency/count
+                // change made to this profile since the GetProfile at the top of Run.
+                MonDB.GetDatabase().SetTimer(characterName, MilkProcessor.DirectionTimerKey(characterName), new CoolDown
                 {
                     timerEnd = DateTime.UtcNow.Date.AddDays(1)
-                };
-                MonDB.GetDatabase().SetProfile(characterName, initiatorProfile);
+                });
                 MonDB.GetDatabase().ChangeCurrency(characterName, ChateauCurrency.SellPayoutCurrency, 1);
                 MonDB.GetDatabase().ChangeCurrency(characterName, ChateauCurrency.BottleCurrency, 1);
 

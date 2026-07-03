@@ -57,31 +57,25 @@ namespace FChatDicebot.InteractionProcessors.Involved
             string recipient = command.pendingInteraction.recipient;
             string currency = command.pendingInteraction.identifier;
             int amount = command.pendingInteraction.extraParameters.FirstOrDefault().ToInt32();
+            int magnitude = Math.Abs(amount);
+
+            // paymentGive: initiator pays recipient. Debit is atomic and guarded (>= magnitude
+            // unless the currency allows negative balances), so this can never mint currency on
+            // self-pay (initiator == recipient nets the same $inc twice back to zero) and never
+            // overdraws a currency that isn't ious/nothing even if a second queued payment races
+            // this one to consent.
+            bool debited = Database.TryDebitCurrency(initiator, currency, magnitude, CurrencyRules.AllowsNegative(currency));
+            if (!debited)
+            {
+                _lastInitiatorPrivateMessage = initiator + " no longer has enough " + currency + " for that transfer.";
+                Database.DeletePendingCommand(command.Id);
+                return "NoInteraction";
+            }
+
+            Database.ChangeCurrency(recipient, currency, magnitude);
 
             // Save the interaction to history
             Database.AddInteraction(command.pendingInteraction);
-
-            // Get both profiles
-            Profile initiatorProfile = Database.GetProfile(initiator);
-            Profile recipientProfile = Database.GetProfile(recipient);
-
-            // Ensure both have currency field
-            if (!initiatorProfile.currencies.ContainsKey(currency))
-            {
-                initiatorProfile.currencies[currency] = 0;
-            }
-            if (!recipientProfile.currencies.ContainsKey(currency))
-            {
-                recipientProfile.currencies[currency] = 0;
-            }
-
-            // Transfer: subtract from initiator, add to recipient
-            initiatorProfile.currencies[currency] -= amount;
-            recipientProfile.currencies[currency] += amount;
-
-            // Save both profiles
-            Database.SetProfile(initiator, initiatorProfile);
-            Database.SetProfile(recipient, recipientProfile);
 
             // Remove pending interaction
             Database.DeletePendingCommand(command.Id);

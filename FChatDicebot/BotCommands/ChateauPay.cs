@@ -48,7 +48,12 @@ namespace FChatDicebot.BotCommands
             {
                 bot.SendPrivateMessage(ChateauInteractionHandler.notFoundText(recipient), characterName);
                 valid = false;
-            } 
+            }
+            else if (string.Equals(recipient, characterName, StringComparison.OrdinalIgnoreCase))
+            {
+                bot.SendPrivateMessage("You can't pay yourself — that's just moving money from one pocket to the other.", characterName);
+                valid = false;
+            }
             else if (currency == null)
             {
                 bot.SendPrivateMessage(ChateauInteractionHandler.typeNotFoundText(identifierType), characterName);
@@ -91,14 +96,15 @@ namespace FChatDicebot.BotCommands
                 }
                 else //negative payment, requesting funds
                 {
-                    if (!recipientProfile.currencies.ContainsKey(currency) || recipientProfile.currencies[currency] < paymentAmount)
+                    int billMagnitude = -paymentAmount;
+                    if (!recipientProfile.currencies.ContainsKey(currency) || recipientProfile.currencies[currency] < billMagnitude)
                     {
                         if (currency != "nothing")
                         {
                             bot.SendPrivateMessage("They don't have enough " + currency + " to make that payment.", characterName);
                             valid = false;
                         }
-                        else if (paymentAmount > 100) //&& currency is "nothing" implied by logic
+                        else if (billMagnitude > 100) //&& currency is "nothing" implied by logic
                         {
                             bot.SendPrivateMessage("You can't ask for 'nothing' amounts over 100! Just think of the inflation...", characterName);
                             valid = false;

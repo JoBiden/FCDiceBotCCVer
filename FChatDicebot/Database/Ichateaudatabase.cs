@@ -26,7 +26,25 @@ namespace FChatDicebot.Database
         void AddToList(string userName, string listLabel, string listValue);
         void RemoveFromList(string userName, string listLabel, string listValue);
         void SetTimer(string userName, string timerLabel, CoolDown timer);
+
+        /// <summary>
+        /// Replace a profile's milkInventory, re-fetching the document immediately before
+        /// writing (same narrow-window pattern as <see cref="SetTimer"/>) rather than reusing a
+        /// profile snapshot the caller loaded earlier in its own command flow. Keeps !sell/!milk
+        /// from reverting any currency/count/timer change that landed concurrently since the
+        /// caller's own GetProfile.
+        /// </summary>
+        void SetMilkInventory(string userName, List<MilkBottle> inventory);
         void ChangeCurrency(string userName, string currencyLabel, int changeAmount);
+
+        /// <summary>
+        /// Atomically remove <paramref name="amount"/> (a positive magnitude) of a currency from
+        /// a profile. Unless <paramref name="allowNegative"/> is true, the debit only applies
+        /// when the balance is &gt;= amount, so a concurrent/stale caller can never drive a normal
+        /// currency below zero. Returns true iff the debit was applied.
+        /// </summary>
+        bool TryDebitCurrency(string userName, string currencyLabel, int amount, bool allowNegative);
+
         void ChangeEscrow(string userName, string escrowLabel, int changeAmount);
         void ChangeJobExperience(string userName, string jobLabel, int changeAmount);
 

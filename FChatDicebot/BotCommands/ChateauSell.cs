@@ -92,10 +92,12 @@ namespace FChatDicebot.BotCommands
                 return;
             }
 
-            // Persist inventory changes, then credit copper (substance value) and the
-            // bottle-currency (the Chateau handing the empty back). Both go through
-            // ChangeCurrency so they don't clobber concurrent edits to other dict keys.
-            MonDB.GetDatabase().SetProfile(characterName, profile);
+            // Persist inventory changes via the targeted milkInventory write (re-fetches
+            // fresh at call time rather than reusing the profile loaded at the top of Run,
+            // so it can't revert a concurrent currency/count/timer change), then credit
+            // copper (substance value) and the bottle-currency (the Chateau handing the
+            // empty back) via atomic $inc.
+            MonDB.GetDatabase().SetMilkInventory(characterName, profile.milkInventory);
             MonDB.GetDatabase().ChangeCurrency(characterName, ChateauCurrency.SellPayoutCurrency, sellResult.PayoutCopper);
             MonDB.GetDatabase().ChangeCurrency(characterName, ChateauCurrency.BottleCurrency, sellResult.BottlesReturned);
 

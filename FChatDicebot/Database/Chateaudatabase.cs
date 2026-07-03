@@ -69,6 +69,10 @@ namespace FChatDicebot.Database
             return documents.Select(doc => BsonSerializer.Deserialize<Profile>(doc)).ToList();
         }
 
+        // Whole-profile ReplaceOne. This reverts any concurrent atomic $inc (ChangeCurrency,
+        // ChangeEscrow, TryDebitCurrency, ChangeCount) that lands between this call's read and
+        // write. Never use this to persist currency/escrow/count/timer changes — use the
+        // targeted atomic helpers for those instead.
         public void SetProfile(string userName, Profile newProfile)
         {
             var collection = Database.GetCollection<Profile>("RegisteredProfiles");
@@ -285,6 +289,18 @@ namespace FChatDicebot.Database
             collection.ReplaceOne(filter, document);
         }
 
+        public void SetMilkInventory(string userName, List<MilkBottle> inventory)
+        {
+            var collection = Database.GetCollection<Profile>("RegisteredProfiles");
+            var filter = Builders<Profile>.Filter.Eq("userName", userName);
+            var document = collection.Find(filter).FirstOrDefault();
+
+            if (document == null) return;
+
+            document.milkInventory = inventory;
+            collection.ReplaceOne(filter, document);
+        }
+
         public void ChangeCurrency(string userName, string currencyLabel, int changeAmount)
         {
             // Server-side atomic $inc (not a read-modify-write ReplaceOne). This matters for the
@@ -296,6 +312,22 @@ namespace FChatDicebot.Database
             var filter = Builders<Profile>.Filter.Eq("userName", userName);
             var update = Builders<Profile>.Update.Inc("currencies." + currencyLabel, changeAmount);
             collection.UpdateOne(filter, update);
+        }
+
+        public bool TryDebitCurrency(string userName, string currencyLabel, int amount, bool allowNegative)
+        {
+            if (amount <= 0) return false; // callers pass a positive magnitude
+            var collection = Database.GetCollection<Profile>("RegisteredProfiles");
+            var fb = Builders<Profile>.Filter;
+            var filter = fb.Eq("userName", userName);
+            if (!allowNegative)
+            {
+                // $gte doesn't match a missing field, so a player with no balance at all
+                // correctly fails the guarded debit with no special-casing needed.
+                filter = fb.And(filter, fb.Gte("currencies." + currencyLabel, amount));
+            }
+            var update = Builders<Profile>.Update.Inc("currencies." + currencyLabel, -amount);
+            return collection.UpdateOne(filter, update).ModifiedCount == 1;
         }
 
         public void ChangeEscrow(string userName, string escrowLabel, int changeAmount)

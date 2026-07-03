@@ -408,6 +408,7 @@
     <Compile Include="BotCommands\Roll.cs" />
     <Compile Include="ChateauInteractionHandler.cs" />
     <Compile Include="Database\Chateaudatabase.cs" />
+    <Compile Include="Database\CurrencyRules.cs" />
     <Compile Include="Database\Ichateaudatabase.cs" />
     <Compile Include="InteractionCountMigration.cs" />
     <Compile Include="InteractionProcessors\Casual\BoobhatProcessor.cs" />
