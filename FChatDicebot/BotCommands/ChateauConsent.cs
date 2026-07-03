@@ -229,10 +229,12 @@ namespace FChatDicebot.BotCommands
             }
             else
             {
-                // Fallback for non-migrated interactions (every currently-registered type has
-                // a processor, so this path is unreachable today; kept as a safety net for a
-                // future interaction type that hasn't been migrated yet).
-                ChateauInteractionHandler.addInteraction(toConsent);
+                // Every registered interaction type has a processor; reaching here means the
+                // pending's type string doesn't match anything in InteractionProcessorRegistry
+                // (e.g. a corrupted/stale document). Drop it rather than silently doing nothing.
+                Console.WriteLine("ProcessOneToOneSeat: no processor registered for interaction type '"
+                    + toConsent.pendingInteraction.type + "' — dropping pending " + toConsent.Id);
+                MonDB.removePendingInteraction(toConsent.Id);
             }
 
             channelMessage = CheckAchievementsAndAppendToMessage(channelMessage, toConsent.pendingInteraction.initiator);
@@ -272,110 +274,5 @@ namespace FChatDicebot.BotCommands
 
             return message;
         }
-
-        //theoretically now defunct, but keeping around for fallback safety
-        public string getInteractionMessage(string interactionType, string identifier, string initiator, string recipient)
-        {
-            Profile initiatorProfile = MonDB.getProfile(initiator);
-            Profile recipientProfile = MonDB.getProfile(recipient);
-            string returnString = string.Empty;
-            var random = new Random();
-            switch (interactionType)
-            {
-                case "kiss":
-                    var kissDescriptors = new List<String> { "cute.", "that's kind of lewd...", "so salatious.", "hot!", "it sounded quite wet.", "short and sweet.", "slow and sensual.", "just a casual peck.", "doki..." };
-                    returnString = "Mwah! " + initiatorProfile.displayName + " and " + recipientProfile.displayName + " share a kiss, " + kissDescriptors[random.Next(kissDescriptors.Count)];
-                    if (initiator == "Queen Contract")
-                    {
-                        returnString += "[eicon]qckiss[/eicon]";
-                    }
-                    break;
-
-                case "handhold":
-                    var handholdDescriptors = new List<String> { "Cute.", "That's kind of lewd...", "So salatious.", "Hot!", "When's the wedding?", "The forbidden act, out in the open..." };
-                    returnString = "Ooh, " + initiatorProfile.displayName + " and " + recipientProfile.displayName + " hold hands! " + handholdDescriptors[random.Next(handholdDescriptors.Count)];
-                    break;
-                case "cuddle":
-                    var cuddleDescriptors = new List<String> { "Cute.", "That's kind of lewd...", "So salatious.", "Hot!", "Looks cozy!", "Is there room for one more?", initiatorProfile.displayName + " is definitely the big spoon.", recipientProfile.displayName + " is definitely the little spoon." };
-                    returnString = initiatorProfile.displayName + " and " + recipientProfile.displayName + " cuddle up together. " + cuddleDescriptors[random.Next(cuddleDescriptors.Count)];
-                    if (initiator == "Queen Contract" || recipient == "Queen Contract")
-                    {
-                        if (initiator == "The Corrupted Rin" || recipient == "The Corrupted Rin")
-                        {
-                            returnString += " [eicon]rin_lap[/eicon]";
-                        }
-                        else
-                        {
-                            returnString += " [eicon]qchug[/eicon]";
-                        }
-                    }
-                    break;
-                case "spank":
-                    var spankDescriptors = new List<String> { "a sharp spank!", "a love tap to the ass.", "a smack that will leave a mark.", "a red imprint on their derriere.", "a surprisingly loving booty grope.", "an impact with enough force to cook a lesser being." };
-                    returnString = initiatorProfile.displayName + " winds up and gives " + recipientProfile.displayName + " " + spankDescriptors[random.Next(spankDescriptors.Count)];
-                    if (recipient == "Queen Contract")
-                    {
-                        returnString += " [eicon]qcass[eicon]";
-                    }
-                    break;
-                case "bully":
-                    var bullyDescriptors = new List<String> { "boolies them into submission!", "shows them whose boss!", "applies excessive force to their victim!", "spins them right round!", "establishes the pecking order!", "instills fear..." };
-                    returnString = initiatorProfile.displayName + " takes " + recipientProfile.displayName + " by the collar and " + bullyDescriptors[random.Next(bullyDescriptors.Count)];
-                    break;
-                case "rename":
-                    returnString = initiatorProfile.displayName + " has made it known that " + recipientProfile.displayName + " is to be known as " + recipientProfile.displayName + " henceforth! All occurrences of their name in our records will be changed to reflect their new identity.";
-                    break;
-                case "monsterize":
-                    identifier = Utils.AnOrA(identifier) + " " + identifier;
-                    returnString = initiatorProfile.displayName + " has bolstered monsterkind by turning " + recipientProfile.displayName + " into " + identifier + "! We welcome all monsters to our Chateau, no matter what your origins. Enjoy your new life as " + identifier + "~";
-                    break;
-                case "petrify":
-                    returnString = initiatorProfile.displayName + " has petrified " + recipientProfile.displayName + " " + Utils.LocationToText(identifier, initiator, recipient) + "! They might be stuck there for quite awhile... hopefully visitors enjoy the pose they're stuck in.";
-                    break;
-                case "plant":
-                    identifier = Utils.AnOrA(identifier) + " " + identifier;
-                    returnString = initiatorProfile.displayName + " has grown the garden by turning " + recipientProfile.displayName + " into " + identifier + "! They might stay planted for quite awhile... surely the gardeners will take good care of them.";
-                    break;
-                case "objectify":
-                    identifier = Utils.AnOrA(identifier) + " " + identifier;
-                    returnString = initiatorProfile.displayName + " has made " + recipientProfile.displayName + " into some sort of " + identifier + "! Who knows what's in store for them, but they'll be stuck with their fate for quite awhile...";
-                    break;
-                case "dressup":
-                    returnString = initiatorProfile.displayName + " has dressed up " + recipientProfile.displayName + " in " + Utils.AttireToText(identifier) + "! Do a spin for everyone, let them admire your new garb!";
-                    break;
-                case "feed":
-                    returnString = initiatorProfile.displayName + " has fed " + recipientProfile.displayName + " some " + Utils.SubstanceToText(identifier) + "! Was it yummy? I bet it was.";
-                    break;
-                case "golden":
-                    returnString = initiatorProfile.displayName + " breathes a sigh of relief as a golden fluid pours over " + recipientProfile.displayName + "'s " + Utils.BodypartToText(identifier) + ".";
-                    break;
-                case "consume":
-                    returnString = initiatorProfile.displayName + " consumes " + recipientProfile.displayName + ", and they were never heard from again... or at least, it will be quite some time before they manage to escape, reform, or otherwise recover their strength.";
-                    break;
-                case "mark":
-                    returnString = initiatorProfile.displayName + " emblazons their mark upon " + recipientProfile.displayName + "'s " + Utils.BodypartToText(identifier) + ". Wear it with pride~ " + initiatorProfile.characteristics["mark"];
-                    break;
-                case "employ":
-                    returnString = initiatorProfile.displayName + " has given " + recipientProfile.displayName + " the esteemed position of " + Utils.JobToText(identifier) + "! Enjoy your new job everytime you !work (and don't forget you can still !volunteer to see what other jobs are like.)";
-                    break;
-                case "bond":
-                    returnString = initiatorProfile.displayName + " is now " + recipientProfile.displayName + "'s " + Utils.BondToText(identifier, false) + ", and " + recipientProfile.displayName + " is now their " + Utils.BondToText(identifier, true) + "! May you enjoy a bright future together.";
-                    break;
-                case "paymentGive":
-                    returnString = initiatorProfile.displayName + " has paid " + recipientProfile.displayName + " in " + identifier + "! How generous!";
-                    break;
-                case "paymentReceive":
-                    returnString = initiatorProfile.displayName + " has received a payment from " + recipientProfile.displayName + " in " + identifier + "! How generous!";
-                    break;
-                default:
-                    returnString = "What type of interaction was that? " + interactionType + "? For some reason, I don't recognize it... tell [user]Queen Contract[/user] to check the 'ChateauConsent' code for me if you get a chance.";
-                    break;
-
-            }
-            returnString += "[noparse=usingOldInteractionMessage][/noparse]";
-            return returnString;
-        }
     }
-
-
 }

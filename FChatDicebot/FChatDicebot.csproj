@@ -567,7 +567,6 @@
     <Compile Include="SavedData\SavedRollTable.cs" />
     <Compile Include="SavedData\ChannelSettings.cs" />
     <Compile Include="SavedData\StartingChannel.cs" />
-    <Compile Include="Tests.cs" />
     <Compile Include="Utils.cs" />
     <Compile Include="BotCommands\AuditChannels.cs" />
     <Compile Include="BotCommands\ChateauBalance.cs" />
@@ -657,8 +656,6 @@
   <ItemGroup>
     <None Include="App.config" />
     <None Include="Database\IdentifiersSnapshot.json" />
-    <None Include="libmongocrypt.dylib" />
-    <None Include="libmongocrypt.so" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>

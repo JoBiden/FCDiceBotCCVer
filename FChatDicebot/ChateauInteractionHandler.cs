@@ -10,48 +10,6 @@ namespace FChatDicebot
     {
 
 
-        public static string addInteraction(PendingCommand toPlay)
-        {
-            string initiator = toPlay.pendingInteraction.initiator;
-            string recipient = toPlay.pendingInteraction.recipient;
-            string returnString = "NoInteraction";
-
-            // NEW: Try to use the new processor system first
-            var processor = InteractionProcessors.InteractionProcessorRegistry.GetProcessor(toPlay.pendingInteraction.type);
-            if (processor != null)
-            {
-                returnString = processor.ProcessInteraction(toPlay);
-
-                if (returnString != "NoInteraction")
-                {
-                    TryMarkPledgeFulfilled(toPlay);
-                }
-
-                return returnString;
-            }
-
-            // FALLBACK: Use old switch statement for interactions not yet migrated
-            // All current interactions have been migrated to the new processor system!
-            // This switch is kept as a fallback for any future legacy interactions
-            switch (toPlay.pendingInteraction.type)
-            {
-                // All interactions have been migrated to processors:
-                // - Casual: kiss, cuddle, handhold, spank, bully
-                // - Involved: feed, golden, dressup
-                // - Commitment: mark, entitle
-                // - Consequence: rename, monsterize, petrify, plant, objectify, consume, employ, bond
-                // - Transaction: paymentGive, paymentReceive
-
-                default:
-                    returnString = "NoInteraction";
-                    break;
-            };
-            if (returnString != "NoInteraction")
-            {
-                MonDB.removePendingInteraction(toPlay.Id);
-            }
-            return returnString;
-        }
 
         /// <summary>
         /// If <paramref name="toPlay"/> is tagged as a pledge fulfillment (ChateauFulfill
