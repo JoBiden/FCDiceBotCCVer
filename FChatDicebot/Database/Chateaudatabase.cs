@@ -57,6 +57,7 @@ namespace FChatDicebot.Database
             if (document != null)
             {
                 Profile profile = BsonSerializer.Deserialize<Profile>(document);
+                NormalizeProfile(profile);
                 return profile;
             }
             return null;
@@ -66,7 +67,36 @@ namespace FChatDicebot.Database
         {
             var collection = Database.GetCollection<BsonDocument>("RegisteredProfiles");
             var documents = collection.Find(Builders<BsonDocument>.Filter.Empty).ToList();
-            return documents.Select(doc => BsonSerializer.Deserialize<Profile>(doc)).ToList();
+            var profiles = documents.Select(doc => BsonSerializer.Deserialize<Profile>(doc)).ToList();
+            foreach (var profile in profiles) NormalizeProfile(profile);
+            return profiles;
+        }
+
+        /// <summary>
+        /// Defaults any null dictionary/list field on a deserialized profile to empty
+        /// (disposition #5). A stale document can carry an explicit BSON null for a field
+        /// added after that document was written — the C# property initializer only
+        /// applies when the field is absent, not when it's present-but-null — so downstream
+        /// code that indexes into e.g. profile.counts[key] would otherwise NRE the first
+        /// time it touches a pre-refactor document.
+        /// </summary>
+        private static void NormalizeProfile(Profile profile)
+        {
+            if (profile == null) return;
+            if (profile.counts == null) profile.counts = new Dictionary<string, int>();
+            if (profile.characteristics == null) profile.characteristics = new Dictionary<string, string>();
+            if (profile.lists == null) profile.lists = new Dictionary<string, List<string>>();
+            if (profile.timers == null) profile.timers = new Dictionary<string, CoolDown>();
+            if (profile.currencies == null) profile.currencies = new Dictionary<string, int>();
+            if (profile.escrow == null) profile.escrow = new Dictionary<string, int>();
+            if (profile.jobExperience == null) profile.jobExperience = new Dictionary<string, int>();
+            if (profile.titles == null) profile.titles = new List<Title>();
+            if (profile.pregnancies == null) profile.pregnancies = new List<Pregnancy>();
+            if (profile.dailyMagnitudes == null) profile.dailyMagnitudes = new Dictionary<string, int>();
+            if (profile.milkInventory == null) profile.milkInventory = new List<MilkBottle>();
+            if (profile.trainings == null) profile.trainings = new Dictionary<string, int>();
+            if (profile.dailyClimaxCounts == null) profile.dailyClimaxCounts = new Dictionary<string, int>();
+            if (profile.employeeEarnings == null) profile.employeeEarnings = new Dictionary<string, Dictionary<string, int>>();
         }
 
         // Whole-profile ReplaceOne. This reverts any concurrent atomic $inc (ChangeCurrency,

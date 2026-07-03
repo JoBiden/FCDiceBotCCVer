@@ -9,6 +9,10 @@ using MongoDB.Driver.Linq;
 
 namespace FChatDicebot.Model
 {
+    // Tolerates a stale document carrying a since-removed field (disposition #5) instead of
+    // throwing FormatException on deserialize — Profile has grown many fields over the
+    // project's history and there's no migration step run against old documents.
+    [BsonIgnoreExtraElements]
     public class Profile
     {
         [BsonId]
@@ -146,6 +150,7 @@ namespace FChatDicebot.Model
 
     }
 
+    [BsonIgnoreExtraElements]
     public class PendingCommand
     {
         [BsonId]
@@ -214,6 +219,7 @@ namespace FChatDicebot.Model
         [BsonIgnoreIfDefault]
         public int broodSizeMax { get; set; } = 0;
     }
+    [BsonIgnoreExtraElements]
     public class Interaction
     {
         [BsonId]
