@@ -113,6 +113,85 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
         }
 
         [Fact]
+        public void ValidateInteraction_DirectionLockActive_ReturnsFailure()
+        {
+            // Regression test for H4: without this recheck, a second !breed pending
+            // against the same recipient (e.g. resolved via !consent all) could land the
+            // same day and produce a second pregnancy.
+            new ProfileBuilder()
+                .WithUserName("Alice")
+                .WithDisplayName("Alice")
+                .WithTimer(BreedProcessor.DirectionTimerKey("Bob"), DateTime.UtcNow.AddHours(12))
+                .BuildAndSave(_database);
+            new ProfileBuilder().WithUserName("Bob").WithDisplayName("Bob").BuildAndSave(_database);
+            _fixture.SeedIdentifier(new Identifier { type = "slime", description = "a viscous slime", categories = new[] { "monster" } });
+
+            var result = _processor.ValidateInteraction("Alice", "Bob", "slime");
+
+            Assert.False(result.IsValid);
+        }
+
+        [Fact]
+        public void ValidateInteraction_DirectionLockExpired_ReturnsSuccess()
+        {
+            new ProfileBuilder()
+                .WithUserName("Alice")
+                .WithDisplayName("Alice")
+                .WithTimer(BreedProcessor.DirectionTimerKey("Bob"), DateTime.UtcNow.AddHours(-1))
+                .BuildAndSave(_database);
+            new ProfileBuilder().WithUserName("Bob").WithDisplayName("Bob").BuildAndSave(_database);
+            _fixture.SeedIdentifier(new Identifier { type = "slime", description = "a viscous slime", categories = new[] { "monster" } });
+
+            var result = _processor.ValidateInteraction("Alice", "Bob", "slime");
+
+            Assert.True(result.IsValid);
+        }
+
+        [Fact]
+        public void ValidateInteraction_DirectionLockIsPerRecipient_OtherRecipientUnaffected()
+        {
+            new ProfileBuilder()
+                .WithUserName("Alice")
+                .WithDisplayName("Alice")
+                .WithTimer(BreedProcessor.DirectionTimerKey("Bob"), DateTime.UtcNow.AddHours(12))
+                .BuildAndSave(_database);
+            new ProfileBuilder().WithUserName("Bob").WithDisplayName("Bob").BuildAndSave(_database);
+            new ProfileBuilder().WithUserName("Carol").WithDisplayName("Carol").BuildAndSave(_database);
+            _fixture.SeedIdentifier(new Identifier { type = "slime", description = "a viscous slime", categories = new[] { "monster" } });
+
+            var result = _processor.ValidateInteraction("Alice", "Carol", "slime");
+
+            Assert.True(result.IsValid);
+        }
+
+        [Fact]
+        public void ProcessInteraction_DirectionLockActive_NoOpsAndDropsPending()
+        {
+            // TOCTOU belt-and-suspenders: even if ValidateInteraction were bypassed,
+            // ProcessInteraction itself must not add a second pregnancy.
+            new ProfileBuilder()
+                .WithUserName("Alice")
+                .WithDisplayName("Alice")
+                .WithTimer(BreedProcessor.DirectionTimerKey("Bob"), DateTime.UtcNow.AddHours(12))
+                .BuildAndSave(_database);
+            new ProfileBuilder().WithUserName("Bob").WithDisplayName("Bob").BuildAndSave(_database);
+            _fixture.SeedIdentifier(new Identifier { type = "slime", description = "a viscous slime", categories = new[] { "monster" } });
+
+            var pendingCommand = new PendingCommand
+            {
+                Id = ObjectId.GenerateNewId(),
+                pendingInteraction = new Interaction { initiator = "Alice", recipient = "Bob", type = "breed", identifier = "slime", investmentLevel = "commitment" }
+            };
+            _database.AddPendingCommand(pendingCommand);
+
+            string result = _processor.ProcessInteraction(pendingCommand);
+
+            Assert.Equal("NoInteraction", result);
+            var bobProfile = _database.GetProfile("Bob");
+            Assert.True(bobProfile.pregnancies == null || bobProfile.pregnancies.Count == 0);
+        }
+
+        [Fact]
         public void ProcessInteraction_AppendsPregnancyToRecipient()
         {
             new ProfileBuilder().WithUserName("Alice").WithDisplayName("Alice").BuildAndSave(_database);
@@ -258,11 +337,16 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
         [Fact]
         public void ProcessInteraction_MultiplePregnanciesAccumulate()
         {
+            // Multiple pregnancies accumulate via different breeders in the same day — the
+            // per-direction lock only blocks the *same* breeder re-breeding the *same*
+            // recipient (see ProcessInteraction_DirectionLockActive_NoOpsAndDropsPending
+            // and H4 above for that case).
             new ProfileBuilder().WithUserName("Alice").WithDisplayName("Alice").BuildAndSave(_database);
+            new ProfileBuilder().WithUserName("Charlie").WithDisplayName("Charlie").BuildAndSave(_database);
             new ProfileBuilder().WithUserName("Bob").WithDisplayName("Bob").BuildAndSave(_database);
 
             _processor.ProcessInteraction(SaveAndReturn(BuildPendingCommand("Alice", "Bob", "slime")));
-            _processor.ProcessInteraction(SaveAndReturn(BuildPendingCommand("Alice", "Bob", "wasp")));
+            _processor.ProcessInteraction(SaveAndReturn(BuildPendingCommand("Charlie", "Bob", "wasp")));
 
             var bob = _database.GetProfile("Bob");
             Assert.Equal(2, bob.pregnancies.Count);

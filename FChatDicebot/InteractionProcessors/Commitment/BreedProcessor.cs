@@ -127,7 +127,41 @@ namespace FChatDicebot.InteractionProcessors.Commitment
                 return ValidationResult.Failure(ChateauInteractionHandler.typeNotFoundText("monster"));
             }
 
+            // Direction lock recheck (H4): without this, nothing stopped a second !breed
+            // pending against the same recipient from landing the same day (e.g. via
+            // !consent all resolving two queued breed pendings sequentially).
+            Profile initiatorProfile = Database.GetProfile(initiator);
+            if (HasActiveDirectionLock(initiatorProfile, recipient))
+            {
+                Profile recipientProfile = Database.GetProfile(recipient);
+                string recipientDisplay = recipientProfile?.displayName ?? recipient;
+                return ValidationResult.Failure(DirectionLockMessage(recipientDisplay));
+            }
+
             return ValidationResult.Success();
+        }
+
+        /// <summary>
+        /// True when <paramref name="profile"/> (the prospective breeder) has already bred
+        /// <paramref name="recipientUser"/> today. Mirrors <see cref="Involved.MilkProcessor.HasActiveDirectionLock"/>
+        /// — used by both ValidateInteraction (the consent-time gate) and ProcessInteraction
+        /// (a TOCTOU belt-and-suspenders recheck) so breed is safe regardless of call path.
+        /// </summary>
+        public static bool HasActiveDirectionLock(Profile profile, string recipientUser)
+        {
+            if (profile?.timers == null) return false;
+            string key = DirectionTimerKey(recipientUser);
+            if (!profile.timers.TryGetValue(key, out var timer)) return false;
+            return DateTime.UtcNow < timer.timerEnd;
+        }
+
+        /// <summary>Channel-facing wording for the once-per-day per-direction breed lock.</summary>
+        public static string DirectionLockMessage(string recipientDisplayOrName)
+        {
+            DateTime now = DateTime.UtcNow;
+            string untilReset = Utils.GetTimeSpanPrint(now.Date.AddDays(1) - now);
+            return "You've already bred " + recipientDisplayOrName
+                + " today. You can breed them again in " + untilReset + ".";
         }
 
         public override string ProcessInteraction(PendingCommand command)
@@ -136,9 +170,20 @@ namespace FChatDicebot.InteractionProcessors.Commitment
             string recipient = command.pendingInteraction.recipient;
             string monsterType = command.pendingInteraction.identifier;
 
+            Profile initiatorProfile = Database.GetProfile(initiator);
+
+            // TOCTOU belt-and-suspenders (H4): ValidateInteraction already gates this at
+            // consent time, but recheck here too so ProcessInteraction is safe even if a
+            // future caller reaches it directly without going through the consent spine —
+            // mirrors MilkProcessor's own recheck.
+            if (HasActiveDirectionLock(initiatorProfile, recipient))
+            {
+                Database.DeletePendingCommand(command.Id);
+                return "NoInteraction";
+            }
+
             Database.AddInteraction(command.pendingInteraction);
 
-            Profile initiatorProfile = Database.GetProfile(initiator);
             Profile recipientProfile = Database.GetProfile(recipient);
 
             Identifier monsterIdentifier = Database.GetIdentifier(monsterType);
