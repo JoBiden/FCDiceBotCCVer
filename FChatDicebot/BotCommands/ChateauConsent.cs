@@ -35,6 +35,17 @@ namespace FChatDicebot.BotCommands
         {
             string characterName = address.character;
             string channel = address.channel;
+
+            // A targeted game-wager proposal awaiting this player takes priority, exactly as
+            // !accept already handles it (disposition #2) — !consent and !accept should be
+            // interchangeable for accepting a wager, not just the latter.
+            string wagerResult = DiceFunctions.Wager.WagerGameSupport.TryAcceptWager(bot, address);
+            if (wagerResult != null)
+            {
+                bot.SendMessageInChannel(wagerResult, address);
+                return;
+            }
+
             var database = MonDB.GetDatabase();
             int pendingMinutesKeep = InteractionProcessors.GroupInteractionResolver.PendingMinutesKeep;
             int maxNoSpoilerLength = 500;
