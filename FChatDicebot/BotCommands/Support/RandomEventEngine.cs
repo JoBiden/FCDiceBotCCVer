@@ -21,7 +21,11 @@ namespace FChatDicebot.BotCommands.Support
     ///
     /// Profile reads/writes go through injected delegates (in production, MonDB; in tests, an
     /// in-memory dictionary) so the entire fire → respond → resolve → grant path is unit-testable
-    /// away from BotMain and Mongo. All in-memory state (active events, per-channel next-fire and
+    /// away from BotMain and Mongo. Currency rewards go through their own atomic
+    /// <c>changeCurrency</c> delegate (prod: <c>ChangeCurrency</c>'s <c>$inc</c>) rather than the
+    /// whole-profile write, so granting a reward can't silently revert a concurrent balance
+    /// change (wager payout, !work) that landed after this engine read the profile (B12-2).
+    /// All in-memory state (active events, per-channel next-fire and
     /// last-activity timestamps, collected responders) is intentionally non-persistent and resets
     /// on restart — only the event definitions and granted rewards are durable.
     ///
@@ -60,16 +64,24 @@ namespace FChatDicebot.BotCommands.Support
         private readonly Random _rng;
         private readonly Func<string, Profile> _getProfile;
         private readonly Action<string, Profile> _setProfile;
+        private readonly Action<string, string, int> _changeCurrency;
 
         // Per-channel state (keys are lowercased channel ids).
         private readonly Dictionary<string, ActiveRandomEvent> _active = new Dictionary<string, ActiveRandomEvent>();
         private readonly Dictionary<string, DateTime> _nextFire = new Dictionary<string, DateTime>();
         private readonly Dictionary<string, DateTime> _lastActivity = new Dictionary<string, DateTime>();
 
-        public RandomEventEngine(Func<string, Profile> getProfile, Action<string, Profile> setProfile, Random rng = null)
+        /// <param name="changeCurrency">Atomic (user, currencyKey, +amount) credit — prod wires
+        /// MonDB.changeCurrency ($inc), tests an in-memory dictionary. Passing null falls back to
+        /// mutating the currency on the loaded profile and persisting it with the whole-profile
+        /// save (the pre-B12-2 behavior, kept only as a degraded mode for a caller that has no
+        /// atomic path).</param>
+        public RandomEventEngine(Func<string, Profile> getProfile, Action<string, Profile> setProfile,
+            Action<string, string, int> changeCurrency, Random rng = null)
         {
             _getProfile = getProfile;
             _setProfile = setProfile;
+            _changeCurrency = changeCurrency;
             _rng = rng ?? new Random();
         }
 
@@ -230,7 +242,12 @@ namespace FChatDicebot.BotCommands.Support
 
             EventOutcome outcome = SelectOutcome(ae.Event, _rng);
 
-            // Apply rewards per winner (each profile saved once) and collect their fragments.
+            // Apply rewards per winner (each profile saved at most once) and collect their
+            // fragments. Currency grants don't touch the loaded profile at all: they're
+            // collected here and applied through the atomic _changeCurrency delegate AFTER
+            // the whole-profile save, so the ReplaceOne can neither revert a concurrent
+            // balance change nor overwrite our own credit — and a pure-currency outcome
+            // (the common case) skips the whole-profile write entirely (B12-2).
             var fragmentsByWinner = new Dictionary<string, List<string>>();
             foreach (string winner in winners)
             {
@@ -238,14 +255,30 @@ namespace FChatDicebot.BotCommands.Support
                 var fragments = new List<string>();
                 if (p != null && outcome != null && outcome.rewards != null)
                 {
+                    var currencyGrants = new List<KeyValuePair<string, int>>();
+                    Action<string, int> creditCurrency = _changeCurrency == null
+                        ? (Action<string, int>)null // degraded mode: mutate the profile in place
+                        : (currencyKey, grantAmount) => currencyGrants.Add(new KeyValuePair<string, int>(currencyKey, grantAmount));
+
+                    bool profileDirty = false;
                     foreach (EventReward reward in outcome.rewards)
                     {
-                        string frag = ApplyEventReward(p, reward, _rng);
-                        if (!string.IsNullOrEmpty(frag))
-                            fragments.Add(frag);
+                        int grantsBefore = currencyGrants.Count;
+                        string frag = ApplyEventReward(p, reward, _rng, creditCurrency);
+                        if (string.IsNullOrEmpty(frag))
+                            continue;
+                        fragments.Add(frag);
+                        // A fragment that didn't add a deferred currency grant means the
+                        // reward wrote to the profile document itself (title/training/
+                        // corruption/purity/curse — or currency in degraded mode).
+                        if (currencyGrants.Count == grantsBefore)
+                            profileDirty = true;
                     }
-                    if (_setProfile != null)
+
+                    if (profileDirty && _setProfile != null)
                         _setProfile(winner, p);
+                    foreach (var grant in currencyGrants)
+                        _changeCurrency(winner, grant.Key, grant.Value);
                 }
                 fragmentsByWinner[winner] = fragments;
             }
@@ -451,8 +484,14 @@ namespace FChatDicebot.BotCommands.Support
         /// and curse are system-granted here, intentionally bypassing the consent flow (the player
         /// opted in by responding). Pure save-free: the caller persists the profile once after all
         /// rewards apply.
+        ///
+        /// The currency branch is the exception (B12-2): when <paramref name="creditCurrency"/>
+        /// is supplied, the rolled amount is handed to it instead of being written onto the
+        /// profile, so the caller can grant it atomically ($inc) and keep it out of the
+        /// whole-profile save. A null sink falls back to the in-place mutation.
         /// </summary>
-        public static string ApplyEventReward(Profile profile, EventReward reward, Random rng)
+        public static string ApplyEventReward(Profile profile, EventReward reward, Random rng,
+            Action<string, int> creditCurrency = null)
         {
             if (profile == null || reward == null) return "";
             string type = (reward.type ?? ResponseTypeNone).ToLowerInvariant();
@@ -462,9 +501,16 @@ namespace FChatDicebot.BotCommands.Support
             {
                 case "currency":
                     if (string.IsNullOrEmpty(reward.key) || amount <= 0) return "";
-                    if (profile.currencies == null) profile.currencies = new Dictionary<string, int>();
-                    if (profile.currencies.ContainsKey(reward.key)) profile.currencies[reward.key] += amount;
-                    else profile.currencies[reward.key] = amount;
+                    if (creditCurrency != null)
+                    {
+                        creditCurrency(reward.key, amount);
+                    }
+                    else
+                    {
+                        if (profile.currencies == null) profile.currencies = new Dictionary<string, int>();
+                        if (profile.currencies.ContainsKey(reward.key)) profile.currencies[reward.key] += amount;
+                        else profile.currencies[reward.key] = amount;
+                    }
                     return "[b]" + amount + " " + reward.key + "[/b]";
 
                 case "title":

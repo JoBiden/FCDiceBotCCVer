@@ -20,12 +20,23 @@ namespace FChatDicebot.Tests.Unit
         // ---- in-memory profile store wired into the engine ----
         private readonly Dictionary<string, Profile> _profiles = new Dictionary<string, Profile>();
         private int _setProfileCalls;
+        private int _changeCurrencyCalls;
 
         private RandomEventEngine NewEngine(int seed = 12345)
         {
             return new RandomEventEngine(
                 userName => _profiles.TryGetValue(userName, out var p) ? p : null,
                 (userName, p) => { _profiles[userName] = p; _setProfileCalls++; },
+                // In-memory stand-in for the atomic ChangeCurrency $inc (B12-2): mutates the
+                // stored profile's currency dict directly, bypassing the whole-profile save.
+                (userName, key, amount) =>
+                {
+                    _changeCurrencyCalls++;
+                    if (!_profiles.TryGetValue(userName, out var p)) return;
+                    if (p.currencies == null) p.currencies = new Dictionary<string, int>();
+                    if (p.currencies.ContainsKey(key)) p.currencies[key] += amount;
+                    else p.currencies[key] = amount;
+                },
                 new Random(seed));
         }
 
@@ -278,6 +289,64 @@ namespace FChatDicebot.Tests.Unit
         }
 
         [Fact]
+        public void Reward_Currency_WithSink_DefersInsteadOfMutatingProfile()
+        {
+            // B12-2: when the caller supplies a currency sink, the rolled amount must go to
+            // the sink (for an atomic $inc) and must NOT be written onto the profile object
+            // that will later be saved whole.
+            var p = new Profile { userName = "Alice" };
+            var granted = new List<KeyValuePair<string, int>>();
+
+            string frag = RandomEventEngine.ApplyEventReward(p, Reward("currency", "rosequartz", 5, 5),
+                new Random(1), (key, amount) => granted.Add(new KeyValuePair<string, int>(key, amount)));
+
+            Assert.Contains("5 rosequartz", frag);
+            Assert.Single(granted);
+            Assert.Equal("rosequartz", granted[0].Key);
+            Assert.Equal(5, granted[0].Value);
+            Assert.Empty(p.currencies);
+        }
+
+        [Fact]
+        public void Resolve_CurrencyOnlyOutcome_CreditsAtomically_WithoutWholeProfileSave()
+        {
+            // B12-2 regression, resolution-level: a pure-currency outcome must be granted
+            // entirely through the changeCurrency delegate, never through setProfile — the
+            // whole-profile ReplaceOne is what silently reverted concurrent balance changes.
+            var engine = NewEngine();
+            AddProfile("Alice");
+            engine.ForceOpen(Channel, EventWith(RandomEventEngine.ResponseTypeNone, RandomEventEngine.WinnerRuleFirstValid,
+                rewards: Reward("currency", "rosequartz", 5, 5)), DateTime.UtcNow);
+
+            engine.HandleRandom(Channel, "Alice", "", DateTime.UtcNow);
+
+            Assert.Equal(5, _profiles["Alice"].currencies["rosequartz"]);
+            Assert.Equal(1, _changeCurrencyCalls);
+            Assert.Equal(0, _setProfileCalls);
+        }
+
+        [Fact]
+        public void Resolve_MixedOutcome_SavesProfileForTitle_ButStillCreditsCurrencyAtomically()
+        {
+            // An outcome that grants both a document-field reward (title) and a currency
+            // reward saves the profile for the former but the currency still arrives via
+            // the atomic delegate — the saved document must not carry the credit.
+            var engine = NewEngine();
+            AddProfile("Alice");
+            engine.ForceOpen(Channel, EventWith(RandomEventEngine.ResponseTypeNone, RandomEventEngine.WinnerRuleFirstValid,
+                rewards: new[] { Reward("title", "Lucky", 0, 0), Reward("currency", "rosequartz", 3, 3) }),
+                DateTime.UtcNow);
+
+            engine.HandleRandom(Channel, "Alice", "", DateTime.UtcNow);
+
+            Assert.Single(_profiles["Alice"].titles);
+            Assert.Equal("Lucky", _profiles["Alice"].titles[0].titleText);
+            Assert.Equal(3, _profiles["Alice"].currencies["rosequartz"]);
+            Assert.Equal(1, _changeCurrencyCalls);
+            Assert.Equal(1, _setProfileCalls);
+        }
+
+        [Fact]
         public void Reward_Title_AddedOnce_AsSystemTitle()
         {
             var p = new Profile { userName = "Alice" };
@@ -348,11 +417,16 @@ namespace FChatDicebot.Tests.Unit
         [Fact]
         public void Resolution_SavesEachWinnerProfileOnce()
         {
+            // Two document-field rewards still produce exactly ONE whole-profile save per
+            // winner (not one per reward). Currency rewards no longer count toward this at
+            // all — they bypass the profile save entirely via the atomic delegate (B12-2),
+            // see Resolve_CurrencyOnlyOutcome_CreditsAtomically_WithoutWholeProfileSave.
             var engine = NewEngine();
             AddProfile("Alice");
             _setProfileCalls = 0;
             engine.ForceOpen(Channel, EventWith(RandomEventEngine.ResponseTypeNone, RandomEventEngine.WinnerRuleFirstValid,
-                rewards: Reward("currency", "rosequartz", 5, 5)), DateTime.UtcNow);
+                rewards: new[] { Reward("title", "Lucky", 0, 0), Reward("training", "magic", 5, 5) }),
+                DateTime.UtcNow);
 
             engine.HandleRandom(Channel, "Alice", "", DateTime.UtcNow);
             Assert.Equal(1, _setProfileCalls);
