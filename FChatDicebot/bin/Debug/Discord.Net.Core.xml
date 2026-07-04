@@ -491,20 +491,20 @@
         </member>
         <member name="P:Discord.DiscordConfig.UseSystemClock">
              <summary>
-		Gets or sets whether or not rate-limits should use the system clock.
+             	Gets or sets whether or not rate-limits should use the system clock.
              </summary>
              <remarks>
-			If set to <see langword="false" />, we will use the X-RateLimit-Reset-After header
-			to determine when a rate-limit expires, rather than comparing the
-			X-RateLimit-Reset timestamp to the system time.
-
-			This should only be changed to false if the system is known to have
-		a clock that is out of sync. Relying on the Reset-After header will
-			incur network lag.
-
-			Regardless of this property, we still rely on the system's wall-clock
-			to determine if a bucket is rate-limited; we do not use any monotonic
-			clock. Your system will still need a stable clock.
+            		If set to <see langword="false" />, we will use the X-RateLimit-Reset-After header
+            		to determine when a rate-limit expires, rather than comparing the
+            		X-RateLimit-Reset timestamp to the system time.
+            
+            		This should only be changed to false if the system is known to have
+             	a clock that is out of sync. Relying on the Reset-After header will
+            		incur network lag.
+            
+            		Regardless of this property, we still rely on the system's wall-clock
+            		to determine if a bucket is rate-limited; we do not use any monotonic
+            		clock. Your system will still need a stable clock.
              </remarks>
         </member>
         <member name="P:Discord.DiscordConfig.UseInteractionSnowflakeDate">
@@ -898,7 +898,7 @@
         </member>
         <member name="P:Discord.GameSecrets.Spectate">
             <summary>
-		Gets the secret for spectating a game.
+            	Gets the secret for spectating a game.
             </summary>
         </member>
         <member name="T:Discord.GameTimestamps">
@@ -1094,7 +1094,7 @@
                 Gets the URL of the album art.
             </summary>
             <returns>
-                A URL pointing to the album art of the track (e.g.
+                A URL pointing to the album art of the track (e.g. 
                 <c>https://i.scdn.co/image/ba2fd8823d42802c2f8738db0b33a4597f2f39e7</c>).
             </returns>
         </member>
@@ -1103,7 +1103,7 @@
                 Gets the direct Spotify URL of the track.
             </summary>
             <returns>
-                A URL pointing directly to the track on Spotify. (e.g.
+                A URL pointing directly to the track on Spotify. (e.g. 
                 <c>https://open.spotify.com/track/7DoN0sCGIT9IcLrtBDm4f0</c>).
             </returns>
         </member>
@@ -1112,7 +1112,7 @@
                 Gets the full information of the song.
             </summary>
             <returns>
-                A string containing the full information of the song (e.g.
+                A string containing the full information of the song (e.g. 
                 <c>Avicii, Rita Ora - Lonely Together (feat. Rita Ora) (3:08)</c>
             </returns>
         </member>
@@ -1266,42 +1266,42 @@
         </member>
         <member name="F:Discord.RoleConnectionMetadataType.IntegerLessOrEqual">
             <summary>
-		The metadata's integer value is less than or equal to the guild's configured value.
+            	The metadata's integer value is less than or equal to the guild's configured value.
             </summary>
         </member>
         <member name="F:Discord.RoleConnectionMetadataType.IntegerGreaterOrEqual">
             <summary>
-		The metadata's integer value is greater than or equal to the guild's configured value.
+            	The metadata's integer value is greater than or equal to the guild's configured value.
             </summary>
         </member>
         <member name="F:Discord.RoleConnectionMetadataType.IntegerEqual">
             <summary>
-		The metadata's integer value is equal to the guild's configured value.
+            	The metadata's integer value is equal to the guild's configured value.
             </summary>
         </member>
         <member name="F:Discord.RoleConnectionMetadataType.IntegerNotEqual">
             <summary>
-		The metadata's integer value is not equal to the guild's configured value.
+            	The metadata's integer value is not equal to the guild's configured value.
             </summary>
         </member>
         <member name="F:Discord.RoleConnectionMetadataType.DateTimeLessOrEqual">
             <summary>
-		The metadata's ISO8601 string value is less or equal to the guild's configured value.
+            	The metadata's ISO8601 string value is less or equal to the guild's configured value.
             </summary>
         </member>
         <member name="F:Discord.RoleConnectionMetadataType.DateTimeGreaterOrEqual">
             <summary>
-		The metadata's ISO8601 string value is greater to the guild's configured value.
+            	The metadata's ISO8601 string value is greater to the guild's configured value.
             </summary>
         </member>
         <member name="F:Discord.RoleConnectionMetadataType.BoolEqual">
             <summary>
-		The metadata's integer value is equal to the guild's configured value.
+            	The metadata's integer value is equal to the guild's configured value.
             </summary>
         </member>
         <member name="F:Discord.RoleConnectionMetadataType.BoolNotEqual">
             <summary>
-		The metadata's integer value is equal to the guild's configured value.
+            	The metadata's integer value is equal to the guild's configured value.
             </summary>
         </member>
         <member name="T:Discord.RoleConnectionProperties">
@@ -1470,7 +1470,7 @@
         </member>
         <member name="F:Discord.ApplicationFlags.ApplicationCommandBadge">
             <summary>
-		Indicates if an app has registered global application commands.
+            	Indicates if an app has registered global application commands.
             </summary>
         </member>
         <member name="F:Discord.ApplicationFlags.ActiveApplication">
@@ -1950,7 +1950,7 @@
         </member>
         <member name="P:Discord.ModifyApplicationProperties.InteractionsEndpointUrl">
             <summary>
-                Gets or sets the http interactions endpoint configured for the application.
+                Gets or sets the http interactions endpoint configured for the application.     
             </summary>
         </member>
         <member name="P:Discord.ModifyApplicationProperties.RoleConnectionsEndpointUrl">
@@ -2023,7 +2023,7 @@
         <member name="P:Discord.IEntitlement.GuildId">
             <summary>
                 Gets the ID of the guild that is granted access to the entitlement's SKU.
-            </summary>
+            </summary> 
             <remarks>
                 <see langword="null"/> if the entitlement is for a user.
             </remarks>
@@ -2486,7 +2486,7 @@
             </summary>
         </member>
         <member name="F:Discord.ChannelFlags.None">
-            <summary>
+            <summary> 
                 Default value for flags, when none are given to a channel.
             </summary>
         </member>
@@ -2585,7 +2585,7 @@
             <remarks>
                 This enum is used to specify the direction for retrieving entities.
                 <note type="important">
-                    At the time of writing, <see cref="F:Discord.Direction.Around"/> is not yet implemented into
+                    At the time of writing, <see cref="F:Discord.Direction.Around"/> is not yet implemented into 
                     <see cref="M:Discord.IMessageChannel.GetMessagesAsync(System.Int32,Discord.CacheMode,Discord.RequestOptions)"/>.
                     Attempting to use the method with <see cref="F:Discord.Direction.Around"/> will throw
                     a <see cref="T:System.NotImplementedException"/>.
@@ -2623,7 +2623,7 @@
                 Setting this value to anything above zero will require each user to wait X seconds before
                 creating another thread; setting this value to <c>0</c> will disable rate limits for this channel.
                 <note>
-                    Users with <see cref="F:Discord.ChannelPermission.ManageMessages"/> or
+                    Users with <see cref="F:Discord.ChannelPermission.ManageMessages"/> or 
                     <see cref="F:Discord.ChannelPermission.ManageChannels"/> will be exempt from rate limits.
                 </note>
             </remarks>
@@ -2900,7 +2900,7 @@
         </member>
         <member name="P:Discord.IForumChannel.DefaultReactionEmoji">
             <summary>
-		Gets the emoji to show in the add reaction button on a thread in a forum channel
+            	Gets the emoji to show in the add reaction button on a thread in a forum channel
             </summary>
             <remarks>
                 If the emoji is <see cref="T:Discord.Emote"/> only the <see cref="P:Discord.Emote.Id"/> will be populated.
@@ -3869,7 +3869,7 @@
         </member>
         <member name="P:Discord.IStageChannel.IsDiscoverableDisabled">
             <summary>
-                Gets whether or not stage discovery is disabled.
+                Gets whether or not stage discovery is disabled. 
             </summary>
         </member>
         <member name="P:Discord.IStageChannel.IsLive">
@@ -4076,7 +4076,7 @@
                 The duration on which this thread archives after.
                 <para>
                     <b>Note: </b> Options <see cref="F:Discord.ThreadArchiveDuration.OneWeek"/> and <see cref="F:Discord.ThreadArchiveDuration.ThreeDays"/>
-                    are only available for guilds that are boosted. You can check in the <see cref="P:Discord.IGuild.Features"/> to see if the
+                    are only available for guilds that are boosted. You can check in the <see cref="P:Discord.IGuild.Features"/> to see if the 
                     guild has the <b>THREE_DAY_THREAD_ARCHIVE</b> and <b>SEVEN_DAY_THREAD_ARCHIVE</b>.
                 </para>
             </param>
@@ -4360,7 +4360,7 @@
                 Setting this value to anything above zero will require each user to wait X seconds before
                 sending another message; setting this value to <c>0</c> will disable slow-mode for this channel.
                 <note>
-                    Users with <see cref="F:Discord.ChannelPermission.ManageMessages"/> or
+                    Users with <see cref="F:Discord.ChannelPermission.ManageMessages"/> or 
                     <see cref="F:Discord.ChannelPermission.ManageChannels"/> will be exempt from slow-mode.
                 </note>
             </remarks>
@@ -4379,7 +4379,7 @@
                 Setting this value to anything above zero will require each user to wait X seconds before
                 sending another message; setting this value to <c>0</c> will disable slow-mode for child threads.
                 <note>
-                    Users with <see cref="F:Discord.ChannelPermission.ManageMessages"/> or
+                    Users with <see cref="F:Discord.ChannelPermission.ManageMessages"/> or 
                     <see cref="F:Discord.ChannelPermission.ManageChannels"/> will be exempt from slow-mode.
                 </note>
             </remarks>
@@ -4468,7 +4468,7 @@
         </member>
         <member name="F:Discord.VideoQualityMode.Full">
             <summary>
-		720p.
+            	720p.
             </summary>
         </member>
         <member name="T:Discord.VoiceChannelProperties">
@@ -4651,7 +4651,7 @@
                 Gets the user ID associated with the creation of this emoji.
             </summary>
             <returns>
-                An <see cref="T:System.UInt64"/> snowflake identifier representing the user who created this emoji;
+                An <see cref="T:System.UInt64"/> snowflake identifier representing the user who created this emoji; 
                 <see langword="null" /> if unknown.
             </returns>
         </member>
@@ -4737,7 +4737,7 @@
         <member name="M:Discord.ForumTagBuilder.#ctor">
             <summary>
             Initializes a new <see cref="T:Discord.ForumTagBuilder"/> class.
-            </summary>
+            </summary> 
         </member>
         <member name="M:Discord.ForumTagBuilder.#ctor(System.String,System.Nullable{System.UInt64},System.Boolean)">
             <summary>
@@ -5796,7 +5796,7 @@
                 given that the <see cref="P:Discord.GuildProperties.SystemChannelId"/> has also been set.
                 A value of <see cref="F:Discord.SystemChannelMessageDeny.GuildBoost"/> will deny guild boost messages from being sent, and allow all
                 other types of messages.
-                Refer to the extension methods <see cref="M:Discord.GuildExtensions.GetGuildBoostMessagesEnabled(Discord.IGuild)"/>,
+                Refer to the extension methods <see cref="M:Discord.GuildExtensions.GetGuildBoostMessagesEnabled(Discord.IGuild)"/>,  
                 <see cref="M:Discord.GuildExtensions.GetWelcomeMessagesEnabled(Discord.IGuild)"/>, <see cref="M:Discord.GuildExtensions.GetGuildSetupTipMessagesEnabled(Discord.IGuild)"/>,
                 and <see cref="M:Discord.GuildExtensions.GetGuildWelcomeMessageReplyEnabled(Discord.IGuild)"/> to check if these system channel message types
                 are enabled, without the need to manipulate the logic of the flag.
@@ -7765,7 +7765,7 @@
             <summary>
                 Gets a value that indicates whether this voice region is custom-made for events.
             </summary>
-            <returns>
+            <returns> 
                 <see langword="true" /> if this is a custom voice region (used for events/etc); otherwise <see langword="false" />/
             </returns>
         </member>
@@ -7888,7 +7888,7 @@
         </member>
         <member name="P:Discord.GuildOnboardingPromptProperties.IsInOnboarding">
             <summary>
-                Gets or sets whether the prompt is present in the onboarding flow.
+                Gets or sets whether the prompt is present in the onboarding flow. 
             </summary>
         </member>
         <member name="P:Discord.GuildOnboardingPromptProperties.Type">
@@ -8135,7 +8135,7 @@
         </member>
         <member name="P:Discord.PartialGuild.VerificationLevel">
             <summary>
-
+            
                 Gets the level of requirements a user must fulfill before being allowed to post messages in this guild.
             </summary>
             <returns>
@@ -8300,12 +8300,12 @@
         </member>
         <member name="P:Discord.WelcomeScreenChannel.Id">
             <summary>
-		Gets the channel's id.
+            	Gets the channel's id.
             </summary>
         </member>
         <member name="P:Discord.WelcomeScreenChannel.Description">
             <summary>
-		Gets the description shown for the channel.
+            	Gets the description shown for the channel.
             </summary>
         </member>
         <member name="P:Discord.WelcomeScreenChannel.Emoji">
@@ -8322,12 +8322,12 @@
         </member>
         <member name="P:Discord.WelcomeScreenChannelProperties.Id">
             <summary>
-		Gets or sets the channel's id.
+            	Gets or sets the channel's id.
             </summary>
         </member>
         <member name="P:Discord.WelcomeScreenChannelProperties.Description">
             <summary>
-		Gets or sets the description shown for the channel.
+            	Gets or sets the description shown for the channel.
             </summary>
         </member>
         <member name="P:Discord.WelcomeScreenChannelProperties.Emoji">
@@ -10245,7 +10245,7 @@
             <param name="placeholder">The placeholder of the menu.</param>
             <param name="minValues">The min values of the placeholder.</param>
             <param name="maxValues">The max values of the placeholder.</param>
-            <param name="disabled">Whether or not the menu is disabled.</param>
+            <param name="disabled">Whether or not the menu is disabled.</param> 
             <param name="type">The type of the select menu.</param>
             <param name="channelTypes">Menus valid channel types (only for <see cref="F:Discord.ComponentType.ChannelSelect"/>)</param>
             <returns>The current builder.</returns>
@@ -11046,7 +11046,7 @@
         <member name="P:Discord.IComponentInteractionData.Channels">
             <summary>
                 Gets the channels(s) of a <see cref="F:Discord.ComponentType.ChannelSelect"/> interaction response. <see langword="null"/> if select type is different.
-            </summary>
+            </summary> 
         </member>
         <member name="P:Discord.IComponentInteractionData.Users">
             <summary>
@@ -12374,7 +12374,7 @@
                 Gets a value that indicates whether the invite is a temporary one.
             </summary>
             <returns>
-                <see langword="true" /> if users accepting this invite will be removed from the guild when they log off; otherwise
+                <see langword="true" /> if users accepting this invite will be removed from the guild when they log off; otherwise 
                 <see langword="false" />.
             </returns>
         </member>
@@ -12663,7 +12663,7 @@
                 Gets the name of the author field.
             </summary>
             <returns>
-
+                
             </returns>
         </member>
         <member name="M:Discord.EmbedAuthor.Equals(System.Object)">
@@ -13393,7 +13393,7 @@
                 Gets the height of this image.
             </summary>
             <returns>
-                A <see cref="T:System.Int32"/> representing the height of this image if it can be retrieved; otherwise
+                A <see cref="T:System.Int32"/> representing the height of this image if it can be retrieved; otherwise 
                 <see langword="null" />.
             </returns>
         </member>
@@ -13402,7 +13402,7 @@
                 Gets the width of this image.
             </summary>
             <returns>
-                A <see cref="T:System.Int32"/> representing the width of this image if it can be retrieved; otherwise
+                A <see cref="T:System.Int32"/> representing the width of this image if it can be retrieved; otherwise 
                 <see langword="null" />.
             </returns>
         </member>
@@ -13505,7 +13505,7 @@
                 Gets the height of this thumbnail.
             </summary>
             <returns>
-                A <see cref="T:System.Int32"/> representing the height of this thumbnail if it can be retrieved; otherwise
+                A <see cref="T:System.Int32"/> representing the height of this thumbnail if it can be retrieved; otherwise 
                 <see langword="null" />.
             </returns>
         </member>
@@ -13514,7 +13514,7 @@
                 Gets the width of this thumbnail.
             </summary>
             <returns>
-                A <see cref="T:System.Int32"/> representing the width of this thumbnail if it can be retrieved; otherwise
+                A <see cref="T:System.Int32"/> representing the width of this thumbnail if it can be retrieved; otherwise 
                 <see langword="null" />.
             </returns>
         </member>
@@ -13614,7 +13614,7 @@
                 Gets the height of the video.
             </summary>
             <returns>
-                A <see cref="T:System.Int32"/> representing the height of this video if it can be retrieved; otherwise
+                A <see cref="T:System.Int32"/> representing the height of this video if it can be retrieved; otherwise 
                 <see langword="null" />.
             </returns>
         </member>
@@ -13623,7 +13623,7 @@
                 Gets the weight of the video.
             </summary>
             <returns>
-                A <see cref="T:System.Int32"/> representing the width of this video if it can be retrieved; otherwise
+                A <see cref="T:System.Int32"/> representing the width of this video if it can be retrieved; otherwise 
                 <see langword="null" />.
             </returns>
         </member>
@@ -13872,7 +13872,7 @@
                 Gets the timestamp of this embed.
             </summary>
             <returns>
-                A <see cref="T:System.DateTimeOffset"/> based on the timestamp present at the bottom left of the embed, or
+                A <see cref="T:System.DateTimeOffset"/> based on the timestamp present at the bottom left of the embed, or 
                 <see langword="null" /> if none is set.
             </returns>
         </member>
@@ -14173,7 +14173,7 @@
         <member name="P:Discord.IMessage.RoleSubscriptionData">
             <summary>
                 Gets the data of the role subscription purchase or renewal that prompted this <see cref="F:Discord.MessageType.RoleSubscriptionPurchase"/> message.
-            </summary>
+            </summary> 
             <returns>
                 A <see cref="T:Discord.MessageRoleSubscriptionData"/> if the message is a role subscription purchase message; otherwise <see langword="null"/>.
             </returns>
@@ -14256,7 +14256,7 @@
             </summary>
             <remarks>
                 <note type="important">
-                    The returned collection is an asynchronous enumerable object; one must call
+                    The returned collection is an asynchronous enumerable object; one must call 
                     <see cref="M:Discord.AsyncEnumerableExtensions.FlattenAsync``1(System.Collections.Generic.IAsyncEnumerable{System.Collections.Generic.IEnumerable{``0}})"/> to access the users as a
                     collection.
                 </note>
@@ -14264,8 +14264,8 @@
                     Do not fetch too many users at once! This may cause unwanted preemptive rate limit or even actual
                     rate limit, causing your bot to freeze!
                 </note>
-                This method will attempt to fetch the number of reactions specified under <paramref name="limit"/>.
-                The library will attempt to split up the requests according to your <paramref name="limit"/> and
+                This method will attempt to fetch the number of reactions specified under <paramref name="limit"/>. 
+                The library will attempt to split up the requests according to your <paramref name="limit"/> and 
                 <see cref="F:Discord.DiscordConfig.MaxUserReactionsPerBatch"/>. In other words, should the user request 500 reactions,
                 and the <see cref="F:Discord.DiscordConfig.MaxUserReactionsPerBatch"/> constant is <c>100</c>, the request will
                 be split into 5 individual requests; thus returning 5 individual asynchronous responses, hence the need
@@ -15013,37 +15013,37 @@
             <seealso cref="M:Discord.IUserMessage.Resolve(Discord.TagHandling,Discord.TagHandling,Discord.TagHandling,Discord.TagHandling,Discord.TagHandling)"/>
         </member>
         <member name="F:Discord.TagHandling.Ignore">
-            <summary>
+            <summary> 
                 Tag handling is ignored (e.g. &lt;@53905483156684800&gt; -&gt; &lt;@53905483156684800&gt;).
             </summary>
         </member>
         <member name="F:Discord.TagHandling.Remove">
-            <summary>
-                Removes the tag entirely.
+            <summary> 
+                Removes the tag entirely. 
             </summary>
         </member>
         <member name="F:Discord.TagHandling.Name">
-            <summary>
-                Resolves to username (e.g. &lt;@53905483156684800&gt; -&gt; @Voltana).
+            <summary> 
+                Resolves to username (e.g. &lt;@53905483156684800&gt; -&gt; @Voltana). 
             </summary>
         </member>
         <member name="F:Discord.TagHandling.NameNoPrefix">
-            <summary>
-                Resolves to username without mention prefix (e.g. &lt;@53905483156684800&gt; -&gt; Voltana).
+            <summary> 
+                Resolves to username without mention prefix (e.g. &lt;@53905483156684800&gt; -&gt; Voltana). 
             </summary>
         </member>
         <member name="F:Discord.TagHandling.FullName">
-            <summary>
-                Resolves to username with discriminator value. (e.g. &lt;@53905483156684800&gt; -&gt; @Voltana#8252).
+            <summary> 
+                Resolves to username with discriminator value. (e.g. &lt;@53905483156684800&gt; -&gt; @Voltana#8252). 
             </summary>
         </member>
         <member name="F:Discord.TagHandling.FullNameNoPrefix">
-            <summary>
-                Resolves to username with discriminator value without mention prefix. (e.g. &lt;@53905483156684800&gt; -&gt; Voltana#8252).
+            <summary> 
+                Resolves to username with discriminator value without mention prefix. (e.g. &lt;@53905483156684800&gt; -&gt; Voltana#8252). 
             </summary>
         </member>
         <member name="F:Discord.TagHandling.Sanitize">
-            <summary>
+            <summary> 
                 Sanitizes the tag (e.g. &lt;@53905483156684800&gt; -&gt; &lt;@53905483156684800&gt; (w/ nbsp)).
             </summary>
         </member>
@@ -15738,7 +15738,7 @@
         </member>
         <member name="F:Discord.GuildPermission.ViewAuditLog">
             <summary>
-		Allows for viewing of audit logs.
+            	Allows for viewing of audit logs.
             </summary>
         </member>
         <member name="F:Discord.GuildPermission.ViewChannel">
@@ -15823,7 +15823,7 @@
         </member>
         <member name="F:Discord.GuildPermission.PrioritySpeaker">
             <summary>
-                Allows for using priority speaker in a voice channel.
+                Allows for using priority speaker in a voice channel.	
             </summary>
         </member>
         <member name="F:Discord.GuildPermission.Stream">
@@ -15870,7 +15870,7 @@
         </member>
         <member name="F:Discord.GuildPermission.UseApplicationCommands">
             <summary>
-                Allows members to use application commands like slash commands and context menus in text channels.
+                Allows members to use application commands like slash commands and context menus in text channels.	
             </summary>
         </member>
         <member name="F:Discord.GuildPermission.RequestToSpeak">
@@ -16716,7 +16716,7 @@
             </summary>
             <remarks>
                 This value cannot be set at the same time as Emoji, as they are both exclusive.
-
+                
                 Setting an Icon will override a currently existing Emoji if present.
             </remarks>
         </member>
@@ -16726,7 +16726,7 @@
              </summary>
              <remarks>
                  This value cannot be set at the same time as Icon, as they are both exclusive.
-
+            
                  Setting an Emoji will override a currently existing Icon if present.
              </remarks>
         </member>
@@ -17353,7 +17353,7 @@
                 Gets when this user joined the guild.
             </summary>
             <returns>
-                A <see cref="T:System.DateTimeOffset"/> representing the time of which the user has joined the guild;
+                A <see cref="T:System.DateTimeOffset"/> representing the time of which the user has joined the guild; 
                 <see langword="null" /> when it cannot be obtained.
             </returns>
         </member>
@@ -18481,7 +18481,7 @@
                     if the user cannot receive DMs due to privacy reasons or if the user has the sender blocked.
                     </para>
                     <para>
-                    You may want to consider catching for <see cref="P:Discord.Net.HttpException.DiscordCode"/>
+                    You may want to consider catching for <see cref="P:Discord.Net.HttpException.DiscordCode"/> 
                     <c>50007</c> when using this method.
                     </para>
                 </note>
@@ -18521,7 +18521,7 @@
                     if the user cannot receive DMs due to privacy reasons or if the user has the sender blocked.
                     </para>
                     <para>
-                    You may want to consider catching for <see cref="P:Discord.Net.HttpException.DiscordCode"/>
+                    You may want to consider catching for <see cref="P:Discord.Net.HttpException.DiscordCode"/> 
                     <c>50007</c> when using this method.
                     </para>
                 </note>
@@ -18550,12 +18550,12 @@
                 Sends a file via DM with an optional caption.
             </summary>
             <example>
-                The following example uploads a local file called <c>wumpus.txt</c> along with the text
+                The following example uploads a local file called <c>wumpus.txt</c> along with the text 
                 <c>good discord boi</c> to the channel.
                 <code language="cs">
                 await channel.SendFileAsync("wumpus.txt", "good discord boi");
                 </code>
-
+            
                 The following example uploads a local image called <c>b1nzy.jpg</c> embedded inside a rich embed to the
                 channel.
                 <code language="cs">
@@ -18571,7 +18571,7 @@
                     if the user cannot receive DMs due to privacy reasons or if the user has the sender blocked.
                     </para>
                     <para>
-                    You may want to consider catching for <see cref="P:Discord.Net.HttpException.DiscordCode"/>
+                    You may want to consider catching for <see cref="P:Discord.Net.HttpException.DiscordCode"/> 
                     <c>50007</c> when using this method.
                     </para>
                 </note>
@@ -18789,7 +18789,7 @@
         <member name="F:Discord.GatewayIntents.MessageContent">
             <summary>
                 This intent defines if the content within messages received by MESSAGE_CREATE is available or not.
-                This is a privileged intent and needs to be enabled in the developer portal.
+                This is a privileged intent and needs to be enabled in the developer portal. 
             </summary>
         </member>
         <member name="F:Discord.GatewayIntents.GuildScheduledEvents">
@@ -19153,7 +19153,7 @@
         </member>
         <member name="M:Discord.IDiscordClient.CreateTestEntitlementAsync(System.UInt64,System.UInt64,Discord.SubscriptionOwnerType,Discord.RequestOptions)">
             <summary>
-                Creates a test entitlement to a given SKU for a given guild or user.
+                Creates a test entitlement to a given SKU for a given guild or user. 
             </summary>
         </member>
         <member name="M:Discord.IDiscordClient.DeleteTestEntitlementAsync(System.UInt64,Discord.RequestOptions)">
@@ -19168,7 +19168,7 @@
         </member>
         <member name="M:Discord.IDiscordClient.GetSKUsAsync(Discord.RequestOptions)">
             <summary>
-                Returns all SKUs for a given application.
+                Returns all SKUs for a given application. 
             </summary>
         </member>
         <member name="T:Discord.IInteractionContext">
@@ -19434,7 +19434,7 @@
                 Gets the HTTP status code returned by Discord.
             </summary>
             <returns>
-                An
+                An 
                 <see href="https://discord.com/developers/docs/topics/opcodes-and-status-codes#http">HTTP status code</see>
                 from Discord.
             </returns>
@@ -19444,7 +19444,7 @@
                 Gets the JSON error code returned by Discord.
             </summary>
             <returns>
-                A
+                A 
                 <see href="https://discord.com/developers/docs/topics/opcodes-and-status-codes#json">JSON error code</see>
                 from Discord, or <see langword="null" /> if none.
             </returns>
@@ -19534,7 +19534,7 @@
                 Gets the close code sent by Discord.
             </summary>
             <returns>
-                A
+                A 
                 <see href="https://discord.com/developers/docs/topics/opcodes-and-status-codes#gateway-gateway-close-event-codes">close code</see>
                 from Discord.
             </returns>
@@ -19647,14 +19647,14 @@
         </member>
         <member name="P:Discord.RequestOptions.UseSystemClock">
             <summary>
-		Gets or sets whether or not this request should use the system
-		clock for rate-limiting. Defaults to <see langword="true" />.
+            	Gets or sets whether or not this request should use the system
+            	clock for rate-limiting. Defaults to <see langword="true" />.
             </summary>
             <remarks>
-		This property can also be set in <see cref="T:Discord.DiscordConfig"/>.
-		On a per-request basis, the system clock should only be disabled
-		when millisecond precision is especially important, and the
-		hosting system is known to have a desynced clock.
+            	This property can also be set in <see cref="T:Discord.DiscordConfig"/>.
+            	On a per-request basis, the system clock should only be disabled
+            	when millisecond precision is especially important, and the
+            	hosting system is known to have a desynced clock.
             </remarks>
         </member>
         <member name="P:Discord.RequestOptions.RatelimitCallback">

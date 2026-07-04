@@ -34,7 +34,6 @@ namespace FChatDicebot.BotCommands
             string channelName = commandController.GetChannelFromInputs(rawTerms, out string channelIdError);
 
             bool usedCustomChannel = !string.IsNullOrEmpty(channelName);
-            string outputMessage = "";
 
             if (!string.IsNullOrEmpty(channelIdError) && !fromChannel)
             {
@@ -125,7 +124,6 @@ namespace FChatDicebot.BotCommands
                     newPotion.suffix = newPotion.suffix == null ? null : Utils.LimitStringToNCharacters(newPotion.suffix, BotMain.MaximumCharactersPotionName);
                     newPotion.OverrideEicon = newPotion.OverrideEicon == null ? null : Utils.LimitStringToNCharacters(newPotion.OverrideEicon, BotMain.MaximumCharactersPotionName);
 
-                    newPotion.HidePotionDetails = newPotion.HidePotionDetails;
                     if (existingEnchantment != null)
                     {
                         existingEnchantment.Copy(newPotion);

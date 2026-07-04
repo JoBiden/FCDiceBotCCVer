@@ -35,9 +35,6 @@ namespace FChatDicebot.BotCommands
                 }
                 else
                 {
-                    bool pot = false;
-                    bool targetedName = false;
-
                     int chipAmount = Utils.GetNumberFromInputs(terms);
 
                     List<ChipPile> allChannelPiles = bot.DiceBot.GetChannelChipPiles(address);
@@ -81,15 +78,11 @@ namespace FChatDicebot.BotCommands
                     {
                         string[] rawTermsMost = Utils.GetRemainingTermsAfterRemovingOneTerm(rawTerms, chipAmount.ToString());
 
-                        if (terms.Contains("pot") && terms.Length == 2 && chipAmount > 0)
-                            pot = true;
-                        else
+                        if (!(terms.Contains("pot") && terms.Length == 2 && chipAmount > 0))
                         {
                             appliedName = Utils.GetUserNameFromFullInputs(rawTermsMost);
-                            targetedName = true;
                         }
                     }
-;
 
                     bot.SendMessageInChannel(allOutputs, address);
                     commandController.SaveChipsToDisk("removeallchipsoveramount");

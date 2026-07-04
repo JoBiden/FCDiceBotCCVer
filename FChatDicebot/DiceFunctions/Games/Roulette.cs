@@ -384,7 +384,9 @@ namespace FChatDicebot.DiceFunctions
             if(greenResults.Contains(randomResult) )
                 colorGreen = true;
 
-            string rollResult = "[color=gray]" + randomResult + " (black)[/color]";
+            string rollResult = "";
+            if (colorBlack)
+                rollResult = "[color=gray]" + randomResult + " (black)[/color]";
             if(colorRed)
                 rollResult = "[color=red]" + randomResult + " (red)[/color]";
             if (colorGreen)

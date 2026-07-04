@@ -16,8 +16,6 @@ namespace FChatDicebot
     {
         private string GetApiTicketUrl = "https://f-list.net/json/getApiTicket.php";
 
-        private bool awaitingReturn = false;
-
         public GetApiTicketResponse ApiTicketResult = null;
         public PostOAuthResponse VcOauthResult = null;
         public VCTransactionResponse VcCreateTransactionResponse = null;
@@ -76,7 +74,6 @@ namespace FChatDicebot
                     }
 
                     GetApiTicketResponse rpt = JsonConvert.DeserializeObject<GetApiTicketResponse>(rtnValue);
-                    awaitingReturn = false;
 
                     if (rpt != null)
                     {

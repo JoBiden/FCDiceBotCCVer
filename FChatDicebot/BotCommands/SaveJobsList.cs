@@ -33,7 +33,6 @@ namespace FChatDicebot.BotCommands
             string channelName = commandController.GetChannelFromInputs(rawTerms, out string channelIdError);
             //todo: channel stuff error handling and such, remove channel id from terms (first term)
             bool usedCustomChannel = !string.IsNullOrEmpty(channelName);
-            string outputMessage = "";
 
             if (!string.IsNullOrEmpty(channelIdError) && !fromChannel)
             {
@@ -188,7 +187,7 @@ namespace FChatDicebot.BotCommands
                     sendMessage = "[b]Success[/b]. Jobs list saved by " + TextFormat.GetCharacterUserTags(tempAddress.character) + ". This will now be the default jobs list used for !work";
                 }
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 sendMessage = "Exception (196) on saving jobs list. Failed to parse jobs list entry data. Make sure the Json is correctly formatted. ";// + e.Message;
             }

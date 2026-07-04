@@ -724,7 +724,6 @@ namespace FChatDicebot
             // This is typically the term after the command and username
             if (terms != null && terms.Length >= 3)
             {
-                bool skipNext = false;
                 bool inUserTag = false;
                 bool inQuotes = false;
                 bool inEIcon = false;

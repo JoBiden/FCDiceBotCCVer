@@ -155,10 +155,10 @@
         <member name="M:Discord.Net.ED25519.CryptoBytes.ConstantTimeEquals(System.Byte[],System.Byte[])">
              <summary>
              Comparison of two arrays.
-
+            
              The runtime of this method does not depend on the contents of the arrays. Using constant time
              prevents timing attacks that allow an attacker to learn if the arrays have a common prefix.
-
+            
              It is important to use such a constant time comparison when verifying MACs.
              </summary>
              <param name="x">Byte array</param>
@@ -168,10 +168,10 @@
         <member name="M:Discord.Net.ED25519.CryptoBytes.ConstantTimeEquals(System.ArraySegment{System.Byte},System.ArraySegment{System.Byte})">
              <summary>
              Comparison of two array segments.
-
+            
              The runtime of this method does not depend on the contents of the arrays. Using constant time
              prevents timing attacks that allow an attacker to learn if the arrays have a common prefix.
-
+            
              It is important to use such a constant time comparison when verifying MACs.
              </summary>
              <param name="x">Byte array segment</param>
@@ -181,10 +181,10 @@
         <member name="M:Discord.Net.ED25519.CryptoBytes.ConstantTimeEquals(System.Byte[],System.Int32,System.Byte[],System.Int32,System.Int32)">
              <summary>
              Comparison of two byte sequences.
-
+            
              The runtime of this method does not depend on the contents of the arrays. Using constant time
              prevents timing attacks that allow an attacker to learn if the arrays have a common prefix.
-
+            
              It is important to use such a constant time comparison when verifying MACs.
              </summary>
              <param name="x">Byte array</param>
@@ -1613,7 +1613,7 @@
         </member>
         <member name="P:Discord.Rest.IntegrationInfo.ExpireGracePeriod">
             <summary>
-		Gets the grace period (in days) before expiring subscribers. <see landword="null"/> if the property was not mentioned in this audit log.
+            	Gets the grace period (in days) before expiring subscribers. <see landword="null"/> if the property was not mentioned in this audit log.
             </summary>
         </member>
         <member name="P:Discord.Rest.IntegrationInfo.Scopes">
@@ -1800,7 +1800,7 @@
                 Gets a value that indicates whether the invite is a temporary one.
             </summary>
             <returns>
-                <see langword="true" /> if users accepting this invite will be removed from the guild when they log off,
+                <see langword="true" /> if users accepting this invite will be removed from the guild when they log off, 
                 <see langword="false" /> if not; <see langword="null" /> if not specified.
             </returns>
         </member>
@@ -1809,7 +1809,7 @@
                 Gets the ID of the channel this invite is linked to.
             </summary>
             <returns>
-                A <see cref="T:System.UInt64"/> representing the channel snowflake identifier that the invite points to;
+                A <see cref="T:System.UInt64"/> representing the channel snowflake identifier that the invite points to; 
                 <see langword="null" /> if not specified.
             </returns>
         </member>
@@ -2433,7 +2433,7 @@
                 Gets a value that indicates whether this role is mentionable.
             </summary>
             <returns>
-                <see langword="true" /> if other members can mention this role in a text channel; otherwise <see langword="false" />;
+                <see langword="true" /> if other members can mention this role in a text channel; otherwise <see langword="false" />; 
                 <see langword="null" /> if this is not mentioned in this entry.
             </returns>
         </member>
@@ -2443,7 +2443,7 @@
                 section on the user list).
             </summary>
             <returns>
-                <see langword="true" /> if this role's members will appear in a separate section in the user list; otherwise
+                <see langword="true" /> if this role's members will appear in a separate section in the user list; otherwise 
                 <see langword="false" />; <see langword="null" /> if this is not mentioned in this entry.
             </returns>
         </member>
@@ -2962,7 +2962,7 @@
             </summary>
             <returns>
                 A <see cref="T:System.UInt64"/> representing the snowflake identifier for the deleted thread.
-
+            
             </returns>
         </member>
         <member name="P:Discord.Rest.ThreadDeleteAuditLogData.ThreadName">
@@ -2971,7 +2971,7 @@
             </summary>
             <returns>
                 A string containing the name of the deleted thread.
-
+            
             </returns>
         </member>
         <member name="P:Discord.Rest.ThreadDeleteAuditLogData.ThreadType">
@@ -4103,7 +4103,7 @@
             <remarks>
                 This field is always true for stage channels.
             </remarks>
-
+            
         </member>
         <member name="P:Discord.Rest.RestStageChannel.PrivacyLevel">
             <inheritdoc/>
@@ -6098,7 +6098,7 @@
             </summary>
             <remarks>
                 <note type="important">
-                    The returned collection is an asynchronous enumerable object; one must call
+                    The returned collection is an asynchronous enumerable object; one must call 
                     <see cref="M:Discord.AsyncEnumerableExtensions.FlattenAsync``1(System.Collections.Generic.IAsyncEnumerable{System.Collections.Generic.IEnumerable{``0}})"/> to access the individual messages as a
                     collection.
                 </note>
@@ -6119,7 +6119,7 @@
             </summary>
             <remarks>
                 <note type="important">
-                    The returned collection is an asynchronous enumerable object; one must call
+                    The returned collection is an asynchronous enumerable object; one must call 
                     <see cref="M:Discord.AsyncEnumerableExtensions.FlattenAsync``1(System.Collections.Generic.IAsyncEnumerable{System.Collections.Generic.IEnumerable{``0}})"/> to access the individual users as a
                     collection.
                 </note>
@@ -6129,7 +6129,7 @@
                 </note>
                 This method will attempt to fetch the number of users specified under <paramref name="limit"/> around
                 the user <paramref name="fromUserId"/> depending on the <paramref name="dir"/>. The library will
-                attempt to split up the requests according to your <paramref name="limit"/> and
+                attempt to split up the requests according to your <paramref name="limit"/> and 
                 <see cref="F:Discord.DiscordConfig.MaxGuildEventUsersPerBatch"/>. In other words, should the user request 500 users,
                 and the <see cref="F:Discord.DiscordConfig.MaxGuildEventUsersPerBatch"/> constant is <c>100</c>, the request will
                 be split into 5 individual requests; thus returning 5 individual asynchronous responses, hence the need
@@ -6531,7 +6531,7 @@
         </member>
         <member name="M:Discord.Rest.RestMessageComponent.Defer(System.Boolean,Discord.RequestOptions)">
             <summary>
-
+            
             </summary>
             <param name="ephemeral"></param>
             <param name="options"></param>

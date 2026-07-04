@@ -87,7 +87,7 @@ namespace FChatDicebot.DiceFunctions
             return "activated " + this.ToString();
         }
 
-        public virtual string ToString()
+        public override string ToString()
         {
             return "Inventory Item: " + Category + " " + GetRarityString() + " " + GetValue();
         }

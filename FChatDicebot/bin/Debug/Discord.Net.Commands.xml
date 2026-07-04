@@ -165,17 +165,17 @@
             </summary>
             <remarks>
                 This attribute will override the <see cref="T:Discord.Commands.TypeReader"/> to be used when parsing for the
-                desired type in the command. This is useful when one wishes to use a particular
+                desired type in the command. This is useful when one wishes to use a particular 
                 <see cref="T:Discord.Commands.TypeReader"/> without affecting other commands that are using the same target
                 type.
                 <note type="warning">
-                    If the given type reader does not inherit from <see cref="T:Discord.Commands.TypeReader"/>, an
+                    If the given type reader does not inherit from <see cref="T:Discord.Commands.TypeReader"/>, an 
                     <see cref="T:System.ArgumentException"/> will be thrown.
                 </note>
             </remarks>
             <example>
-                In this example, the <see cref="T:System.TimeSpan"/> will be read by a custom
-                <see cref="T:Discord.Commands.TypeReader"/>, <c>FriendlyTimeSpanTypeReader</c>, instead of the
+                In this example, the <see cref="T:System.TimeSpan"/> will be read by a custom 
+                <see cref="T:Discord.Commands.TypeReader"/>, <c>FriendlyTimeSpanTypeReader</c>, instead of the 
                 <see cref="T:Discord.Commands.TimeSpanTypeReader"/> shipped by Discord.Net.
                 <code language="cs">
                 [Command("time")]
@@ -185,8 +185,8 @@
             </example>
         </member>
         <member name="P:Discord.Commands.OverrideTypeReaderAttribute.TypeReader">
-            <summary>
-                Gets the specified <see cref="P:Discord.Commands.OverrideTypeReaderAttribute.TypeReader"/> of the parameter.
+            <summary> 
+                Gets the specified <see cref="P:Discord.Commands.OverrideTypeReaderAttribute.TypeReader"/> of the parameter. 
             </summary>
         </member>
         <member name="M:Discord.Commands.OverrideTypeReaderAttribute.#ctor(System.Type)">
@@ -356,7 +356,7 @@
                      [Command("cool")]
                      public Task CoolAsync()
                          => ReplyAsync("I'm cool for everyone.");
-
+            
                      [RequireNsfw]
                      [Command("too-cool")]
                      public Task TooCoolAsync()
@@ -1286,7 +1286,7 @@
                 A <see cref="T:Discord.Commands.TypeReader"/> for parsing objects implementing <see cref="T:Discord.IChannel"/>.
             </summary>
             <remarks>
-                This <see cref="T:Discord.Commands.TypeReader"/> is shipped with Discord.Net and is used by default to parse any
+                This <see cref="T:Discord.Commands.TypeReader"/> is shipped with Discord.Net and is used by default to parse any 
                 <see cref="T:Discord.IChannel"/> implemented object within a command. The TypeReader will attempt to first parse the
                 input by mention, then the snowflake identifier, then by name; the highest candidate will be chosen as the
                 final output; otherwise, an erroneous <see cref="T:Discord.Commands.TypeReaderResult"/> is returned.
@@ -1425,7 +1425,7 @@
                 Gets a string that indicates the execution result.
             </summary>
             <returns>
-                <c>Success</c> if <see cref="P:Discord.Commands.ExecuteResult.IsSuccess"/> is <see langword="true" />; otherwise "<see cref="P:Discord.Commands.ExecuteResult.Error"/>:
+                <c>Success</c> if <see cref="P:Discord.Commands.ExecuteResult.IsSuccess"/> is <see langword="true" />; otherwise "<see cref="P:Discord.Commands.ExecuteResult.Error"/>: 
                 <see cref="P:Discord.Commands.ExecuteResult.ErrorReason"/>".
             </returns>
         </member>
@@ -1439,7 +1439,7 @@
                 Describes the error type that may have occurred during the operation.
             </summary>
             <returns>
-                A <see cref="T:Discord.Commands.CommandError" /> indicating the type of error that may have occurred during the operation;
+                A <see cref="T:Discord.Commands.CommandError" /> indicating the type of error that may have occurred during the operation; 
                 <see langword="null" /> if the operation was successful.
             </returns>
         </member>
@@ -1494,7 +1494,7 @@
                 Provides information about the parameter that caused the parsing error.
             </summary>
             <returns>
-                A <see cref="T:Discord.Commands.ParameterInfo" /> indicating the parameter info of the error that may have occurred during parsing;
+                A <see cref="T:Discord.Commands.ParameterInfo" /> indicating the parameter info of the error that may have occurred during parsing; 
                 <see langword="null" /> if the parsing was successful or the parsing error is not specific to a single parameter.
             </returns>
         </member>
