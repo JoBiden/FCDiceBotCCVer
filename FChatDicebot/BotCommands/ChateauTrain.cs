@@ -68,8 +68,8 @@ namespace FChatDicebot.BotCommands
                 return;
             }
 
-            string message = initiatorProfile.displayName + " wants to do some " + training + " training with "
-                + recipientProfile.displayName + "! Do you !consent to improving your skills together?";
+            var processor = InteractionProcessors.InteractionProcessorRegistry.GetProcessor("train");
+            string message = processor.GetConsentWarning(initiatorProfile, recipientProfile, training);
 
             Interaction trainInteraction = new Interaction
             {

@@ -157,7 +157,7 @@ namespace FChatDicebot.BotCommands
                 else if (userProfile.timers.ContainsKey("volunteer") && userProfile.timers["volunteer"].timerEnd > DateTime.UtcNow) //already volunteered
                 {
                     TimeSpan timeLeft = userProfile.timers["volunteer"].timerEnd - DateTime.UtcNow;
-                    message += ("You've already volunteered today! You can volunteer again when a new Chateau day starts in " + string.Format("{0:D2}h:{1:D2}m:{2:D2}s", timeLeft.Hours, timeLeft.Minutes, timeLeft.Seconds) + ".");
+                    message += ("You've already volunteered today! You can volunteer again when a new Chateau day starts in " + Utils.GetTimeSpanPrint(timeLeft) + ".");
                 }
                 else //can volunteer
                 {

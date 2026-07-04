@@ -51,7 +51,8 @@ namespace FChatDicebot.BotCommands
             }
             else
             {
-                string message = initiatorProfile.displayName + " wants to give " + recipientProfile.displayName + " a lick. Do you !consent to being lapped at?";
+                var processor = InteractionProcessors.InteractionProcessorRegistry.GetProcessor("lick");
+                string message = processor.GetConsentWarning(initiatorProfile, recipientProfile, null);
 
                 Interaction lick = new Interaction();
                 lick.initiator = characterName;

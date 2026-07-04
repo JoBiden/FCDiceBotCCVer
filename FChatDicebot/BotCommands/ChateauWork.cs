@@ -179,7 +179,7 @@ namespace FChatDicebot.BotCommands
             else if (userProfile.timers.ContainsKey("work") && userProfile.timers["work"].timerEnd > DateTime.UtcNow) //no duty in progress and already worked
             {
                 TimeSpan timeLeft = userProfile.timers["work"].timerEnd - DateTime.UtcNow;
-                message += ("You've already worked today! You can work again when a new Chateau day starts in " + string.Format("{0:D2}h:{1:D2}m:{2:D2}s", timeLeft.Hours, timeLeft.Minutes, timeLeft.Seconds) + ".");
+                message += ("You've already worked today! You can work again when a new Chateau day starts in " + Utils.GetTimeSpanPrint(timeLeft) + ".");
             }
             else //no duty in progress and can work
             {

@@ -51,7 +51,8 @@ namespace FChatDicebot.BotCommands
             }
             else
             {
-                string message = initiatorProfile.displayName + " is gearing up to bully " + recipientProfile.displayName + ". Do you !consent to whatever is coming?";
+                var processor = InteractionProcessors.InteractionProcessorRegistry.GetProcessor("bully");
+                string message = processor.GetConsentWarning(initiatorProfile, recipientProfile, null);
 
                 Interaction bully = new Interaction();
                 bully.initiator = characterName;

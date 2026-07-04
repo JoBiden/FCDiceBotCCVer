@@ -35,26 +35,8 @@ namespace FChatDicebot.Model
         /// </summary>
         public static List<ParasiteInstance> LoadAll(Profile profile)
         {
-            var result = new List<ParasiteInstance>();
-            if (profile?.lists == null) return result;
-            if (!profile.lists.ContainsKey(ParasitesListKey)) return result;
-
-            foreach (string raw in profile.lists[ParasitesListKey])
-            {
-                if (string.IsNullOrEmpty(raw)) continue;
-                ParasiteInstance entry;
-                try
-                {
-                    entry = JsonConvert.DeserializeObject<ParasiteInstance>(raw);
-                }
-                catch (JsonException)
-                {
-                    continue;
-                }
-                if (entry == null || string.IsNullOrEmpty(entry.Parasite)) continue;
-                result.Add(entry);
-            }
-            return result;
+            return ProfileListStore<ParasiteInstance>.LoadAll(profile, ParasitesListKey,
+                entry => !string.IsNullOrEmpty(entry.Parasite));
         }
 
         /// <summary>
@@ -64,21 +46,7 @@ namespace FChatDicebot.Model
         /// </summary>
         public static void SaveAll(Profile profile, List<ParasiteInstance> entries)
         {
-            if (profile == null) return;
-            if (profile.lists == null) profile.lists = new Dictionary<string, List<string>>();
-
-            if (entries == null || entries.Count == 0)
-            {
-                profile.lists.Remove(ParasitesListKey);
-                return;
-            }
-
-            var encoded = new List<string>();
-            foreach (var entry in entries)
-            {
-                encoded.Add(JsonConvert.SerializeObject(entry));
-            }
-            profile.lists[ParasitesListKey] = encoded;
+            ProfileListStore<ParasiteInstance>.SaveAll(profile, ParasitesListKey, entries);
         }
     }
 }

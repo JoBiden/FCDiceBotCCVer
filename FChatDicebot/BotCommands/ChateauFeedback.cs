@@ -137,7 +137,7 @@ namespace FChatDicebot.BotCommands
         public static string CooldownMessage(TimeSpan timeLeft)
         {
             return "You've shared feedback very recently. Please wait " +
-                string.Format("{0:D2}m:{1:D2}s", timeLeft.Minutes, timeLeft.Seconds) +
+                Utils.GetTimeSpanPrint(timeLeft) +
                 " before sending more.";
         }
     }

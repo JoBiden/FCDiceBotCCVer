@@ -54,7 +54,8 @@ namespace FChatDicebot.BotCommands
             }
             if (valid)
             {
-                string message = initiatorProfile.displayName + " is going to feed " + recipientProfile.displayName + " some " + Utils.SubstanceToText(substance) + "! Do you !consent to consuming that?";
+                var processor = InteractionProcessors.InteractionProcessorRegistry.GetProcessor("feed");
+                string message = processor.GetConsentWarning(initiatorProfile, recipientProfile, substance);
 
                 Interaction objectifyInteraction = new Interaction();
                 objectifyInteraction.initiator = characterName;

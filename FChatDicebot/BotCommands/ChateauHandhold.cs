@@ -51,7 +51,8 @@ namespace FChatDicebot.BotCommands
             }
             else
             {
-                string message = initiatorProfile.displayName + " wants to hold your hand (or equivalent appendage) " + recipientProfile.displayName + ". Do you !consent to some handholding?";
+                var processor = InteractionProcessors.InteractionProcessorRegistry.GetProcessor("handhold");
+                string message = processor.GetConsentWarning(initiatorProfile, recipientProfile, null);
 
                 Interaction handhold = new Interaction();
                 handhold.initiator = characterName;

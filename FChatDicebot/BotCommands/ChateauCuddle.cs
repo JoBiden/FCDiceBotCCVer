@@ -51,7 +51,8 @@ namespace FChatDicebot.BotCommands
             }
             else
             {
-                string message = initiatorProfile.displayName + " wants to cuddle you, " + recipientProfile.displayName + ". Do you !consent to some cuddles?";
+                var processor = InteractionProcessors.InteractionProcessorRegistry.GetProcessor("cuddle");
+                string message = processor.GetConsentWarning(initiatorProfile, recipientProfile, null);
 
                 Interaction cuddle = new Interaction();
                 cuddle.initiator = characterName;

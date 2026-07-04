@@ -454,6 +454,7 @@
     <Compile Include="InteractionProcessors\StatusEffectContributors\CurseStatusContributor.cs" />
     <Compile Include="InteractionProcessors\PurgeCostType.cs" />
     <Compile Include="InteractionProcessors\PurgeCostApplier.cs" />
+    <Compile Include="Model\ProfileListStore.cs" />
     <Compile Include="Model\ScentLayer.cs" />
     <Compile Include="Model\BreakInstance.cs" />
     <Compile Include="Model\ScentText.cs" />
@@ -473,6 +474,7 @@
     <Compile Include="InteractionProcessors\Commitment\CorruptionProcessor.cs" />
     <Compile Include="InteractionProcessors\Commitment\CorruptionCommandSupport.cs" />
     <Compile Include="InteractionProcessors\StatusEffectContributors\CorruptionStatusContributor.cs" />
+    <Compile Include="InteractionProcessors\Involved\PaymentProcessorBase.cs" />
     <Compile Include="InteractionProcessors\Involved\PaymentGiveProcessor.cs" />
     <Compile Include="InteractionProcessors\Involved\PaymentReceiveProcessor.cs" />
     <Compile Include="InteractionProcessors\Involved\ClimaxforProcessor.cs" />
