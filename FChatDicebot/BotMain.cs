@@ -160,9 +160,14 @@ namespace FChatDicebot
             if(runMode != RunMode.Default)
                 RunMode = runMode;
 
-            BotCommandController = new BotCommandController(this);
-
+            // MonDB must be initialized BEFORE the command controller: loading commands
+            // instantiates every command type, and the DI-style ones (ChateauDossier,
+            // ChateauBondtree, ChateauFamilytree) resolve MonDB.GetDatabase() in their
+            // parameterless constructors — which throws when uninitialized, making the
+            // loader silently skip those commands for the bot's whole lifetime.
             MonDB.Initialize("mongodb://localhost:27017", "ChateauDb");
+
+            BotCommandController = new BotCommandController(this);
 
             BackupAllData();
 
@@ -188,7 +193,7 @@ namespace FChatDicebot
             WebRequests = new BotWebRequests();
             _discordUsers = new List<SocketUser>();
             DiceBot = new DiceFunctions.DiceBot(this);
-            RandomEventEngine = new BotCommands.Support.RandomEventEngine(MonDB.getProfile, MonDB.setProfile);
+            RandomEventEngine = new BotCommands.Support.RandomEventEngine(MonDB.getProfile, MonDB.setProfile, MonDB.changeCurrency);
             VelvetcuffConnection = new FChatDicebot.VelvetcuffConnection(WebRequests, AccountSettings);
 
             if(RunMode == RunMode.FListOnly || RunMode == RunMode.FlistPlusDiscord)

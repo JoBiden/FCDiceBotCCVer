@@ -83,6 +83,11 @@ namespace FChatDicebot
             GetDatabase().ChangeCount(userName, countLabel, changeAmount);
         }
 
+        internal static void changeCurrency(string userName, string currencyLabel, int changeAmount)
+        {
+            GetDatabase().ChangeCurrency(userName, currencyLabel, changeAmount);
+        }
+
         internal static Profile getProfile(string userName)
         {
             return GetDatabase().GetProfile(userName);
@@ -166,25 +171,6 @@ namespace FChatDicebot
         internal static Identifier getIdentifier(string identifier)
         {
             return GetDatabase().GetIdentifier(identifier);
-        }
-
-        internal static long getTypeCount(string profileName, string identifierType, string initiatorRecipientOrBoth)
-        {
-            identifierType = identifierType.ToLower();
-            initiatorRecipientOrBoth = initiatorRecipientOrBoth.ToLower();
-
-            switch (initiatorRecipientOrBoth)
-            {
-                case "initiator":
-                    return GetDatabase().CountInteractionsByInitiatorAndType(profileName, identifierType);
-                case "recipient":
-                    return GetDatabase().CountInteractionsByRecipientAndType(profileName, identifierType);
-                default:
-                    // For "both", we need to sum initiator and recipient counts
-                    int asInitiator = GetDatabase().CountInteractionsByInitiatorAndType(profileName, identifierType);
-                    int asRecipient = GetDatabase().CountInteractionsByRecipientAndType(profileName, identifierType);
-                    return asInitiator + asRecipient;
-            }
         }
 
         internal static void removePendingInteraction(ObjectId idToRemove)
