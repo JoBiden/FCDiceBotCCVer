@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -29,7 +29,7 @@ namespace FChatDicebot
 #endif
         public const bool _returnAllRecievedChatMessagesFromChannels = false;
         public const string Version = "1.62b";
-        public RunMode RunMode = RunMode.FlistPlusDiscord;// RunMode.FlistPlusDiscord; //RunMode.FlistPlusDiscord;// RunMode.FListOnly;// RunMode.DiscordOnly;
+        public RunMode RunMode = RunMode.FListOnly;// RunMode.FlistPlusDiscord; //RunMode.FlistPlusDiscord;// RunMode.FListOnly;// RunMode.DiscordOnly;
 
         public const ChatRoom ChatRoom = FChatDicebot.ChatRoom.FChat; //currently little effect
 
@@ -202,12 +202,12 @@ namespace FChatDicebot
                 th.IsBackground = true;
                 th.Start();
             }
-            if (RunMode == RunMode.DiscordOnly || RunMode == RunMode.FlistPlusDiscord)
-            {
-                System.Threading.Thread th2 = new Thread(RunLoopDiscord);
-                th2.IsBackground = true;
-                th2.Start();
-            }
+            //if (RunMode == RunMode.DiscordOnly || RunMode == RunMode.FlistPlusDiscord)
+            //{
+            //    System.Threading.Thread th2 = new Thread(RunLoopDiscord);
+            //    th2.IsBackground = true;
+            //    th2.Start();
+            //}
         }
         #region load data
         private void LoadAccountSettings()
