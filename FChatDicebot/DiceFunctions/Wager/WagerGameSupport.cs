@@ -405,7 +405,7 @@ namespace FChatDicebot.DiceFunctions.Wager
             return TextFormat.GetCharacterUserTags(player) + " can't cover a stake of " + stake.Display() + ".";
         }
 
-        private static string DisplayBag(Dictionary<string, int> totals)
+        internal static string DisplayBag(Dictionary<string, int> totals)
         {
             var parts = totals.OrderBy(kv => kv.Key)
                 .Select(kv => kv.Value + " " + kv.Key)

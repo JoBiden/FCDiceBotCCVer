@@ -794,26 +794,53 @@ namespace FChatDicebot.DiceFunctions
             if (held < betAmount)
                 return "Error: " + TextFormat.GetCharacterUserTags(address.character) + " does not have enough " + currency + " (" + betAmount + " needed, " + held + " held).";
 
-            // Load this machine's running jackpot for this currency (floored at the starting amount).
-            string jackpotKey = slotsSetting.Name + "|" + currency;
-            int storedJackpot = MonDB.GetDatabase().GetSlotsJackpot(jackpotKey);
+            // Load this machine's running jackpot. Every currency played on this machine grows
+            // its own column independently (never converted), but a jackpot win sweeps every
+            // other currency's column into the payout as a bonus bag — see below.
+            string jackpotKey = slotsSetting.Name;
+            Dictionary<string, int> jackpotAmounts = MonDB.GetDatabase().GetSlotsJackpotAmounts(jackpotKey);
+            int storedJackpot = jackpotAmounts.TryGetValue(currency, out int storedForCurrency) ? storedForCurrency : 0;
             int jackpot = storedJackpot >= slotsSetting.StartingJackpotAmount ? storedJackpot : slotsSetting.StartingJackpotAmount;
 
             var result = slotsSetting.GetSpinResult(random, betAmount, rewardMultiplier, jackpot, testCommand);
-
-            // Persist the jackpot's new running total (grows from losses, resets on a jackpot win).
-            MonDB.GetDatabase().SetSlotsJackpot(jackpotKey, result.NewJackpotAmount);
 
             // Stake to the house, winnings minted back — both in the bet currency.
             WagerBank.Burn(address.character, currency, betAmount);
             if (result.Winnings > 0)
                 WagerBank.PayWinner(address.character, currency, result.Winnings);
 
+            string bagText = "";
+            if (result.WonJackpot)
+            {
+                // Sweep every other currency's accumulated total on this machine into the win as
+                // a bonus bag, paid out in each of those currencies as-is (no conversion), then
+                // clear the whole machine's jackpot — every currency floors back to the starting
+                // amount on its next spin.
+                var bonusBag = new Dictionary<string, int>();
+                foreach (var entry in jackpotAmounts)
+                {
+                    if (entry.Key == currency || entry.Value <= 0) continue;
+                    bonusBag[entry.Key] = entry.Value;
+                }
+                foreach (var entry in bonusBag)
+                    WagerBank.PayWinner(address.character, entry.Key, entry.Value);
+                if (bonusBag.Count > 0)
+                    bagText = " Plus " + Wager.WagerGameSupport.DisplayBag(bonusBag) + " spills out of the machine!";
+
+                MonDB.GetDatabase().SetSlotsJackpotAmounts(jackpotKey, new Dictionary<string, int>());
+            }
+            else
+            {
+                // Persist this currency's new running total (grows from losses).
+                jackpotAmounts[currency] = result.NewJackpotAmount;
+                MonDB.GetDatabase().SetSlotsJackpotAmounts(jackpotKey, jackpotAmounts);
+            }
+
             int net = result.Winnings - betAmount;
             string betBonusString = betMultiplier > 1 ? "(x" + betMultiplier + ")" : "";
             string netString = "\n[sub]Net " + (net >= 0 ? "+" : "") + net + " " + currency + ".[/sub]";
-            string slotsSpinText = TextFormat.Emoji("dbslots1") + TextFormat.Emoji("dbslots2") + " " + TextFormat.GetCharacterIconTags(address.character) + " is spinning the [b]" + slotsSetting.Name + "[/b] slot machine! " + betBonusString + "\n[sub]Putting in " + betAmount + " " + currency + " and pulling the lever...[/sub] " + result.GetJackpotString();
-            return slotsSpinText + "\n" + result.ToString() + netString;
+            string slotsSpinText = TextFormat.Emoji("dbslots1") + TextFormat.Emoji("dbslots2") + " " + TextFormat.GetCharacterIconTags(address.character) + " is spinning the [b]" + slotsSetting.Name + "[/b] slot machine! " + betBonusString + "\n[sub]Putting in " + betAmount + " " + currency + " and pulling the lever...[/sub] " + result.GetJackpotString(currency);
+            return slotsSpinText + "\n" + result.ToString() + bagText + netString;
         }
 
         public string SpinSlots(SlotsSetting slotsSetting, MessageAddress address, int betMultiplier, FChatDicebot.BotCommands.SlotsTestCommand testCommand)
@@ -848,7 +875,7 @@ namespace FChatDicebot.DiceFunctions
 
             string newChips = DisplayChipPile(address, characterChips);
             string betBonusString = betMultiplier > 1 ? "(x" + betMultiplier + ")" : "";
-            string slotsSpinText = TextFormat.Emoji("dbslots1") + TextFormat.Emoji("dbslots2") + " " + TextFormat.GetCharacterIconTags(address.character) + " is spinning the [b]" + slotsSetting.Name + "[/b] slot machine! " + betBonusString + "\n[sub]Putting in " + betAmount + " " + BotMain.CurrencyPlaceholder + "s and pulling the lever...[/sub] " + result.GetJackpotString();
+            string slotsSpinText = TextFormat.Emoji("dbslots1") + TextFormat.Emoji("dbslots2") + " " + TextFormat.GetCharacterIconTags(address.character) + " is spinning the [b]" + slotsSetting.Name + "[/b] slot machine! " + betBonusString + "\n[sub]Putting in " + betAmount + " " + BotMain.CurrencyPlaceholder + "s and pulling the lever...[/sub] " + result.GetJackpotString(BotMain.CurrencyPlaceholder + "s");
             return slotsSpinText + "\n" + result.ToString();
         }
 

@@ -103,9 +103,10 @@ namespace FChatDicebot.Database
         List<MonsterStats> GetAllMonsterStats();
         void IncrementMonsterStats(string key, int pregnancyDelta, int offspringDelta);
 
-        // Slots jackpot persistence (per "{machine}|{currency}"); -1 when unset.
-        int GetSlotsJackpot(string key);
-        void SetSlotsJackpot(string key, int amount);
+        // Slots jackpot persistence, keyed per machine. Amounts maps currency -> running total;
+        // an unset machine (or unset currency within it) returns/starts empty.
+        Dictionary<string, int> GetSlotsJackpotAmounts(string machineKey);
+        void SetSlotsJackpotAmounts(string machineKey, Dictionary<string, int> amounts);
 
         // Mod Message Operations
         string GetModMessage(string messageLabel);

@@ -209,17 +209,20 @@ namespace FChatDicebot.Tests.Unit
         }
 
         [Fact]
-        public void SlotsJackpot_PersistsPerKey_DefaultsToMinusOne()
+        public void SlotsJackpot_PersistsPerMachine_AsPerCurrencyAmounts()
         {
-            Assert.Equal(-1, _database.GetSlotsJackpot("Fancy|copper")); // unset
+            Assert.Empty(_database.GetSlotsJackpotAmounts("Fancy")); // unset
 
-            _database.SetSlotsJackpot("Fancy|copper", 500);
-            Assert.Equal(500, _database.GetSlotsJackpot("Fancy|copper"));
+            _database.SetSlotsJackpotAmounts("Fancy", new System.Collections.Generic.Dictionary<string, int> { { "copper", 500 } });
+            Assert.Equal(500, _database.GetSlotsJackpotAmounts("Fancy")["copper"]);
 
-            _database.SetSlotsJackpot("Fancy|copper", 750); // updates in place
-            Assert.Equal(750, _database.GetSlotsJackpot("Fancy|copper"));
+            // Updates in place, and other currencies on the same machine coexist in one document.
+            _database.SetSlotsJackpotAmounts("Fancy", new System.Collections.Generic.Dictionary<string, int> { { "copper", 750 }, { "gold", 30 } });
+            var amounts = _database.GetSlotsJackpotAmounts("Fancy");
+            Assert.Equal(750, amounts["copper"]);
+            Assert.Equal(30, amounts["gold"]);
 
-            Assert.Equal(-1, _database.GetSlotsJackpot("Fancy|gold")); // other currency isolated
+            Assert.Empty(_database.GetSlotsJackpotAmounts("OtherMachine")); // other machine isolated
         }
 
         public void Dispose()
