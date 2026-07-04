@@ -35,26 +35,8 @@ namespace FChatDicebot.Model
         /// </summary>
         public static List<CurseInstance> LoadAll(Profile profile)
         {
-            var result = new List<CurseInstance>();
-            if (profile?.lists == null) return result;
-            if (!profile.lists.ContainsKey(CursesListKey)) return result;
-
-            foreach (string raw in profile.lists[CursesListKey])
-            {
-                if (string.IsNullOrEmpty(raw)) continue;
-                CurseInstance entry;
-                try
-                {
-                    entry = JsonConvert.DeserializeObject<CurseInstance>(raw);
-                }
-                catch (JsonException)
-                {
-                    continue;
-                }
-                if (entry == null || string.IsNullOrEmpty(entry.Curse)) continue;
-                result.Add(entry);
-            }
-            return result;
+            return ProfileListStore<CurseInstance>.LoadAll(profile, CursesListKey,
+                entry => !string.IsNullOrEmpty(entry.Curse));
         }
 
         /// <summary>
@@ -64,21 +46,7 @@ namespace FChatDicebot.Model
         /// </summary>
         public static void SaveAll(Profile profile, List<CurseInstance> entries)
         {
-            if (profile == null) return;
-            if (profile.lists == null) profile.lists = new Dictionary<string, List<string>>();
-
-            if (entries == null || entries.Count == 0)
-            {
-                profile.lists.Remove(CursesListKey);
-                return;
-            }
-
-            var encoded = new List<string>();
-            foreach (var entry in entries)
-            {
-                encoded.Add(JsonConvert.SerializeObject(entry));
-            }
-            profile.lists[CursesListKey] = encoded;
+            ProfileListStore<CurseInstance>.SaveAll(profile, CursesListKey, entries);
         }
     }
 }

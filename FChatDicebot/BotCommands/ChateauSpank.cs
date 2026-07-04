@@ -51,7 +51,8 @@ namespace FChatDicebot.BotCommands
             }
             else
             {
-                string message = initiatorProfile.displayName + " is about to give " + recipientProfile.displayName + " a spank. Do you !consent to that sting?";
+                var processor = InteractionProcessors.InteractionProcessorRegistry.GetProcessor("spank");
+                string message = processor.GetConsentWarning(initiatorProfile, recipientProfile, null);
 
                 Interaction spank = new Interaction();
                 spank.initiator = characterName;

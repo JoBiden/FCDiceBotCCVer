@@ -51,7 +51,8 @@ namespace FChatDicebot.BotCommands
             }
             else
             {
-                string message = initiatorProfile.displayName + " wants to rest their chest atop " + recipientProfile.displayName + ". Do you !consent to the temporary headwear?";
+                var processor = InteractionProcessors.InteractionProcessorRegistry.GetProcessor("boobhat");
+                string message = processor.GetConsentWarning(initiatorProfile, recipientProfile, null);
 
                 Interaction boobhat = new Interaction();
                 boobhat.initiator = characterName;

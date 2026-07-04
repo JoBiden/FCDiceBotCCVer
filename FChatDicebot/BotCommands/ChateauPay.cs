@@ -114,8 +114,15 @@ namespace FChatDicebot.BotCommands
                 if (valid)
                 {
                     //payment amount is guaranteed to be non zero here
-                    string message = paymentAmount > 0 ? initiatorProfile.displayName + " is going to pay " + recipientProfile.displayName + " " + paymentAmount + " " + currency + "! Do you !consent to this transaction?" :
-                        initiatorProfile.displayName + " is requesting " + recipientProfile.displayName + " pay them " + -paymentAmount + " " + currency + "! Do you !consent to this transaction?";
+                    // Delegate consent wording to the processor so it stays in one place
+                    // (previously hand-rolled here and had drifted from PaymentGiveProcessor/
+                    // PaymentReceiveProcessor's own GetConsentWarning). GetConsentWarning's
+                    // identifier slot only carries one string, so fold the magnitude into it
+                    // ("100 gold") rather than dropping the amount from the announcement.
+                    var processor = InteractionProcessors.InteractionProcessorRegistry.GetProcessor(
+                        paymentAmount > 0 ? "paymentGive" : "paymentReceive");
+                    string amountAndCurrency = Math.Abs(paymentAmount) + " " + currency;
+                    string message = processor.GetConsentWarning(initiatorProfile, recipientProfile, amountAndCurrency);
 
                     Interaction payInteraction = new Interaction();
                     payInteraction.initiator = characterName;

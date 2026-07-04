@@ -54,8 +54,8 @@ namespace FChatDicebot.BotCommands
             }
             if (valid)
             {
-                
-                string message = initiatorProfile.displayName + " is going to relieve themselves using " + recipientProfile.displayName + "'s " + Utils.BodypartToText(bodypart) + "! Do you !consent to being used like that?";
+                var processor = InteractionProcessors.InteractionProcessorRegistry.GetProcessor("golden");
+                string message = processor.GetConsentWarning(initiatorProfile, recipientProfile, bodypart);
 
                 Interaction objectifyInteraction = new Interaction();
                 objectifyInteraction.initiator = characterName;

@@ -54,7 +54,8 @@ namespace FChatDicebot.BotCommands
             }
             if (valid)
             {
-                string message = initiatorProfile.displayName + " is going to dress up " + recipientProfile.displayName + " in " + Utils.AttireToText(attire) + "! Do you !consent to the change of attire?";
+                var processor = InteractionProcessors.InteractionProcessorRegistry.GetProcessor("dressup");
+                string message = processor.GetConsentWarning(initiatorProfile, recipientProfile, attire);
 
                 Interaction objectifyInteraction = new Interaction();
                 objectifyInteraction.initiator = characterName;

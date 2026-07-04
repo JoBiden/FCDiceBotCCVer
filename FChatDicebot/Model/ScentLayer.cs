@@ -33,26 +33,7 @@ namespace FChatDicebot.Model
         /// </summary>
         public static List<ScentLayer> LoadAll(Profile profile)
         {
-            var result = new List<ScentLayer>();
-            if (profile?.lists == null) return result;
-            if (!profile.lists.ContainsKey(ScentsListKey)) return result;
-
-            foreach (string raw in profile.lists[ScentsListKey])
-            {
-                if (string.IsNullOrEmpty(raw)) continue;
-                ScentLayer layer;
-                try
-                {
-                    layer = JsonConvert.DeserializeObject<ScentLayer>(raw);
-                }
-                catch (JsonException)
-                {
-                    continue;
-                }
-                if (layer == null) continue;
-                result.Add(layer);
-            }
-            return result;
+            return ProfileListStore<ScentLayer>.LoadAll(profile, ScentsListKey);
         }
 
         /// <summary>
@@ -62,21 +43,7 @@ namespace FChatDicebot.Model
         /// </summary>
         public static void SaveAll(Profile profile, List<ScentLayer> layers)
         {
-            if (profile == null) return;
-            if (profile.lists == null) profile.lists = new Dictionary<string, List<string>>();
-
-            if (layers == null || layers.Count == 0)
-            {
-                profile.lists.Remove(ScentsListKey);
-                return;
-            }
-
-            var encoded = new List<string>();
-            foreach (var layer in layers)
-            {
-                encoded.Add(JsonConvert.SerializeObject(layer));
-            }
-            profile.lists[ScentsListKey] = encoded;
+            ProfileListStore<ScentLayer>.SaveAll(profile, ScentsListKey, layers);
         }
     }
 }

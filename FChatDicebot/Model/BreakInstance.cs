@@ -31,26 +31,7 @@ namespace FChatDicebot.Model
         /// </summary>
         public static List<BreakInstance> LoadAll(Profile profile)
         {
-            var result = new List<BreakInstance>();
-            if (profile?.lists == null) return result;
-            if (!profile.lists.ContainsKey(BreaksListKey)) return result;
-
-            foreach (string raw in profile.lists[BreaksListKey])
-            {
-                if (string.IsNullOrEmpty(raw)) continue;
-                BreakInstance entry;
-                try
-                {
-                    entry = JsonConvert.DeserializeObject<BreakInstance>(raw);
-                }
-                catch (JsonException)
-                {
-                    continue;
-                }
-                if (entry == null) continue;
-                result.Add(entry);
-            }
-            return result;
+            return ProfileListStore<BreakInstance>.LoadAll(profile, BreaksListKey);
         }
 
         /// <summary>
@@ -97,21 +78,7 @@ namespace FChatDicebot.Model
         /// </summary>
         public static void SaveAll(Profile profile, List<BreakInstance> entries)
         {
-            if (profile == null) return;
-            if (profile.lists == null) profile.lists = new Dictionary<string, List<string>>();
-
-            if (entries == null || entries.Count == 0)
-            {
-                profile.lists.Remove(BreaksListKey);
-                return;
-            }
-
-            var encoded = new List<string>();
-            foreach (var entry in entries)
-            {
-                encoded.Add(JsonConvert.SerializeObject(entry));
-            }
-            profile.lists[BreaksListKey] = encoded;
+            ProfileListStore<BreakInstance>.SaveAll(profile, BreaksListKey, entries);
         }
     }
 }
