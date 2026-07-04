@@ -21,17 +21,17 @@ namespace FChatDicebot
         public string CurrentApiKey = "";
         public const string FListChatUri = "wss://chat.f-list.net/chat2";
 #if DEBUG
-        public const bool _debug = true;
-        public const bool _testVersion = true;
+        public static readonly bool _debug = true;
+        public static readonly bool _testVersion = true;
 #else
-    public const bool _debug = false;
-    public const bool _testVersion = false;
+        public static readonly bool _debug = false;
+        public static readonly bool _testVersion = false;
 #endif
-        public const bool _returnAllRecievedChatMessagesFromChannels = false;
+        public static readonly bool _returnAllRecievedChatMessagesFromChannels = false;
         public const string Version = "1.62b";
         public RunMode RunMode = RunMode.FListOnly;// RunMode.FlistPlusDiscord; //RunMode.FlistPlusDiscord;// RunMode.FListOnly;// RunMode.DiscordOnly;
 
-        public const ChatRoom ChatRoom = FChatDicebot.ChatRoom.FChat; //currently little effect
+        public static readonly ChatRoom ChatRoom = FChatDicebot.ChatRoom.FChat; //currently little effect
 
         public const string FileFolder = "C:\\BotData\\DiceBot";
         public const string LogsFolder = "C:\\BotData\\DiceBot\\logs";

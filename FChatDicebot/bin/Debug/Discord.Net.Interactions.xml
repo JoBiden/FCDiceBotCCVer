@@ -780,7 +780,7 @@
                      [Command("cool")]
                      public Task CoolAsync()
                          => ReplyAsync("I'm cool for everyone.");
-
+            
                      [RequireNsfw]
                      [Command("too-cool")]
                      public Task TooCoolAsync()
@@ -4786,7 +4786,7 @@
                 Gets a string that indicates the autocompletion result.
             </summary>
             <returns>
-                <c>Success</c> if <see cref="P:Discord.Interactions.AutocompletionResult.IsSuccess"/> is <see langword="true" />; otherwise "<see cref="P:Discord.Interactions.AutocompletionResult.Error"/>:
+                <c>Success</c> if <see cref="P:Discord.Interactions.AutocompletionResult.IsSuccess"/> is <see langword="true" />; otherwise "<see cref="P:Discord.Interactions.AutocompletionResult.Error"/>: 
                 <see cref="P:Discord.Interactions.AutocompletionResult.ErrorReason"/>".
             </returns>
         </member>
@@ -4856,7 +4856,7 @@
                 Gets a string that indicates the execution result.
             </summary>
             <returns>
-                <c>Success</c> if <see cref="P:Discord.Interactions.ExecuteResult.IsSuccess"/> is <see langword="true"/>; otherwise "<see cref="P:Discord.Interactions.ExecuteResult.Error"/>:
+                <c>Success</c> if <see cref="P:Discord.Interactions.ExecuteResult.IsSuccess"/> is <see langword="true"/>; otherwise "<see cref="P:Discord.Interactions.ExecuteResult.Error"/>: 
                 <see cref="P:Discord.Interactions.ExecuteResult.ErrorReason"/>".
             </returns>
         </member>
@@ -4870,7 +4870,7 @@
                 Gets the error type that may have occurred during the operation.
             </summary>
             <returns>
-                A <see cref="T:Discord.Interactions.InteractionCommandError" /> indicating the type of error that may have occurred during the operation;
+                A <see cref="T:Discord.Interactions.InteractionCommandError" /> indicating the type of error that may have occurred during the operation; 
                 <see langword="null"/> if the operation was successful.
             </returns>
         </member>
@@ -4997,7 +4997,7 @@
                 Gets a string that indicates the runtime result.
             </summary>
             <returns>
-                <c>Success</c> if <see cref="P:Discord.Interactions.RuntimeResult.IsSuccess"/> is <see langword="true" />; otherwise "<see cref="P:Discord.Interactions.RuntimeResult.Error"/>:
+                <c>Success</c> if <see cref="P:Discord.Interactions.RuntimeResult.IsSuccess"/> is <see langword="true" />; otherwise "<see cref="P:Discord.Interactions.RuntimeResult.Error"/>: 
                 <see cref="P:Discord.Interactions.RuntimeResult.ErrorReason"/>".
             </returns>
         </member>

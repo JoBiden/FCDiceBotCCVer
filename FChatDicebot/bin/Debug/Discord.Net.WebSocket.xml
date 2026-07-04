@@ -2648,7 +2648,7 @@
         </member>
         <member name="P:Discord.WebSocket.SocketIntegrationInfo.ExpireGracePeriod">
             <summary>
-		Gets the grace period (in days) before expiring subscribers. <see landword="null"/> if the property was not mentioned in this audit log.
+            	Gets the grace period (in days) before expiring subscribers. <see landword="null"/> if the property was not mentioned in this audit log.
             </summary>
         </member>
         <member name="P:Discord.WebSocket.SocketIntegrationInfo.Scopes">
@@ -2830,7 +2830,7 @@
                 Gets a value that indicates whether the invite is a temporary one.
             </summary>
             <returns>
-                <see langword="true" /> if users accepting this invite will be removed from the guild when they log off,
+                <see langword="true" /> if users accepting this invite will be removed from the guild when they log off, 
                 <see langword="false" /> if not; <see langword="null" /> if not specified.
             </returns>
         </member>
@@ -2839,7 +2839,7 @@
                 Gets the ID of the channel this invite is linked to.
             </summary>
             <returns>
-                A <see cref="T:System.UInt64"/> representing the channel snowflake identifier that the invite points to;
+                A <see cref="T:System.UInt64"/> representing the channel snowflake identifier that the invite points to; 
                 <see langword="null" /> if not specified.
             </returns>
         </member>
@@ -3916,7 +3916,7 @@
             </summary>
             <returns>
                 A <see cref="T:System.UInt64"/> representing the snowflake identifier for the deleted thread.
-
+            
             </returns>
         </member>
         <member name="P:Discord.WebSocket.SocketThreadDeleteAuditLogData.ThreadName">
@@ -3925,7 +3925,7 @@
             </summary>
             <returns>
                 A string containing the name of the deleted thread.
-
+            
             </returns>
         </member>
         <member name="P:Discord.WebSocket.SocketThreadDeleteAuditLogData.ThreadType">
@@ -7433,7 +7433,7 @@
             </summary>
             <remarks>
                 <note type="important">
-                    The returned collection is an asynchronous enumerable object; one must call
+                    The returned collection is an asynchronous enumerable object; one must call 
                     <see cref="M:Discord.AsyncEnumerableExtensions.FlattenAsync``1(System.Collections.Generic.IAsyncEnumerable{System.Collections.Generic.IEnumerable{``0}})"/> to access the individual messages as a
                     collection.
                 </note>
@@ -7454,7 +7454,7 @@
             </summary>
             <remarks>
                 <note type="important">
-                    The returned collection is an asynchronous enumerable object; one must call
+                    The returned collection is an asynchronous enumerable object; one must call 
                     <see cref="M:Discord.AsyncEnumerableExtensions.FlattenAsync``1(System.Collections.Generic.IAsyncEnumerable{System.Collections.Generic.IEnumerable{``0}})"/> to access the individual users as a
                     collection.
                 </note>
@@ -7464,7 +7464,7 @@
                 </note>
                 This method will attempt to fetch the number of users specified under <paramref name="limit"/> around
                 the user <paramref name="fromUserId"/> depending on the <paramref name="dir"/>. The library will
-                attempt to split up the requests according to your <paramref name="limit"/> and
+                attempt to split up the requests according to your <paramref name="limit"/> and 
                 <see cref="F:Discord.DiscordConfig.MaxGuildEventUsersPerBatch"/>. In other words, should the user request 500 users,
                 and the <see cref="F:Discord.DiscordConfig.MaxGuildEventUsersPerBatch"/> constant is <c>100</c>, the request will
                 be split into 5 individual requests; thus returning 5 individual asynchronous responses, hence the need
@@ -7687,7 +7687,7 @@
         </member>
         <member name="M:Discord.WebSocket.SocketModal.DeferAsync(System.Boolean,Discord.RequestOptions)">
             <inheritdoc/>
-            <remarks>
+            <remarks>     
                 Acknowledges this interaction with the <see cref="F:Discord.InteractionResponseType.DeferredUpdateMessage"/> if the modal was created
                 in a response to a message component interaction, <see cref="F:Discord.InteractionResponseType.DeferredChannelMessageWithSource"/> otherwise.
             </remarks>
@@ -9936,10 +9936,10 @@
         </member>
         <member name="P:Discord.WebSocket.SocketVoiceServer.Token">
             <summary>
-		Gets the voice connection token.
+            	Gets the voice connection token.
             </summary>
             <returns>
-		A voice connection token.
+            	A voice connection token.
             </returns>
         </member>
         <member name="T:Discord.WebSocket.GatewayReconnectException">

@@ -16,9 +16,6 @@ namespace FChatDicebot.Model
         public string channel;
         public string guild;
 
-        //perhaps temp, feels odd.
-        DiceFunctions.GameSession MessageIdDestination;
-
         public DiscordSocketMessage()
         {
 

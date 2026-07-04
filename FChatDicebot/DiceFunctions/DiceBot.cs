@@ -1232,7 +1232,6 @@ namespace FChatDicebot.DiceFunctions
                                     
                                     string[] terms = Utils.LowercaseStrings(rawTerms);
 
-                                    string privateMessage = "";
                                     GeneratePotionResult potionResult = GeneratePotion(terms, settings, address, false); //don't send private message?
                                     //string rollResult = GeneratePotion(terms, settings, address, false, out privateMessage); //don't send private message?
                                     string rollResult = potionResult.OutputString;
@@ -1919,8 +1918,6 @@ namespace FChatDicebot.DiceFunctions
                 requireLewd = false;
             }
 
-            string outputMessage = "";
-            string privateMessage = "";
             if (!allowLewd && requireLewd)
             {
                 result.OutputString = "Error: AllowNsfw must be enabled in channel settings if you want to require a nsfw " + channelSettings.PotionCommandsAlias + ".";

@@ -747,13 +747,13 @@
             daily basis, which is in the order 10E-4, so we allow for extra margin here.
             This value is used to calculate early arrival for the long term queue timer
             that will reevaluate work for the short term queue.
-
+            
             Example:  -------------------------------...---------------------*-----$
                                                                              ^     ^
                                                                              |     |
                                                                            early  due
                                                                            0.999  1.0
-
+                                                                           
             We also make the gap between early and due at least LONGTOSHORT so we have
             enough time to transition work to short term and as a courtesy to the
             destination scheduler to manage its queues etc.
@@ -2592,7 +2592,7 @@
         </member>
         <member name="M:System.Reactive.Disposables.Disposable.Dispose(System.IDisposable@)">
             <summary>
-            Disposes <paramref name="fieldRef" />.
+            Disposes <paramref name="fieldRef" />. 
             </summary>
         </member>
         <member name="T:System.Reactive.Disposables.ICancelable">
@@ -10192,9 +10192,9 @@
         </member>
         <member name="M:System.Reactive.Linq.Observable.Switch``1(System.IObservable{System.IObservable{``0}})">
             <summary>
-            Transforms an observable sequence of observable sequences into an observable sequence
+            Transforms an observable sequence of observable sequences into an observable sequence 
             producing values only from the most recent observable sequence.
-            Each time a new inner observable sequence is received, unsubscribe from the
+            Each time a new inner observable sequence is received, unsubscribe from the 
             previous inner observable sequence.
             </summary>
             <typeparam name="TSource">The type of the elements in the source sequences.</typeparam>
@@ -10204,7 +10204,7 @@
         </member>
         <member name="M:System.Reactive.Linq.Observable.Switch``1(System.IObservable{System.Threading.Tasks.Task{``0}})">
             <summary>
-            Transforms an observable sequence of tasks into an observable sequence
+            Transforms an observable sequence of tasks into an observable sequence 
             producing values only from the most recent observable sequence.
             Each time a new task is received, the previous task's result is ignored.
             </summary>
@@ -20023,9 +20023,9 @@
         </member>
         <member name="M:System.Reactive.Linq.Qbservable.Switch``1(System.Reactive.Linq.IQbservable{System.IObservable{``0}})">
             <summary>
-            Transforms an observable sequence of observable sequences into an observable sequence
+            Transforms an observable sequence of observable sequences into an observable sequence 
             producing values only from the most recent observable sequence.
-            Each time a new inner observable sequence is received, unsubscribe from the
+            Each time a new inner observable sequence is received, unsubscribe from the 
             previous inner observable sequence.
             </summary>
             <typeparam name="TSource">The type of the elements in the source sequences.</typeparam>
@@ -20036,7 +20036,7 @@
         </member>
         <member name="M:System.Reactive.Linq.Qbservable.Switch``1(System.Reactive.Linq.IQbservable{System.Threading.Tasks.Task{``0}})">
             <summary>
-            Transforms an observable sequence of tasks into an observable sequence
+            Transforms an observable sequence of tasks into an observable sequence 
             producing values only from the most recent observable sequence.
             Each time a new task is received, the previous task's result is ignored.
             </summary>

@@ -83,6 +83,8 @@ namespace FChatDicebot.DiceFunctions
         public string RunGame(System.Random r, String executingPlayer, List<String> playerNames, DiceBot diceBot, BotMain botMain, GameSession session)
         {
             return "(game run cancelled - game unfinished)";
+            // The body below is intentionally disabled until the game is finished.
+#pragma warning disable 0162
             List<string> currentPlayerNames = new List<string>();
 
             foreach(string s in playerNames)
@@ -201,6 +203,7 @@ namespace FChatDicebot.DiceFunctions
             session.State = DiceFunctions.GameState.Finished;
 
             return outputString;
+#pragma warning restore 0162
         }
 
         public void Update(BotMain botMain, GameSession session, double currentTime)

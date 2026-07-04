@@ -68,7 +68,6 @@ namespace FChatDicebot.BotCommands
                 bool secret = false;
 
                 bool otherUserName = false;
-                bool nameNotFound = false;
 
                 string userNameUsed = address.character;
                 string tempUserName = "";
@@ -114,8 +113,6 @@ namespace FChatDicebot.BotCommands
                     }
                     else
                     {
-                        bool found = false;
-
                         foreach (string term in terms)
                         {
                             Match topMatch = Regex.Match(term, @"^top(\d+)$", RegexOptions.IgnoreCase);
@@ -123,7 +120,6 @@ namespace FChatDicebot.BotCommands
                             if (topMatch.Success)
                             {
                                 topCount = int.Parse(topMatch.Groups[1].Value);
-                                found = true;
                                 break;
                             }
 
@@ -132,13 +128,9 @@ namespace FChatDicebot.BotCommands
                             if (fromMatch.Success)
                             {
                                 startFromNumber = int.Parse(fromMatch.Groups[1].Value);
-                                found = true;
                                 break;
                             }
                         }
-
-                        if (!found)
-                            nameNotFound = true;
                     }
 
                     //otherUserName = true;
