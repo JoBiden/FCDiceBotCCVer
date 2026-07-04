@@ -308,6 +308,18 @@ namespace FChatDicebot.InteractionProcessors.Commitment
         /// </summary>
         internal static void ResolveGestationAndBrood(Identifier monsterIdentifier, Random random, out int gestationDays, out int broodSize, out bool isRareTwins)
         {
+            ResolveGestationAndBroodRange(monsterIdentifier, out gestationDays, out int broodMin, out int broodMax);
+            broodSize = RollBroodSize(broodMin, broodMax, random, out isRareTwins);
+        }
+
+        /// <summary>
+        /// Pure (no RNG) resolution of a monster's gestation days and brood size range —
+        /// the same category-default-then-override precedence as
+        /// <see cref="ResolveGestationAndBrood"/>, minus the brood-size roll. Used by
+        /// !whatis to display gestation info without actually rolling a pregnancy.
+        /// </summary>
+        internal static void ResolveGestationAndBroodRange(Identifier monsterIdentifier, out int gestationDays, out int broodSizeMin, out int broodSizeMax)
+        {
             CategoryDefault? categoryDefault = ResolveCategoryDefault(monsterIdentifier);
 
             int resolvedGestation = DefaultGestationDays;
@@ -338,7 +350,8 @@ namespace FChatDicebot.InteractionProcessors.Commitment
             }
 
             gestationDays = ClampGestation(resolvedGestation);
-            broodSize = RollBroodSize(resolvedBroodMin, resolvedBroodMax, random, out isRareTwins);
+            broodSizeMin = resolvedBroodMin > 0 ? resolvedBroodMin : DefaultBroodSize;
+            broodSizeMax = resolvedBroodMax >= broodSizeMin ? resolvedBroodMax : broodSizeMin;
         }
 
         internal static CategoryDefault? ResolveCategoryDefault(Identifier monsterIdentifier)

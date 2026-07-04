@@ -69,6 +69,14 @@ If no NPC system is installed (graceful degradation), `name=` and `description=`
 
 `!birth` is **not** a consent-flow interaction — it's a self-action. No `PendingCommand` involved.
 
+### DM status readout
+
+`!birth` no longer hard-requires a channel. Messaged privately, it doesn't birth anything — it lists every one of the caller's pregnancies with a status line ("Ready now!" or "ready in {time remaining}"), then reminds them that actually giving birth requires running `!birth` in a channel (the completion message is posted publicly). See `ChateauBirth.BuildGestationStatusMessage`.
+
+## `!whatis` gestation display
+
+`!identifier` / `!whatis` appends a `Gestation: {N} days. Brood size: {min}-{max}.` line for any identifier in the `monster` category, resolved via `BreedProcessor.ResolveGestationAndBroodRange` (the same category-default-then-override precedence as the real roll, minus the brood-size RNG — pure and side-effect-free so looking it up doesn't consume anything).
+
 ## Persistence
 
 On `Profile`:

@@ -20,6 +20,22 @@ namespace FChatDicebot.InteractionProcessors.Consequence
         {
         }
 
+        public override ValidationResult ValidateInteraction(string initiator, string recipient, string identifier)
+        {
+            var baseValidation = base.ValidateInteraction(initiator, recipient, identifier);
+            if (!baseValidation.IsValid)
+            {
+                return baseValidation;
+            }
+
+            if (string.IsNullOrEmpty(identifier))
+            {
+                return ValidationResult.Failure(ChateauInteractionHandler.typeNotFoundText("bodypart"));
+            }
+
+            return ValidationResult.Success();
+        }
+
         public override string ProcessInteraction(PendingCommand command)
         {
             string recipient = command.pendingInteraction.recipient;
@@ -46,7 +62,8 @@ namespace FChatDicebot.InteractionProcessors.Consequence
 
         public override string GetCompletionMessage(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
-            return initiatorProfile.displayName + " consumes " + recipientProfile.displayName + ", and they were never heard from again... or at least, it will be quite some time before they manage to escape, reform, or otherwise recover their strength.";
+            string bodypartText = Utils.BodypartToText(identifier);
+            return initiatorProfile.displayName + " consumes " + recipientProfile.displayName + " with their " + bodypartText + ", and they were never heard from again... or at least, it will be quite some time before they manage to escape, reform, or otherwise recover their strength.";
         }
 
         public override CooldownSpec CooldownRule => Cooldown;
@@ -60,10 +77,11 @@ namespace FChatDicebot.InteractionProcessors.Consequence
 
         public override string GetConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
+            string bodypartText = Utils.BodypartToText(identifier);
             string seriousness = ConsentWarningText.Block(
                 ConsentWarningText.FrequencyRecipient("consumed", Cooldown.PeriodDays));
 
-            return initiatorProfile.displayName + " is going to consume " + recipientProfile.displayName + "! " + seriousness
+            return initiatorProfile.displayName + " is going to consume " + recipientProfile.displayName + " with their " + bodypartText + "! " + seriousness
                 + " Do you !consent to being consumed, devoured, or otherwise feasted upon?";
         }
     }

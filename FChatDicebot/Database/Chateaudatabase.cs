@@ -802,21 +802,21 @@ namespace FChatDicebot.Database
             collection.UpdateOne(filter, update, options);
         }
 
-        public int GetSlotsJackpot(string key)
+        public Dictionary<string, int> GetSlotsJackpotAmounts(string machineKey)
         {
-            if (string.IsNullOrEmpty(key)) return -1;
+            if (string.IsNullOrEmpty(machineKey)) return new Dictionary<string, int>();
             var collection = Database.GetCollection<SlotsJackpot>("SlotsJackpots");
-            var filter = Builders<SlotsJackpot>.Filter.Eq(s => s.Id, key);
+            var filter = Builders<SlotsJackpot>.Filter.Eq(s => s.Id, machineKey);
             var doc = collection.Find(filter).FirstOrDefault();
-            return doc == null ? -1 : doc.Amount;
+            return doc?.Amounts ?? new Dictionary<string, int>();
         }
 
-        public void SetSlotsJackpot(string key, int amount)
+        public void SetSlotsJackpotAmounts(string machineKey, Dictionary<string, int> amounts)
         {
-            if (string.IsNullOrEmpty(key)) return;
+            if (string.IsNullOrEmpty(machineKey)) return;
             var collection = Database.GetCollection<SlotsJackpot>("SlotsJackpots");
-            var filter = Builders<SlotsJackpot>.Filter.Eq(s => s.Id, key);
-            var update = Builders<SlotsJackpot>.Update.Set(s => s.Amount, amount);
+            var filter = Builders<SlotsJackpot>.Filter.Eq(s => s.Id, machineKey);
+            var update = Builders<SlotsJackpot>.Update.Set(s => s.Amounts, amounts ?? new Dictionary<string, int>());
             collection.UpdateOne(filter, update, new UpdateOptions { IsUpsert = true });
         }
 

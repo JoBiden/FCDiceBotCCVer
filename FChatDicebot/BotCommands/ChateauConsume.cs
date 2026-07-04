@@ -20,12 +20,12 @@ namespace FChatDicebot.BotCommands
             Aliases = new string[] { };
             Category = "Commitment Interaction";
             ShortDescription = "Consume/devour another resident";
-            LongDescription = "Consume or devour someone in whole or in part, whether that's their soul, their body, or their mind. The recipient must !consent before surrendering to their fate. It's up to you whether this is a permanent fate or something that can be recovered from.";
-            Usage = "!consume [noparse][user]NameInUserTag[/user][/noparse]";
+            LongDescription = "Consume or devour someone in whole or in part, whether that's their soul, their body, or their mind. Specify which of your own bodyparts is doing the consuming. The recipient must !consent before surrendering to their fate. It's up to you whether this is a permanent fate or something that can be recovered from.";
+            Usage = "!consume [noparse][user]NameInUserTag[/user][/noparse] {bodypart}";
             RelatedCommands = new string[] { "mark", "bond"};
             CooldownDuration = "1 Day";
             CooldownAppliesTo = "recipient";
-            IdentifierCategory = null;
+            IdentifierCategory = "bodypart";
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
             RequireChannel = true;
@@ -37,7 +37,9 @@ namespace FChatDicebot.BotCommands
             string characterName = address.character;
             string channel = address.channel;
             string timerString = "consume";
+            string identifierType = "bodypart";
             string recipient = commandController.GetUserNameFromCommandTerms(rawTerms);
+            string bodypart = commandController.GetIdentifierFromCommandTerms(rawTerms, identifierType);
             Profile recipientProfile = MonDB.getProfile(recipient);
             Profile initiatorProfile = MonDB.getProfile(characterName);
             Boolean valid = true;
@@ -45,8 +47,19 @@ namespace FChatDicebot.BotCommands
             {
                 bot.SendPrivateMessage(ChateauInteractionHandler.notFoundText(recipient), characterName);
                 valid = false;
-            } 
-            else if (recipientProfile.timers.ContainsKey(timerString)) { 
+            }
+            else if (bodypart == null)
+            {
+                string message = ChateauInteractionHandler.typeNotFoundText(identifierType);
+                List<Identifier> bodypartIdentifiers = MonDB.getIdentifiers(identifierType);
+                if (bodypartIdentifiers != null && bodypartIdentifiers.Count > 0)
+                {
+                    message += "\n\nAvailable bodyparts: " + Utils.sortedListDisplayText(bodypartIdentifiers.Select(i => i.type).ToList());
+                }
+                bot.SendPrivateMessage(message, characterName);
+                valid = false;
+            }
+            else if (recipientProfile.timers.ContainsKey(timerString)) {
 
                 if (recipientProfile.timers[timerString].timerEnd.CompareTo(DateTime.UtcNow) > 0) //recipient was plantified too recently
                 {
@@ -60,11 +73,12 @@ namespace FChatDicebot.BotCommands
             {
                 // Delegate consent wording to the processor so it stays in one place.
                 var processor = InteractionProcessors.InteractionProcessorRegistry.GetProcessor("consume");
-                string message = processor.GetConsentWarning(initiatorProfile, recipientProfile, null);
+                string message = processor.GetConsentWarning(initiatorProfile, recipientProfile, bodypart);
 
                 Interaction objectifyInteraction = new Interaction();
                 objectifyInteraction.initiator = characterName;
                 objectifyInteraction.recipient = recipient;
+                objectifyInteraction.identifier = bodypart;
                 objectifyInteraction.type = timerString;
                 objectifyInteraction.investmentLevel = "commitment";
                 objectifyInteraction.interactionTime = DateTime.UtcNow;

@@ -488,12 +488,12 @@ namespace FChatDicebot.DiceFunctions
             return RawSpin + " " + winString + rewardString;
         }
 
-        public string GetJackpotString()
+        public string GetJackpotString(string currency)
         {
             if (WonJackpot || NewJackpotAmount == 0)
                 return "";
             else
-                return "[sub]The jackpot ticks up to $" + NewJackpotAmount + ".[/sub]";
+                return "[sub]The jackpot ticks up to " + NewJackpotAmount + " " + currency + ".[/sub]";
         }
     }
 }

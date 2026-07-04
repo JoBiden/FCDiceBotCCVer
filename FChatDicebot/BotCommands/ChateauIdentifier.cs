@@ -7,6 +7,7 @@ using FChatDicebot.BotCommands.Base;
 using FChatDicebot.SavedData;
 using Newtonsoft.Json;
 using FChatDicebot.DiceFunctions;
+using FChatDicebot.InteractionProcessors.Commitment;
 using FChatDicebot.Model;
 using SharpCompress;
 
@@ -46,6 +47,14 @@ namespace FChatDicebot.BotCommands
                 if (identifier != null)
                 {
                     returnText = "[b]" + identifier.type + "[/b]\n" + identifier.description;
+
+                    if (identifier.categories != null && identifier.categories.Contains("monster", StringComparer.OrdinalIgnoreCase))
+                    {
+                        BreedProcessor.ResolveGestationAndBroodRange(identifier, out int gestationDays, out int broodSizeMin, out int broodSizeMax);
+                        string broodText = broodSizeMin == broodSizeMax ? broodSizeMin.ToString() : broodSizeMin + "-" + broodSizeMax;
+                        string dayWord = gestationDays == 1 ? "day" : "days";
+                        returnText += "\n[i]Gestation: " + gestationDays + " " + dayWord + ". Brood size: " + broodText + ".[/i]";
+                    }
                 }
                 else
                 {

@@ -112,15 +112,19 @@ namespace FChatDicebot.Model
     }
 
     /// <summary>
-    /// Persistent per-(machine, currency) slots jackpot. Grows by each spin's contribution and
-    /// resets to the machine's StartingJackpotAmount when won. Stored outside Profile so it never
-    /// counts as resident wealth in !economics / !populations. Id is "{machineName}|{currency}".
+    /// Persistent per-machine slots jackpot. Amounts is a per-currency running total (never
+    /// converted between currencies) — each currency grows independently from spins made in
+    /// that currency, but a jackpot win sweeps every currency's total in this machine into the
+    /// payout (see DiceBot.SpinSlotsCurrency), then the whole dictionary resets so every
+    /// currency floors back to the machine's StartingJackpotAmount on its next spin. Stored
+    /// outside Profile so it never counts as resident wealth in !economics / !populations.
+    /// Id is the machine name.
     /// </summary>
     public class SlotsJackpot
     {
         [BsonId]
         public string Id { get; set; }
-        public int Amount { get; set; }
+        public Dictionary<string, int> Amounts { get; set; } = new Dictionary<string, int>();
     }
 
     public class Title

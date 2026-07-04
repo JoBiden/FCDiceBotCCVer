@@ -16,7 +16,7 @@ namespace FChatDicebot.BotCommands
             Aliases = new string[] { };
             Category = "Commitment Interaction";
             ShortDescription = "Birth a pregnancy that has finished gestating";
-            LongDescription = "Birth your young once they have finished gestating. If multiple pregnancies are ready to be born, you will be messaged a numbered list of the pregnancies, and can choose which pregnancy to birth, or '!birth all' to birth every pregnancy you are able to.";
+            LongDescription = "Birth your young once they have finished gestating. If multiple pregnancies are ready to be born, you will be messaged a numbered list of the pregnancies, and can choose which pregnancy to birth, or '!birth all' to birth every pregnancy you are able to. Message this command privately to check on your pregnancies' remaining gestation time without birthing anything — actually giving birth requires running !birth in a channel.";
             Usage = "!birth\nor\n!birth {index}\n";
             RelatedCommands = new string[] { "breed", "dossier" };
             CooldownDuration = null;
@@ -24,7 +24,7 @@ namespace FChatDicebot.BotCommands
             IdentifierCategory = null;
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
-            RequireChannel = true;
+            RequireChannel = false;
             LockCategory = CommandLockCategory.NONE;
         }
 
@@ -32,6 +32,13 @@ namespace FChatDicebot.BotCommands
         {
             string characterName = address.character;
             string channel = address.channel;
+
+            if (!commandController.MessageCameFromChannel(address))
+            {
+                bot.SendPrivateMessage(BuildGestationStatusMessage(MonDB.GetDatabase(), characterName), characterName);
+                return;
+            }
+
             BirthResult result = ExecuteBirth(MonDB.GetDatabase(), characterName, rawTerms);
             if (!string.IsNullOrEmpty(result.PrivateMessage))
             {
@@ -41,6 +48,38 @@ namespace FChatDicebot.BotCommands
             {
                 bot.SendMessageInChannel(result.ChannelMessage, channel);
             }
+        }
+
+        /// <summary>
+        /// DM-only status readout: lists every pregnancy with its remaining gestation time
+        /// (or "Ready now!"), without birthing anything. Actually giving birth requires
+        /// running !birth in a channel, since the completion message is posted publicly.
+        /// </summary>
+        public static string BuildGestationStatusMessage(IChateauDatabase database, string characterName)
+        {
+            Profile carrier = database.GetProfile(characterName);
+            if (carrier == null)
+            {
+                return ChateauInteractionHandler.notFoundText(characterName);
+            }
+
+            List<Pregnancy> pregnancies = carrier.pregnancies ?? new List<Pregnancy>();
+            if (pregnancies.Count == 0)
+            {
+                return "You aren't pregnant! Ask someone to !breed you first.";
+            }
+
+            DateTime now = DateTime.UtcNow;
+            string msg = "Here's the status of your pregnancies. Once one is ready, use !birth in a channel to actually give birth:";
+            foreach (var pregnancy in pregnancies.OrderBy(p => p.ReadyAt))
+            {
+                string status = pregnancy.ReadyAt <= now
+                    ? "Ready now!"
+                    : "ready in " + Utils.GetTimeSpanPrint(pregnancy.ReadyAt - now);
+                string broodPart = pregnancy.BroodSize > 1 ? " (brood of " + pregnancy.BroodSize + ")" : "";
+                msg += "\n[b]" + pregnancy.MonsterType + "[/b] sired by [user]" + pregnancy.Initiator + "[/user]" + broodPart + ": " + status;
+            }
+            return msg;
         }
 
         public class BirthResult
