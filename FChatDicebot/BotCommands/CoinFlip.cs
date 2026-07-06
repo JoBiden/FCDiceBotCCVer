@@ -15,6 +15,15 @@ namespace FChatDicebot.BotCommands
         public CoinFlip()
         {
             Name = "coinflip";
+            Aliases = new string[] { };
+            Category = "Dicebot";
+            ShortDescription = "Flip a coin";
+            LongDescription = "Flips a coin and reports heads or tails.";
+            Usage = "!coinflip";
+            RelatedCommands = new string[] { "roll" };
+            CooldownDuration = null;
+            CooldownAppliesTo = null;
+            IdentifierCategory = null;
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
             RequireChannel = false;

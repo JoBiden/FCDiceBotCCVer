@@ -16,6 +16,15 @@ namespace FChatDicebot.BotCommands
         public CancelGame()
         {
             Name = "cancelgame";
+            Aliases = new string[] { };
+            Category = "Dicebot";
+            ShortDescription = "Cancel the active game session";
+            LongDescription = "Cancels the game session for the given game type (or the only active session, if just one exists). Any committed currency stakes are refunded to their players.";
+            Usage = "!cancelgame\nor\n!cancelgame {game name}";
+            RelatedCommands = new string[] { "startgame", "joingame", "leavegame" };
+            CooldownDuration = null;
+            CooldownAppliesTo = null;
+            IdentifierCategory = null;
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
             RequireChannel = true;

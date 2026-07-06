@@ -14,6 +14,15 @@ namespace FChatDicebot.BotCommands
         public TipDie()
         {
             Name = "tipdie";
+            Aliases = new string[] { };
+            Category = "Dicebot";
+            ShortDescription = "Adjust one die from the last roll";
+            LongDescription = "Changes one die's result from the most recent roll, useful for correcting or narratively 'tipping' a die after the fact. Without arguments, tips the lowest-value die up to the die's maximum face.";
+            Usage = "!tipdie\nor\n!tipdie {from}>{to}";
+            RelatedCommands = new string[] { "roll", "showlastroll" };
+            CooldownDuration = null;
+            CooldownAppliesTo = null;
+            IdentifierCategory = null;
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
             RequireChannel = false;

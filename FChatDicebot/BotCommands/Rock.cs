@@ -14,6 +14,15 @@ namespace FChatDicebot.BotCommands
         public Rock()
         {
             Name = "rock";
+            Aliases = new string[] { };
+            Category = "Dicebot";
+            ShortDescription = "Play rock in an active Rock-Paper-Scissors game";
+            LongDescription = "Submits rock as your move in the Rock-Paper-Scissors session you've joined in this channel via !joingame. (Lizard and Spock only apply if the session was started as the five-way variant.)";
+            Usage = "!rock";
+            RelatedCommands = new string[] { "paper", "scissors", "lizard", "spock", "joingame" };
+            CooldownDuration = null;
+            CooldownAppliesTo = null;
+            IdentifierCategory = null;
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
             RequireChannel = false;

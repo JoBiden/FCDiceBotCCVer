@@ -16,6 +16,15 @@ namespace FChatDicebot.BotCommands
         public JoinGame()
         {
             Name = "joingame";
+            Aliases = new string[] { };
+            Category = "Dicebot";
+            ShortDescription = "Join or start a dice game";
+            LongDescription = "Join the current game session for a game type, or start a new one if none exists. Optionally stake an amount of currency - the first player to name a stake opens it, later players either match it exactly or propose a different stake (which the opener must !accept). Joining with no stake at all makes it a friendly, no-money game.";
+            Usage = "!joingame {game name}\nor\n!joingame {game name} {amount} {currency}";
+            RelatedCommands = new string[] { "startgame", "leavegame", "gamestatus", "showgames", "cancelgame" };
+            CooldownDuration = null;
+            CooldownAppliesTo = null;
+            IdentifierCategory = null;
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
             RequireChannel = true;

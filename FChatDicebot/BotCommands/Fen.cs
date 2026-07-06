@@ -20,6 +20,15 @@ namespace FChatDicebot.BotCommands
         public Fen()
         {
             Name = "fen";
+            Aliases = new string[] { };
+            Category = "Dicebot";
+            ShortDescription = "Display a chess board from FEN notation";
+            LongDescription = "Renders a chess board position from FEN (Forsyth-Edwards Notation) text. 'starting' or 'default' shows the standard opening position. Add 'setdescription' to set this channel's description to the rendered board (requires the bot to be a channel admin, or you to be a bot admin).";
+            Usage = "!fen {FEN string}\nor\n!fen starting\nor\n!fen {FEN string} setdescription";
+            RelatedCommands = new string[] { "joingame", "gamecommand" };
+            CooldownDuration = null;
+            CooldownAppliesTo = null;
+            IdentifierCategory = null;
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
             RequireChannel = false;

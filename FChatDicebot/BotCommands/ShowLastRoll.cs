@@ -14,6 +14,15 @@ namespace FChatDicebot.BotCommands
         public ShowLastRoll()
         {
             Name = "showlastroll";
+            Aliases = new string[] { };
+            Category = "Dicebot";
+            ShortDescription = "Show the last dice roll made.";
+            LongDescription = "Redisplays the most recent dice roll recorded. Add 'sort' to show the individual dice sorted by value.";
+            Usage = "!showlastroll\nor\n!showlastroll sort";
+            RelatedCommands = new string[] { "roll", "tipdie" };
+            CooldownDuration = null;
+            CooldownAppliesTo = null;
+            IdentifierCategory = null;
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
             RequireChannel = true;

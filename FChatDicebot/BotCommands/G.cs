@@ -16,6 +16,15 @@ namespace FChatDicebot.BotCommands
         public G()
         {
             Name = "g";
+            Aliases = new string[] { };
+            Category = "Dicebot";
+            ShortDescription = "Alias for !gamecommand";
+            LongDescription = "Shorthand for !gamecommand. See !help gamecommand for full details.";
+            Usage = "!g {game name} {command}";
+            RelatedCommands = new string[] { "gamecommand" };
+            CooldownDuration = null;
+            CooldownAppliesTo = null;
+            IdentifierCategory = null;
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
             RequireChannel = true;
