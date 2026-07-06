@@ -157,6 +157,29 @@ namespace FChatDicebot.BotCommands
                 "!odorize",
                 "!break"
             };
+
+            List<string> dicebotCommands = new List<string>()
+            {
+                "!joingame",
+                "!startgame",
+                "!leavegame",
+                "!cancelgame",
+                "!gamestatus",
+                "!gamecommand [sub]!gc, !g[/sub]",
+                "!showgames",
+                "!roll",
+                "!rolltable",
+                "!showlastroll",
+                "!coinflip",
+                "!fitd",
+                "!tipdie",
+                "!rock",
+                "!paper",
+                "!scissors",
+                "!lizard",
+                "!spock",
+                "!fen"
+            };
             string messageText = "These are all of the commands native to the [user]Chateau Contract[/user] bot, as of [b]June 29th 2026.[/b] For detailed description of their use, please see the [user]Chateau Contract[/user] profile or use !help [command] Commands in subtext are alternate names of the same command - all documentation will be for the first listed names.\n\n" +
                     "[u]Does not require channel[/u]\n" +
                     Utils.sortedListDisplayText(generalCommands) + "\n" +
@@ -167,11 +190,12 @@ namespace FChatDicebot.BotCommands
                     "[i]Involved Interactions:[/i] " + Utils.sortedListDisplayText(involvedCommands) + "\n" +
                     "[i]Commitment Interactions:[/i] " + Utils.sortedListDisplayText(commitmentCommands) + "\n" +
                     "[i]Consequence Interactions:[/i] " + Utils.sortedListDisplayText(consequenceCommands) + "\n" +
+                    "[i]Dice Bot Commands:[/i] " + Utils.sortedListDisplayText(dicebotCommands) + "\n" +
 
                     "\n[b]Channel Op only Commands:[/b]\n" +
                     "None yet :)\n" +
 
-                    "\nFor full information on dice commands, see the profile [user]Dice Bot[/user]. [color=yellow]The [user]Dice Bot[/user] profile is maintained for the core [user]Dice Bot[/user] and not all of the commands described may be present in the Chateau Contract bot.[/color]\n";
+                    "\nAny dicebot commands not listed here have yet to be fully migrated, or were intentionally cut. They might work, but use at your own risk!\n";
 
             if(Utils.IsCharacterAdmin(bot.AccountSettings.AdminCharacters, command.characterName))
             {
@@ -224,6 +248,9 @@ namespace FChatDicebot.BotCommands
                         break;
                     case "Recovery":
                         sb.AppendLine("[color=blue]Recovery[/color]");
+                        break;
+                    case "Dicebot":
+                        sb.AppendLine("[color=cyan]Dicebot[/color]");
                         break;
                     case "General":
                         sb.AppendLine("General");

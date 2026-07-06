@@ -15,6 +15,15 @@ namespace FChatDicebot.BotCommands
         public RollTable()
         {
             Name = "rolltable";
+            Aliases = new string[] { };
+            Category = "Dicebot";
+            ShortDescription = "Roll on a saved random table";
+            LongDescription = "Rolls against a saved table (a weighted or listed set of possible results) and reports what came up. Some tables reference others and roll them automatically as a secondary result unless 'nosecondary' is given; 'nolabel' hides the table's name in the output.";
+            Usage = "!rolltable {table name}\nor\n!rolltable {table name} nolabel\nor\n!rolltable {table name} nosecondary";
+            RelatedCommands = new string[] { "roll", "showlastroll" };
+            CooldownDuration = null;
+            CooldownAppliesTo = null;
+            IdentifierCategory = null;
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
             RequireChannel = true;

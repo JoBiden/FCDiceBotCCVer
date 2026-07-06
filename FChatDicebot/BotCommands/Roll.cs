@@ -13,6 +13,15 @@ namespace FChatDicebot.BotCommands
         public Roll()
         {
             Name = "roll";
+            Aliases = new string[] { };
+            Category = "Dicebot";
+            ShortDescription = "Roll dice using standard dice notation";
+            LongDescription = "Rolls one or more dice and reports the result. Accepts standard notation such as '2d6', '1d20+5', or multiple dice groups at once.";
+            Usage = "!roll {dice notation}";
+            RelatedCommands = new string[] { "rolltable", "showlastroll", "tipdie" };
+            CooldownDuration = null;
+            CooldownAppliesTo = null;
+            IdentifierCategory = null;
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
             RequireChannel = false;

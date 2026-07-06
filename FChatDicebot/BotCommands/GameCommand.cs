@@ -16,6 +16,15 @@ namespace FChatDicebot.BotCommands
         public GameCommand()
         {
             Name = "gamecommand";
+            Aliases = new string[] { "gc", "g" };
+            Category = "Dicebot";
+            ShortDescription = "Send a game-specific command to the active game session";
+            LongDescription = "Passes a command through to whichever game is currently active in this channel (for example, choosing a card or an action specific to that game). What's valid depends on the game in progress, see that game's own instructions.";
+            Usage = "!gamecommand {game name} {command}\nor\n!gc {game name} {command}\nor\n!g {game name} {command}";
+            RelatedCommands = new string[] { "joingame", "startgame", "gamestatus" };
+            CooldownDuration = null;
+            CooldownAppliesTo = null;
+            IdentifierCategory = null;
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
             RequireChannel = true;

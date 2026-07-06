@@ -16,6 +16,15 @@ namespace FChatDicebot.BotCommands
         public StartGame()
         {
             Name = "startgame";
+            Aliases = new string[] { };
+            Category = "Dicebot";
+            ShortDescription = "Start the current game session once enough players have joined";
+            LongDescription = "Starts the game session for the given game type once the minimum player count has been met. Add 'keepsession' to keep the session open for another round after this one finishes, or 'endsession' to close it out.";
+            Usage = "!startgame {game name}\nor\n!startgame {game name} keepsession\nor\n!startgame {game name} endsession";
+            RelatedCommands = new string[] { "joingame", "gamestatus", "gamecommand" };
+            CooldownDuration = null;
+            CooldownAppliesTo = null;
+            IdentifierCategory = null;
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
             RequireChannel = true;

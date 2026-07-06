@@ -15,8 +15,17 @@ namespace FChatDicebot.BotCommands
         public ShowGames()
         {
             Name = "showgames";
+            Aliases = new string[] { };
+            Category = "Dicebot";
+            ShortDescription = "List every game type available with !joingame";
+            LongDescription = "Shows the full list of dice games currently supported, by name, for use with !joingame.";
+            Usage = "!showgames";
+            RelatedCommands = new string[] { "joingame" };
+            CooldownDuration = null;
+            CooldownAppliesTo = null;
+            IdentifierCategory = null;
             RequireBotAdmin = false;
-            RequireChannelAdmin = true;
+            RequireChannelAdmin = false;
             RequireChannel = false;
             LockCategory = CommandLockCategory.SavedTables;
         }

@@ -16,6 +16,15 @@ namespace FChatDicebot.BotCommands
         public GameStatus()
         {
             Name = "gamestatus";
+            Aliases = new string[] { };
+            Category = "Dicebot";
+            ShortDescription = "Check the status of an active game session";
+            LongDescription = "Shows the current state of the named game's session in this channel. Includes players joined, whose turn it is, and any countdown remaining before it can start.";
+            Usage = "!gamestatus {game name}";
+            RelatedCommands = new string[] { "joingame", "startgame", "gamecommand" };
+            CooldownDuration = null;
+            CooldownAppliesTo = null;
+            IdentifierCategory = null;
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
             RequireChannel = true;
