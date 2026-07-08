@@ -16,6 +16,14 @@ namespace FChatDicebot.BotCommands.Support
     /// rewards to existing profile stores (currency / title / training / corruption / purity /
     /// curse).
     ///
+    /// Activity gating uses <b>arm-and-wait</b>: a fire that comes due while the room is quiet is
+    /// NOT discarded (the original "skip + reschedule 6-8h" starved low-traffic channels that go
+    /// silent for many hours — an event could go weeks without ever firing). Instead the channel
+    /// is "armed" and holds its due slot until the next human message, then fires a small random
+    /// delay (0..<see cref="WakeDelayMaxMinutes"/>m) after that wake so it doesn't land on the
+    /// exact first message. Only after a fire actually lands does the 6-8h cadence restart. A
+    /// room that was already active when the fire came due fires immediately (there was no wake).
+    ///
     /// Deliberately lives outside <c>FChatDicebot.BotCommands</c> so the reflection-based command
     /// loader in <c>BotCommandController</c> doesn't try to <c>Activator.CreateInstance</c> it.
     ///
@@ -41,6 +49,12 @@ namespace FChatDicebot.BotCommands.Support
         public const double IntervalMaxHours = 8.0;
         // Activity gate: only fire into a channel that saw a human message this recently.
         public const int ActivityWindowMinutes = 15;
+        // Arm-and-wait: when a fire comes due in a quiet room we don't discard the slot — we
+        // "arm" the channel and fire shortly after the next human message instead. The post-wake
+        // delay is a small random hold so the event doesn't land on the exact first message.
+        // MUST stay strictly below ActivityWindowMinutes: a lone wake message has to still count
+        // as "recent activity" when the delay elapses, or the fire would re-arm and never land.
+        public const int WakeDelayMaxMinutes = 10;
         // Fallback response window when an event leaves responseWindowSeconds at 0.
         public const int DefaultResponseWindowSeconds = 60;
 
@@ -65,11 +79,19 @@ namespace FChatDicebot.BotCommands.Support
         private readonly Func<string, Profile> _getProfile;
         private readonly Action<string, Profile> _setProfile;
         private readonly Action<string, string, int> _changeCurrency;
+        // Optional diagnostic sink (prod: Console + Utils.AddToLog; tests: capture list; may be
+        // null). Used only for operator-facing scheduler diagnostics (quiet-arm, no-events) —
+        // never for player-facing channel text.
+        private readonly Action<string> _log;
 
         // Per-channel state (keys are lowercased channel ids).
         private readonly Dictionary<string, ActiveRandomEvent> _active = new Dictionary<string, ActiveRandomEvent>();
         private readonly Dictionary<string, DateTime> _nextFire = new Dictionary<string, DateTime>();
         private readonly Dictionary<string, DateTime> _lastActivity = new Dictionary<string, DateTime>();
+        // Channels whose fire came due while quiet and are now holding until the next message
+        // (arm-and-wait). A channel leaves this set when it wakes (fire scheduled just past the
+        // wake delay) — it never leaves on its own, so a room that stays silent stays armed.
+        private readonly HashSet<string> _armed = new HashSet<string>();
 
         /// <param name="changeCurrency">Atomic (user, currencyKey, +amount) credit — prod wires
         /// MonDB.changeCurrency ($inc), tests an in-memory dictionary. Passing null falls back to
@@ -77,12 +99,13 @@ namespace FChatDicebot.BotCommands.Support
         /// save (the pre-B12-2 behavior, kept only as a degraded mode for a caller that has no
         /// atomic path).</param>
         public RandomEventEngine(Func<string, Profile> getProfile, Action<string, Profile> setProfile,
-            Action<string, string, int> changeCurrency, Random rng = null)
+            Action<string, string, int> changeCurrency, Random rng = null, Action<string> log = null)
         {
             _getProfile = getProfile;
             _setProfile = setProfile;
             _changeCurrency = changeCurrency;
             _rng = rng ?? new Random();
+            _log = log;
         }
 
         // ============================ Public entry points ============================
@@ -167,23 +190,42 @@ namespace FChatDicebot.BotCommands.Support
                     }
                 }
 
-                // Fire a new event if one is due, none is active, and the room is awake. The next
-                // fire is scheduled at fire time, so events stay 6-8h apart regardless of how long
-                // resolution takes.
+                // Fire a new event if one is due and none is active. The 6-8h cadence restarts
+                // only when a fire actually lands, so resolution time and quiet stretches don't
+                // shorten the gap between events.
                 if (!_active.ContainsKey(key) && IsFireDueLocked(key, utcNow))
                 {
                     if (IsChannelActiveLocked(key, utcNow))
                     {
-                        List<RandomEvent> events = getEvents != null ? getEvents() : null;
-                        ActiveRandomEvent fired = OpenEventLocked(key, channel, events, utcNow);
-                        RescheduleLocked(key, utcNow);
-                        if (fired != null)
-                            output.Add(fired.AnnounceText);
+                        if (_armed.Contains(key))
+                        {
+                            // The room just woke while we were holding this due slot. Push the
+                            // fire a small random delay out (< the activity window) so it doesn't
+                            // land on the exact first message; the next tick after the delay fires
+                            // it normally. Don't load events or post yet.
+                            _armed.Remove(key);
+                            _nextFire[key] = utcNow.Add(RandomWakeDelay());
+                        }
+                        else
+                        {
+                            // Room was already active at maturity (or the post-wake delay has just
+                            // elapsed): fire now.
+                            List<RandomEvent> events = getEvents != null ? getEvents() : null;
+                            ActiveRandomEvent fired = OpenEventLocked(key, channel, events, utcNow);
+                            RescheduleLocked(key, utcNow);
+                            if (fired != null)
+                                output.Add(fired.AnnounceText);
+                            else
+                                Log("[random-events] " + channel + ": a fire came due in an active channel but no events are authored (RandomEvents collection is empty); nothing posted, rescheduled for the next interval.");
+                        }
                     }
                     else
                     {
-                        // Due, but the room is quiet: skip and reschedule (don't spam a dead room).
-                        RescheduleLocked(key, utcNow);
+                        // Due, but the room is quiet: arm and hold the slot for the next human
+                        // message rather than discarding it for another 6-8h (which starved
+                        // low-traffic channels). Logged once, on the transition into armed.
+                        if (_armed.Add(key))
+                            Log("[random-events] " + channel + ": a fire is due but the channel has seen no activity in over " + ActivityWindowMinutes + "m; armed and holding until someone next posts.");
                     }
                 }
             }
@@ -404,6 +446,14 @@ namespace FChatDicebot.BotCommands.Support
         {
             double hours = IntervalMinHours + _rng.NextDouble() * (IntervalMaxHours - IntervalMinHours);
             return TimeSpan.FromHours(hours);
+        }
+
+        // Post-wake hold before an armed channel actually fires: 0..WakeDelayMaxMinutes, kept
+        // below the activity window so a single wake message still counts as "active" when it
+        // elapses (see WakeDelayMaxMinutes).
+        private TimeSpan RandomWakeDelay()
+        {
+            return TimeSpan.FromMinutes(_rng.NextDouble() * WakeDelayMaxMinutes);
         }
 
         // ============================ Pure helpers (unit-tested directly) ============================
@@ -631,6 +681,12 @@ namespace FChatDicebot.BotCommands.Support
         private static string Key(string channel)
         {
             return (channel ?? "").ToLowerInvariant();
+        }
+
+        // Operator-facing diagnostic only (never player-facing). No-op when no sink was injected.
+        private void Log(string message)
+        {
+            if (_log != null) _log(message);
         }
 
         // ============================ Framework user-facing strings (owner review) ============================

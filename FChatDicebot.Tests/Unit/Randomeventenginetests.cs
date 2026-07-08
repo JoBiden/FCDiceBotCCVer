@@ -22,7 +22,7 @@ namespace FChatDicebot.Tests.Unit
         private int _setProfileCalls;
         private int _changeCurrencyCalls;
 
-        private RandomEventEngine NewEngine(int seed = 12345)
+        private RandomEventEngine NewEngine(int seed = 12345, Action<string> log = null)
         {
             return new RandomEventEngine(
                 userName => _profiles.TryGetValue(userName, out var p) ? p : null,
@@ -37,7 +37,8 @@ namespace FChatDicebot.Tests.Unit
                     if (p.currencies.ContainsKey(key)) p.currencies[key] += amount;
                     else p.currencies[key] = amount;
                 },
-                new Random(seed));
+                new Random(seed),
+                log);
         }
 
         private Profile AddProfile(string userName, string displayName = null)
@@ -521,17 +522,82 @@ namespace FChatDicebot.Tests.Unit
         }
 
         [Fact]
-        public void Scheduler_DueFireIntoQuietChannel_SkipsAndDoesNotPost()
+        public void Scheduler_DueFireIntoQuietChannel_ArmsWithoutPosting()
         {
             var engine = NewEngine();
             var events = new List<RandomEvent> { EventWith(RandomEventEngine.ResponseTypeNone, RandomEventEngine.WinnerRuleAllInWindow) };
             DateTime t0 = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
             engine.Tick(Channel, t0, () => events); // seed
-            // 9h later with NO recent activity → due but quiet → skip, no post, no active event.
+            // 9h later with NO recent activity → due but quiet → arm, no post, no active event.
             var output = engine.Tick(Channel, t0.AddHours(9), () => events);
             Assert.Empty(output);
             Assert.False(engine.HasActiveEvent(Channel));
+
+            // Still quiet many hours later → the slot is held, not lost: still nothing posted and
+            // still no active event (the pre-fix behavior would have discarded and rescheduled).
+            var later = engine.Tick(Channel, t0.AddHours(20), () => events);
+            Assert.Empty(later);
+            Assert.False(engine.HasActiveEvent(Channel));
+        }
+
+        [Fact]
+        public void Scheduler_QuietThenWakes_FiresAfterWakeDelay()
+        {
+            var engine = NewEngine();
+            AddProfile("Alice");
+            var events = new List<RandomEvent> { EventWith(RandomEventEngine.ResponseTypeNone, RandomEventEngine.WinnerRuleAllInWindow) };
+            DateTime t0 = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
+            engine.Tick(Channel, t0, () => events);          // seed 6-8h out
+            engine.Tick(Channel, t0.AddHours(9), () => events); // due + quiet → armed
+
+            // Someone finally posts. The wake schedules the fire a short (< activity window)
+            // delay out, so the immediate next tick must NOT fire on the exact first message.
+            DateTime tWake = t0.AddHours(9);
+            engine.RecordActivity(Channel, tWake);
+            Assert.Empty(engine.Tick(Channel, tWake, () => events));
+            Assert.False(engine.HasActiveEvent(Channel));
+
+            // Once the wake delay (<= WakeDelayMaxMinutes) has elapsed with the room still active
+            // (that max is below ActivityWindowMinutes, so the lone wake message still counts),
+            // the fire lands.
+            DateTime tAfterDelay = tWake.AddMinutes(RandomEventEngine.WakeDelayMaxMinutes + 0.001);
+            var fired = engine.Tick(Channel, tAfterDelay, () => events);
+            Assert.Single(fired);
+            Assert.True(engine.HasActiveEvent(Channel));
+        }
+
+        [Fact]
+        public void Scheduler_QuietArming_IsLoggedOnce()
+        {
+            var logs = new List<string>();
+            var engine = NewEngine(log: logs.Add);
+            var events = new List<RandomEvent> { EventWith(RandomEventEngine.ResponseTypeNone, RandomEventEngine.WinnerRuleAllInWindow) };
+            DateTime t0 = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
+            engine.Tick(Channel, t0, () => events); // seed
+            engine.Tick(Channel, t0.AddHours(9), () => events);            // due + quiet → arm + log
+            engine.Tick(Channel, t0.AddHours(9).AddMinutes(1), () => events); // still armed → no 2nd log
+
+            Assert.Single(logs.Where(l => l.Contains("armed")));
+        }
+
+        [Fact]
+        public void Scheduler_DueFireWithNoAuthoredEvents_LogsAndPostsNothing()
+        {
+            var logs = new List<string>();
+            var engine = NewEngine(log: logs.Add);
+            DateTime t0 = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
+            engine.Tick(Channel, t0, () => new List<RandomEvent>()); // seed
+            DateTime tDue = t0.AddHours(9);
+            engine.RecordActivity(Channel, tDue);                    // active room, so we try to fire
+            var output = engine.Tick(Channel, tDue, () => new List<RandomEvent>());
+
+            Assert.Empty(output);
+            Assert.False(engine.HasActiveEvent(Channel));
+            Assert.Contains(logs, l => l.Contains("no events are authored"));
         }
 
         [Fact]
