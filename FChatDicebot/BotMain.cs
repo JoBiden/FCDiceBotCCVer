@@ -193,7 +193,8 @@ namespace FChatDicebot
             WebRequests = new BotWebRequests();
             _discordUsers = new List<SocketUser>();
             DiceBot = new DiceFunctions.DiceBot(this);
-            RandomEventEngine = new BotCommands.Support.RandomEventEngine(MonDB.getProfile, MonDB.setProfile, MonDB.changeCurrency);
+            RandomEventEngine = new BotCommands.Support.RandomEventEngine(MonDB.getProfile, MonDB.setProfile, MonDB.changeCurrency,
+                log: msg => { Console.WriteLine(msg); Utils.AddToLog(msg, null); });
             VelvetcuffConnection = new FChatDicebot.VelvetcuffConnection(WebRequests, AccountSettings);
 
             if(RunMode == RunMode.FListOnly || RunMode == RunMode.FlistPlusDiscord)
