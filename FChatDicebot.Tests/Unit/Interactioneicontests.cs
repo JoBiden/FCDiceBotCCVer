@@ -3,6 +3,7 @@ using FChatDicebot.Database;
 using FChatDicebot.InteractionProcessors;
 using FChatDicebot.InteractionProcessors.Casual;
 using FChatDicebot.InteractionProcessors.Commitment;
+using FChatDicebot.InteractionProcessors.Involved;
 using FChatDicebot.Model;
 using FChatDicebot.Tests.Builders;
 using FChatDicebot.Tests.Fixtures;
@@ -88,6 +89,34 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
         {
             Assert.True(InteractionEiconSupport.IsSelfRendered("mark"));
             Assert.False(InteractionEiconSupport.IsSelfRendered("kiss"));
+        }
+
+        // ---- climax / climaxfor share one stored slot ----
+
+        [Fact]
+        public void ClimaxAndClimaxfor_ShareOneStoredSlot()
+        {
+            var p = new ProfileBuilder().Build();
+
+            // Set under one verb, read back under both — they resolve to the same slot.
+            InteractionEiconSupport.SetInteractionEicon(p, "climaxfor", "[eicon]spray[/eicon]");
+            Assert.Equal("[eicon]spray[/eicon]", InteractionEiconSupport.GetInteractionEicon(p, "climax"));
+            Assert.Equal("[eicon]spray[/eicon]", InteractionEiconSupport.GetInteractionEicon(p, "climaxfor"));
+
+            // Overwriting from the other direction updates the same shared icon.
+            InteractionEiconSupport.SetInteractionEicon(p, "climax", "[eicon]drip[/eicon]");
+            Assert.Equal("[eicon]drip[/eicon]", InteractionEiconSupport.GetInteractionEicon(p, "climaxfor"));
+
+            // Clearing from either direction clears the shared icon.
+            InteractionEiconSupport.ClearInteractionEicon(p, "climaxfor");
+            Assert.Equal(string.Empty, InteractionEiconSupport.GetInteractionEicon(p, "climax"));
+        }
+
+        [Fact]
+        public void TryResolveTokenToVerbKeys_ClimaxforFoldsToClimax()
+        {
+            Assert.True(InteractionEiconSupport.TryResolveTokenToVerbKeys("climaxfor", out var keys));
+            Assert.Equal(new[] { "climax" }, keys);
         }
 
         // ---- Directionality of the completion suffix ----
@@ -185,6 +214,49 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
 
             Assert.Contains("[eicon]aa[/eicon]", message);
             Assert.Contains("[eicon]bb[/eicon]", message);
+        }
+
+        // ---- Climax: the climaxer's eicon shows, whichever direction was typed ----
+
+        [Fact]
+        public void Climaxfor_ShowsInitiatorEicon_TheClimaxer()
+        {
+            // !climaxfor: the initiator is the one climaxing, so their icon shows.
+            var initiator = new ProfileBuilder()
+                .WithUserName("Alice").WithDisplayName("Alice")
+                .WithCharacteristic("eicon_climax", "[eicon]alicecum[/eicon]")
+                .BuildAndSave(_database);
+            var recipient = new ProfileBuilder()
+                .WithUserName("Bob").WithDisplayName("Bob")
+                .WithCharacteristic("eicon_climax", "[eicon]bobcum[/eicon]")
+                .BuildAndSave(_database);
+
+            string message = new ClimaxforProcessor(_database).GetCompletionMessageWithStatusEffects(
+                initiator, recipient, ClimaxforProcessor.ComposeIdentifier("climaxfor", 1), "climaxfor");
+
+            Assert.Contains("[eicon]alicecum[/eicon]", message);
+            Assert.DoesNotContain("[eicon]bobcum[/eicon]", message);
+        }
+
+        [Fact]
+        public void Climax_ShowsRecipientEicon_TheClimaxer()
+        {
+            // !climax: the recipient is the one made to climax, so THEIR icon shows —
+            // not the initiator's, even though the initiator typed the command.
+            var initiator = new ProfileBuilder()
+                .WithUserName("Alice").WithDisplayName("Alice")
+                .WithCharacteristic("eicon_climax", "[eicon]alicecum[/eicon]")
+                .BuildAndSave(_database);
+            var recipient = new ProfileBuilder()
+                .WithUserName("Bob").WithDisplayName("Bob")
+                .WithCharacteristic("eicon_climax", "[eicon]bobcum[/eicon]")
+                .BuildAndSave(_database);
+
+            string message = new ClimaxforProcessor(_database).GetCompletionMessageWithStatusEffects(
+                initiator, recipient, ClimaxforProcessor.ComposeIdentifier("climax", 1), "climax");
+
+            Assert.Contains("[eicon]bobcum[/eicon]", message);
+            Assert.DoesNotContain("[eicon]alicecum[/eicon]", message);
         }
 
         // ---- Birth special-case ----

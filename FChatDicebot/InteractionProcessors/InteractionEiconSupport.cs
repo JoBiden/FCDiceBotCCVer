@@ -12,9 +12,12 @@ namespace FChatDicebot.InteractionProcessors
     ///
     /// Eicons are stored on <see cref="Profile.characteristics"/>, keyed by the interaction
     /// <b>verb</b> that gets stamped on <see cref="Interaction.type"/> at completion time. That
-    /// keeps the storage key and the completion-time lookup in agreement, and lets
-    /// shared-processor pairs (corrupt/purify, climax/climaxfor, lap/sit) carry distinct icons
-    /// even though one processor backs both verbs.
+    /// keeps the storage key and the completion-time lookup in agreement, and lets most
+    /// shared-processor pairs (corrupt/purify, lap/sit) carry distinct icons even though one
+    /// processor backs both verbs. The one exception is <c>climax</c>/<c>climaxfor</c>: those
+    /// two verbs are the same act typed from opposite directions, so they deliberately share a
+    /// single stored slot (see <see cref="StorageKey"/>) — a resident sets their climax eicon
+    /// once and it renders whichever direction they use.
     ///
     /// The <c>mark</c> eicon predates this system: it lives in <c>characteristics["mark"]</c>,
     /// is surfaced in the dossier and by <c>MarkProcessor</c>'s own reveal, and is therefore
@@ -30,10 +33,18 @@ namespace FChatDicebot.InteractionProcessors
         /// <summary>The verb whose eicon is stored/rendered specially (see class summary).</summary>
         public const string MarkVerbKey = "mark";
 
+        /// <summary>
+        /// The two directional climax verbs. They fold onto <see cref="ClimaxVerbKey"/> for
+        /// storage so <c>!seteicon climax</c> and <c>!seteicon climaxfor</c> share one icon.
+        /// </summary>
+        public const string ClimaxVerbKey = "climax";
+        public const string ClimaxforVerbKey = "climaxfor";
+
         // User-typed command token -> the interaction verb key(s) it reads/writes. Aliases fold
-        // onto their canonical verb (hug->cuddle, dress->dressup, hire->employ); !pay covers both
-        // payment directions. Every value here is a verb that appears on Interaction.type at
-        // completion time, so this map and the completion suffix stay in lockstep.
+        // onto their canonical verb (hug->cuddle, dress->dressup, hire->employ, climaxfor->climax);
+        // !pay covers both payment directions. Every value here is a verb that appears on
+        // Interaction.type at completion time, so this map and the completion suffix stay in
+        // lockstep (climaxfor's completion read folds back via StorageKey normalization).
         private static readonly Dictionary<string, string[]> TokenToVerbKeys =
             new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase)
         {
@@ -50,7 +61,7 @@ namespace FChatDicebot.InteractionProcessors
             { "spank", new[] { "spank" } },
             // Involved
             { "climax", new[] { "climax" } },
-            { "climaxfor", new[] { "climaxfor" } },
+            { "climaxfor", new[] { "climax" } },
             { "dressup", new[] { "dressup" } },
             { "dress", new[] { "dressup" } },
             { "feed", new[] { "feed" } },
@@ -89,7 +100,7 @@ namespace FChatDicebot.InteractionProcessors
         public static readonly string[] CanonicalTokensInOrder = new[]
         {
             "boobhat", "bully", "cuddle", "handhold", "kiss", "lap", "sit", "lick", "spank",
-            "climax", "climaxfor", "dressup", "feed", "golden", "milk", "pay",
+            "climax", "dressup", "feed", "golden", "milk", "pay",
             "birth", "bond", "breed", "consume", "corrupt", "purify", "employ", "entitle",
             "mark", "objectify", "petrify", "plant", "train",
             "break", "curse", "dose", "infest", "monsterize", "odorize", "rename",
@@ -144,12 +155,23 @@ namespace FChatDicebot.InteractionProcessors
         }
 
         // Mark keeps its historical characteristics["mark"] slot so the dossier + existing marks
-        // keep working unchanged; every other verb namespaces under "eicon_".
+        // keep working unchanged; every other verb namespaces under "eicon_". climaxfor folds to
+        // climax first so both directions resolve to the same slot on every set/read/clear —
+        // this normalization is the single seam that keeps the two verbs sharing one icon,
+        // whether the verb arrives typed by the user or read raw off Interaction.type.
         private static string StorageKey(string verbKey)
         {
-            return string.Equals(verbKey, MarkVerbKey, StringComparison.OrdinalIgnoreCase)
+            string normalized = NormalizeVerbKey(verbKey);
+            return string.Equals(normalized, MarkVerbKey, StringComparison.OrdinalIgnoreCase)
                 ? MarkVerbKey
-                : "eicon_" + verbKey;
+                : "eicon_" + normalized;
+        }
+
+        private static string NormalizeVerbKey(string verbKey)
+        {
+            return string.Equals(verbKey, ClimaxforVerbKey, StringComparison.OrdinalIgnoreCase)
+                ? ClimaxVerbKey
+                : verbKey;
         }
     }
 }
