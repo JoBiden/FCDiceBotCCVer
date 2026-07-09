@@ -260,6 +260,27 @@ namespace FChatDicebot.InteractionProcessors.Casual
         }
 
         /// <summary>
+        /// Per-position custom eicons for a resolved lap stack. The bottom (position 0) is a
+        /// pure lap, so it shows their <c>!lap</c> eicon; everyone stacked above (middle riders
+        /// and the top) shows their <c>!sit</c> eicon — a mid-stack rider is doing both, and
+        /// the owner prefers the sit icon there. Rendered bottom -> top so the icons read in
+        /// stack order.
+        /// </summary>
+        public override string GetGroupEiconSuffix(string interactionVerb, Profile initiatorProfile, IReadOnlyList<Profile> consentersInOrder)
+        {
+            string verb = string.IsNullOrEmpty(interactionVerb) ? InteractionType : interactionVerb;
+            var stack = BuildStack(verb, initiatorProfile, consentersInOrder); // bottom -> top
+
+            var eicons = new List<string>();
+            for (int position = 0; position < stack.Count; position++)
+            {
+                string roleVerb = position == 0 ? LapType : SitType;
+                AddInteractionEicon(eicons, stack[position], roleVerb);
+            }
+            return JoinEiconSuffix(eicons);
+        }
+
+        /// <summary>
         /// Assemble the lap stack bottom -> top from the typed verb and the consenters in
         /// consent order. <c>!lap</c>: initiator is the bottom, consenters stack above in
         /// order. <c>!sit</c>: the first consenter claims the open bottom, the initiator sits

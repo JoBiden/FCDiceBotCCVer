@@ -16,6 +16,9 @@ namespace FChatDicebot.InteractionProcessors.Casual
         // Symmetric group model: every participant gets +(M-1) "handhold".
         public override GroupSpec GroupSpec => GroupSpec.Symmetric("handhold");
 
+        // Mutual interaction: both parties' custom !seteicon eicons show on the completion.
+        public override bool EiconAppliesToBothParties => true;
+
         private static readonly List<string> HandholdDescriptors = new List<string>
         {
             "Cute.",

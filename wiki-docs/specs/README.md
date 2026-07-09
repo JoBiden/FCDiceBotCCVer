@@ -50,6 +50,12 @@ Design + as-implemented documentation for the Chateau Contract interaction syste
 |------|------|
 | [Feedback](Feedback.md) | `!feedback` (+ `!suggestion` alias) to submit an idea or bug report into a new `Feedback` collection, plus admin-only `!feedbacklist` to read recent submissions. |
 
+### Customization
+
+| Spec | Adds |
+|------|------|
+| [Custom-Interaction-Eicons](Custom-Interaction-Eicons.md) | `!seteicon {interaction} [eicon]…[/eicon]` to pin your own eicon to any interaction (shown on its completion message). Verb-keyed storage (`InteractionEiconSupport`), `EiconAppliesToBothParties` directionality, group + lap-stack rules, `!birth` special-case. Subsumes `!setmark` (now a legacy alias). |
+
 ## Upcoming features
 
 See [`Future-Interactions/README.md`](Future-Interactions/README.md) for the design specs of features that haven't shipped yet, organized by tier and dependency.

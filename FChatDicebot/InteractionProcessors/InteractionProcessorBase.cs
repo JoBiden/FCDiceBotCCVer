@@ -160,7 +160,7 @@ namespace FChatDicebot.InteractionProcessors
         /// sentence to attach to.
         /// </summary>
         public string GetCompletionMessageWithStatusEffects(
-            Profile initiatorProfile, Profile recipientProfile, string identifier)
+            Profile initiatorProfile, Profile recipientProfile, string identifier, string interactionVerb = null)
         {
             string baseMessage = GetCompletionMessage(initiatorProfile, recipientProfile, identifier);
             if (string.IsNullOrEmpty(baseMessage)) return baseMessage;
@@ -172,7 +172,90 @@ namespace FChatDicebot.InteractionProcessors
                 initiatorProfile, recipientProfile, identifier);
 
             string withStatusFragments = AppendStatusFragments(baseMessage, effects.CompletionAppendix);
-            return AppendStatusFragments(withStatusFragments, postEffectFragments);
+            string withPostEffects = AppendStatusFragments(withStatusFragments, postEffectFragments);
+
+            // Custom per-interaction eicon (!seteicon), keyed to the verb actually typed so
+            // shared-processor pairs keep distinct icons. Appended last, as a trailing flourish.
+            return withPostEffects + BuildOneToOneEiconSuffix(interactionVerb, initiatorProfile, recipientProfile);
+        }
+
+        // ====================================================================
+        // Custom interaction eicons (!seteicon). The initiator's chosen eicon
+        // (and, for symmetric interactions, the recipient's) is appended to the
+        // completion message. See InteractionEiconSupport.
+        // ====================================================================
+
+        /// <summary>
+        /// Whether both parties' custom interaction eicons surface on the completion message.
+        /// Directional interactions (the default) show only the initiator's; symmetric,
+        /// co-equal interactions (cuddle, kiss, handhold, bond) override this to true so each
+        /// participant's eicon shows.
+        /// </summary>
+        public virtual bool EiconAppliesToBothParties => false;
+
+        /// <summary>
+        /// 1:1 custom-eicon flourish: the initiator's eicon for the typed verb, plus the
+        /// recipient's when <see cref="EiconAppliesToBothParties"/> and they're a different
+        /// person. Empty when nobody involved has one set, or for self-rendered verbs (mark).
+        /// </summary>
+        private string BuildOneToOneEiconSuffix(string interactionVerb, Profile initiatorProfile, Profile recipientProfile)
+        {
+            string verb = string.IsNullOrEmpty(interactionVerb) ? InteractionType : interactionVerb;
+            if (InteractionEiconSupport.IsSelfRendered(verb)) return string.Empty;
+
+            var eicons = new List<string>();
+            AddInteractionEicon(eicons, initiatorProfile, verb);
+            if (EiconAppliesToBothParties && !IsSameProfile(initiatorProfile, recipientProfile))
+            {
+                AddInteractionEicon(eicons, recipientProfile, verb);
+            }
+            return JoinEiconSuffix(eicons);
+        }
+
+        /// <summary>
+        /// Group custom-eicon flourish over the consenting recipients in consent order.
+        /// Default: the initiator's eicon (plus every consenter's for symmetric interactions).
+        /// Lapsit overrides for its per-position rule.
+        /// </summary>
+        public virtual string GetGroupEiconSuffix(string interactionVerb, Profile initiatorProfile, IReadOnlyList<Profile> consentersInOrder)
+        {
+            string verb = string.IsNullOrEmpty(interactionVerb) ? InteractionType : interactionVerb;
+            if (InteractionEiconSupport.IsSelfRendered(verb)) return string.Empty;
+
+            var eicons = new List<string>();
+            AddInteractionEicon(eicons, initiatorProfile, verb);
+            if (EiconAppliesToBothParties && consentersInOrder != null)
+            {
+                foreach (var consenter in consentersInOrder)
+                {
+                    AddInteractionEicon(eicons, consenter, verb);
+                }
+            }
+            return JoinEiconSuffix(eicons);
+        }
+
+        /// <summary>
+        /// Append a participant's stored eicon for <paramref name="verb"/> to the running list,
+        /// if they have one. Deliberately does NOT de-duplicate: if several participants picked
+        /// the same eicon, it shows once per participant (e.g. three lipstick marks on a kiss).
+        /// </summary>
+        protected static void AddInteractionEicon(List<string> into, Profile profile, string verb)
+        {
+            string eicon = InteractionEiconSupport.GetInteractionEicon(profile, verb);
+            if (!string.IsNullOrEmpty(eicon)) into.Add(eicon);
+        }
+
+        /// <summary>Join collected eicons into a leading-space-prefixed suffix (empty if none).</summary>
+        protected static string JoinEiconSuffix(List<string> eicons)
+        {
+            if (eicons == null || eicons.Count == 0) return string.Empty;
+            return " " + string.Join(" ", eicons);
+        }
+
+        private static bool IsSameProfile(Profile a, Profile b)
+        {
+            if (a == null || b == null) return false;
+            return ReferenceEquals(a, b) || string.Equals(a.userName, b.userName, StringComparison.Ordinal);
         }
 
         /// <summary>

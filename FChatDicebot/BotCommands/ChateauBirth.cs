@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using FChatDicebot.BotCommands.Base;
 using FChatDicebot.Database;
+using FChatDicebot.InteractionProcessors;
 using FChatDicebot.InteractionProcessors.Commitment;
 using FChatDicebot.Model;
 
@@ -210,12 +211,17 @@ namespace FChatDicebot.BotCommands
 
         private static string BuildCompletionMessage(Profile carrier, Pregnancy pregnancy)
         {
+            // Birth is a solo resolution (no consent pipeline), so it appends the carrier's
+            // own custom !seteicon birth eicon here rather than through the shared completion hook.
+            string birthEicon = InteractionEiconSupport.GetInteractionEicon(carrier, "birth");
+            string eiconSuffix = string.IsNullOrEmpty(birthEicon) ? string.Empty : " " + birthEicon;
+
             // Rare-twins flavor: the resolved brood range was [1,1] and the 1% roll fired.
             if (pregnancy.IsRareTwins)
             {
                 return carrier.displayName + " has miraculously given birth to a pair of " + pregnancy.MonsterType
                     + " twins — a rare blessing for a species that normally bears just one! (Sired by "
-                    + pregnancy.Initiator + ".)";
+                    + pregnancy.Initiator + ".)" + eiconSuffix;
             }
 
             string broodPhrase = pregnancy.BroodSize > 1
@@ -223,7 +229,7 @@ namespace FChatDicebot.BotCommands
                 : Utils.AnOrA(pregnancy.MonsterType) + " " + pregnancy.MonsterType;
 
             return carrier.displayName + " has given birth to " + broodPhrase
-                + "! (Sired by " + pregnancy.Initiator + ".)";
+                + "! (Sired by " + pregnancy.Initiator + ".)" + eiconSuffix;
         }
 
         private static string BuildReadyList(List<Pregnancy> ready)

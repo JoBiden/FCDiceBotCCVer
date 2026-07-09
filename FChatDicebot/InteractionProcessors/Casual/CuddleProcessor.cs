@@ -19,6 +19,9 @@ namespace FChatDicebot.InteractionProcessors.Casual
         // Symmetric group model: every participant gets +(M-1) "cuddle".
         public override GroupSpec GroupSpec => GroupSpec.Symmetric("cuddle");
 
+        // Mutual interaction: both cuddlers' custom !seteicon eicons show on the completion.
+        public override bool EiconAppliesToBothParties => true;
+
         /// <summary>
         /// Constructor for dependency injection (for testing)
         /// </summary>

@@ -149,6 +149,8 @@ namespace FChatDicebot.InteractionProcessors
             Profile initiatorProfile = database.GetProfile(initiator);
             var consenterProfiles = consenterNames.Select(database.GetProfile).ToList();
             string message = processor.GetGroupCompletionMessage(initiatorProfile, consenterProfiles, identifier);
+            // Custom !seteicon flourish (keyed to the typed verb), before the rate-limit sub-note.
+            message += processor.GetGroupEiconSuffix(type, initiatorProfile, consenterProfiles);
             if (!string.IsNullOrEmpty(rateLimitNote))
             {
                 message += rateLimitNote;

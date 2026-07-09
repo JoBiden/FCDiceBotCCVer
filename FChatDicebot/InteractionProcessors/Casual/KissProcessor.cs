@@ -20,6 +20,9 @@ namespace FChatDicebot.InteractionProcessors.Casual
         // Symmetric group model: every participant gets +(M-1) "kiss".
         public override GroupSpec GroupSpec => GroupSpec.Symmetric("kiss");
 
+        // Mutual interaction: both kissers' custom !seteicon eicons show on the completion.
+        public override bool EiconAppliesToBothParties => true;
+
         private static readonly List<string> KissDescriptors = new List<string>
         {
             "cute.",

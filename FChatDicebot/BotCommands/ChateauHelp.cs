@@ -82,7 +82,7 @@ namespace FChatDicebot.BotCommands
                 "!modmessage",
                 "!random",
                 "!feedback [sub]!suggestion[/sub]",
-                "!setmark",
+                "!seteicon",
                 "!help [sub]!commands[/sub]",
                 "!botinfo",
                 "!uptime"
