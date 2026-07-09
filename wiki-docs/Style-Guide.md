@@ -115,4 +115,5 @@ For new `ChatBotCommand` subclasses:
 - **No emoji** in any user-facing string. (Eicons are the bot's emoji equivalent and they're tag-wrapped.)
 - **No "users", "players", or "you all"** for residents. The Chateau addresses one person at a time, or names them.
 - **No raw identifier names where a `*ToText` helper exists** — they'll render unstyled.
+- **No em-dashes (`—`) in any user-facing string.** Use `...` for dramatic pauses, periods for hard breaks, or commas/parentheses for asides. Em-dashes may not render correctly in all clients.
 - **No silent failures.** Every refusal path must say something — even the rare TOCTOU paths get a private heads-up message (see `CorruptionProcessor` `_lastInitiatorPrivateMessage`).
