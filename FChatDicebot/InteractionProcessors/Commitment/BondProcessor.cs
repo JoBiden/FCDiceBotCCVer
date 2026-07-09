@@ -13,6 +13,9 @@ namespace FChatDicebot.InteractionProcessors.Consequence
         public override string InteractionType => "bond";
         public override string InvestmentLevel => "commitment";
 
+        // Mutual interaction: both partners' custom !seteicon eicons show on the completion.
+        public override bool EiconAppliesToBothParties => true;
+
         public override CooldownSpec CooldownRule => Cooldown;
 
         public static readonly CooldownSpec Cooldown = new CooldownSpec

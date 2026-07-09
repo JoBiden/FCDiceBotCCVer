@@ -193,7 +193,7 @@ namespace FChatDicebot.InteractionProcessors.Involved
             // Intensify-only — vices not already present on freshInitiator are not created.
             ApplyClimaxAutoDose(initiator, freshInitiator);
 
-            return GetCompletionMessageWithStatusEffects(freshInitiator, freshInitiator, interaction.identifier);
+            return GetCompletionMessageWithStatusEffects(freshInitiator, freshInitiator, interaction.identifier, typeKey);
         }
 
         public override ValidationResult ValidateInteraction(string initiator, string recipient, string identifier)

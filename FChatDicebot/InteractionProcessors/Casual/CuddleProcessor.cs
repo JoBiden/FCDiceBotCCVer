@@ -19,6 +19,9 @@ namespace FChatDicebot.InteractionProcessors.Casual
         // Symmetric group model: every participant gets +(M-1) "cuddle".
         public override GroupSpec GroupSpec => GroupSpec.Symmetric("cuddle");
 
+        // Mutual interaction: both cuddlers' custom !seteicon eicons show on the completion.
+        public override bool EiconAppliesToBothParties => true;
+
         /// <summary>
         /// Constructor for dependency injection (for testing)
         /// </summary>
@@ -77,17 +80,13 @@ namespace FChatDicebot.InteractionProcessors.Casual
 
             string message = $"{initiatorProfile.displayName} and {recipientProfile.displayName} cuddle up together. {GetRandomDescriptor(cuddleDescriptors)}";
 
-            // Special handling for Queen Contract and The Corrupted Rin
-            if (initiatorProfile.userName == "Queen Contract" || recipientProfile.userName == "Queen Contract")
+            // Only the Queen Contract + Corrupted Rin combined icon stays hardcoded; the
+            // single-party Queen Contract cuddle icon now comes from her own !seteicon cuddle.
+            bool queenInvolved = initiatorProfile.userName == "Queen Contract" || recipientProfile.userName == "Queen Contract";
+            bool rinInvolved = initiatorProfile.userName == "The Corrupted Rin" || recipientProfile.userName == "The Corrupted Rin";
+            if (queenInvolved && rinInvolved)
             {
-                if (initiatorProfile.userName == "The Corrupted Rin" || recipientProfile.userName == "The Corrupted Rin")
-                {
-                    message += " [eicon]rin_lap[/eicon]";
-                }
-                else
-                {
-                    message += " [eicon]qchug[/eicon]";
-                }
+                message += " [eicon]rin_lap[/eicon]";
             }
 
             return message;
@@ -119,9 +118,11 @@ namespace FChatDicebot.InteractionProcessors.Casual
                 || consentersInOrder.Any(p => p.userName == "Queen Contract");
             bool anyRin = initiatorProfile.userName == "The Corrupted Rin"
                 || consentersInOrder.Any(p => p.userName == "The Corrupted Rin");
-            if (anyQueen)
+            // Only the Queen Contract + Corrupted Rin combined icon stays hardcoded; the
+            // single-party Queen Contract cuddle icon now comes from her own !seteicon cuddle.
+            if (anyQueen && anyRin)
             {
-                message += anyRin ? " [eicon]rin_lap[/eicon]" : " [eicon]qchug[/eicon]";
+                message += " [eicon]rin_lap[/eicon]";
             }
 
             return message;

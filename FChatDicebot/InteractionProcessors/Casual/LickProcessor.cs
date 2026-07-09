@@ -72,10 +72,7 @@ namespace FChatDicebot.InteractionProcessors.Casual
                 .Replace("{lickgiver}", initiatorProfile.displayName)
                 .Replace("{licktaker}", recipientProfile.displayName);
 
-            if (initiatorProfile.userName == "Queen Contract")
-            {
-                descriptor += "[eicon]qctongue[/eicon]";
-            }
+            // (Queen Contract's lick icon now comes from her own !seteicon lick.)
 
             return $"{initiatorProfile.displayName} gives {recipientProfile.displayName} a slow lick. {descriptor}";
         }
@@ -91,10 +88,7 @@ namespace FChatDicebot.InteractionProcessors.Casual
                 .Replace("{lickgiver}", initiatorProfile.displayName)
                 .Replace("{licktaker}", consentersInOrder[0].displayName);
 
-            if (initiatorProfile.userName == "Queen Contract")
-            {
-                descriptor += "[eicon]qctongue[/eicon]";
-            }
+            // (Queen Contract's lick icon now comes from her own !seteicon lick.)
 
             // Spec's directional example: "Alice licks Bob, Carol, and Dave. {descriptor}".
             string names = JoinNamesSerial(consentersInOrder.Select(p => p.displayName).ToList());

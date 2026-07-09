@@ -67,11 +67,24 @@ namespace FChatDicebot.InteractionProcessors
 
         /// <summary>
         /// Channel-bound entry point: returns <see cref="GetCompletionMessage"/> with any
-        /// active status-effect completion fragments appended. The consent pipeline calls
-        /// this so every interaction surfaces e.g. corruption auras / scent layers
-        /// uniformly without each processor having to wire it in itself.
+        /// active status-effect completion fragments appended, plus the initiator's (and, for
+        /// symmetric interactions, the recipient's) custom <c>!seteicon</c> flourish. The
+        /// consent pipeline calls this so every interaction surfaces e.g. corruption auras /
+        /// scent layers uniformly without each processor having to wire it in itself.
+        ///
+        /// <paramref name="interactionVerb"/> is the verb actually stamped on the pending
+        /// (e.g. "purify" vs "corrupt", "sit" vs "lap"), used to look up the right custom
+        /// eicon for shared-processor pairs. Null falls back to <see cref="InteractionType"/>.
         /// </summary>
-        string GetCompletionMessageWithStatusEffects(Profile initiatorProfile, Profile recipientProfile, string identifier);
+        string GetCompletionMessageWithStatusEffects(Profile initiatorProfile, Profile recipientProfile, string identifier, string interactionVerb = null);
+
+        /// <summary>
+        /// Custom <c>!seteicon</c> flourish for a resolved group moment, over the consenting
+        /// recipients in consent order. Default: the initiator's eicon (plus every consenter's
+        /// for symmetric interactions); lapsit overrides for its per-position rule. Returns a
+        /// leading-space-prefixed string, or empty when nobody involved has one set.
+        /// </summary>
+        string GetGroupEiconSuffix(string interactionVerb, Profile initiatorProfile, IReadOnlyList<Profile> consentersInOrder);
 
         /// <summary>
         /// Drain any out-of-band private note the processor wants delivered to the
