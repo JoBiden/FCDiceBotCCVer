@@ -68,11 +68,7 @@ namespace FChatDicebot.InteractionProcessors.Casual
         {
             string message = $"Mwah! {initiatorProfile.displayName} and {recipientProfile.displayName} share a kiss, {GetRandomDescriptor(KissDescriptors)}";
 
-            // Special handling for Queen Contract (keeping your existing special case)
-            if (initiatorProfile.userName == "Queen Contract")
-            {
-                message += "[eicon]qckiss[/eicon]";
-            }
+            // (Queen Contract's kiss icon now comes from her own !seteicon kiss.)
 
             return message;
         }
@@ -86,10 +82,7 @@ namespace FChatDicebot.InteractionProcessors.Casual
             names.AddRange(consentersInOrder.Select(p => p.displayName));
             string message = $"Mwah! {JoinNamesSerial(names)} share a flurry of kisses, {GetRandomDescriptor(KissDescriptors)}";
 
-            if (initiatorProfile.userName == "Queen Contract")
-            {
-                message += "[eicon]qckiss[/eicon]";
-            }
+            // (Queen Contract's kiss icon now comes from her own !seteicon kiss.)
 
             return message;
         }

@@ -322,9 +322,11 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
         }
 
         [Fact]
-        public void GetCompletionMessage_QueenContract_AddsEicon()
+        public void GetCompletionMessage_QueenContractSolo_NoLongerHardcodesEicon()
         {
-            // Arrange
+            // The single-party Queen Contract cuddle icon (qchug) now comes from her own
+            // !seteicon cuddle instead of a hardcoded branch, so a QC-without-Rin cuddle no
+            // longer appends it here. (The QC+Rin combined icon is still hardcoded — below.)
             var queenContract = new ProfileBuilder()
                 .WithUserName("Queen Contract")
                 .WithDisplayName("Queen Contract")
@@ -339,7 +341,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
             string message = _processor.GetCompletionMessage(queenContract, recipient, "");
 
             // Assert
-            Assert.Contains("[eicon]qchug[/eicon]", message);
+            Assert.DoesNotContain("[eicon]qchug[/eicon]", message);
         }
 
         [Fact]

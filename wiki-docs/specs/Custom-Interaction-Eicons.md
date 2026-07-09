@@ -64,6 +64,15 @@ The group path ([`GroupInteractionResolver`](../../FChatDicebot/InteractionProce
 
 The F-List profile documentation (maintained externally) should likewise treat `!setmark` as legacy.
 
+## Queen Contract hardcoded-eicon migration
+
+The single-party Queen Contract easter-egg icons were removed from the processors so they can be re-set through `!seteicon` without double-printing:
+
+- **Removed** (now set via `!seteicon`): cuddle `qchug`, kiss `qckiss`, lick `qctongue` (each in both the 1:1 and group paths).
+- **Kept** (can't be expressed as a single resident's eicon): the Queen Contract + Corrupted Rin combined `rin_lap` in both `CuddleProcessor` and `LapsitProcessor`.
+- **Kept** — spank `qcass` is recipient-side (fires when Queen Contract is *spanked*), which the initiator-keyed `!seteicon` can't reproduce, so it stays hardcoded.
+- **Left as-is** — `MarkProcessor` still writes `characteristics["queenMark"]` on the recipient; it's an orphaned value (never displayed) and not a double-print risk, so it was out of scope for this change.
+
 ## `!birth` special-case
 
 `!birth` is a solo resolution with no consent pipeline, so it does not flow through the shared completion hook. The carrier's `birth` eicon is appended directly in `ChateauBirth.BuildCompletionMessage`.
