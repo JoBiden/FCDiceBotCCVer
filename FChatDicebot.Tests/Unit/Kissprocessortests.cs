@@ -325,9 +325,10 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
         }
 
         [Fact]
-        public void GetCompletionMessage_QueenContract_AddsEicon()
+        public void GetCompletionMessage_QueenContract_NoLongerHardcodesEicon()
         {
-            // Arrange
+            // Queen Contract's kiss icon (qckiss) now comes from her own !seteicon kiss
+            // instead of a hardcoded branch, so it's no longer appended here.
             var queenContract = new ProfileBuilder()
                 .WithUserName("Queen Contract")
                 .WithDisplayName("Queen Contract")
@@ -342,8 +343,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
             string message = _processor.GetCompletionMessage(queenContract, recipient, "");
 
             // Assert
-            Assert.Contains("[eicon]qckiss[/eicon]", message);
-            Assert.DoesNotContain("usingOldInteractionMessage", message);
+            Assert.DoesNotContain("[eicon]qckiss[/eicon]", message);
         }
 
         [Fact]

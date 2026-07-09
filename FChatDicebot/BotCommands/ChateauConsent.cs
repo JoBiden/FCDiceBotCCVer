@@ -224,7 +224,7 @@ namespace FChatDicebot.BotCommands
 
                 Profile initProfile = MonDB.getProfile(toConsent.pendingInteraction.initiator);
                 Profile recipProfile = MonDB.getProfile(toConsent.pendingInteraction.recipient);
-                channelMessage += processor.GetCompletionMessageWithStatusEffects(initProfile, recipProfile, toConsent.pendingInteraction.identifier);
+                channelMessage += processor.GetCompletionMessageWithStatusEffects(initProfile, recipProfile, toConsent.pendingInteraction.identifier, toConsent.pendingInteraction.type);
                 channelMessage += processor.GetAndClearRateLimitMessage();
             }
             else
