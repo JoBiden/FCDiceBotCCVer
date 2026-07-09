@@ -50,9 +50,11 @@ The group path ([`GroupInteractionResolver`](../../FChatDicebot/InteractionProce
 - Directional group casuals (`spank`/`bully`/`lick`/`boobhat`): only the initiator's.
 - **No de-duplication:** if several participants picked the same eicon it shows once per participant (e.g. three lipstick marks on a group kiss).
 
-### Lap-stack per-position rule
+### Lap-stack per-position rule (totem pole)
 
-`LapsitProcessor` overrides `GetGroupEiconSuffix`: the bottom of the stack (position 0, a pure lap) shows their `lap` eicon; everyone stacked above — middle riders and the top — shows their `sit` eicon (a mid-stack rider is doing both, and we prefer the sit icon there). Rendered bottom → top.
+`LapsitProcessor` overrides `GetGroupEiconSuffix` and renders the stack as a vertical **totem pole** — one figure per line, topmost sitter first — so the icons read like the physical stack (top of the pile on the top line). The bottom of the stack (position 0, a pure lap) shows their `lap` eicon; everyone stacked above — middle riders and the top — shows their `sit` eicon (a mid-stack rider is doing both, and we prefer the sit icon there).
+
+Unlike every other group interaction, the lap stack **fills empty slots**: a participant who hasn't set the relevant eicon falls back to their character icon (`[icon]{userName}[/icon]`) so the pole always carries one figure per person and the stack stays visually intact. (This slot-filling is lap-stack-only; other group interactions still omit unset participants.)
 
 ## `!mark` / `!setmark` refactor
 
@@ -83,7 +85,7 @@ New:
 
 - [`FChatDicebot/InteractionProcessors/InteractionEiconSupport.cs`](../../FChatDicebot/InteractionProcessors/InteractionEiconSupport.cs) — storage, token→verb-key mapping, self-rendered check.
 - [`FChatDicebot/BotCommands/ChateauSeteicon.cs`](../../FChatDicebot/BotCommands/ChateauSeteicon.cs) — the `!seteicon` command (set / clear / list).
-- [`FChatDicebot.Tests/Unit/Interactioneicontests.cs`](../../FChatDicebot.Tests/Unit/Interactioneicontests.cs) — 21 tests.
+- [`FChatDicebot.Tests/Unit/Interactioneicontests.cs`](../../FChatDicebot.Tests/Unit/Interactioneicontests.cs) — 22 tests.
 
 Modified:
 
@@ -100,7 +102,7 @@ Modified:
 
 ## Tests
 
-`Interactioneicontests.cs` covers: storage round-trip; mark's legacy slot; clear; token/alias/`pay` resolution and rejection of unsupported tokens; `IsSelfRendered`; directional (initiator-only) vs symmetric (both) suffix; no de-duplication; mark excluded from the suffix; the lap-stack per-position rule for both `!lap` and `!sit`; the 1:1 completion actually appending both symmetric eicons; and the birth special-case.
+`Interactioneicontests.cs` covers: storage round-trip; mark's legacy slot; clear; token/alias/`pay` resolution and rejection of unsupported tokens; `IsSelfRendered`; directional (initiator-only) vs symmetric (both) suffix; no de-duplication; mark excluded from the suffix; the lap-stack per-position totem rule for both `!lap` and `!sit` (top → bottom, newline-separated) and its unset-slot character-icon fallback; the 1:1 completion actually appending both symmetric eicons; and the birth special-case.
 
 ## Decisions
 

@@ -260,24 +260,47 @@ namespace FChatDicebot.InteractionProcessors.Casual
         }
 
         /// <summary>
-        /// Per-position custom eicons for a resolved lap stack. The bottom (position 0) is a
+        /// Per-position custom eicons for a resolved lap stack, rendered as a vertical "totem
+        /// pole" — one figure per line, topmost sitter first — so the icons read like the
+        /// physical stack (top of the pile sits on the top line). The bottom (position 0) is a
         /// pure lap, so it shows their <c>!lap</c> eicon; everyone stacked above (middle riders
-        /// and the top) shows their <c>!sit</c> eicon — a mid-stack rider is doing both, and
-        /// the owner prefers the sit icon there. Rendered bottom -> top so the icons read in
-        /// stack order.
+        /// and the top) shows their <c>!sit</c> eicon — a mid-stack rider is doing both, and the
+        /// owner prefers the sit icon there.
+        ///
+        /// Unlike every other group interaction, the lap stack fills empty slots: a participant
+        /// who hasn't set the relevant eicon falls back to their character icon
+        /// (<c>[icon]{userName}[/icon]</c>) so the pole always carries one figure per person and
+        /// the stack stays visually intact.
         /// </summary>
         public override string GetGroupEiconSuffix(string interactionVerb, Profile initiatorProfile, IReadOnlyList<Profile> consentersInOrder)
         {
             string verb = string.IsNullOrEmpty(interactionVerb) ? InteractionType : interactionVerb;
             var stack = BuildStack(verb, initiatorProfile, consentersInOrder); // bottom -> top
 
-            var eicons = new List<string>();
-            for (int position = 0; position < stack.Count; position++)
+            // Walk top -> bottom so the topmost sitter lands on the top line of the pole.
+            var figures = new List<string>();
+            for (int position = stack.Count - 1; position >= 0; position--)
             {
                 string roleVerb = position == 0 ? LapType : SitType;
-                AddInteractionEicon(eicons, stack[position], roleVerb);
+                figures.Add(GetStackFigure(stack[position], roleVerb));
             }
-            return JoinEiconSuffix(eicons);
+
+            if (figures.Count == 0) return string.Empty;
+            // One figure per line, stacked beneath the completion sentence.
+            return "\n" + string.Join("\n", figures);
+        }
+
+        /// <summary>
+        /// The totem figure for one stack member: their custom eicon for
+        /// <paramref name="roleVerb"/> if set, otherwise their F-List character icon so an unset
+        /// slot still holds the pole together. Mirrors <c>Utils.GetCharacterIconTags</c>; kept
+        /// inline to match this file's other literal tag flourishes (e.g. the rin_lap eicon).
+        /// </summary>
+        private static string GetStackFigure(Profile profile, string roleVerb)
+        {
+            string eicon = InteractionEiconSupport.GetInteractionEicon(profile, roleVerb);
+            if (!string.IsNullOrEmpty(eicon)) return eicon;
+            return "[icon]" + (profile?.userName ?? string.Empty) + "[/icon]";
         }
 
         /// <summary>

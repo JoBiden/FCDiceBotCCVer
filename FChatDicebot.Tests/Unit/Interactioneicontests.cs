@@ -176,8 +176,9 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
 
             string suffix = processor.GetGroupEiconSuffix("lap", initiator, new List<Profile> { c1, c2 });
 
-            // Bottom (initiator) uses their lap eicon; riders use their sit eicon.
-            Assert.Equal(" [eicon]LAP[/eicon] [eicon]C1SIT[/eicon] [eicon]C2SIT[/eicon]", suffix);
+            // Totem pole: one figure per line, topmost sitter (c2) first, bottom lap (initiator)
+            // last. Bottom uses their lap eicon; riders use their sit eicon.
+            Assert.Equal("\n[eicon]C2SIT[/eicon]\n[eicon]C1SIT[/eicon]\n[eicon]LAP[/eicon]", suffix);
         }
 
         [Fact]
@@ -191,8 +192,29 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
 
             string suffix = processor.GetGroupEiconSuffix("sit", initiator, new List<Profile> { c1, c2 });
 
-            // Bottom is c1 (their lap eicon); initiator + c2 ride (their sit eicons).
-            Assert.Equal(" [eicon]C1LAP[/eicon] [eicon]ISIT[/eicon] [eicon]C2SIT[/eicon]", suffix);
+            // Totem pole top -> bottom: topmost sitter c2, then initiator, then bottom lap c1
+            // (their lap eicon). One figure per line.
+            Assert.Equal("\n[eicon]C2SIT[/eicon]\n[eicon]ISIT[/eicon]\n[eicon]C1LAP[/eicon]", suffix);
+        }
+
+        [Fact]
+        public void LapsitGroupEiconSuffix_UnsetSlot_FallsBackToCharacterIcon()
+        {
+            // A participant with no eicon for their role still holds a slot in the pole via
+            // their character icon, so an unset middle rider can't collapse the stack.
+            var initiator = new ProfileBuilder()
+                .WithUserName("BottomChar")
+                .WithCharacteristic("eicon_lap", "[eicon]LAP[/eicon]")
+                .Build();
+            var c1 = new ProfileBuilder().WithUserName("MiddleChar").Build(); // no sit eicon set
+            var c2 = new ProfileBuilder().WithUserName("TopChar")
+                .WithCharacteristic("eicon_sit", "[eicon]C2SIT[/eicon]").Build();
+            var processor = new LapsitProcessor(_database);
+
+            string suffix = processor.GetGroupEiconSuffix("lap", initiator, new List<Profile> { c1, c2 });
+
+            // Top -> bottom: c2's sit eicon, MiddleChar's fallback character icon, initiator's lap eicon.
+            Assert.Equal("\n[eicon]C2SIT[/eicon]\n[icon]MiddleChar[/icon]\n[eicon]LAP[/eicon]", suffix);
         }
 
         // ---- 1:1 completion path actually appends the eicon (symmetric shows both) ----
