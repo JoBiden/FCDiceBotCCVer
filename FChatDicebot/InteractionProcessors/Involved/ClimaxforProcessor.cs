@@ -419,6 +419,26 @@ namespace FChatDicebot.InteractionProcessors.Involved
                 : recipientProfile;
         }
 
+        /// <summary>
+        /// The custom <c>!seteicon</c> eicon on a climax belongs to the person who actually
+        /// climaxed — the initiator on <c>!climaxfor</c>, the recipient on <c>!climax</c> (the
+        /// inverted reskin). Self-targets resolve to the initiator either way. This is the same
+        /// redirection <see cref="GetStatusEffectSubject"/> makes for status fragments; the two
+        /// climax verbs also share a single stored eicon slot (see
+        /// <see cref="InteractionEiconSupport"/>), so the icon renders whichever direction the
+        /// climaxer set it from.
+        /// </summary>
+        protected override Profile GetEiconSubject(string interactionVerb, Profile initiatorProfile, Profile recipientProfile)
+        {
+            if (initiatorProfile == null || recipientProfile == null) return initiatorProfile;
+            return string.Equals(
+                ResolveClimaxer(interactionVerb, initiatorProfile.userName, recipientProfile.userName),
+                initiatorProfile.userName,
+                StringComparison.Ordinal)
+                ? initiatorProfile
+                : recipientProfile;
+        }
+
         public override string GetConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
             // Consent warnings are only emitted for non-self-target paths, so we can

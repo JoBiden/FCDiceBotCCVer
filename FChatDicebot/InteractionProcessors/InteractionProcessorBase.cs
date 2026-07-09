@@ -194,9 +194,22 @@ namespace FChatDicebot.InteractionProcessors
         public virtual bool EiconAppliesToBothParties => false;
 
         /// <summary>
-        /// 1:1 custom-eicon flourish: the initiator's eicon for the typed verb, plus the
-        /// recipient's when <see cref="EiconAppliesToBothParties"/> and they're a different
-        /// person. Empty when nobody involved has one set, or for self-rendered verbs (mark).
+        /// The party whose custom interaction eicon leads the 1:1 completion suffix — the one
+        /// who "performs" the interaction. Default: the initiator. Override when the acting
+        /// party is someone else (e.g. climax, where the climaxer — the recipient on
+        /// <c>!climax</c> — is the one whose eicon should show). Mirrors
+        /// <see cref="GetStatusEffectSubject"/>, which redirects status fragments the same way.
+        /// </summary>
+        protected virtual Profile GetEiconSubject(string interactionVerb, Profile initiatorProfile, Profile recipientProfile)
+        {
+            return initiatorProfile;
+        }
+
+        /// <summary>
+        /// 1:1 custom-eicon flourish: the acting party's eicon for the typed verb (see
+        /// <see cref="GetEiconSubject"/>), plus the other party's when
+        /// <see cref="EiconAppliesToBothParties"/> and they're a different person. Empty when
+        /// nobody involved has one set, or for self-rendered verbs (mark).
         /// </summary>
         private string BuildOneToOneEiconSuffix(string interactionVerb, Profile initiatorProfile, Profile recipientProfile)
         {
@@ -204,10 +217,12 @@ namespace FChatDicebot.InteractionProcessors
             if (InteractionEiconSupport.IsSelfRendered(verb)) return string.Empty;
 
             var eicons = new List<string>();
-            AddInteractionEicon(eicons, initiatorProfile, verb);
+            Profile primary = GetEiconSubject(verb, initiatorProfile, recipientProfile);
+            AddInteractionEicon(eicons, primary, verb);
             if (EiconAppliesToBothParties && !IsSameProfile(initiatorProfile, recipientProfile))
             {
-                AddInteractionEicon(eicons, recipientProfile, verb);
+                Profile other = IsSameProfile(primary, initiatorProfile) ? recipientProfile : initiatorProfile;
+                AddInteractionEicon(eicons, other, verb);
             }
             return JoinEiconSuffix(eicons);
         }

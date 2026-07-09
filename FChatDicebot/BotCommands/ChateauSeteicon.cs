@@ -21,11 +21,10 @@ namespace FChatDicebot.BotCommands
             Aliases = new string[] { };
             Category = "General";
             ShortDescription = "Set your personal eicon for an interaction";
-            LongDescription = "Pin one of your own eicons to an interaction, the way Chateau Contract has its own little easter-egg icons. Once set, whenever you perform that interaction the onlookers will see your eicon alongside the result.\n\n"
-                + "Works for almost every interaction across the Casual, Involved, Commitment, and Consequence categories — for example !cuddle, !kiss, !spank, !mark, !corrupt, !pay, and more (but not system, recovery, or dicebot commands). For mutual interactions like !kiss, !cuddle, !handhold and !bond, both people's eicons show; for one-sided ones, only yours (the one performing it) does.\n\n"
+            LongDescription = "Set a special eicon to show for your interactions of the specified type. Once set, whenever you perform that interaction the onlookers will see your eicon alongside the result. For mutual interactions (!kiss, !cuddle, !handhold and !bond) and group interactions, all participants' eicons will show. For !climax and !climaxfor, the eicon for the one climaxing will show. For all other interactions, the initiator's eicon will show.\n\n"
                 + "Set one with !seteicon {interaction} [noparse][eicon]YourEicon[/eicon][/noparse]. Leave the eicon off to clear it. Message !seteicon on its own to see everything you've set.";
             Usage = "!seteicon {interaction} [noparse][eicon]YourEicon[/eicon][/noparse]\nor\n!seteicon {interaction}   (to clear it)\nor\n!seteicon   (to list what you've set)";
-            RelatedCommands = new string[] { "setmark", "dossier" };
+            RelatedCommands = new string[] { "dossier" };
             CooldownDuration = null;
             CooldownAppliesTo = null;
             IdentifierCategory = null;
