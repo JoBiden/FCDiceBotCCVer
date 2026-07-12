@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chateau Work Duty Builder</title>
+<style>
+  :root {
+    --bg: #17121c;
+    --panel: #211a2a;
+    --panel2: #2a2136;
+    --border: #3a2f4a;
+    --text: #e8e2ee;
+    --muted: #9d92ac;
+    --accent: #c9789a;
+    --accent2: #c9a227;
+    --danger: #d46a6a;
+    --ok: #7fbf8e;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 14px/1.5 "Segoe UI", system-ui, sans-serif;
+  }
+  header {
+    display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap;
+    padding: 14px 20px; border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, #241b30, #1c1526);
+  }
+  header h1 { font: 600 19px Georgia, serif; margin: 0; color: var(--accent); letter-spacing: .5px; }
+  header .sub { color: var(--muted); font-size: 12.5px; }
+  header .spacer { flex: 1; }
+  .layout {
+    display: grid; grid-template-columns: 270px minmax(430px, 1fr) minmax(360px, 460px);
+    gap: 16px; padding: 16px 20px; align-items: start;
+  }
+  @media (max-width: 1200px) { .layout { grid-template-columns: 240px 1fr; } .previewCol { grid-column: 1 / -1; } }
+
+  .panel { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); }
+  .panel h2 {
+    font: 600 12px "Segoe UI", sans-serif; text-transform: uppercase; letter-spacing: 1.2px;
+    color: var(--muted); margin: 0; padding: 11px 14px; border-bottom: 1px solid var(--border);
+  }
+  .panel .body { padding: 13px 14px; }
+
+  /* ---- sidebar ---- */
+  #filterBox { width: 100%; margin-bottom: 6px; }
+  #dutyList { list-style: none; margin: 0; padding: 6px; max-height: 62vh; overflow-y: auto; }
+  #dutyList li {
+    padding: 7px 10px; border-radius: 7px; cursor: pointer; margin-bottom: 2px;
+    display: flex; justify-content: space-between; align-items: center; gap: 8px;
+  }
+  #dutyList li.jobHead {
+    cursor: default; padding: 8px 4px 2px; color: var(--accent2);
+    font-size: 11px; text-transform: uppercase; letter-spacing: 1px;
+  }
+  #dutyList li:not(.jobHead):hover { background: var(--panel2); }
+  #dutyList li.active { background: #3a2647; outline: 1px solid var(--accent); }
+  #dutyList .lbl { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .badge {
+    font-size: 10.5px; padding: 1px 7px; border-radius: 9px; flex-shrink: 0;
+    background: var(--panel2); color: var(--muted); border: 1px solid var(--border);
+  }
+
+  /* ---- form ---- */
+  .row { display: flex; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+  .field { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 120px; }
+  .field.grow2 { flex: 2.5; }
+  label { font-size: 11.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .7px; }
+  input, select, textarea {
+    background: var(--bg); color: var(--text); border: 1px solid var(--border);
+    border-radius: 7px; padding: 7px 9px; font: inherit;
+  }
+  input:focus, select:focus, textarea:focus { outline: 1px solid var(--accent); border-color: var(--accent); }
+  textarea { resize: vertical; min-height: 74px; }
+  .hint { font-size: 12px; color: var(--muted); }
+  .hint b { color: var(--text); font-weight: 600; }
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 5px; }
+  .chip {
+    font-size: 11.5px; font-family: Consolas, monospace; cursor: pointer;
+    background: var(--panel2); border: 1px solid var(--border); color: var(--accent2);
+    border-radius: 6px; padding: 2px 8px;
+  }
+  .chip:hover { border-color: var(--accent2); }
+
+  /* ---- choices ---- */
+  .choice {
+    border: 1px solid var(--border); border-radius: var(--radius);
+    background: var(--panel2); padding: 12px; margin-bottom: 12px;
+  }
+  .choice .head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .choice .head .title { font-weight: 600; color: var(--accent); white-space: nowrap; }
+  .reward { display: flex; gap: 8px; align-items: flex-end; margin-bottom: 8px; flex-wrap: wrap; }
+  .reward .field { min-width: 90px; }
+  .reward .field.num { flex: 0 0 70px; }
+  .reward .odds { flex: 0 0 52px; font-size: 12px; color: var(--accent2); padding-bottom: 8px; text-align: right; }
+
+  button {
+    background: var(--panel2); color: var(--text); border: 1px solid var(--border);
+    border-radius: 7px; padding: 7px 14px; font: inherit; cursor: pointer;
+  }
+  button:hover { border-color: var(--accent); }
+  button.primary { background: #5a2c46; border-color: var(--accent); font-weight: 600; }
+  button.primary:hover { background: #6d3655; }
+  button.danger { color: var(--danger); }
+  button.danger:hover { border-color: var(--danger); }
+  button.small { padding: 3px 9px; font-size: 12px; }
+  button:disabled { opacity: .4; cursor: default; }
+
+  .actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 4px; }
+  #status { font-size: 13px; }
+  #status.ok { color: var(--ok); }
+  #status.err { color: var(--danger); }
+  .warnings { margin: 10px 0 0; padding: 0 0 0 18px; color: #e8c477; font-size: 12.5px; }
+
+  /* ---- preview ---- */
+  .previewMsg {
+    background: #14101a; border: 1px solid var(--border); border-radius: 8px;
+    padding: 11px 13px; margin-bottom: 10px; font-size: 13.5px; word-wrap: break-word;
+  }
+  .previewMsg .from { color: var(--accent); font-weight: 600; margin-right: 6px; }
+  .previewMsg sub { opacity: .8; }
+  .previewCaption { font-size: 11.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .8px; margin: 12px 0 5px; }
+  .previewCaption:first-child { margin-top: 0; }
+  .lockNote { color: var(--accent2); }
+  .oddsTable { font-size: 12px; color: var(--muted); margin: -4px 0 10px 4px; }
+  .oddsTable b { color: var(--text); }
+  pre.export {
+    background: #14101a; border: 1px solid var(--border); border-radius: 8px;
+    padding: 10px 12px; font: 12px Consolas, monospace; overflow-x: auto;
+    max-height: 260px; white-space: pre; color: #cfc6dd;
+  }
+  .muted { color: var(--muted); }
+  .divider { border: none; border-top: 1px solid var(--border); margin: 14px 0; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Chateau Work Duty Builder</h1>
+  <span class="sub">authoring UI for the <b>Duties</b> collection &middot; used by <b>!work</b> and <b>!volunteer</b> &middot; picked up live (no bot restart needed)</span>
+  <span class="spacer"></span>
+  <span class="sub" id="dbInfo"></span>
+</header>
+
+<div class="layout">
+
+  <!-- ==================== sidebar ==================== -->
+  <div class="panel">
+    <h2>Duties</h2>
+    <div class="body" style="padding-bottom:0">
+      <input id="filterBox" placeholder="filter by job or label...">
+    </div>
+    <ul id="dutyList"></ul>
+    <div class="body" style="border-top:1px solid var(--border)">
+      <button class="primary" style="width:100%" onclick="newDuty()">+ New duty</button>
+    </div>
+  </div>
+
+  <!-- ==================== form ==================== -->
+  <div class="panel">
+    <h2 id="formTitle">Duty</h2>
+    <div class="body" id="formBody" style="display:none">
+
+      <div class="row">
+        <div class="field grow2">
+          <label>Label (unique id)</label>
+          <input id="f_label" placeholder="e.g. PolishTheSilverware">
+        </div>
+        <div class="field">
+          <label>Job</label>
+          <input id="f_job" list="jobOptions" placeholder="maid">
+          <datalist id="jobOptions"></datalist>
+        </div>
+      </div>
+      <div class="hint" style="margin:-6px 0 12px">When a player with this job uses <b>!work</b> (or anyone uses <b>!volunteer</b> for it), one of the job's duties is rolled at random. Job <b>default</b> is the fallback when a job has no duties yet.</div>
+
+      <div class="row">
+        <div class="field grow2">
+          <label>Categories (comma-separated, optional)</label>
+          <input id="f_categories" placeholder="martial, mercantile, lewd">
+        </div>
+      </div>
+
+      <div class="field" style="margin-bottom:12px">
+        <label>Start text (sets the scene, then choices are listed) — BBCode ok</label>
+        <textarea id="f_start" placeholder="The head maid hands you a list of chores..."></textarea>
+        <div class="chips">
+          <span class="chip" onclick="insertAtCursor('f_start','[b][/b]')">[b]</span>
+          <span class="chip" onclick="insertAtCursor('f_start','[i][/i]')">[i]</span>
+          <span class="chip" onclick="insertAtCursor('f_start','[u][/u]')">[u]</span>
+          <span class="chip" onclick="insertAtCursor('f_start','[sub][/sub]')">[sub]</span>
+        </div>
+      </div>
+
+      <hr class="divider">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <b>Choices</b>
+        <span class="hint">shown in order as !w 1, !w 2, ... — one reward is rolled by weight</span>
+        <span style="flex:1"></span>
+        <button class="small" onclick="addChoice()">+ Add choice</button>
+      </div>
+      <div id="choices"></div>
+
+      <ul class="warnings" id="warnings"></ul>
+
+      <hr class="divider">
+      <div class="actions">
+        <button class="primary" onclick="save()">Save to database</button>
+        <button onclick="duplicateDuty()" id="btnDup">Duplicate</button>
+        <button class="danger" onclick="removeDuty()" id="btnDel">Delete</button>
+        <span id="status"></span>
+      </div>
+    </div>
+    <div class="body" id="formPlaceholder">
+      <span class="muted">Select a duty on the left, or create a new one.</span>
+    </div>
+  </div>
+
+  <!-- ==================== preview ==================== -->
+  <div class="panel previewCol">
+    <h2>Live preview</h2>
+    <div class="body" id="previewBody" style="display:none">
+      <div class="previewCaption">When they !work (PM from the bot)</div>
+      <div class="previewMsg" id="pv_start"></div>
+      <div class="hint" id="pv_numberNote" style="margin:-4px 0 4px"></div>
+      <div id="pv_choices"></div>
+      <hr class="divider">
+      <div class="previewCaption" style="display:flex;align-items:center;gap:8px">
+        Export
+        <button class="small" onclick="copyExport('json')">Copy JSON</button>
+        <button class="small" onclick="copyExport('mongosh')">Copy mongosh insert</button>
+      </div>
+      <pre class="export" id="pv_export"></pre>
+    </div>
+    <div class="body" id="previewPlaceholder"><span class="muted">Nothing to preview yet.</span></div>
+  </div>
+
+</div>
+
+<script>
+'use strict';
+
+// ============================ state ============================
+
+var catalogs = { jobs: [], currencies: [], trainings: [], monsterCategories: [], conditionalKinds: [] };
+var duties = [];
+var current = null;        // working copy being edited (editor shape: choices array)
+var originalLabel = null;  // label the doc had when loaded (null = brand new)
+
+var BOT_NAME = 'Chateau Contract';
+
+var KIND_LABELS = {
+  none: 'always — every player sees it',
+  job:  'job experience — needs N+ completions',
+  trn:  'training — needs the training',
+  cur:  'currency — needs N+ on hand',
+  mon:  'species — needs a species tag'
+};
+
+// ============================ boot ============================
+
+// When this file is opened directly (file:// or an embedded preview panel) there is
+// no http origin to resolve relative URLs against, so talk to the helper server at
+// its default address instead. Served normally, same-origin relative paths are used.
+var API = (location.protocol === 'http:' || location.protocol === 'https:') && location.host
+  ? '' : 'http://localhost:8788';
+
+Promise.all([
+  fetch(API + '/api/catalogs').then(function (r) { return r.json(); }),
+  fetch(API + '/api/duties').then(function (r) { return r.json(); })
+]).then(function (results) {
+  catalogs = results[0];
+  duties = results[1];
+  var dl = document.getElementById('jobOptions');
+  ['default'].concat(catalogs.jobs || []).forEach(function (j) {
+    var op = document.createElement('option');
+    op.value = j;
+    dl.appendChild(op);
+  });
+  updateDbInfo();
+  renderList();
+}).catch(function () {
+  document.getElementById('dbInfo').textContent =
+    'Helper server not reachable - start it with scripts\\work-duty-builder\\run.ps1, then open http://localhost:8788/ (or reload this panel).';
+});
+
+function updateDbInfo() {
+  document.getElementById('dbInfo').textContent =
+    duties.length + ' dut' + (duties.length === 1 ? 'y' : 'ies') + ' in collection';
+}
+
+function reloadDuties() {
+  return fetch(API + '/api/duties').then(function (r) { return r.json(); }).then(function (list) {
+    duties = list;
+    updateDbInfo();
+    renderList();
+  });
+}
+
+// ============================ db shape <-> editor shape ============================
+
+// The DB stores choices/rewards as keyed subdocuments; the editor uses ordered arrays.
+// JS object key order preserves the document's field order, which is exactly the order
+// !work numbers choices in.
+function toEditor(doc) {
+  var choices = [];
+  Object.keys(doc.dutyResults || {}).forEach(function (k) {
+    var r = doc.dutyResults[k] || {};
+    var cond = r.conditional || {};
+    var type = (cond.type == null ? '' : String(cond.type)).trim();
+    var kind = 'none', key = '';
+    if (type.length >= 3) {
+      var prefix = type.slice(0, 3).toLowerCase();
+      if (prefix === 'non') { kind = 'none'; }
+      else if (['job', 'trn', 'cur', 'mon'].indexOf(prefix) >= 0) { kind = prefix; key = type.slice(3); }
+      else { kind = 'none'; key = ''; choicesWarn(r.choiceName || k, type); }
+    }
+    var rewards = [];
+    Object.keys(r.rewardList || {}).forEach(function (rk) {
+      var rw = r.rewardList[rk] || {};
+      rewards.push({
+        currency: rw.currency || rk,
+        weight: rw.weight == null ? 1 : rw.weight,
+        min: rw.min == null ? 0 : rw.min,
+        max: rw.max == null ? 0 : rw.max
+      });
+    });
+    choices.push({
+      choiceName: r.choiceName || k,
+      resultText: r.resultText || '',
+      conditionalKind: kind,
+      conditionalKey: key,
+      conditionalValue: cond.value == null ? 0 : cond.value,
+      rewards: rewards
+    });
+  });
+  return {
+    label: doc.label || '',
+    job: doc.job || '',
+    categories: doc.categories || [],
+    startText: doc.startText || '',
+    choices: choices
+  };
+}
+
+var loadWarnings = [];
+function choicesWarn(name, type) {
+  loadWarnings.push('Choice "' + name + '" had unrecognized conditional "' + type +
+    '" - it was loaded as "always"; saving will store it that way.');
+}
+
+// What the server will write: the exact Duty document shape the bot deserializes.
+// Mirrored here so the export pane shows real DB documents.
+function toDbShape(ed) {
+  var dutyResults = {};
+  ed.choices.forEach(function (c) {
+    var rewardList = {};
+    (c.rewards || []).forEach(function (r) {
+      var key = uniqueKey(rewardList, r.currency || 'entry');
+      rewardList[key] = { currency: r.currency, weight: r.weight, min: r.min, max: r.max };
+    });
+    var key = uniqueKey(dutyResults, c.choiceName || 'entry');
+    dutyResults[key] = {
+      choiceName: c.choiceName,
+      resultText: c.resultText,
+      conditional: {
+        type: c.conditionalKind === 'none' ? 'none' : c.conditionalKind + c.conditionalKey,
+        value: (c.conditionalKind === 'job' || c.conditionalKind === 'cur') ? (c.conditionalValue || 0) : 0
+      },
+      rewardList: rewardList
+    };
+  });
+  return {
+    label: ed.label,
+    categories: ed.categories,
+    job: (ed.job || '').toLowerCase(),
+    startText: ed.startText,
+    dutyResults: dutyResults
+  };
+}
+
+function uniqueKey(host, desired) {
+  var cleaned = String(desired).replace(/\./g, '_').replace(/^\$+/, '').trim() || 'entry';
+  var candidate = cleaned, n = 2;
+  while (Object.prototype.hasOwnProperty.call(host, candidate)) { candidate = cleaned + '_' + n; n++; }
+  return candidate;
+}
+
+// ============================ sidebar ============================
+
+function renderList() {
+  var ul = document.getElementById('dutyList');
+  var filter = document.getElementById('filterBox').value.trim().toLowerCase();
+  ul.innerHTML = '';
+  var lastJob = null;
+  var shown = 0;
+  duties.forEach(function (d) {
+    var hay = (d.job + ' ' + d.label).toLowerCase();
+    if (filter && hay.indexOf(filter) < 0) return;
+    shown++;
+    if (d.job !== lastJob) {
+      lastJob = d.job;
+      var head = document.createElement('li');
+      head.className = 'jobHead';
+      head.textContent = d.job;
+      ul.appendChild(head);
+    }
+    var li = document.createElement('li');
+    if (originalLabel && d.label === originalLabel) li.className = 'active';
+    var lbl = document.createElement('span');
+    lbl.className = 'lbl';
+    lbl.textContent = d.label;
+    var badge = document.createElement('span');
+    badge.className = 'badge';
+    var n = Object.keys(d.dutyResults || {}).length;
+    badge.textContent = n + (n === 1 ? ' choice' : ' choices');
+    li.appendChild(lbl); li.appendChild(badge);
+    li.onclick = function () { selectDuty(d.label); };
+    ul.appendChild(li);
+  });
+  if (!shown) {
+    var empty = document.createElement('li');
+    empty.innerHTML = '<span class="muted" style="padding:0 4px">' + (filter ? 'No matches.' : 'No duties yet.') + '</span>';
+    empty.style.cursor = 'default';
+    ul.appendChild(empty);
+  }
+}
+
+document.getElementById('filterBox').addEventListener('input', renderList);
+
+function selectDuty(label) {
+  var d = duties.filter(function (x) { return x.label === label; })[0];
+  if (!d) return;
+  loadWarnings = [];
+  current = toEditor(JSON.parse(JSON.stringify(d)));
+  originalLabel = d.label;
+  loadForm();
+}
+
+function newDuty() {
+  loadWarnings = [];
+  current = {
+    label: '', job: '', categories: [], startText: '',
+    choices: [blankChoice()]
+  };
+  originalLabel = null;
+  loadForm();
+}
+
+function blankChoice() {
+  return { choiceName: '', resultText: '', conditionalKind: 'none', conditionalKey: '', conditionalValue: 0, rewards: [] };
+}
+
+function duplicateDuty() {
+  if (!current) return;
+  current = collect();
+  current.label = current.label + '_copy';
+  originalLabel = null;
+  loadForm();
+  setStatus('Editing a copy — save to insert it as a new duty.', 'ok');
+}
+
+// ============================ form ============================
+
+function loadForm() {
+  document.getElementById('formBody').style.display = '';
+  document.getElementById('formPlaceholder').style.display = 'none';
+  document.getElementById('previewBody').style.display = '';
+  document.getElementById('previewPlaceholder').style.display = 'none';
+  document.getElementById('formTitle').textContent =
+    originalLabel ? 'Edit: ' + originalLabel : 'New duty';
+  document.getElementById('btnDel').style.display = originalLabel ? '' : 'none';
+  document.getElementById('btnDup').style.display = originalLabel ? '' : 'none';
+
+  setVal('f_label', current.label);
+  setVal('f_job', current.job);
+  setVal('f_categories', (current.categories || []).join(', '));
+  setVal('f_start', current.startText);
+  renderChoices();
+  refresh();
+  setStatus('', '');
+  renderList();
+}
+
+function setVal(id, v) { document.getElementById(id).value = v == null ? '' : v; }
+
+['f_label', 'f_job', 'f_categories', 'f_start'].forEach(function (id) {
+  document.getElementById(id).addEventListener('input', refresh);
+});
+
+function collect() {
+  return {
+    label: document.getElementById('f_label').value.trim(),
+    job: document.getElementById('f_job').value.trim(),
+    categories: document.getElementById('f_categories').value
+      .split(',').map(function (s) { return s.trim(); }).filter(Boolean),
+    startText: document.getElementById('f_start').value.trim(),
+    choices: current.choices
+  };
+}
+
+function insertAtCursor(id, text) {
+  var el = document.getElementById(id);
+  var start = el.selectionStart, end = el.selectionEnd;
+  el.value = el.value.slice(0, start) + text + el.value.slice(end);
+  var pos = text.indexOf('[/') > 0 ? start + text.indexOf('[/') : start + text.length;
+  el.focus(); el.setSelectionRange(pos, pos);
+  refresh();
+}
+
+// ============================ choices ============================
+
+function addChoice() {
+  current.choices.push(blankChoice());
+  renderChoices(); refresh();
+}
+
+function renderChoices() {
+  var host = document.getElementById('choices');
+  host.innerHTML = '';
+  current.choices.forEach(function (c, ci) {
+    host.appendChild(choiceCard(c, ci));
+  });
+}
+
+function choiceCard(c, ci) {
+  var card = document.createElement('div');
+  card.className = 'choice';
+
+  var head = document.createElement('div');
+  head.className = 'head';
+  head.innerHTML = '<span class="title">!w ' + (ci + 1) + '</span>';
+  var nameField = document.createElement('input');
+  nameField.placeholder = 'Choice name (shown in the option list)';
+  nameField.value = c.choiceName || '';
+  nameField.style.flex = '1';
+  nameField.oninput = function () { c.choiceName = nameField.value; refresh(); };
+  head.appendChild(nameField);
+  var up = document.createElement('button');
+  up.className = 'small'; up.textContent = '↑'; up.title = 'Move up';
+  up.disabled = ci === 0;
+  up.onclick = function () { moveChoice(ci, -1); };
+  head.appendChild(up);
+  var down = document.createElement('button');
+  down.className = 'small'; down.textContent = '↓'; down.title = 'Move down';
+  down.disabled = ci === current.choices.length - 1;
+  down.onclick = function () { moveChoice(ci, 1); };
+  head.appendChild(down);
+  var rm = document.createElement('button');
+  rm.className = 'small danger'; rm.textContent = 'Remove';
+  rm.onclick = function () { current.choices.splice(ci, 1); renderChoices(); refresh(); };
+  head.appendChild(rm);
+  card.appendChild(head);
+
+  // ---- availability (conditional) ----
+  var condRow = document.createElement('div');
+  condRow.className = 'row';
+  condRow.style.marginBottom = '8px';
+
+  var kindField = document.createElement('div');
+  kindField.className = 'field';
+  kindField.innerHTML = '<label>Available to</label>';
+  var kindSel = document.createElement('select');
+  ['none', 'job', 'trn', 'cur', 'mon'].forEach(function (k) {
+    var op = document.createElement('option');
+    op.value = k; op.textContent = KIND_LABELS[k];
+    if (c.conditionalKind === k) op.selected = true;
+    kindSel.appendChild(op);
+  });
+  kindSel.onchange = function () {
+    c.conditionalKind = kindSel.value;
+    c.conditionalKey = '';
+    renderChoices(); refresh();
+  };
+  kindField.appendChild(kindSel);
+  condRow.appendChild(kindField);
+
+  if (c.conditionalKind !== 'none') {
+    var pool = c.conditionalKind === 'job' ? (catalogs.jobs || [])
+             : c.conditionalKind === 'trn' ? (catalogs.trainings || [])
+             : c.conditionalKind === 'cur' ? (catalogs.currencies || [])
+             : (catalogs.monsterCategories || []);
+    var keyField = document.createElement('div');
+    keyField.className = 'field';
+    var keyLabel = c.conditionalKind === 'job' ? 'Job' :
+                   c.conditionalKind === 'trn' ? 'Training' :
+                   c.conditionalKind === 'cur' ? 'Currency' : 'Species tag';
+    keyField.innerHTML = '<label>' + keyLabel + '</label>';
+    var keyInput;
+    if (pool.length) {
+      keyInput = document.createElement('select');
+      var blank = document.createElement('option');
+      blank.value = ''; blank.textContent = '— pick —';
+      keyInput.appendChild(blank);
+      var matched = false;
+      pool.forEach(function (p) {
+        var op = document.createElement('option');
+        op.value = p; op.textContent = p;
+        if ((c.conditionalKey || '').toLowerCase() === p.toLowerCase()) { op.selected = true; matched = true; }
+        keyInput.appendChild(op);
+      });
+      // Keep a key that isn't in the current catalog (legacy doc / other db)
+      // selectable so editing doesn't silently drop it.
+      if (c.conditionalKey && !matched) {
+        var keep = document.createElement('option');
+        keep.value = c.conditionalKey; keep.textContent = c.conditionalKey + ' (not in catalog)';
+        keep.selected = true;
+        keyInput.appendChild(keep);
+      }
+      keyInput.onchange = function () { c.conditionalKey = keyInput.value; refresh(); };
+    } else {
+      keyInput = document.createElement('input');
+      keyInput.value = c.conditionalKey || '';
+      keyInput.placeholder = 'e.g. flight';
+      keyInput.oninput = function () { c.conditionalKey = keyInput.value; refresh(); };
+    }
+    keyField.appendChild(keyInput);
+    condRow.appendChild(keyField);
+  }
+
+  if (c.conditionalKind === 'job' || c.conditionalKind === 'cur') {
+    var valField = document.createElement('div');
+    valField.className = 'field';
+    valField.style.flex = '0 0 110px';
+    valField.innerHTML = '<label>' + (c.conditionalKind === 'job' ? 'Min experience' : 'Min amount') + '</label>';
+    var valInput = document.createElement('input');
+    valInput.type = 'number'; valInput.min = 0;
+    valInput.value = c.conditionalValue == null ? 0 : c.conditionalValue;
+    valInput.oninput = function () { c.conditionalValue = parseInt(valInput.value, 10) || 0; refresh(); };
+    valField.appendChild(valInput);
+    condRow.appendChild(valField);
+  }
+  card.appendChild(condRow);
+
+  // ---- result text ----
+  var rt = document.createElement('div');
+  rt.className = 'field';
+  rt.innerHTML = '<label>Result text (PMed when they pick this) — BBCode ok</label>';
+  var ta = document.createElement('textarea');
+  ta.value = c.resultText || '';
+  ta.placeholder = 'You spend the afternoon polishing until you can see your reflection...';
+  ta.oninput = function () { c.resultText = ta.value; refresh(); };
+  rt.appendChild(ta);
+  card.appendChild(rt);
+
+  // ---- rewards ----
+  var rewardsHost = document.createElement('div');
+  rewardsHost.style.marginTop = '10px';
+  var totalWeight = (c.rewards || []).reduce(function (s, r) { return s + Math.max(0, r.weight || 0); }, 0);
+  (c.rewards || []).forEach(function (r, ri) {
+    rewardsHost.appendChild(rewardRow(c, r, ri, totalWeight));
+  });
+  card.appendChild(rewardsHost);
+
+  var addR = document.createElement('button');
+  addR.className = 'small'; addR.textContent = '+ Add reward';
+  addR.onclick = function () {
+    if (!c.rewards) c.rewards = [];
+    c.rewards.push({ currency: '', weight: 1, min: 1, max: 1 });
+    renderChoices(); refresh();
+  };
+  card.appendChild(addR);
+
+  return card;
+}
+
+function moveChoice(ci, delta) {
+  var moved = current.choices.splice(ci, 1)[0];
+  current.choices.splice(ci + delta, 0, moved);
+  renderChoices(); refresh();
+}
+
+function rewardRow(choice, r, ri, totalWeight) {
+  var row = document.createElement('div');
+  row.className = 'reward';
+
+  var curField = document.createElement('div');
+  curField.className = 'field';
+  curField.innerHTML = '<label>Currency</label>';
+  var sel = document.createElement('select');
+  var blank = document.createElement('option');
+  blank.value = ''; blank.textContent = '— pick a currency —';
+  sel.appendChild(blank);
+  var matched = false;
+  (catalogs.currencies || []).forEach(function (cur) {
+    var op = document.createElement('option');
+    op.value = cur; op.textContent = cur;
+    if ((r.currency || '').toLowerCase() === cur.toLowerCase()) { op.selected = true; matched = true; }
+    sel.appendChild(op);
+  });
+  if (r.currency && !matched) {
+    var keep = document.createElement('option');
+    keep.value = r.currency; keep.textContent = r.currency + ' (not in catalog)';
+    keep.selected = true;
+    sel.appendChild(keep);
+  }
+  sel.onchange = function () { r.currency = sel.value; refresh(); };
+  curField.appendChild(sel);
+  row.appendChild(curField);
+
+  [['weight', 'weight'], ['min', 'min'], ['max', 'max']].forEach(function (pair) {
+    var f = document.createElement('div');
+    f.className = 'field num';
+    f.innerHTML = '<label>' + pair[0] + '</label>';
+    var inp = document.createElement('input');
+    inp.type = 'number'; inp.value = r[pair[1]] == null ? 0 : r[pair[1]];
+    inp.oninput = function () { r[pair[1]] = parseInt(inp.value, 10) || 0; renderOddsOnly(); refresh(); };
+    f.appendChild(inp);
+    row.appendChild(f);
+  });
+
+  var odds = document.createElement('div');
+  odds.className = 'odds';
+  odds.textContent = totalWeight > 0 ? Math.round(100 * Math.max(0, r.weight || 0) / totalWeight) + '%' : '';
+  row.appendChild(odds);
+
+  var rm = document.createElement('button');
+  rm.className = 'small danger'; rm.textContent = '×'; rm.title = 'Remove reward';
+  rm.onclick = function () { choice.rewards.splice(ri, 1); renderChoices(); refresh(); };
+  row.appendChild(rm);
+
+  return row;
+}
+
+// Re-rendering every card on each keystroke would drop input focus, so odds badges
+// are refreshed in place while typing.
+function renderOddsOnly() {
+  var cards = document.querySelectorAll('#choices .choice');
+  current.choices.forEach(function (c, ci) {
+    if (!cards[ci]) return;
+    var total = (c.rewards || []).reduce(function (s, r) { return s + Math.max(0, r.weight || 0); }, 0);
+    var badges = cards[ci].querySelectorAll('.odds');
+    (c.rewards || []).forEach(function (r, ri) {
+      if (badges[ri]) badges[ri].textContent = total > 0 ? Math.round(100 * Math.max(0, r.weight || 0) / total) + '%' : '';
+    });
+  });
+}
+
+// ============================ engine-mirroring preview ============================
+
+function refresh() {
+  if (!current) return;
+  var ed = collect();
+  current = ed; // keep choices reference + scalars in sync
+  renderPreview(ed);
+  renderWarnings(ed);
+  renderExport(ed);
+}
+
+function bbToHtml(s) {
+  var h = String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  h = h.replace(/\[b\]([\s\S]*?)\[\/b\]/gi, '<strong>$1</strong>');
+  h = h.replace(/\[i\]([\s\S]*?)\[\/i\]/gi, '<em>$1</em>');
+  h = h.replace(/\[u\]([\s\S]*?)\[\/u\]/gi, '<u>$1</u>');
+  h = h.replace(/\[sub\]([\s\S]*?)\[\/sub\]/gi, '<sub>$1</sub>');
+  h = h.replace(/\[url=([^\]]*)\]([\s\S]*?)\[\/url\]/gi, '<u>$2</u>');
+  h = h.replace(/\[user\]([\s\S]*?)\[\/user\]/gi, '<span style="color:#90c0e8;font-weight:600">$1</span>');
+  h = h.replace(/\[color=([a-z]+)\]([\s\S]*?)\[\/color\]/gi, '<span style="color:$1">$2</span>');
+  h = h.replace(/\n/g, '<br>');
+  return h;
+}
+
+function conditionText(c) {
+  switch (c.conditionalKind) {
+    case 'job': return 'only with ' + (c.conditionalValue || 0) + '+ ' + (c.conditionalKey || '?') + ' job experience';
+    case 'trn': return 'only with the ' + (c.conditionalKey || '?') + ' training';
+    case 'cur': return 'only with ' + (c.conditionalValue || 0) + '+ ' + (c.conditionalKey || '?') + ' on hand';
+    case 'mon': return 'only for species tagged ' + (c.conditionalKey || '?');
+    default: return 'always available';
+  }
+}
+
+function renderPreview(ed) {
+  // Mirrors ChateauWork: startText + "\n" + "!w 1: name | !w 2: name | ..."
+  var offer = ed.startText + '\n' + ed.choices.map(function (c, i) {
+    return '!w ' + (i + 1) + ': ' + (c.choiceName || '(unnamed)');
+  }).join(' | ');
+  document.getElementById('pv_start').innerHTML =
+    '<span class="from">' + BOT_NAME + ':</span>' + bbToHtml(offer);
+
+  var conditionalCount = ed.choices.filter(function (c) { return c.conditionalKind !== 'none'; }).length;
+  document.getElementById('pv_numberNote').innerHTML = conditionalCount
+    ? 'Numbers above assume every conditional is met — a player who doesn’t qualify for a choice simply doesn’t see it, and later choices renumber. <b>!volunteer</b> shows the same duty with <b>!v</b> numbers.'
+    : '<b>!volunteer</b> shows the same duty with <b>!v</b> numbers.';
+
+  var host = document.getElementById('pv_choices');
+  host.innerHTML = '';
+  ed.choices.forEach(function (c, i) {
+    var cap = document.createElement('div');
+    cap.className = 'previewCaption';
+    cap.innerHTML = 'If they pick !w ' + (i + 1) +
+      (c.conditionalKind !== 'none' ? ' <span class="lockNote">(' + conditionText(c) + ')</span>' : '');
+    host.appendChild(cap);
+
+    // Mirrors the completion PM: resultText + blank line + the rolled reward line.
+    var total = (c.rewards || []).reduce(function (s, r) { return s + Math.max(0, r.weight || 0); }, 0);
+    var top = null;
+    (c.rewards || []).forEach(function (r) { if (!top || (r.weight || 0) > (top.weight || 0)) top = r; });
+
+    var lines = [c.resultText || '(no result text)'];
+    if (top && top.currency) {
+      var sample = Math.floor(((top.min || 0) + (top.max || 0)) / 2);
+      lines.push('');
+      lines.push('You received [b]' + sample + ' ' + top.currency + '[/b]!');
+    }
+    var msg = document.createElement('div');
+    msg.className = 'previewMsg';
+    msg.innerHTML = '<span class="from">' + BOT_NAME + ':</span>' + bbToHtml(lines.join('\n'));
+    host.appendChild(msg);
+
+    if ((c.rewards || []).length) {
+      var tbl = document.createElement('div');
+      tbl.className = 'oddsTable';
+      tbl.innerHTML = (c.rewards || []).map(function (r) {
+        var pct = total > 0 ? Math.round(100 * Math.max(0, r.weight || 0) / total) : 0;
+        var range = (r.min === r.max) ? String(r.max) : r.min + '–' + r.max;
+        return pct + '% → <b>' + range + ' ' + (r.currency || '?') + '</b>';
+      }).join(' &nbsp;·&nbsp; ');
+      host.appendChild(tbl);
+    } else {
+      var none = document.createElement('div');
+      none.className = 'oddsTable';
+      none.textContent = 'No rewards — flavor only (the completion PM will have no "You received" line).';
+      host.appendChild(none);
+    }
+  });
+}
+
+function renderWarnings(ed) {
+  var w = loadWarnings.slice();
+  if (!ed.label) w.push('Label is required.');
+  if (!ed.job) w.push('Job is required.');
+  else if (ed.job.toLowerCase() !== 'default' &&
+           (catalogs.jobs || []).map(lc).indexOf(lc(ed.job)) < 0)
+    w.push('"' + ed.job + '" is not an existing job identifier — no one can be employed in it yet.');
+  if (!ed.startText) w.push('Start text is required.');
+  if (!ed.choices.length) w.push('At least one choice is required.');
+  if (ed.choices.length && !ed.choices.some(function (c) { return c.conditionalKind === 'none'; }))
+    w.push('No always-available choice: a player who meets no conditionals would get a dead work day. The server will refuse to save this.');
+
+  var names = {};
+  ed.choices.forEach(function (c, i) {
+    var n = i + 1;
+    if (!c.choiceName) w.push('Choice ' + n + ': name is required.');
+    else {
+      var k = lc(c.choiceName);
+      if (names[k]) w.push('Choices ' + names[k] + ' and ' + n + ' have the same name.');
+      else names[k] = n;
+    }
+    if (!c.resultText) w.push('Choice ' + n + ': result text is required.');
+    if (c.conditionalKind !== 'none' && !c.conditionalKey)
+      w.push('Choice ' + n + ': pick which ' + (c.conditionalKind === 'job' ? 'job' : c.conditionalKind === 'trn' ? 'training' : c.conditionalKind === 'cur' ? 'currency' : 'species tag') + ' the conditional checks.');
+    if ((c.conditionalKind === 'job' || c.conditionalKind === 'cur') && (c.conditionalValue || 0) < 1)
+      w.push('Choice ' + n + ': a minimum of 0 is always met — this conditional does nothing.');
+    (c.rewards || []).forEach(function (r, ri) {
+      if (!r.currency) w.push('Choice ' + n + ' reward ' + (ri + 1) + ': pick a currency.');
+      if ((r.weight || 0) < 1) w.push('Choice ' + n + ' reward ' + (ri + 1) + ': weight must be at least 1.');
+      if (r.currency && Math.max(r.min || 0, r.max || 0) <= 0)
+        w.push('Choice ' + n + ' reward ' + (ri + 1) + ': max ≤ 0 means the player receives nothing (or loses currency if negative).');
+    });
+  });
+  var ul = document.getElementById('warnings');
+  ul.innerHTML = '';
+  w.forEach(function (msg) {
+    var li = document.createElement('li');
+    li.textContent = msg;
+    ul.appendChild(li);
+  });
+}
+
+function lc(s) { return String(s).toLowerCase(); }
+
+function renderExport(ed) {
+  document.getElementById('pv_export').textContent = JSON.stringify(toDbShape(ed), null, 2);
+}
+
+function copyExport(kind) {
+  var json = JSON.stringify(toDbShape(collect()), null, 2);
+  var text = kind === 'mongosh'
+    ? '// mongosh — run against the bot’s server\nuse ChateauDb\ndb.Duties.insertOne(' + json + ')'
+    : json;
+  navigator.clipboard.writeText(text).then(function () {
+    setStatus('Copied ' + (kind === 'mongosh' ? 'mongosh insert' : 'JSON') + ' to clipboard.', 'ok');
+  });
+}
+
+// ============================ persistence ============================
+
+function save() {
+  var ed = collect();
+  // The server expects the editor shape (ordered choices array) and builds the
+  // keyed document itself.
+  var payload = {
+    label: ed.label,
+    job: ed.job,
+    categories: ed.categories,
+    startText: ed.startText,
+    choices: ed.choices.map(function (c) {
+      return {
+        choiceName: c.choiceName,
+        resultText: c.resultText,
+        conditionalKind: c.conditionalKind,
+        conditionalKey: c.conditionalKey,
+        conditionalValue: c.conditionalValue,
+        rewards: c.rewards
+      };
+    })
+  };
+  var req = originalLabel
+    ? fetch(API + '/api/duties/' + encodeURIComponent(originalLabel), { method: 'PUT', body: JSON.stringify(payload) })
+    : fetch(API + '/api/duties', { method: 'POST', body: JSON.stringify(payload) });
+  req.then(function (r) { return r.json(); }).then(function (res) {
+    if (res.error) { setStatus(res.error, 'err'); return; }
+    loadWarnings = [];
+    setStatus(res.message, 'ok');
+    originalLabel = ed.label;
+    document.getElementById('formTitle').textContent = 'Edit: ' + ed.label;
+    document.getElementById('btnDel').style.display = '';
+    document.getElementById('btnDup').style.display = '';
+    reloadDuties();
+  }).catch(function (e) { setStatus('Request failed: ' + e, 'err'); });
+}
+
+function removeDuty() {
+  if (!originalLabel) return;
+  if (!confirm('Delete "' + originalLabel + '" from the live database?')) return;
+  fetch(API + '/api/duties/' + encodeURIComponent(originalLabel), { method: 'DELETE' })
+    .then(function (r) { return r.json(); })
+    .then(function (res) {
+      if (res.error) { setStatus(res.error, 'err'); return; }
+      setStatus(res.message, 'ok');
+      current = null; originalLabel = null;
+      document.getElementById('formBody').style.display = 'none';
+      document.getElementById('formPlaceholder').style.display = '';
+      document.getElementById('previewBody').style.display = 'none';
+      document.getElementById('previewPlaceholder').style.display = '';
+      document.getElementById('formTitle').textContent = 'Duty';
+      reloadDuties();
+    });
+}
+
+function setStatus(msg, cls) {
+  var el = document.getElementById('status');
+  el.textContent = msg;
+  el.className = cls;
+}
+</script>
+
+</body>
+</html>

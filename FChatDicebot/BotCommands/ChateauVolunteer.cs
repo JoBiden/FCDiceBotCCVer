@@ -1,5 +1,6 @@
 ﻿using Amazon.Runtime.Documents;
 using FChatDicebot.BotCommands.Base;
+using FChatDicebot.BotCommands.Support;
 using FChatDicebot.Model;
 using System;
 using System.Collections.Generic;
@@ -41,7 +42,7 @@ namespace FChatDicebot.BotCommands
             // Check if duty is from previous day and clean it up
             if (dutyInProgress != null && dutyInProgress.startTime < DateTime.UtcNow.Date)
             {
-                MonDB.removePendingInteraction(dutyInProgress.Id);
+                MonDB.removePendingDuty(dutyInProgress.Id);
                 dutyInProgress = null;
                 message += ChateauInteractionHandler.dutyFromPreviousDayText() + " Enough about the past though. Let's see what volunteer opportunity awaits you today... \n\n";
             }
@@ -173,13 +174,14 @@ namespace FChatDicebot.BotCommands
                     message += duty.startText + "\n";
                     foreach (KeyValuePair<string, DutyResult> keyvaluepair in duty.dutyResults)
                     {
-                        switch (keyvaluepair.Value.conditional.type.Substring(0, 3))
+                        string conditionalKey = DutyConditionalSupport.Key(keyvaluepair.Value.conditional);
+                        switch (DutyConditionalSupport.Kind(keyvaluepair.Value.conditional))
                         {
                             case "non": //none
                                 validResults.Add(keyvaluepair.Value);
                                 break;
                             case "job": //job experience
-                                if (checkDictionaryConditional(keyvaluepair.Value.conditional.type, keyvaluepair.Value.conditional.value, userProfile.jobExperience))
+                                if (checkDictionaryConditional(conditionalKey, keyvaluepair.Value.conditional.value, userProfile.jobExperience))
                                 {
                                     validResults.Add(keyvaluepair.Value);
                                 }
@@ -187,14 +189,14 @@ namespace FChatDicebot.BotCommands
                             case "trn": //training
                                 if (userProfile.lists.ContainsKey("trainings"))
                                 {
-                                    if (userProfile.lists["trainings"].Contains(keyvaluepair.Value.conditional.type.Substring(3)))
+                                    if (userProfile.lists["trainings"].Contains(conditionalKey))
                                     {
                                         validResults.Add(keyvaluepair.Value);
                                     }
                                 }
                                 break;
                             case "cur": //currency
-                                if (checkDictionaryConditional(keyvaluepair.Value.conditional.type, keyvaluepair.Value.conditional.value, userProfile.currencies))
+                                if (checkDictionaryConditional(conditionalKey, keyvaluepair.Value.conditional.value, userProfile.currencies))
                                 {
                                     validResults.Add(keyvaluepair.Value);
                                 }
@@ -202,7 +204,7 @@ namespace FChatDicebot.BotCommands
                             case "mon": //monster/species trait or category
                                 if (userProfile.characteristics.ContainsKey("monster"))
                                 {
-                                    if (MonDB.getIdentifier(userProfile.characteristics["monster"]).categories.Contains<string>(keyvaluepair.Value.conditional.type.Substring(3)))
+                                    if (MonDB.getIdentifier(userProfile.characteristics["monster"]).categories.Contains<string>(conditionalKey))
                                     {
                                         validResults.Add(keyvaluepair.Value);
                                     }
