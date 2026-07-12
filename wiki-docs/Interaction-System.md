@@ -604,47 +604,40 @@ Bot: Alice has employed Bob as a maid!
 
 ### Work Command
 
-**Daily Duty:**
+**Daily Duty (two-step, via PM):**
 
 ```
 Bob: !work
-Bot: Bob performs their duty as a maid: [random task]
-Bob has earned 50 tokens!
+Bot (PM): The head maid hands you a list of chores...
+         !w 1: Dust the shelves | !w 2: Polish the silver
+Bob: !w 2
+Bot (PM): Gleaming! ...
+         You received [b]12 copper[/b]!
 ```
 
-**Implementation:**
-1. Fetch duty for job type
-2. Check if already worked today (cooldown)
-3. Complete the duty
-4. Grant rewards (tokens, experience)
-5. Set work cooldown (24 hours)
+**Implementation** (`BotCommands/ChateauWork.cs`):
+1. Remove a stale pending duty left over from a previous Chateau day, if any
+2. If a pending duty is waiting, the number is the player's choice: post its
+   `resultText`, roll ONE reward from the choice's weighted `rewardList`,
+   grant +1 job experience, set the daily work timer, delete the pending duty
+   (a 25% MANOR kickback may go to the employer - see Employer earnings)
+3. Otherwise pick a random duty for the player's job (falling back to the
+   `default` job's duties), filter its choices by their conditionals (job
+   experience / training / currency / species - see
+   `BotCommands/Support/DutyConditionalSupport.cs`), PM the numbered choice
+   list, and store a `PendingDuty`
 
-**Duty Database:**
-
-```csharp
-{
-  "jobName": "maid",
-  "taskDescriptions": [
-    "Clean the manor",
-    "Serve tea to guests",
-    "Organize the library"
-  ],
-  "rewards": {
-    "tokens": 50,
-    "experience": 10
-  }
-}
-```
+Duty documents live in the `Duties` collection; see
+[Database-and-Persistence](Database-and-Persistence.md) for the real schema
+(label/job/startText/dutyResults). They are authored with the Work Duty
+Builder (`scripts/work-duty-builder`).
 
 ### Volunteer
 
-Try other jobs without being employed:
-
-```
-Bob: !volunteer
-Bot: Bob tries their hand at being a chef: [random task]
-Bob earned 10 tokens! (Volunteers earn less than employees)
-```
+`!volunteer {job}` runs the same duty flow for a job you are NOT employed in
+(answers use `!v N`). It has its own daily timer, separate from `!work`, rolls
+the same duties for the same rewards, and grants job experience for the job
+being tried.
 
 ## Transformation System
 
