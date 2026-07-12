@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chateau Random Event Builder</title>
+<style>
+  :root {
+    --bg: #17121c;
+    --panel: #211a2a;
+    --panel2: #2a2136;
+    --border: #3a2f4a;
+    --text: #e8e2ee;
+    --muted: #9d92ac;
+    --accent: #c9789a;
+    --accent2: #c9a227;
+    --danger: #d46a6a;
+    --ok: #7fbf8e;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 14px/1.5 "Segoe UI", system-ui, sans-serif;
+  }
+  header {
+    display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap;
+    padding: 14px 20px; border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, #241b30, #1c1526);
+  }
+  header h1 { font: 600 19px Georgia, serif; margin: 0; color: var(--accent); letter-spacing: .5px; }
+  header .sub { color: var(--muted); font-size: 12.5px; }
+  header .spacer { flex: 1; }
+  .layout {
+    display: grid; grid-template-columns: 250px minmax(430px, 1fr) minmax(360px, 460px);
+    gap: 16px; padding: 16px 20px; align-items: start;
+  }
+  @media (max-width: 1200px) { .layout { grid-template-columns: 230px 1fr; } .previewCol { grid-column: 1 / -1; } }
+
+  .panel { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); }
+  .panel h2 {
+    font: 600 12px "Segoe UI", sans-serif; text-transform: uppercase; letter-spacing: 1.2px;
+    color: var(--muted); margin: 0; padding: 11px 14px; border-bottom: 1px solid var(--border);
+  }
+  .panel .body { padding: 13px 14px; }
+
+  /* ---- sidebar ---- */
+  #eventList { list-style: none; margin: 0; padding: 6px; max-height: 70vh; overflow-y: auto; }
+  #eventList li {
+    padding: 8px 10px; border-radius: 7px; cursor: pointer; margin-bottom: 2px;
+    display: flex; justify-content: space-between; align-items: center; gap: 8px;
+  }
+  #eventList li:hover { background: var(--panel2); }
+  #eventList li.active { background: #3a2647; outline: 1px solid var(--accent); }
+  #eventList .lbl { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .badge {
+    font-size: 10.5px; padding: 1px 7px; border-radius: 9px; flex-shrink: 0;
+    background: var(--panel2); color: var(--muted); border: 1px solid var(--border);
+  }
+  .badge.keyword { color: #e8c477; }
+  .badge.challenge { color: #90c0e8; }
+
+  /* ---- form ---- */
+  .row { display: flex; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+  .field { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 120px; }
+  .field.grow2 { flex: 2.5; }
+  label { font-size: 11.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .7px; }
+  input, select, textarea {
+    background: var(--bg); color: var(--text); border: 1px solid var(--border);
+    border-radius: 7px; padding: 7px 9px; font: inherit;
+  }
+  input:focus, select:focus, textarea:focus { outline: 1px solid var(--accent); border-color: var(--accent); }
+  textarea { resize: vertical; min-height: 74px; }
+  .hint { font-size: 12px; color: var(--muted); }
+  .hint b { color: var(--text); font-weight: 600; }
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 5px; }
+  .chip {
+    font-size: 11.5px; font-family: Consolas, monospace; cursor: pointer;
+    background: var(--panel2); border: 1px solid var(--border); color: var(--accent2);
+    border-radius: 6px; padding: 2px 8px;
+  }
+  .chip:hover { border-color: var(--accent2); }
+
+  /* ---- outcomes ---- */
+  .outcome {
+    border: 1px solid var(--border); border-radius: var(--radius);
+    background: var(--panel2); padding: 12px; margin-bottom: 12px;
+  }
+  .outcome .head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .outcome .head .title { font-weight: 600; color: var(--accent); }
+  .reward { display: flex; gap: 8px; align-items: flex-end; margin-bottom: 8px; flex-wrap: wrap; }
+  .reward .field { min-width: 90px; }
+  .reward .field.kind { flex: 0 0 110px; }
+  .reward .field.num { flex: 0 0 70px; }
+
+  button {
+    background: var(--panel2); color: var(--text); border: 1px solid var(--border);
+    border-radius: 7px; padding: 7px 14px; font: inherit; cursor: pointer;
+  }
+  button:hover { border-color: var(--accent); }
+  button.primary { background: #5a2c46; border-color: var(--accent); font-weight: 600; }
+  button.primary:hover { background: #6d3655; }
+  button.danger { color: var(--danger); }
+  button.danger:hover { border-color: var(--danger); }
+  button.small { padding: 3px 9px; font-size: 12px; }
+
+  .actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 4px; }
+  #status { font-size: 13px; }
+  #status.ok { color: var(--ok); }
+  #status.err { color: var(--danger); }
+  .warnings { margin: 10px 0 0; padding: 0 0 0 18px; color: #e8c477; font-size: 12.5px; }
+
+  /* ---- preview ---- */
+  .previewMsg {
+    background: #14101a; border: 1px solid var(--border); border-radius: 8px;
+    padding: 11px 13px; margin-bottom: 10px; font-size: 13.5px; word-wrap: break-word;
+  }
+  .previewMsg .from { color: var(--accent); font-weight: 600; margin-right: 6px; }
+  .previewMsg sub { opacity: .8; }
+  .usertag { color: #90c0e8; font-weight: 600; }
+  .usertag::before { content: "@"; opacity: .55; }
+  .previewCaption { font-size: 11.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .8px; margin: 12px 0 5px; }
+  .previewCaption:first-child { margin-top: 0; }
+  pre.export {
+    background: #14101a; border: 1px solid var(--border); border-radius: 8px;
+    padding: 10px 12px; font: 12px Consolas, monospace; overflow-x: auto;
+    max-height: 260px; white-space: pre; color: #cfc6dd;
+  }
+  .muted { color: var(--muted); }
+  .divider { border: none; border-top: 1px solid var(--border); margin: 14px 0; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Chateau Random Event Builder</h1>
+  <span class="sub">authoring UI for the <b>RandomEvents</b> collection &middot; events are picked up live (no bot restart needed)</span>
+  <span class="spacer"></span>
+  <span class="sub" id="dbInfo"></span>
+</header>
+
+<div class="layout">
+
+  <!-- ==================== sidebar ==================== -->
+  <div class="panel">
+    <h2>Events</h2>
+    <ul id="eventList"></ul>
+    <div class="body" style="border-top:1px solid var(--border)">
+      <button class="primary" style="width:100%" onclick="newEvent()">+ New event</button>
+    </div>
+  </div>
+
+  <!-- ==================== form ==================== -->
+  <div class="panel">
+    <h2 id="formTitle">Event</h2>
+    <div class="body" id="formBody" style="display:none">
+
+      <div class="row">
+        <div class="field grow2">
+          <label>Label (unique id)</label>
+          <input id="f_label" placeholder="e.g. wine_cellar_ghost">
+        </div>
+        <div class="field num">
+          <label>Selection weight</label>
+          <input id="f_weight" type="number" min="0" value="10">
+        </div>
+      </div>
+      <div class="hint" style="margin:-6px 0 12px">Weight is relative across <b>all</b> events (categories below are stored but not used for selection yet).</div>
+
+      <div class="row">
+        <div class="field grow2">
+          <label>Categories (comma-separated, optional)</label>
+          <input id="f_categories" placeholder="seasonal, spooky">
+        </div>
+      </div>
+
+      <div class="field" style="margin-bottom:4px">
+        <label>Announcement (posted when the event fires) — BBCode ok</label>
+        <textarea id="f_announce" placeholder="A hush falls over the halls..."></textarea>
+        <div class="chips">
+          <span class="chip" onclick="insertAtCursor('f_announce','{keyword}')">{keyword}</span>
+          <span class="chip" onclick="insertAtCursor('f_announce','{challenge}')">{challenge}</span>
+          <span class="chip" onclick="insertAtCursor('f_announce','{window}')">{window}</span>
+          <span class="chip" onclick="insertAtCursor('f_announce','[b][/b]')">[b]</span>
+          <span class="chip" onclick="insertAtCursor('f_announce','[i][/i]')">[i]</span>
+          <span class="chip" onclick="insertAtCursor('f_announce','[sub][/sub]')">[sub]</span>
+        </div>
+      </div>
+      <div class="hint" id="announceHint" style="margin-bottom:12px"></div>
+
+      <div class="row">
+        <div class="field">
+          <label>Response type</label>
+          <select id="f_responseType">
+            <option value="none">none — any !random counts</option>
+            <option value="keyword">keyword — must repeat a random word</option>
+            <option value="challenge">challenge — must solve a small sum</option>
+          </select>
+        </div>
+        <div class="field num">
+          <label>Window (seconds)</label>
+          <input id="f_window" type="number" min="0" value="60">
+        </div>
+        <div class="field">
+          <label>Winner rule</label>
+          <select id="f_winnerRule">
+            <option value="firstValid">firstValid — first correct wins instantly</option>
+            <option value="allInWindow">allInWindow — everyone correct wins</option>
+            <option value="nth">nth — the Nth correct responder wins</option>
+            <option value="random">random — one winner drawn at close</option>
+          </select>
+        </div>
+        <div class="field num" id="winnerNField" style="display:none">
+          <label>N</label>
+          <input id="f_winnerN" type="number" min="1" value="3">
+        </div>
+      </div>
+      <div class="hint" id="ruleHint" style="margin-bottom:6px"></div>
+
+      <hr class="divider">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <b>Outcomes</b>
+        <span class="hint">one is rolled by weight when the event resolves</span>
+        <span style="flex:1"></span>
+        <button class="small" onclick="addOutcome()">+ Add outcome</button>
+      </div>
+      <div id="outcomes"></div>
+
+      <ul class="warnings" id="warnings"></ul>
+
+      <hr class="divider">
+      <div class="actions">
+        <button class="primary" onclick="save()">Save to database</button>
+        <button onclick="duplicateEvent()" id="btnDup">Duplicate</button>
+        <button class="danger" onclick="removeEvent()" id="btnDel">Delete</button>
+        <span id="status"></span>
+      </div>
+    </div>
+    <div class="body" id="formPlaceholder">
+      <span class="muted">Select an event on the left, or create a new one.</span>
+    </div>
+  </div>
+
+  <!-- ==================== preview ==================== -->
+  <div class="panel previewCol">
+    <h2>Live preview</h2>
+    <div class="body" id="previewBody" style="display:none">
+      <div class="previewCaption">When it fires</div>
+      <div class="previewMsg" id="pv_announce"></div>
+      <div id="pv_outcomes"></div>
+      <hr class="divider">
+      <div class="previewCaption" style="display:flex;align-items:center;gap:8px">
+        Export
+        <button class="small" onclick="copyExport('json')">Copy JSON</button>
+        <button class="small" onclick="copyExport('mongosh')">Copy mongosh insert</button>
+      </div>
+      <pre class="export" id="pv_export"></pre>
+    </div>
+    <div class="body" id="previewPlaceholder"><span class="muted">Nothing to preview yet.</span></div>
+  </div>
+
+</div>
+
+<script>
+'use strict';
+
+// ============================ state ============================
+
+var catalogs = { currencies: [], trainings: [], curses: [], keywordPool: [], rewardTypes: [] };
+var events = [];
+var current = null;        // working copy being edited
+var originalLabel = null;  // label the doc had when loaded (null = brand new)
+
+var SAMPLE_WINNERS = ['Riven Ashvale', 'Mira Solenne', 'Kess Whitlock'];
+var BOT_NAME = 'Chateau Contract';
+
+// ============================ boot ============================
+
+// When this file is opened directly (file:// or an embedded preview panel) there is
+// no http origin to resolve relative URLs against, so talk to the helper server at
+// its default address instead. Served normally, same-origin relative paths are used.
+var API = (location.protocol === 'http:' || location.protocol === 'https:') && location.host
+  ? '' : 'http://localhost:8787';
+
+Promise.all([
+  fetch(API + '/api/catalogs').then(function (r) { return r.json(); }),
+  fetch(API + '/api/events').then(function (r) { return r.json(); })
+]).then(function (results) {
+  catalogs = results[0];
+  events = results[1];
+  document.getElementById('dbInfo').textContent =
+    events.length + ' event' + (events.length === 1 ? '' : 's') + ' in collection';
+  renderList();
+}).catch(function () {
+  document.getElementById('dbInfo').textContent =
+    'Helper server not reachable - start it with scripts\\random-event-builder\\run.ps1, then open http://localhost:8787/ (or reload this panel).';
+});
+
+function reloadEvents() {
+  return fetch(API + '/api/events').then(function (r) { return r.json(); }).then(function (list) {
+    events = list;
+    document.getElementById('dbInfo').textContent =
+      events.length + ' event' + (events.length === 1 ? '' : 's') + ' in collection';
+    renderList();
+  });
+}
+
+// ============================ sidebar ============================
+
+function renderList() {
+  var ul = document.getElementById('eventList');
+  ul.innerHTML = '';
+  events.forEach(function (ev) {
+    var li = document.createElement('li');
+    if (originalLabel && ev.label === originalLabel) li.className = 'active';
+    var lbl = document.createElement('span');
+    lbl.className = 'lbl';
+    lbl.textContent = ev.label;
+    var badge = document.createElement('span');
+    badge.className = 'badge ' + ev.responseType;
+    badge.textContent = ev.responseType + ' · w' + ev.weight;
+    li.appendChild(lbl); li.appendChild(badge);
+    li.onclick = function () { selectEvent(ev.label); };
+    ul.appendChild(li);
+  });
+  if (!events.length) {
+    var empty = document.createElement('li');
+    empty.innerHTML = '<span class="muted">No events yet.</span>';
+    ul.appendChild(empty);
+  }
+}
+
+function selectEvent(label) {
+  var ev = events.filter(function (e) { return e.label === label; })[0];
+  if (!ev) return;
+  current = JSON.parse(JSON.stringify(ev));
+  delete current._id;
+  originalLabel = ev.label;
+  loadForm();
+}
+
+function newEvent() {
+  current = {
+    label: '', categories: [], weight: 10, announceText: '',
+    responseType: 'keyword', responseWindowSeconds: 60,
+    winnerRule: 'allInWindow', winnerN: 0,
+    outcomes: [{ weight: 1, resultText: '', rewards: [] }]
+  };
+  originalLabel = null;
+  loadForm();
+}
+
+function duplicateEvent() {
+  if (!current) return;
+  current = collect();
+  current.label = current.label + '_copy';
+  originalLabel = null;
+  loadForm();
+  setStatus('Editing a copy — save to insert it as a new event.', 'ok');
+}
+
+// ============================ form ============================
+
+function loadForm() {
+  document.getElementById('formBody').style.display = '';
+  document.getElementById('formPlaceholder').style.display = 'none';
+  document.getElementById('previewBody').style.display = '';
+  document.getElementById('previewPlaceholder').style.display = 'none';
+  document.getElementById('formTitle').textContent =
+    originalLabel ? 'Edit: ' + originalLabel : 'New event';
+  document.getElementById('btnDel').style.display = originalLabel ? '' : 'none';
+  document.getElementById('btnDup').style.display = originalLabel ? '' : 'none';
+
+  setVal('f_label', current.label);
+  setVal('f_weight', current.weight);
+  setVal('f_categories', (current.categories || []).join(', '));
+  setVal('f_announce', current.announceText);
+  setVal('f_responseType', current.responseType || 'none');
+  setVal('f_window', current.responseWindowSeconds);
+  setVal('f_winnerRule', current.winnerRule || 'firstValid');
+  setVal('f_winnerN', current.winnerN > 0 ? current.winnerN : 3);
+  renderOutcomes();
+  refresh();
+  setStatus('', '');
+  renderList();
+}
+
+function setVal(id, v) { document.getElementById(id).value = v == null ? '' : v; }
+
+['f_label', 'f_weight', 'f_categories', 'f_announce', 'f_responseType',
+ 'f_window', 'f_winnerRule', 'f_winnerN'].forEach(function (id) {
+  document.getElementById(id).addEventListener('input', refresh);
+});
+
+function collect() {
+  var doc = {
+    label: document.getElementById('f_label').value.trim(),
+    categories: document.getElementById('f_categories').value
+      .split(',').map(function (s) { return s.trim(); }).filter(Boolean),
+    weight: num('f_weight', 10),
+    announceText: document.getElementById('f_announce').value.trim(),
+    responseType: document.getElementById('f_responseType').value,
+    responseWindowSeconds: num('f_window', 60),
+    winnerRule: document.getElementById('f_winnerRule').value,
+    winnerN: document.getElementById('f_winnerRule').value === 'nth' ? num('f_winnerN', 1) : 0,
+    outcomes: current.outcomes
+  };
+  return doc;
+}
+
+function num(id, fallback) {
+  var v = parseInt(document.getElementById(id).value, 10);
+  return isNaN(v) ? fallback : v;
+}
+
+function insertAtCursor(id, text) {
+  var el = document.getElementById(id);
+  var start = el.selectionStart, end = el.selectionEnd;
+  el.value = el.value.slice(0, start) + text + el.value.slice(end);
+  var pos = text.indexOf('[/') > 0 ? start + text.indexOf('[/') : start + text.length;
+  el.focus(); el.setSelectionRange(pos, pos);
+  refresh();
+}
+
+// ============================ outcomes ============================
+
+function addOutcome() {
+  current.outcomes.push({ weight: 1, resultText: '', rewards: [] });
+  renderOutcomes(); refresh();
+}
+
+function renderOutcomes() {
+  var host = document.getElementById('outcomes');
+  host.innerHTML = '';
+  current.outcomes.forEach(function (o, oi) {
+    var card = document.createElement('div');
+    card.className = 'outcome';
+
+    var head = document.createElement('div');
+    head.className = 'head';
+    head.innerHTML = '<span class="title">Outcome ' + (oi + 1) + '</span>';
+    var wField = document.createElement('div');
+    wField.innerHTML = '<label style="margin-right:6px">weight</label>';
+    var wInput = document.createElement('input');
+    wInput.type = 'number'; wInput.min = 0; wInput.value = o.weight;
+    wInput.style.width = '70px';
+    wInput.oninput = function () { o.weight = parseInt(wInput.value, 10) || 0; refresh(); };
+    wField.appendChild(wInput);
+    head.appendChild(wField);
+    var spacer = document.createElement('span'); spacer.style.flex = '1';
+    head.appendChild(spacer);
+    var rm = document.createElement('button');
+    rm.className = 'small danger'; rm.textContent = 'Remove';
+    rm.onclick = function () { current.outcomes.splice(oi, 1); renderOutcomes(); refresh(); };
+    head.appendChild(rm);
+    card.appendChild(head);
+
+    var rt = document.createElement('div');
+    rt.className = 'field';
+    rt.innerHTML = '<label>Result text — may use {winners} for the winner name(s)</label>';
+    var ta = document.createElement('textarea');
+    ta.value = o.resultText || '';
+    ta.placeholder = '{winners} are showered in rose petals!';
+    ta.oninput = function () { o.resultText = ta.value; refresh(); };
+    rt.appendChild(ta);
+    card.appendChild(rt);
+
+    var rewardsHost = document.createElement('div');
+    rewardsHost.style.marginTop = '10px';
+    (o.rewards || []).forEach(function (r, ri) {
+      rewardsHost.appendChild(rewardRow(o, r, ri));
+    });
+    card.appendChild(rewardsHost);
+
+    var addR = document.createElement('button');
+    addR.className = 'small'; addR.textContent = '+ Add reward';
+    addR.onclick = function () {
+      if (!o.rewards) o.rewards = [];
+      o.rewards.push({ type: 'currency', key: '', min: 1, max: 1 });
+      renderOutcomes(); refresh();
+    };
+    card.appendChild(addR);
+
+    host.appendChild(card);
+  });
+}
+
+function rewardRow(outcome, r, ri) {
+  var row = document.createElement('div');
+  row.className = 'reward';
+
+  var kind = document.createElement('div');
+  kind.className = 'field kind';
+  kind.innerHTML = '<label>Reward</label>';
+  var sel = document.createElement('select');
+  ['currency', 'title', 'training', 'corruption', 'purity', 'curse', 'none'].forEach(function (t) {
+    var op = document.createElement('option');
+    op.value = t; op.textContent = t;
+    if (r.type === t) op.selected = true;
+    sel.appendChild(op);
+  });
+  sel.onchange = function () { r.type = sel.value; renderOutcomes(); refresh(); };
+  kind.appendChild(sel);
+  row.appendChild(kind);
+
+  var usesKey = ['currency', 'title', 'training', 'curse'].indexOf(r.type) >= 0;
+  var usesAmount = ['currency', 'training', 'corruption', 'purity'].indexOf(r.type) >= 0;
+
+  if (usesKey) {
+    var keyField = document.createElement('div');
+    keyField.className = 'field';
+    keyField.innerHTML = '<label>' +
+      (r.type === 'title' ? 'Title text' : r.type + ' key') + '</label>';
+    var keyInput;
+    if (r.type === 'title') {
+      // Titles are free text by design.
+      keyInput = document.createElement('input');
+      keyInput.value = r.key || '';
+      keyInput.oninput = function () { r.key = keyInput.value; refresh(); };
+    } else {
+      // currency / training / curse all pick from a known catalog.
+      var pool = r.type === 'currency' ? (catalogs.currencies || [])
+               : r.type === 'training' ? (catalogs.trainings || [])
+               : (catalogs.curses || []);
+      keyInput = document.createElement('select');
+      var blank = document.createElement('option');
+      blank.value = ''; blank.textContent = '— pick a ' + r.type + ' —';
+      keyInput.appendChild(blank);
+      var matched = false;
+      pool.forEach(function (c) {
+        var op = document.createElement('option');
+        op.value = c; op.textContent = c;
+        if ((r.key || '').toLowerCase() === c.toLowerCase()) { op.selected = true; matched = true; }
+        keyInput.appendChild(op);
+      });
+      // Keep a key that isn't in the current catalog (legacy doc / other db)
+      // selectable so editing doesn't silently drop it.
+      if (r.key && !matched) {
+        var keep = document.createElement('option');
+        keep.value = r.key; keep.textContent = r.key + ' (not in catalog)';
+        keep.selected = true;
+        keyInput.appendChild(keep);
+      }
+      keyInput.onchange = function () { r.key = keyInput.value; refresh(); };
+    }
+    keyField.appendChild(keyInput);
+    row.appendChild(keyField);
+  }
+
+  if (usesAmount) {
+    ['min', 'max'].forEach(function (bound) {
+      var f = document.createElement('div');
+      f.className = 'field num';
+      f.innerHTML = '<label>' + bound + '</label>';
+      var inp = document.createElement('input');
+      inp.type = 'number'; inp.value = r[bound] == null ? 0 : r[bound];
+      inp.oninput = function () { r[bound] = parseInt(inp.value, 10) || 0; refresh(); };
+      f.appendChild(inp);
+      row.appendChild(f);
+    });
+  }
+
+  var rm = document.createElement('button');
+  rm.className = 'small danger'; rm.textContent = '×'; rm.title = 'Remove reward';
+  rm.onclick = function () { outcome.rewards.splice(ri, 1); renderOutcomes(); refresh(); };
+  row.appendChild(rm);
+
+  return row;
+}
+
+// ============================ engine-mirroring preview ============================
+
+function refresh() {
+  if (!current) return;
+  var doc = collect();
+  current = doc; // keep outcomes reference + scalars in sync
+
+  document.getElementById('winnerNField').style.display =
+    doc.winnerRule === 'nth' ? '' : 'none';
+
+  var hints = {
+    none: 'Any <b>!random</b> during the window counts — no argument needed.',
+    keyword: 'The engine picks a random word from its pool (' +
+      (catalogs.keywordPool || []).slice(0, 5).join(', ') + ', …) each time this fires. ' +
+      'Use <b>{keyword}</b> in the announcement to place it; if you don’t, the engine auto-appends ' +
+      'a [sub]Quick, !random WORD to take part![/sub] instruction line.',
+    challenge: 'The engine generates a small sum like “4 + 7”. Use <b>{challenge}</b> to place it; ' +
+      'if you don’t, an instruction line is auto-appended. Responders must answer with !random 11.'
+  };
+  document.getElementById('announceHint').innerHTML =
+    hints[doc.responseType] + ' <b>{window}</b> inserts the response window in seconds.';
+
+  var ruleHints = {
+    firstValid: 'Resolves the instant the first correct response arrives. If nobody responds in time, a no-winner message posts.',
+    allInWindow: 'Collects every correct responder until the window closes, then everyone wins together (use {winners} in result text).',
+    nth: 'Resolves as soon as the Nth correct responder arrives; if fewer than N respond, nobody wins.',
+    random: 'Collects responders until the window closes, then draws one winner at random.'
+  };
+  document.getElementById('ruleHint').innerHTML = ruleHints[doc.winnerRule];
+
+  renderPreview(doc);
+  renderWarnings(doc);
+  renderExport(doc);
+}
+
+function bbToHtml(s) {
+  var h = String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  h = h.replace(/\[b\]([\s\S]*?)\[\/b\]/gi, '<strong>$1</strong>');
+  h = h.replace(/\[i\]([\s\S]*?)\[\/i\]/gi, '<em>$1</em>');
+  h = h.replace(/\[u\]([\s\S]*?)\[\/u\]/gi, '<u>$1</u>');
+  h = h.replace(/\[sub\]([\s\S]*?)\[\/sub\]/gi, '<sub>$1</sub>');
+  h = h.replace(/\[user\]([\s\S]*?)\[\/user\]/gi, '<span class="usertag">$1</span>');
+  h = h.replace(/\[color=([a-z]+)\]([\s\S]*?)\[\/color\]/gi, '<span style="color:$1">$2</span>');
+  h = h.replace(/\n/g, '<br>');
+  return h;
+}
+
+function joinWithAnd(parts) {
+  if (parts.length <= 1) return parts.join('');
+  if (parts.length === 2) return parts[0] + ' and ' + parts[1];
+  return parts.slice(0, -1).join(', ') + ' and ' + parts[parts.length - 1];
+}
+
+function sampleWinners(doc) {
+  if (doc.winnerRule === 'allInWindow') return SAMPLE_WINNERS;
+  return [SAMPLE_WINNERS[0]];
+}
+
+function rewardFragment(r) {
+  var range = (r.min === r.max) ? String(r.max) : r.min + '–' + r.max;
+  switch (r.type) {
+    case 'currency': return '[b]' + range + ' ' + r.key + '[/b]';
+    case 'title': return 'the title ·' + r.key + '·';
+    case 'training': return '[b]' + range + '[/b] ' + r.key + ' training';
+    case 'corruption': return '[b]' + range + '[/b] corruption';
+    case 'purity': return '[b]' + range + '[/b] purity';
+    case 'curse': return 'the [b]' + r.key + '[/b] curse';
+    default: return null; // "none": flavor only
+  }
+}
+
+function renderPreview(doc) {
+  var windowSecs = doc.responseWindowSeconds > 0 ? doc.responseWindowSeconds : 60;
+  var kw = (catalogs.keywordPool || ['velvet'])[1] || 'velvet';
+  var challenge = '4 + 7';
+
+  var announce = doc.announceText
+    .replace(/\{keyword\}/g, kw)
+    .replace(/\{challenge\}/g, challenge)
+    .replace(/\{window\}/g, windowSecs)
+    .replace(/\{seconds\}/g, windowSecs);
+  if (doc.responseType === 'keyword' && doc.announceText.indexOf('{keyword}') < 0)
+    announce += '\n[sub]Quick, [b]!random ' + kw + '[/b] to take part![/sub]';
+  if (doc.responseType === 'challenge' && doc.announceText.indexOf('{challenge}') < 0)
+    announce += '\n[sub]Quick, [b]!random ' + challenge + ' = ?[/b] to take part![/sub]';
+
+  document.getElementById('pv_announce').innerHTML =
+    '<span class="from">' + BOT_NAME + ':</span>' + bbToHtml(announce);
+
+  var host = document.getElementById('pv_outcomes');
+  host.innerHTML = '';
+  var totalW = doc.outcomes.reduce(function (s, o) { return s + Math.max(0, o.weight); }, 0);
+  var winners = sampleWinners(doc);
+  var winnerTags = winners.map(function (w) { return '[user]' + w + '[/user]'; });
+
+  doc.outcomes.forEach(function (o, i) {
+    var cap = document.createElement('div');
+    cap.className = 'previewCaption';
+    var pct = totalW > 0 ? Math.round(100 * Math.max(0, o.weight) / totalW) : Math.round(100 / doc.outcomes.length);
+    cap.textContent = 'On resolve — outcome ' + (i + 1) + ' (' + pct + '% chance)';
+    host.appendChild(cap);
+
+    var lines = [];
+    var header = (o.resultText || '').replace(/\{winners\}/g, joinWithAnd(winnerTags));
+    if (header) lines.push(header);
+
+    var fragments = (o.rewards || []).map(rewardFragment).filter(Boolean);
+    if (fragments.length) {
+      var verb = winners.length > 1 ? ' receive ' : ' receives ';
+      lines.push(joinWithAnd(winnerTags) + verb + joinWithAnd(fragments) + '!');
+    }
+
+    var msg = document.createElement('div');
+    msg.className = 'previewMsg';
+    msg.innerHTML = lines.length
+      ? '<span class="from">' + BOT_NAME + ':</span>' + bbToHtml(lines.join('\n'))
+      : '<span class="muted">(blank — add result text or rewards)</span>';
+    host.appendChild(msg);
+  });
+}
+
+function renderWarnings(doc) {
+  var w = [];
+  if (!doc.label) w.push('Label is required.');
+  if (!doc.announceText) w.push('Announcement text is required.');
+  if (doc.responseWindowSeconds === 0) w.push('Window of 0 uses the engine default (60s).');
+  doc.outcomes.forEach(function (o, i) {
+    (o.rewards || []).forEach(function (r) {
+      if (r.type === 'currency' && r.key && (catalogs.currencies || []).map(lc).indexOf(lc(r.key)) < 0)
+        w.push('Outcome ' + (i + 1) + ': "' + r.key + '" is not an existing currency identifier.');
+      if (r.type === 'training' && r.key && (catalogs.trainings || []).map(lc).indexOf(lc(r.key)) < 0)
+        w.push('Outcome ' + (i + 1) + ': "' + r.key + '" is not an existing training identifier.');
+      if (['currency', 'training', 'corruption', 'purity'].indexOf(r.type) >= 0 && Math.max(r.min, r.max) <= 0)
+        w.push('Outcome ' + (i + 1) + ': a ' + r.type + ' reward with max ≤ 0 never grants anything.');
+    });
+  });
+  if (doc.responseType !== 'none' && doc.winnerRule === 'firstValid' && doc.responseWindowSeconds > 120)
+    w.push('firstValid resolves on the first correct answer — a long window mostly just delays the no-winner message.');
+  var ul = document.getElementById('warnings');
+  ul.innerHTML = '';
+  w.forEach(function (msg) {
+    var li = document.createElement('li');
+    li.textContent = msg;
+    ul.appendChild(li);
+  });
+}
+
+function lc(s) { return String(s).toLowerCase(); }
+
+function renderExport(doc) {
+  document.getElementById('pv_export').textContent = JSON.stringify(doc, null, 2);
+}
+
+function copyExport(kind) {
+  var doc = collect();
+  var json = JSON.stringify(doc, null, 2);
+  var text = kind === 'mongosh'
+    ? '// mongosh — run against the bot’s server\nuse ChateauDb\ndb.RandomEvents.insertOne(' + json + ')'
+    : json;
+  navigator.clipboard.writeText(text).then(function () {
+    setStatus('Copied ' + (kind === 'mongosh' ? 'mongosh insert' : 'JSON') + ' to clipboard.', 'ok');
+  });
+}
+
+// ============================ persistence ============================
+
+function save() {
+  var doc = collect();
+  var req = originalLabel
+    ? fetch(API + '/api/events/' + encodeURIComponent(originalLabel), { method: 'PUT', body: JSON.stringify(doc) })
+    : fetch(API + '/api/events', { method: 'POST', body: JSON.stringify(doc) });
+  req.then(function (r) { return r.json(); }).then(function (res) {
+    if (res.error) { setStatus(res.error, 'err'); return; }
+    setStatus(res.message, 'ok');
+    originalLabel = doc.label;
+    document.getElementById('formTitle').textContent = 'Edit: ' + doc.label;
+    document.getElementById('btnDel').style.display = '';
+    document.getElementById('btnDup').style.display = '';
+    reloadEvents();
+  }).catch(function (e) { setStatus('Request failed: ' + e, 'err'); });
+}
+
+function removeEvent() {
+  if (!originalLabel) return;
+  if (!confirm('Delete "' + originalLabel + '" from the live database?')) return;
+  fetch(API + '/api/events/' + encodeURIComponent(originalLabel), { method: 'DELETE' })
+    .then(function (r) { return r.json(); })
+    .then(function (res) {
+      if (res.error) { setStatus(res.error, 'err'); return; }
+      setStatus(res.message, 'ok');
+      current = null; originalLabel = null;
+      document.getElementById('formBody').style.display = 'none';
+      document.getElementById('formPlaceholder').style.display = '';
+      document.getElementById('previewBody').style.display = 'none';
+      document.getElementById('previewPlaceholder').style.display = '';
+      document.getElementById('formTitle').textContent = 'Event';
+      reloadEvents();
+    });
+}
+
+function setStatus(msg, cls) {
+  var el = document.getElementById('status');
+  el.textContent = msg;
+  el.className = cls;
+}
+</script>
+
+</body>
+</html>
