@@ -222,77 +222,114 @@ var pending = GetPendingCommands("Bob");
 
 #### 4. Duties
 
-**Purpose:** Job system - task definitions
+**Purpose:** Job system - the authored duty scenarios `!work` and `!volunteer` roll from
+
+Each document is one scenario for one job. When a player works, one of their job's
+duties is picked at random; if a job has no duties, the `"default"` job's duties are
+used as a fallback. Model classes: `Duty`, `DutyResult`, `Reward`, `Conditional` in
+`FChatDicebot/Model/ChateauDB.cs`.
 
 **Document Structure:**
 
 ```json
 {
   "_id": ObjectId("..."),
-  "jobName": "maid",
-  "taskDescriptions": [
-    "Clean the manor",
-    "Serve tea to guests",
-    "Organize the library",
-    "Polish silverware",
-    "Prepare bedrooms"
-  ],
-  "baseReward": {
-    "tokens": 50,
-    "gold": 10
-  },
-  "experienceGrant": 10,
-  "conditions": [
-    {
-      "conditionType": "random",
-      "probability": 0.1,
-      "effect": {
-        "bonusTokens": 25,
-        "message": "You found a tip!"
+  "label": "PolishTheSilverware",
+  "categories": ["mercantile"],
+  "job": "maid",
+  "startText": "The head maid hands you a list of chores...",
+  "dutyResults": {
+    "Dust the shelves": {
+      "choiceName": "Dust the shelves",
+      "resultText": "You dust until you can see your reflection.",
+      "conditional": { "type": "none", "value": 0 },
+      "rewardList": {
+        "copper": { "currency": "copper", "weight": 9, "min": 5, "max": 20 },
+        "silver": { "currency": "silver", "weight": 1, "min": 1, "max": 3 }
       }
+    },
+    "Fly to the chandelier": {
+      "choiceName": "Fly to the chandelier",
+      "resultText": "Only the winged can dust up here.",
+      "conditional": { "type": "monflight", "value": 0 },
+      "rewardList": { }
     }
-  ]
+  }
 }
 ```
 
-**Indexes:**
-- `jobName` (unique)
+`dutyResults` is a keyed subdocument (`Dictionary<string, DutyResult>` in code); its
+field order is the order choices are numbered in (`!w 1`, `!w 2`, ...). On completion
+ONE reward is rolled from `rewardList`, weighted by `weight`, for an amount between
+`min` and `max` inclusive; an empty `rewardList` is pure flavor.
+
+**Conditionals:** `conditional.type` is a three-letter kind prefix plus a lookup key,
+parsed by `BotCommands/Support/DutyConditionalSupport.cs`:
+
+| Type | Choice is shown when |
+| --- | --- |
+| `none` | Always |
+| `job` + job, e.g. `jobadventurer` | That job's experience >= `value` |
+| `trn` + training, e.g. `trndeepthroat` | Player has the training |
+| `cur` + currency, e.g. `curgold` | Currency balance >= `value` |
+| `mon` + category, e.g. `monflight` | Player's species identifier carries that category |
+
+Every duty must keep at least one `none` choice - a player who fails every
+conditional would otherwise get a duty with zero choices and lose the work day.
+
+**Queried by:** `label` (exact), `job` (exact, lowercase), `categories` (contains).
+No indexes are created; the collection is small.
 
 **Key Methods:**
 
 ```csharp
-Duty GetDuty(string jobName)
-void AddDuty(Duty duty)
-List<string> GetRandomTask(string jobName)
+Duty GetDuty(string dutyLabel)
+void SetDuty(string label, Duty newDuty)
+List<Duty> GetDutiesByJob(string job)
+List<Duty> GetDutiesByCategory(string category)
 ```
+
+**Authoring:** duties are seeded externally, not by the bot. Use the Work Duty
+Builder (`scripts/work-duty-builder`, `run.ps1`, http://localhost:8788) - it edits
+this collection live with validation and a preview of the resulting PMs.
 
 #### 5. PendingDuties
 
-**Purpose:** Active work assignments
+**Purpose:** A started work/volunteer session awaiting the player's choice
+
+Created when `!work` or `!volunteer` presents a duty's choices; deleted when the
+player answers with `!w N` / `!v N` (rewards granted, job experience +1, daily
+timer set), or cleaned up on their next invocation if it's from a previous
+Chateau day. Model class: `PendingDuty` in `FChatDicebot/Model/ChateauDB.cs`.
 
 **Document Structure:**
 
 ```json
 {
   "_id": ObjectId("..."),
-  "userName": "Alice",
-  "jobName": "maid",
-  "taskDescription": "Clean the manor",
-  "assignedTime": ISODate("2025-11-22T08:00:00Z"),
-  "completed": false
+  "dutyResults": [
+    { "choiceName": "...", "resultText": "...", "conditional": {...}, "rewardList": {...} }
+  ],
+  "dutyLabel": "PolishTheSilverware",
+  "job": "maid",
+  "awaitingInputFrom": "Alice",
+  "startTime": ISODate("2025-11-22T08:00:00Z")
 }
 ```
 
-**Indexes:**
-- `userName`
-- `completed`
+Unlike `Duties`, `dutyResults` here is an ARRAY: only the choices the player
+qualified for, in the order they were numbered - the player's `!w N` indexes
+straight into it.
+
+**Queried by:** `awaitingInputFrom` (exact). No indexes are created.
 
 **Key Methods:**
 
 ```csharp
-PendingDuty GetPendingDuty(string userName)
-void AssignDuty(string userName, string jobName, string task)
-void CompleteDuty(ObjectId id)
+void AddPendingDuty(PendingDuty toAdd)
+PendingDuty GetPendingDuty(string awaitingInputFrom)
+void SetPendingDuty(PendingDuty updatedDuty)
+void DeletePendingDuty(ObjectId dutyId)
 ```
 
 #### 6. Commands
@@ -716,9 +753,14 @@ public interface IChateauDatabase
     bool IncrementCountWithRateLimit(string userName, string countName, TimeSpan rateLimit);
 
     // Duty operations
-    Duty GetDuty(string jobName);
-    PendingDuty GetPendingDuty(string userName);
-    void AssignDuty(string userName, string jobName, string task);
+    Duty GetDuty(string dutyLabel);
+    void SetDuty(string label, Duty newDuty);
+    List<Duty> GetDutiesByJob(string job);
+    List<Duty> GetDutiesByCategory(string category);
+    void AddPendingDuty(PendingDuty toAdd);
+    PendingDuty GetPendingDuty(string awaitingInputFrom);
+    void SetPendingDuty(PendingDuty updatedDuty);
+    void DeletePendingDuty(ObjectId dutyId);
 
     // Identifier operations
     List<string> GetIdentifiers(string category);
