@@ -179,6 +179,11 @@ namespace FChatDicebot.Migration
                     result.Add((recipient, "licktake"));
                     break;
 
+                case "pet":
+                    result.Add((initiator, "petgive"));
+                    result.Add((recipient, "pettake"));
+                    break;
+
                 // lapsit: !lap → initiator is the lap (lapsittake), recipient sits (lapsitgive)
                 case "lap":
                     result.Add((initiator, "lapsittake"));

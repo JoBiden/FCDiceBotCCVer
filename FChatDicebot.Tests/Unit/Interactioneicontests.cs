@@ -67,6 +67,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
         [InlineData("hire", new[] { "employ" })]
         [InlineData("purify", new[] { "purify" })]
         [InlineData("sit", new[] { "sit" })]
+        [InlineData("pet", new[] { "pet" })]
         [InlineData("pay", new[] { "paymentGive", "paymentReceive" })]
         public void TryResolveTokenToVerbKeys_MapsTokens(string token, string[] expected)
         {
@@ -132,6 +133,35 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
 
             Assert.Contains("[eicon]ihand[/eicon]", suffix);
             Assert.DoesNotContain("[eicon]rbutt[/eicon]", suffix);
+        }
+
+        [Fact]
+        public void CompletionSuffix_Pet_ShowsRecipientEicon_TheOneBeingPetted()
+        {
+            // Unlike the other directional casuals, !pet surfaces the recipient's eicon (their
+            // "being petted" icon), not the initiator's.
+            var initiator = new ProfileBuilder().WithCharacteristic("eicon_pet", "[eicon]ihand[/eicon]").Build();
+            var recipient = new ProfileBuilder().WithCharacteristic("eicon_pet", "[eicon]beingpet[/eicon]").Build();
+            var processor = new PetProcessor(_database);
+
+            string message = processor.GetCompletionMessageWithStatusEffects(initiator, recipient, "", "pet");
+
+            Assert.Contains("[eicon]beingpet[/eicon]", message);
+            Assert.DoesNotContain("[eicon]ihand[/eicon]", message);
+        }
+
+        [Fact]
+        public void GroupEiconSuffix_Pet_RecipientsOnly()
+        {
+            var initiator = new ProfileBuilder().WithCharacteristic("eicon_pet", "[eicon]ihand[/eicon]").Build();
+            var c1 = new ProfileBuilder().WithCharacteristic("eicon_pet", "[eicon]pet1[/eicon]").Build();
+            var c2 = new ProfileBuilder().WithCharacteristic("eicon_pet", "[eicon]pet2[/eicon]").Build();
+            var processor = new PetProcessor(_database);
+
+            string suffix = processor.GetGroupEiconSuffix("pet", initiator, new List<Profile> { c1, c2 });
+
+            // Each petted recipient's icon shows; the initiator's does not.
+            Assert.Equal(" [eicon]pet1[/eicon] [eicon]pet2[/eicon]", suffix);
         }
 
         [Fact]

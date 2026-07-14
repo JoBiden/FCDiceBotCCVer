@@ -37,6 +37,8 @@ namespace FChatDicebot.BotCommands
             { "boobhattake", "Boobhats Worn" },
             { "lickgive", "Licks Given" },
             { "licktake", "Licks Received" },
+            { "petgive", "Pets Given" },
+            { "pettake", "Pets Received" },
             { "lapsitgive", "Laps Sat On" },
             { "lapsittake", "Sitters Supported" },
             { "climaxtake", "Orgasms" },
@@ -70,6 +72,8 @@ namespace FChatDicebot.BotCommands
             { "boobhattake", "Boob Wearing" },
             { "lickgive", "Licking" },
             { "licktake", "Living Lollipop" },
+            { "petgive", "Petting" },
+            { "pettake", "Petted" },
             { "lapsitgive", "Lap Sitting" },
             { "lapsittake", "Lap Providing" }
         };
