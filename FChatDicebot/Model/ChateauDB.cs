@@ -176,6 +176,12 @@ namespace FChatDicebot.Model
         [BsonIgnoreIfNull]
         public string groupId { get; set; }
 
+        // Channel the group announcement was posted in, so the timeout sweep can post the
+        // resolved moment there without anyone typing another command. Only stamped on
+        // group seats; null for 1:1 pendings and legacy documents.
+        [BsonIgnoreIfNull]
+        public string sourceChannel { get; set; }
+
         // PendingConsent / Consented. Only meaningful for group seats; a 1:1 pending never
         // transitions (it is processed-then-deleted on consent). Default keeps legacy docs
         // and 1:1 seats in the "still waiting" state.

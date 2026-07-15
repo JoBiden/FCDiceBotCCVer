@@ -37,15 +37,20 @@ namespace FChatDicebot.InteractionProcessors.Casual
         // assembled and credited in the group overrides below.
         public override GroupSpec GroupSpec => GroupSpec.LapStack();
 
-        // Owner-provided descriptors (shared by !lap and !sit, 1:1 and group).
+        // Owner-provided descriptors (shared by !lap and !sit, 1:1 and group). The
+        // two-person tease only makes sense when exactly two people are involved, so
+        // stacks of 3+ draw from the list without it.
+        private const string TwoPersonDescriptor = "Does it count as a stack if it's only two?";
         private static readonly List<string> LapsitDescriptors = new List<string>
         {
-            "Does it count as a stack if it's only two?",
+            TwoPersonDescriptor,
             "Lap! Lap! Lap!",
             "We have normal chairs too, in case you didn't know...",
             "That means {lapsitgiver} is on top, literally.",
             "Always nice to have some support."
         };
+        private static readonly List<string> GroupLapsitDescriptors =
+            LapsitDescriptors.Where(d => d != TwoPersonDescriptor).ToList();
 
         /// <summary>
         /// Constructor for dependency injection (for testing)
@@ -247,8 +252,11 @@ namespace FChatDicebot.InteractionProcessors.Casual
             }
 
             // {lapsitgiver} = the topmost sitter (the most lapsitgive), i.e. the top of stack.
+            // A group that resolved with a single consenter is still just two people, so it
+            // keeps the two-person tease in the pool.
             string topmost = stack[stackSize - 1].displayName;
-            string descriptor = GetRandomDescriptor(LapsitDescriptors).Replace("{lapsitgiver}", topmost);
+            var descriptors = stackSize >= 3 ? GroupLapsitDescriptors : LapsitDescriptors;
+            string descriptor = GetRandomDescriptor(descriptors).Replace("{lapsitgiver}", topmost);
 
             // Special handling for Queen Contract and The Corrupted Rin.
             if (topmost == "The Corrupted Rin" && stack.Any(p => p.userName == "Queen Contract"))

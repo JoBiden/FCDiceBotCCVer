@@ -55,6 +55,36 @@ namespace FChatDicebot.Tests.Unit
         }
 
         [Fact]
+        public void GetAllGroupPendingCommands_ReturnsGroupSeatsOnly()
+        {
+            string groupA = Guid.NewGuid().ToString("N");
+            string groupB = Guid.NewGuid().ToString("N");
+            _database.AddPendingCommand(MakeSeat("Alice", "Bob", groupA));
+            _database.AddPendingCommand(MakeSeat("Alice", "Carol", groupA));
+            _database.AddPendingCommand(MakeSeat("Dave", "Erin", groupB));
+            _database.AddPendingCommand(MakeSeat("Alice", "Dave", null)); // 1:1 — excluded
+
+            var seats = _database.GetAllGroupPendingCommands();
+
+            Assert.Equal(3, seats.Count);
+            Assert.All(seats, s => Assert.True(s.IsGroupSeat));
+            Assert.Equal(2, seats.Count(s => s.groupId == groupA));
+            Assert.Equal(1, seats.Count(s => s.groupId == groupB));
+        }
+
+        [Fact]
+        public void AddPendingCommand_PersistsSourceChannel()
+        {
+            string groupId = Guid.NewGuid().ToString("N");
+            var seat = MakeSeat("Alice", "Bob", groupId);
+            seat.sourceChannel = "ADH-testchannel123";
+            _database.AddPendingCommand(seat);
+
+            var reloaded = _database.GetPendingCommandsByGroupId(groupId).Single();
+            Assert.Equal("ADH-testchannel123", reloaded.sourceChannel);
+        }
+
+        [Fact]
         public void ChangeCountByWithRateLimit_FirstCall_AppliesFullAmount()
         {
             new ProfileBuilder().WithUserName("Alice").WithDisplayName("Alice").BuildAndSave(_database);

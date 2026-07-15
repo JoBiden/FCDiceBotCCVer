@@ -123,34 +123,13 @@ namespace FChatDicebot.BotCommands
                 }
             }
 
-            // Fire any group whose last Pending seat just cleared.
+            // Fire any group whose last Pending seat just cleared. The shared helper handles
+            // the dropped-seat notifications (H2) and the consolidated "Title Time!" banner.
             foreach (string groupId in touchedGroups)
             {
-                var resolution = InteractionProcessors.GroupInteractionResolver.CheckAndResolve(database, groupId);
-
-                // Privately notify anyone dropped by a failed re-validation (H2), regardless
-                // of whether the rest of the group still resolved.
-                foreach (var dropped in resolution.Dropped)
+                string groupMessage = Support.GroupResolutionSupport.ResolveAndFormat(bot, database, groupId);
+                if (!string.IsNullOrEmpty(groupMessage))
                 {
-                    bot.SendPrivateMessage(dropped.Reason, dropped.Participant);
-                }
-
-                if (resolution.Resolved && !string.IsNullOrEmpty(resolution.ChannelMessage))
-                {
-                    string groupMessage = resolution.ChannelMessage;
-
-                    // One consolidated "Title Time!" banner for the whole moment, grouped by
-                    // title. Fold each participant's lifetime-count title wins (granted now that
-                    // the group counts have been applied) in with the group-achievement titles
-                    // (by resolved size / lap-stack position) already granted during resolution.
-                    var allTitleGrants = new List<InteractionProcessors.GroupTitleGrant>(resolution.GroupTitleGrants);
-                    foreach (string participant in resolution.Participants)
-                    {
-                        var countGrant = ChateauSystemTitles.CheckAndGrantCountTitles(participant);
-                        if (countGrant != null) allTitleGrants.Add(countGrant);
-                    }
-                    groupMessage += ChateauSystemTitles.FormatGroupTitleNotification(allTitleGrants);
-
                     if (!string.IsNullOrEmpty(channelMessage)) channelMessage += "\n\n";
                     channelMessage += groupMessage;
                 }

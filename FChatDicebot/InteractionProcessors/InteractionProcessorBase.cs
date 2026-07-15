@@ -528,10 +528,18 @@ namespace FChatDicebot.InteractionProcessors
         /// <summary>
         /// Helper method to get a random descriptor from a list
         /// </summary>
+        // Shared RNG for descriptor draws. A per-call `new Random()` is time-seeded, so
+        // draws landing in the same clock tick (back-to-back messages, or a test loop)
+        // always picked the same line. Locked because the group-timeout sweep in BotMain
+        // can render a completion message from its own thread.
+        private static readonly Random DescriptorRng = new Random();
+
         protected string GetRandomDescriptor(List<string> descriptors)
         {
-            var random = new Random();
-            return descriptors[random.Next(descriptors.Count)];
+            lock (DescriptorRng)
+            {
+                return descriptors[DescriptorRng.Next(descriptors.Count)];
+            }
         }
 
         /// <summary>
@@ -579,7 +587,7 @@ namespace FChatDicebot.InteractionProcessors
             if (!initiatorCounted && !recipientCounted)
             {
                 // Both rate limited
-                return $"\n\n[sub]Looks like that didn't make it into either dossier though... The clerks were probably still busy processing their last {InteractionType}s.[/sub]";
+                return $"\n\n[sub]Looks like that didn't make it into either dossier though... The clerks were probably still busy processing their last {TextFormat.PluralizeNoun(InteractionType)}.[/sub]";
             }
             else if (!initiatorCounted)
             {
@@ -766,7 +774,8 @@ namespace FChatDicebot.InteractionProcessors
             if (limitedDisplayNames == null || limitedDisplayNames.Count == 0) return string.Empty;
             string names = JoinNamesSerial(limitedDisplayNames);
             string dossierWord = limitedDisplayNames.Count > 1 ? "dossiers" : "dossier";
-            return $"\n\n[sub]Looks like that didn't make it into {names}'s {dossierWord} though... The clerks were probably still busy processing their last {InteractionType}.[/sub]";
+            string interactionWord = limitedDisplayNames.Count > 1 ? TextFormat.PluralizeNoun(InteractionType) : InteractionType;
+            return $"\n\n[sub]Looks like that didn't make it into {names}'s {dossierWord} though... The clerks were probably still busy processing their last {interactionWord}.[/sub]";
         }
 
         /// <summary>

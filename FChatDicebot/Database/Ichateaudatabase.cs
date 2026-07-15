@@ -72,6 +72,7 @@ namespace FChatDicebot.Database
         PendingCommand GetPendingCommandAwaitingConsent(string awaitingConsentFrom);
         List<PendingCommand> GetPendingCommands(string awaitingConsentFrom);
         List<PendingCommand> GetPendingCommandsByGroupId(string groupId);
+        List<PendingCommand> GetAllGroupPendingCommands();
         List<PendingCommand> GetPendingCommandsByInitiator(string initiator);
         void DeletePendingCommand(ObjectId commandId);
 

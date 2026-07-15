@@ -541,6 +541,20 @@ namespace FChatDicebot.Database
             return documents.Select(doc => BsonSerializer.Deserialize<PendingCommand>(doc)).ToList();
         }
 
+        public List<PendingCommand> GetAllGroupPendingCommands()
+        {
+            // Every seat of every in-flight group invocation (documents carrying a groupId).
+            // Used by the timeout sweep to find groups whose window has run out without
+            // waiting for another !consent / !no to trigger the lazy resolution path.
+            var collection = Database.GetCollection<BsonDocument>("PendingCommands");
+            var filter = Builders<BsonDocument>.Filter.And(
+                Builders<BsonDocument>.Filter.Exists("groupId"),
+                Builders<BsonDocument>.Filter.Ne("groupId", BsonNull.Value));
+            var documents = collection.Find(filter).ToList();
+
+            return documents.Select(doc => BsonSerializer.Deserialize<PendingCommand>(doc)).ToList();
+        }
+
         public List<PendingCommand> GetPendingCommandsByInitiator(string initiator)
         {
             // The initiator lives on the nested interaction document, so the filter has to

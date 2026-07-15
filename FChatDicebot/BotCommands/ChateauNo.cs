@@ -127,25 +127,13 @@ namespace FChatDicebot.BotCommands
             }
 
             // A declined group seat may complete the group for whoever else already consented.
+            // The shared helper handles the dropped-seat notifications (H2) and the
+            // consolidated "Title Time!" banner (M12).
             foreach (string groupId in touchedGroups)
             {
-                var resolution = InteractionProcessors.GroupInteractionResolver.CheckAndResolve(database, groupId);
-                if (resolution.Resolved && !string.IsNullOrEmpty(resolution.ChannelMessage))
+                string groupMessage = Support.GroupResolutionSupport.ResolveAndFormat(bot, database, groupId);
+                if (!string.IsNullOrEmpty(groupMessage))
                 {
-                    string groupMessage = resolution.ChannelMessage;
-
-                    // Mirror ChateauConsent's banner (M12): fold the resolved group-
-                    // achievement grants (by size / lap-stack position) in with each
-                    // participant's lifetime-count title wins, instead of using the 1:1
-                    // CheckAndGrantTitles path which never even looks at GroupTitleGrants.
-                    var allTitleGrants = new List<InteractionProcessors.GroupTitleGrant>(resolution.GroupTitleGrants);
-                    foreach (string participant in resolution.Participants)
-                    {
-                        var countGrant = ChateauSystemTitles.CheckAndGrantCountTitles(participant);
-                        if (countGrant != null) allTitleGrants.Add(countGrant);
-                    }
-                    groupMessage += ChateauSystemTitles.FormatGroupTitleNotification(allTitleGrants);
-
                     if (!string.IsNullOrEmpty(channelMessage)) channelMessage += "\n\n";
                     channelMessage += groupMessage;
                 }

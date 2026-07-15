@@ -5,6 +5,7 @@ using FChatDicebot.Tests.Builders;
 using FChatDicebot.Tests.Fixtures;
 using MongoDB.Bson;
 using System;
+using System.Collections.Generic;
 using Xunit;
 
 namespace FChatDicebot.Tests.Unit.InteractionProcessors
@@ -138,6 +139,47 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
                 Assert.Contains("lap", message);
                 Assert.DoesNotContain("{lapsitgiver}", message);
             }
+        }
+
+        [Fact]
+        public void GetGroupCompletionMessage_StackOfThreeOrMore_NeverUsesTwoPersonDescriptor()
+        {
+            // Feedback 6a5592e6: "does it count as a stack if it's only two" must not show
+            // up under a completion message describing a 3+ stack. The descriptor draw is
+            // random, so run enough times to visit the whole pool.
+            var initiator = new ProfileBuilder().WithUserName("Alice").WithDisplayName("Alice").BuildAndSave(_database);
+            var consenters = new List<Profile>
+            {
+                new ProfileBuilder().WithUserName("Bob").WithDisplayName("Bob").BuildAndSave(_database),
+                new ProfileBuilder().WithUserName("Carol").WithDisplayName("Carol").BuildAndSave(_database),
+            };
+
+            for (int i = 0; i < 100; i++)
+            {
+                string message = _processor.GetGroupCompletionMessage(initiator, consenters, "lap");
+                Assert.DoesNotContain("only two", message);
+            }
+        }
+
+        [Fact]
+        public void GetGroupCompletionMessage_GroupThatResolvedToTwoPeople_KeepsTwoPersonDescriptor()
+        {
+            // A group where only one seat consented is still just two people, so the
+            // two-person tease stays in the pool. With 5 descriptors, 200 draws miss one
+            // only with negligible probability.
+            var initiator = new ProfileBuilder().WithUserName("Alice").WithDisplayName("Alice").BuildAndSave(_database);
+            var consenters = new List<Profile>
+            {
+                new ProfileBuilder().WithUserName("Bob").WithDisplayName("Bob").BuildAndSave(_database),
+            };
+
+            bool seenTwoPersonLine = false;
+            for (int i = 0; i < 200 && !seenTwoPersonLine; i++)
+            {
+                seenTwoPersonLine = _processor.GetGroupCompletionMessage(initiator, consenters, "lap")
+                    .Contains("only two");
+            }
+            Assert.True(seenTwoPersonLine);
         }
 
         private static PendingCommand MakePending(string initiator, string recipient, string verb)

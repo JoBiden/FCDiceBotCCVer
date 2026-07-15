@@ -43,8 +43,26 @@ namespace FChatDicebot.InteractionProcessors
         }
 
         /// <summary>
+        /// The groupIds among <paramref name="groupSeats"/> that are due a timeout resolution:
+        /// groups holding at least one un-consented seat past the 10-minute window. Feeding
+        /// these through <see cref="CheckAndResolve"/> fires the moment with whoever consented
+        /// (or silently clears a group nobody answered) — the background sweep's counterpart
+        /// to the lazy expiry that !consent / !no trigger. Pure so it can be unit-tested.
+        /// </summary>
+        public static List<string> FindTimedOutGroupIds(IEnumerable<PendingCommand> groupSeats, DateTime utcNow)
+        {
+            DateTime cutoff = utcNow.AddMinutes(-PendingMinutesKeep);
+            return groupSeats
+                .Where(s => s != null && s.IsGroupSeat && !s.HasConsented && s.startTime.CompareTo(cutoff) < 0)
+                .Select(s => s.groupId)
+                .Distinct()
+                .ToList();
+        }
+
+        /// <summary>
         /// Resolve the group if it's ready. Expired un-consented seats are swept first (lazy
-        /// expiry — there is no background timer), then:
+        /// expiry — the sweep in BotMain.HandleGroupTimeoutsTick and the !consent / !no
+        /// paths all funnel through here), then:
         ///   - if any non-expired seat is still Pending, nothing happens (still waiting);
         ///   - if every remaining seat has consented, the moment fires with that set;
         ///   - if no seats remain at all (everyone refused/expired), the group dies silently.
