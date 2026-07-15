@@ -30,6 +30,19 @@ namespace FChatDicebot.InteractionProcessors.Commitment
         public static string MonsterStatsKey(string monsterType) => "monster:" + monsterType.ToLowerInvariant();
         public static string CategoryStatsKey(string category) => "category:" + category.ToLowerInvariant();
 
+        /// <summary>
+        /// True when the typed !breed identifier is one of the mystery keywords
+        /// ("random": one rolled species for the whole brood; "mixed": every child rolls
+        /// its own) rather than a real monster Identifier. The keywords are reserved —
+        /// GetIdentifierFromCommandTerms can't match them, so a monster could never be
+        /// registered under these names anyway.
+        /// </summary>
+        public static bool IsMysteryKeyword(string identifier)
+        {
+            return string.Equals(identifier, Pregnancy.MysteryRandom, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(identifier, Pregnancy.MysteryMixed, StringComparison.OrdinalIgnoreCase);
+        }
+
         internal struct CategoryDefault
         {
             public string Category;
@@ -116,15 +129,28 @@ namespace FChatDicebot.InteractionProcessors.Commitment
                 return ValidationResult.Failure(ChateauInteractionHandler.typeNotFoundText("monster"));
             }
 
-            Identifier monsterIdentifier = Database.GetIdentifier(identifier);
-            if (monsterIdentifier == null)
+            if (IsMysteryKeyword(identifier))
             {
-                return ValidationResult.Failure(ChateauInteractionHandler.notFoundText(identifier));
+                // The species roll needs a pool to draw from; with no registered monsters
+                // (only realistic in a fresh install) the keyword can't work.
+                var pool = Database.GetIdentifiersByCategory("monster");
+                if (pool == null || pool.Count == 0)
+                {
+                    return ValidationResult.Failure(ChateauInteractionHandler.typeNotFoundText("monster"));
+                }
             }
-            if (monsterIdentifier.categories == null
-                || !monsterIdentifier.categories.Contains("monster", StringComparer.OrdinalIgnoreCase))
+            else
             {
-                return ValidationResult.Failure(ChateauInteractionHandler.typeNotFoundText("monster"));
+                Identifier monsterIdentifier = Database.GetIdentifier(identifier);
+                if (monsterIdentifier == null)
+                {
+                    return ValidationResult.Failure(ChateauInteractionHandler.notFoundText(identifier));
+                }
+                if (monsterIdentifier.categories == null
+                    || !monsterIdentifier.categories.Contains("monster", StringComparer.OrdinalIgnoreCase))
+                {
+                    return ValidationResult.Failure(ChateauInteractionHandler.typeNotFoundText("monster"));
+                }
             }
 
             // Direction lock recheck (H4): without this, nothing stopped a second !breed
@@ -186,14 +212,63 @@ namespace FChatDicebot.InteractionProcessors.Commitment
 
             Profile recipientProfile = Database.GetProfile(recipient);
 
-            Identifier monsterIdentifier = Database.GetIdentifier(monsterType);
+            // Mystery keywords (feedback 6a51d2fa): roll the species here, at breed time, so
+            // gestation and brood size resolve from a real monster — but keep the result off
+            // every pre-birth display via Pregnancy.MysteryKind. For "random" the rolled
+            // monster IS the brood; for "mixed" it is only the womb-math host and each child
+            // rolls its own species below.
+            string mysteryKind = null;
+            List<BroodChild> children = null;
+            List<Identifier> mysteryPool = null;
+            Identifier monsterIdentifier;
+            if (IsMysteryKeyword(monsterType))
+            {
+                mysteryPool = Database.GetIdentifiersByCategory("monster");
+                if (mysteryPool == null || mysteryPool.Count == 0)
+                {
+                    // ValidateInteraction gates this; belt-and-suspenders for direct callers.
+                    Database.DeletePendingCommand(command.Id);
+                    return "NoInteraction";
+                }
+                mysteryKind = string.Equals(monsterType, Pregnancy.MysteryMixed, StringComparison.OrdinalIgnoreCase)
+                    ? Pregnancy.MysteryMixed
+                    : Pregnancy.MysteryRandom;
+                monsterIdentifier = mysteryPool[Rng.Next(mysteryPool.Count)];
+                monsterType = mysteryKind == Pregnancy.MysteryRandom ? monsterIdentifier.type : Pregnancy.MysteryMixed;
+            }
+            else
+            {
+                monsterIdentifier = Database.GetIdentifier(monsterType);
+            }
+
             ResolveGestationAndBrood(monsterIdentifier, Rng, out int gestationDays, out int broodSize, out bool isRareTwins);
 
             // Snapshot the monster's categories on the pregnancy so birth-time category
             // counters don't need to re-fetch the Identifier (which could have changed).
-            List<string> categoriesSnapshot = monsterIdentifier?.categories != null
-                ? new List<string>(monsterIdentifier.categories)
-                : new List<string>();
+            // A mixed brood snapshots per child instead — the host only donated the numbers.
+            List<string> categoriesSnapshot;
+            if (mysteryKind == Pregnancy.MysteryMixed)
+            {
+                children = new List<BroodChild>();
+                for (int i = 0; i < broodSize; i++)
+                {
+                    Identifier childSpecies = mysteryPool[Rng.Next(mysteryPool.Count)];
+                    children.Add(new BroodChild
+                    {
+                        Species = childSpecies.type,
+                        Categories = childSpecies.categories != null
+                            ? new List<string>(childSpecies.categories)
+                            : new List<string>()
+                    });
+                }
+                categoriesSnapshot = new List<string>();
+            }
+            else
+            {
+                categoriesSnapshot = monsterIdentifier?.categories != null
+                    ? new List<string>(monsterIdentifier.categories)
+                    : new List<string>();
+            }
 
             DateTime now = DateTime.UtcNow;
             Pregnancy pregnancy = new Pregnancy
@@ -205,7 +280,9 @@ namespace FChatDicebot.InteractionProcessors.Commitment
                 ReadyAt = now.AddDays(gestationDays),
                 BroodSize = broodSize,
                 Categories = categoriesSnapshot,
-                IsRareTwins = isRareTwins
+                IsRareTwins = isRareTwins,
+                MysteryKind = mysteryKind,
+                Children = children
             };
 
             if (recipientProfile.pregnancies == null)
@@ -224,8 +301,17 @@ namespace FChatDicebot.InteractionProcessors.Commitment
             Database.SetProfile(recipient, recipientProfile);
 
             // Bump the global pregnancy counter for this monster type and each of its
-            // categories. Offspring counters are bumped at birth time, not here.
-            IncrementGlobalPregnancyCounts(Database, monsterType, categoriesSnapshot);
+            // categories. Offspring counters are bumped at birth time, not here. A mixed
+            // brood counts once per distinct species/category it carries — "mixed" itself
+            // is not a monster and gets no counter.
+            if (mysteryKind == Pregnancy.MysteryMixed)
+            {
+                IncrementGlobalMixedPregnancyCounts(Database, children);
+            }
+            else
+            {
+                IncrementGlobalPregnancyCounts(Database, monsterType, categoriesSnapshot);
+            }
 
             Database.DeletePendingCommand(command.Id);
 
@@ -249,8 +335,50 @@ namespace FChatDicebot.InteractionProcessors.Commitment
             }
         }
 
+        /// <summary>
+        /// Bump the global pregnancy counter for a mixed brood: +1 per distinct species and
+        /// +1 per distinct category across the litter (it is one pregnancy carrying each of
+        /// them, not one pregnancy per child).
+        /// </summary>
+        public static void IncrementGlobalMixedPregnancyCounts(IChateauDatabase database, IEnumerable<BroodChild> children)
+        {
+            if (children == null) return;
+            var species = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var categories = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var child in children)
+            {
+                if (child == null || string.IsNullOrEmpty(child.Species)) continue;
+                species.Add(child.Species);
+                if (child.Categories == null) continue;
+                foreach (var category in child.Categories)
+                {
+                    if (!string.IsNullOrEmpty(category)) categories.Add(category);
+                }
+            }
+            foreach (var s in species)
+            {
+                database.IncrementMonsterStats(MonsterStatsKey(s), pregnancyDelta: 1, offspringDelta: 0);
+            }
+            foreach (var c in categories)
+            {
+                database.IncrementMonsterStats(CategoryStatsKey(c), pregnancyDelta: 1, offspringDelta: 0);
+            }
+        }
+
         public override string GetCompletionMessage(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
+            if (string.Equals(identifier, Pregnancy.MysteryRandom, StringComparison.OrdinalIgnoreCase))
+            {
+                return initiatorProfile.displayName + " has bred " + recipientProfile.displayName
+                    + " with new life of a mystery species! "
+                    + recipientProfile.displayName + " will carry the pregnancy until they're ready to !birth their young — and only then will anyone learn what's inside.";
+            }
+            if (string.Equals(identifier, Pregnancy.MysteryMixed, StringComparison.OrdinalIgnoreCase))
+            {
+                return initiatorProfile.displayName + " has bred " + recipientProfile.displayName
+                    + " with a mixed brood of mystery life! "
+                    + recipientProfile.displayName + " will carry the pregnancy until they're ready to !birth their young — and only then will anyone learn what's inside.";
+            }
             return initiatorProfile.displayName + " has bred " + recipientProfile.displayName
                 + " with new " + identifier + " life! "
                 + recipientProfile.displayName + " will carry the pregnancy until they're ready to !birth their young.";
@@ -278,8 +406,18 @@ namespace FChatDicebot.InteractionProcessors.Commitment
             string seriousness = ConsentWarningText.Block(
                 ConsentWarningText.FrequencyPerAxis(initiatorProfile.displayName, "breed you", Cooldown.PeriodDays));
 
+            string lifePhrase = " with new " + identifier + " life!";
+            if (string.Equals(identifier, Pregnancy.MysteryRandom, StringComparison.OrdinalIgnoreCase))
+            {
+                lifePhrase = " with new life of a mystery species — nobody will know what it is until the !birth!";
+            }
+            else if (string.Equals(identifier, Pregnancy.MysteryMixed, StringComparison.OrdinalIgnoreCase))
+            {
+                lifePhrase = " with a mixed brood — every child a mystery species until the !birth!";
+            }
+
             return initiatorProfile.displayName + " wants to breed " + recipientProfile.displayName
-                + " with new " + identifier + " life! " + seriousness
+                + lifePhrase + " " + seriousness
                 + pregnancyCountText
                 + " Do you !consent to being bred?";
         }

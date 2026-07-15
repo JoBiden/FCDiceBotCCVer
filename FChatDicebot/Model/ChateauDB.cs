@@ -94,6 +94,37 @@ namespace FChatDicebot.Model
         // Used to emit special "rare twins" flavor in the birth message.
         [BsonIgnoreIfDefault]
         public bool IsRareTwins { get; set; }
+
+        // --- Mystery pregnancies (feedback 6a51d2fa) ---
+        // "random" (whole brood one rolled species) or "mixed" (each child its own rolled
+        // species); null for an ordinary pregnancy. The roll happens at breed time, but
+        // every pre-birth display masks the species — the birth announcement reveals it.
+        [BsonIgnoreIfNull]
+        public string MysteryKind { get; set; }
+
+        // Mixed broods only: one entry per child, rolled at breed time. Mirrors the
+        // Categories snapshot above but per child, so birth-time counters don't need to
+        // re-fetch Identifiers. Null for ordinary and "random" pregnancies (whose single
+        // species lives in MonsterType/Categories as usual).
+        [BsonIgnoreIfNull]
+        public List<BroodChild> Children { get; set; }
+
+        public const string MysteryRandom = "random";
+        public const string MysteryMixed = "mixed";
+
+        public bool IsMystery => !string.IsNullOrEmpty(MysteryKind);
+        public bool IsMixedBrood => MysteryKind == MysteryMixed;
+    }
+
+    /// <summary>
+    /// One child of a mixed-species brood: its rolled species and the category snapshot
+    /// taken at breed time (same rationale as <see cref="Pregnancy.Categories"/>).
+    /// </summary>
+    public class BroodChild
+    {
+        public string Species { get; set; }
+        [BsonIgnoreIfNull]
+        public List<string> Categories { get; set; }
     }
 
     /// <summary>

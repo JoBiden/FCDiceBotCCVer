@@ -613,6 +613,113 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
             Assert.Equal("slime", reloaded.pregnancies[0].MonsterType);
         }
 
+        // ---- Mystery pregnancies (feedback 6a51d2fa): !breed random / !breed mixed ----
+
+        [Theory]
+        [InlineData("random")]
+        [InlineData("mixed")]
+        [InlineData("RANDOM")]
+        public void ValidateInteraction_MysteryKeyword_WithMonstersRegistered_ReturnsSuccess(string keyword)
+        {
+            new ProfileBuilder().WithUserName("Alice").WithDisplayName("Alice").BuildAndSave(_database);
+            new ProfileBuilder().WithUserName("Bob").WithDisplayName("Bob").BuildAndSave(_database);
+            _fixture.SeedIdentifier(new Identifier { type = "slime", description = "a viscous slime", categories = new[] { "monster" } });
+
+            var result = _processor.ValidateInteraction("Alice", "Bob", keyword);
+
+            Assert.True(result.IsValid);
+        }
+
+        [Fact]
+        public void ValidateInteraction_MysteryKeyword_NoMonstersRegistered_ReturnsFailure()
+        {
+            new ProfileBuilder().WithUserName("Alice").WithDisplayName("Alice").BuildAndSave(_database);
+            new ProfileBuilder().WithUserName("Bob").WithDisplayName("Bob").BuildAndSave(_database);
+
+            var result = _processor.ValidateInteraction("Alice", "Bob", "random");
+
+            Assert.False(result.IsValid);
+        }
+
+        [Fact]
+        public void ProcessInteraction_RandomKeyword_RollsARealSpeciesAndStaysMasked()
+        {
+            new ProfileBuilder().WithUserName("Alice").WithDisplayName("Alice").BuildAndSave(_database);
+            new ProfileBuilder().WithUserName("Bob").WithDisplayName("Bob").BuildAndSave(_database);
+            // A single registered monster makes the roll deterministic.
+            _fixture.SeedIdentifier(new Identifier
+            {
+                type = "slime",
+                description = "a viscous slime",
+                categories = new[] { "monster", "slime" },
+                gestationDays = 3,
+                broodSizeMin = 2,
+                broodSizeMax = 2
+            });
+
+            _processor.ProcessInteraction(SaveAndReturn(BuildPendingCommand("Alice", "Bob", "random")));
+
+            var pregnancy = _database.GetProfile("Bob").pregnancies.Single();
+            Assert.Equal("slime", pregnancy.MonsterType);          // rolled species, real stats
+            Assert.Equal(Pregnancy.MysteryRandom, pregnancy.MysteryKind);
+            Assert.True(pregnancy.IsMystery);
+            Assert.False(pregnancy.IsMixedBrood);
+            Assert.Null(pregnancy.Children);
+            Assert.Equal(2, pregnancy.BroodSize);                  // slime's own brood range
+            Assert.Equal(new[] { "monster", "slime" }, pregnancy.Categories.ToArray());
+
+            // The pregnancy counter goes to the rolled species; "random" is not a monster.
+            Assert.Equal(1, _database.GetMonsterStats(BreedProcessor.MonsterStatsKey("slime")).PregnancyCount);
+            Assert.Null(_database.GetMonsterStats(BreedProcessor.MonsterStatsKey("random")));
+        }
+
+        [Fact]
+        public void ProcessInteraction_MixedKeyword_RollsEachChildWithItsOwnSnapshot()
+        {
+            new ProfileBuilder().WithUserName("Alice").WithDisplayName("Alice").BuildAndSave(_database);
+            new ProfileBuilder().WithUserName("Bob").WithDisplayName("Bob").BuildAndSave(_database);
+            _fixture.SeedIdentifier(new Identifier
+            {
+                type = "slime",
+                description = "a viscous slime",
+                categories = new[] { "monster", "slime" },
+                gestationDays = 3,
+                broodSizeMin = 3,
+                broodSizeMax = 3
+            });
+
+            _processor.ProcessInteraction(SaveAndReturn(BuildPendingCommand("Alice", "Bob", "mixed")));
+
+            var pregnancy = _database.GetProfile("Bob").pregnancies.Single();
+            Assert.Equal(Pregnancy.MysteryMixed, pregnancy.MonsterType);
+            Assert.Equal(Pregnancy.MysteryMixed, pregnancy.MysteryKind);
+            Assert.True(pregnancy.IsMixedBrood);
+            Assert.Equal(3, pregnancy.BroodSize);                  // host's brood range
+            Assert.Equal(3, pregnancy.Children.Count);             // one rolled species per child
+            Assert.All(pregnancy.Children, c => Assert.Equal("slime", c.Species));
+            Assert.All(pregnancy.Children, c => Assert.Equal(new[] { "monster", "slime" }, c.Categories.ToArray()));
+            Assert.Empty(pregnancy.Categories);                    // host categories don't count
+
+            // One pregnancy carrying one distinct species → +1 for slime, nothing for "mixed".
+            Assert.Equal(1, _database.GetMonsterStats(BreedProcessor.MonsterStatsKey("slime")).PregnancyCount);
+            Assert.Null(_database.GetMonsterStats(BreedProcessor.MonsterStatsKey("mixed")));
+        }
+
+        [Fact]
+        public void GetConsentWarning_MysteryKeywords_DoNotLeakASpecies()
+        {
+            var alice = new ProfileBuilder().WithUserName("Alice").WithDisplayName("Alice").BuildAndSave(_database);
+            var bob = new ProfileBuilder().WithUserName("Bob").WithDisplayName("Bob").BuildAndSave(_database);
+
+            string randomWarning = _processor.GetConsentWarning(alice, bob, "random");
+            string mixedWarning = _processor.GetConsentWarning(alice, bob, "mixed");
+
+            Assert.Contains("mystery", randomWarning);
+            Assert.Contains("!consent", randomWarning);
+            Assert.Contains("mixed brood", mixedWarning);
+            Assert.Contains("!consent", mixedWarning);
+        }
+
         private PendingCommand BuildPendingCommand(string initiator, string recipient, string monster)
         {
             return new PendingCommand
