@@ -115,6 +115,7 @@ namespace FChatDicebot.BotCommands
                 "!bully",
                 "!boobhat",
                 "!lick",
+                "!pet",
                 "!lap",
                 "!sit"
             };

@@ -21,7 +21,7 @@ namespace FChatDicebot.BotCommands
             Aliases = new string[] { };
             Category = "General";
             ShortDescription = "Set your personal eicon for an interaction";
-            LongDescription = "Set a special eicon to show for your interactions of the specified type. Once set, whenever you perform that interaction the onlookers will see your eicon alongside the result. For mutual interactions (!kiss, !cuddle, !handhold and !bond) and group interactions, all participants' eicons will show. For !climax and !climaxfor, the eicon for the one climaxing will show. For all other interactions, the initiator's eicon will show.\n\n"
+            LongDescription = "Set a special eicon to show for your interactions of the specified type. Once set, whenever you perform that interaction the onlookers will see your eicon alongside the result. For mutual interactions (!kiss, !cuddle, !handhold and !bond) and group interactions, all participants' eicons will show. For !climax and !climaxfor, the eicon for the one climaxing will show. For !pet, the eicon for the one being petted will show (set your own 'being petted' eicon). For all other interactions, the initiator's eicon will show.\n\n"
                 + "Set one with !seteicon {interaction} [noparse][eicon]YourEicon[/eicon][/noparse]. Leave the eicon off to clear it. Message !seteicon on its own to see everything you've set.";
             Usage = "!seteicon {interaction} [noparse][eicon]YourEicon[/eicon][/noparse]\nor\n!seteicon {interaction}   (to clear it)\nor\n!seteicon   (to list what you've set)";
             RelatedCommands = new string[] { "dossier" };

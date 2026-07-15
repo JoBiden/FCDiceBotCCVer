@@ -39,6 +39,7 @@ Driven by `InteractionProcessorBase.EiconAppliesToBothParties`:
 
 - **Directional (default):** only the initiator's eicon shows (e.g. `!spank`, `!mark`, `!feed`, `!corrupt`).
 - **Symmetric:** both parties' eicons show. Overridden to `true` on the mutual, co-equal interactions: **`cuddle`, `kiss`, `handhold`, `bond`**.
+- **Redirected subject:** a directional interaction can still point the single eicon at the *other* party by overriding `GetEiconSubject`. `!climax`/`!climaxfor` point it at whoever actually climaxed, and **`!pet`** points it at the recipient — residents keep a "my character being petted" eicon, so the natural icon is the pet's, not the petter's.
 
 Self-interactions (e.g. solo `!climax`) collapse to a single eicon.
 
@@ -48,6 +49,7 @@ The group path ([`GroupInteractionResolver`](../../FChatDicebot/InteractionProce
 
 - Symmetric group casuals (`cuddle`/`kiss`/`handhold`): every participant who set an eicon shows it.
 - Directional group casuals (`spank`/`bully`/`lick`/`boobhat`): only the initiator's.
+- Recipient-subject group casual (`pet`): overrides `GetGroupEiconSuffix` to show each petted recipient's eicon (in consent order), mirroring its 1:1 `GetEiconSubject` redirect — the initiator's is not shown.
 - **No de-duplication:** if several participants picked the same eicon it shows once per participant (e.g. three lipstick marks on a group kiss).
 
 ### Lap-stack per-position rule (totem pole)

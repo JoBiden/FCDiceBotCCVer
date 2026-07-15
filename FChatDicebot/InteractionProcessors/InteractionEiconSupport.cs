@@ -58,6 +58,7 @@ namespace FChatDicebot.InteractionProcessors
             { "lap", new[] { "lap" } },
             { "sit", new[] { "sit" } },
             { "lick", new[] { "lick" } },
+            { "pet", new[] { "pet" } },
             { "spank", new[] { "spank" } },
             // Involved
             { "climax", new[] { "climax" } },
@@ -99,7 +100,7 @@ namespace FChatDicebot.InteractionProcessors
         /// </summary>
         public static readonly string[] CanonicalTokensInOrder = new[]
         {
-            "boobhat", "bully", "cuddle", "handhold", "kiss", "lap", "sit", "lick", "spank",
+            "boobhat", "bully", "cuddle", "handhold", "kiss", "lap", "sit", "lick", "pet", "spank",
             "climax", "dressup", "feed", "golden", "milk", "pay",
             "birth", "bond", "breed", "consume", "corrupt", "purify", "employ", "entitle",
             "mark", "objectify", "petrify", "plant", "train",
