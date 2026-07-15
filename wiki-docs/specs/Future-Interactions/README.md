@@ -17,6 +17,7 @@ Specs are removed from this folder once they ship — the as-implemented docs li
 | Spec | Adds |
 |------|------|
 | [Group-Interactions-And-Pending-Lifecycle](Group-Interactions-And-Pending-Lifecycle.md) | Multi-person casual interactions (hybrid group model), `!withdraw`/`!refuse` pending-lifecycle commands, and three new casuals (lapsit lap-stack, boobhat, lick). |
+| [Bodypart-and-Identifier-Eicons](Bodypart-and-Identifier-Eicons.md) | `!seteicon {bodypart}` personal bodypart eicons rendered on part-involving interactions (mark, consume, golden, break + implicit spank/feed/lick/boobhat/milk/handhold), the `qcass` easter-egg migration, and an optional `Identifier.eicon` field surfaced in `!whatis` (admin-set via `!setidentifiereicon`). |
 
 ### Shelved
 
