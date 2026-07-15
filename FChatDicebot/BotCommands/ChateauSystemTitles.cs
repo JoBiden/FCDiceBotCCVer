@@ -169,18 +169,18 @@ namespace FChatDicebot
                 ("licktake", 500, "Lollipop"),
 
                 // Pet - giving (the one petting)
-                ("petgive", 1, "Pat, Pat"),
-                ("petgive", 10, "Petter"),
-                ("petgive", 50, "Head Patter"),
-                ("petgive", 100, "Pet Whisperer"),
-                ("petgive", 500, "Gives The Best Scritches"),
+                ("petgive", 1, "[i]Pets You[/i]"),
+                ("petgive", 10, "Scritch Supplier"),
+                ("petgive", 50, "Power Petter"),
+                ("petgive", 100, "Gives The Best Scritches"),
+                ("petgive", 500, "Put on this Plane to Pet"),
 
                 // Pet - taking (the one being petted)
                 ("pettake", 1, "Good Pet"),
-                ("pettake", 10, "Petted"),
-                ("pettake", 50, "Headpat Enjoyer"),
+                ("pettake", 10, "Petteded"),
+                ("pettake", 50, "Scritches Please"),
                 ("pettake", 100, "Very Good Pet"),
-                ("pettake", 500, "Purrs On Command"),
+                ("pettake", 500, "Put on this Plane to be Pet"),
 
                 // INVOLVED INTERACTION titles
 
@@ -654,11 +654,10 @@ namespace FChatDicebot
                 },
                 ["pet"] = new[]
                 {
-                    (3, "Petting Zoo"),
-                    (5, "Menagerie"),
-                    (7, "Herder"),
-                    (9, "Pack Leader"),
-                    (11, "Whole Kennel"),
+                    (4, "Pet Pet Pet"),
+                    (6, "Need More Limbs!"),
+                    (9, "Octopets"),
+                    (11, "Epetomy"),
                 },
             };
 
