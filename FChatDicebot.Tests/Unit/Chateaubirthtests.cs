@@ -242,6 +242,120 @@ namespace FChatDicebot.Tests.Unit.BotCommands
             Assert.NotEqual(string.Empty, result.PrivateMessage);
         }
 
+        // ---- Mystery pregnancies (feedback 6a51d2fa): masked until birth reveals ----
+
+        [Fact]
+        public void BuildGestationStatusMessage_MysteryPregnancies_MaskTheSpecies()
+        {
+            var random = BuildPregnancy("Alice", "slime", conceivedDaysAgo: 0, readyInDays: 3, broodSize: 2);
+            random.MysteryKind = Pregnancy.MysteryRandom;
+            var mixed = BuildPregnancy("Carol", Pregnancy.MysteryMixed, conceivedDaysAgo: 0, readyInDays: 2, broodSize: 2);
+            mixed.MysteryKind = Pregnancy.MysteryMixed;
+            mixed.Children = new List<BroodChild>
+            {
+                new BroodChild { Species = "wasp" },
+                new BroodChild { Species = "dragon" },
+            };
+            CreateCarrierWithPregnancies("Bob", random, mixed);
+
+            string msg = ChateauBirth.BuildGestationStatusMessage(_database, "Bob");
+
+            Assert.Contains("???", msg);
+            Assert.Contains("mixed brood", msg);
+            Assert.DoesNotContain("slime", msg);
+            Assert.DoesNotContain("wasp", msg);
+            Assert.DoesNotContain("dragon", msg);
+        }
+
+        [Fact]
+        public void ExecuteBirth_ReadyList_MasksMysterySpecies()
+        {
+            var normal = BuildPregnancy("Alice", "wasp", conceivedDaysAgo: 5, readyInDays: -2, broodSize: 4);
+            var random = BuildPregnancy("Carol", "slime", conceivedDaysAgo: 4, readyInDays: -1, broodSize: 1);
+            random.MysteryKind = Pregnancy.MysteryRandom;
+            CreateCarrierWithPregnancies("Bob", normal, random);
+
+            var result = ChateauBirth.ExecuteBirth(_database, "Bob", new string[0]);
+
+            Assert.Contains("wasp", result.PrivateMessage);
+            Assert.Contains("???", result.PrivateMessage);
+            Assert.DoesNotContain("slime", result.PrivateMessage);
+        }
+
+        [Fact]
+        public void ExecuteBirth_RandomMystery_RevealsTheSpecies()
+        {
+            var pregnancy = BuildPregnancy("Alice", "slime", conceivedDaysAgo: 5, readyInDays: -2, broodSize: 1);
+            pregnancy.MysteryKind = Pregnancy.MysteryRandom;
+            CreateCarrierWithPregnancies("Bob", pregnancy);
+
+            var result = ChateauBirth.ExecuteBirth(_database, "Bob", new string[0]);
+
+            Assert.Contains("Who would have guessed?", result.ChannelMessage);
+            Assert.Contains("slime", result.ChannelMessage);
+        }
+
+        [Fact]
+        public void ExecuteBirth_MixedBrood_EnumeratesLitterAndCountsPerChild()
+        {
+            var pregnancy = BuildPregnancy("Alice", Pregnancy.MysteryMixed, conceivedDaysAgo: 5, readyInDays: -2, broodSize: 3);
+            pregnancy.MysteryKind = Pregnancy.MysteryMixed;
+            pregnancy.Children = new List<BroodChild>
+            {
+                new BroodChild { Species = "slime", Categories = new List<string> { "monster", "slime" } },
+                new BroodChild { Species = "slime", Categories = new List<string> { "monster", "slime" } },
+                new BroodChild { Species = "dragon", Categories = new List<string> { "monster", "dragon" } },
+            };
+            CreateCarrierWithPregnancies("Bob", pregnancy);
+
+            var result = ChateauBirth.ExecuteBirth(_database, "Bob", new string[0]);
+
+            Assert.Contains("mixed brood of 3", result.ChannelMessage);
+            Assert.Contains("2 slimes", result.ChannelMessage);
+            Assert.Contains("a dragon", result.ChannelMessage);
+
+            // Offspring counters land per child; "mixed" is not a monster.
+            Assert.Equal(2, _database.GetMonsterStats(BreedProcessor.MonsterStatsKey("slime")).OffspringCount);
+            Assert.Equal(1, _database.GetMonsterStats(BreedProcessor.MonsterStatsKey("dragon")).OffspringCount);
+            Assert.Null(_database.GetMonsterStats(BreedProcessor.MonsterStatsKey("mixed")));
+            Assert.Equal(3, _database.GetMonsterStats(BreedProcessor.CategoryStatsKey("monster")).OffspringCount);
+
+            // The offspring log records the composition.
+            var bob = _database.GetProfile("Bob");
+            Assert.Contains(bob.lists["offspring"], entry => entry.Contains("mixed (slime, slime, dragon)"));
+        }
+
+        [Fact]
+        public void ExecuteBirth_MixedBroodOfOne_UsesSoleChildWording()
+        {
+            var pregnancy = BuildPregnancy("Alice", Pregnancy.MysteryMixed, conceivedDaysAgo: 5, readyInDays: -2, broodSize: 1);
+            pregnancy.MysteryKind = Pregnancy.MysteryMixed;
+            pregnancy.Children = new List<BroodChild>
+            {
+                new BroodChild { Species = "dragon", Categories = new List<string> { "monster", "dragon" } },
+            };
+            CreateCarrierWithPregnancies("Bob", pregnancy);
+
+            var result = ChateauBirth.ExecuteBirth(_database, "Bob", new string[0]);
+
+            Assert.Contains("sole child", result.ChannelMessage);
+            Assert.Contains("a dragon", result.ChannelMessage);
+        }
+
+        [Fact]
+        public void DescribeMixedLitter_GroupsBySpeciesWithSerialComma()
+        {
+            var children = new List<BroodChild>
+            {
+                new BroodChild { Species = "slime" },
+                new BroodChild { Species = "wasp" },
+                new BroodChild { Species = "slime" },
+                new BroodChild { Species = "imp" },
+            };
+
+            Assert.Equal("2 slimes, a wasp, and an imp", ChateauBirth.DescribeMixedLitter(children));
+        }
+
         private void CreateCarrierWithPregnancies(string userName, params Pregnancy[] pregnancies)
         {
             var carrier = new ProfileBuilder()

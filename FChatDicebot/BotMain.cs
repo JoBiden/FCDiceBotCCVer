@@ -143,6 +143,11 @@ namespace FChatDicebot
         // How often the random-events scheduler scans eligible channels (seconds). Events are
         // hours apart, so a coarse scan is plenty and keeps the 200ms tick loop cheap.
         public const double RandomEventScanIntervalSeconds = 10;
+
+        // How often the group-interaction timeout sweep runs (seconds). The consent window is
+        // 10 minutes, so a half-minute granularity on "the timer ran out" is plenty and keeps
+        // the Mongo scan off the hot path.
+        public const double GroupTimeoutScanIntervalSeconds = 30;
         public List<string> ChannelsJoined = new List<string>();
         public List<UserGeneratedCommand> WaitingChannelOpRequests = new List<UserGeneratedCommand>();
         public List<BuyCommand> WaitingBuyCommands = new List<BuyCommand>();
@@ -695,6 +700,7 @@ namespace FChatDicebot
                         // bot that stops processing future messages and random events.
                         HandleFutureMessagesTick(TickTimeMiliseconds);
                         HandleRandomEventsTick(TickTimeMiliseconds);
+                        HandleGroupTimeoutsTick(TickTimeMiliseconds);
                     }
                     catch (Exception exc)
                     {
@@ -1104,6 +1110,51 @@ namespace FChatDicebot
                 {
                     Console.WriteLine("Exception in HandleRandomEventsTick for " + cs.Name + ": " + exc.ToString());
                     Utils.AddToLog("Exception in HandleRandomEventsTick for " + cs.Name + ": " + exc.ToString(), null);
+                }
+            }
+        }
+
+        // Heartbeat for group-interaction timeouts (feedback 6a55cfa9), sibling to
+        // HandleRandomEventsTick. GroupInteractionResolver's expiry is otherwise lazy — it
+        // only runs when someone types !consent / !no — so a group whose 10-minute window
+        // ran out used to sit unresolved until the next command happened to touch it. This
+        // sweep fires those groups with whoever consented (or quietly clears a group nobody
+        // answered). Wrapped per-group so one bad group can't abort the others.
+        private double _lastGroupTimeoutScanSeconds = 0;
+        private void HandleGroupTimeoutsTick(int tickMs)
+        {
+            double nowSeconds = DoubleTime.GetCurrentTimestampSeconds();
+            if (nowSeconds - _lastGroupTimeoutScanSeconds < GroupTimeoutScanIntervalSeconds)
+                return;
+            _lastGroupTimeoutScanSeconds = nowSeconds;
+
+            var database = MonDB.GetDatabase();
+            List<PendingCommand> groupSeats = database.GetAllGroupPendingCommands();
+            if (groupSeats.Count == 0)
+                return;
+
+            foreach (string groupId in InteractionProcessors.GroupInteractionResolver.FindTimedOutGroupIds(groupSeats, DateTime.UtcNow))
+            {
+                try
+                {
+                    // The announcement channel travels on the seats; without it (legacy
+                    // in-flight seats from before sourceChannel existed) there is nowhere
+                    // to post the moment, so leave the group to the lazy path.
+                    string channel = groupSeats
+                        .Where(s => s.groupId == groupId)
+                        .Select(s => s.sourceChannel)
+                        .FirstOrDefault(c => !string.IsNullOrEmpty(c));
+                    if (channel == null)
+                        continue;
+
+                    string message = BotCommands.Support.GroupResolutionSupport.ResolveAndFormat(this, database, groupId);
+                    if (!string.IsNullOrEmpty(message))
+                        SendMessageInChannel(message, channel);
+                }
+                catch (Exception exc)
+                {
+                    Console.WriteLine("Exception in HandleGroupTimeoutsTick for group " + groupId + ": " + exc.ToString());
+                    Utils.AddToLog("Exception in HandleGroupTimeoutsTick for group " + groupId + ": " + exc.ToString(), null);
                 }
             }
         }

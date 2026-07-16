@@ -78,7 +78,7 @@ namespace FChatDicebot.BotCommands
                     ? "Ready now!"
                     : "ready in " + Utils.GetTimeSpanPrint(pregnancy.ReadyAt - now);
                 string broodPart = pregnancy.BroodSize > 1 ? " (brood of " + pregnancy.BroodSize + ")" : "";
-                msg += "\n[b]" + pregnancy.MonsterType + "[/b] sired by [user]" + pregnancy.Initiator + "[/user]" + broodPart + ": " + status;
+                msg += "\n[b]" + DescribePregnancyType(pregnancy) + "[/b] sired by [user]" + pregnancy.Initiator + "[/user]" + broodPart + ": " + status;
             }
             return msg;
         }
@@ -175,7 +175,12 @@ namespace FChatDicebot.BotCommands
             foreach (var pregnancy in toBirth)
             {
                 carrier.pregnancies.Remove(pregnancy);
-                carrier.lists["offspring"].Add(now.ToString("yyyy-MM-dd") + ": " + pregnancy.MonsterType
+                // A mixed brood logs its composition (a "random" pregnancy's MonsterType is
+                // already the real species — the log entry is only written post-reveal).
+                string logType = pregnancy.IsMixedBrood && pregnancy.Children != null && pregnancy.Children.Count > 0
+                    ? "mixed (" + string.Join(", ", pregnancy.Children.Select(c => c.Species)) + ")"
+                    : pregnancy.MonsterType;
+                carrier.lists["offspring"].Add(now.ToString("yyyy-MM-dd") + ": " + logType
                     + " brood of " + pregnancy.BroodSize
                     + " (parent: " + pregnancy.Initiator + ")");
                 channelParts.Add(BuildCompletionMessage(carrier, pregnancy));
@@ -199,7 +204,27 @@ namespace FChatDicebot.BotCommands
 
         private static void IncrementGlobalOffspringCounts(IChateauDatabase database, Pregnancy pregnancy)
         {
-            if (string.IsNullOrEmpty(pregnancy.MonsterType) || pregnancy.BroodSize <= 0) return;
+            if (pregnancy.BroodSize <= 0) return;
+
+            // Mixed broods count per child ("mixed" itself is not a monster and gets no
+            // counter), each against its own breed-time category snapshot.
+            if (pregnancy.IsMixedBrood && pregnancy.Children != null)
+            {
+                foreach (var child in pregnancy.Children)
+                {
+                    if (child == null || string.IsNullOrEmpty(child.Species)) continue;
+                    database.IncrementMonsterStats(BreedProcessor.MonsterStatsKey(child.Species), pregnancyDelta: 0, offspringDelta: 1);
+                    if (child.Categories == null) continue;
+                    foreach (var category in child.Categories)
+                    {
+                        if (string.IsNullOrEmpty(category)) continue;
+                        database.IncrementMonsterStats(BreedProcessor.CategoryStatsKey(category), pregnancyDelta: 0, offspringDelta: 1);
+                    }
+                }
+                return;
+            }
+
+            if (string.IsNullOrEmpty(pregnancy.MonsterType)) return;
             database.IncrementMonsterStats(BreedProcessor.MonsterStatsKey(pregnancy.MonsterType), pregnancyDelta: 0, offspringDelta: pregnancy.BroodSize);
             if (pregnancy.Categories == null) return;
             foreach (var category in pregnancy.Categories)
@@ -216,20 +241,88 @@ namespace FChatDicebot.BotCommands
             string birthEicon = InteractionEiconSupport.GetInteractionEicon(carrier, "birth");
             string eiconSuffix = string.IsNullOrEmpty(birthEicon) ? string.Empty : " " + birthEicon;
 
-            // Rare-twins flavor: the resolved brood range was [1,1] and the 1% roll fired.
-            if (pregnancy.IsRareTwins)
+            // Mixed brood: the reveal enumerates the litter (which also covers a host-rolled
+            // rare-twins pair, so the twins flavor below never applies to mixed).
+            if (pregnancy.IsMixedBrood && pregnancy.Children != null && pregnancy.Children.Count > 0)
             {
-                return carrier.displayName + " has miraculously given birth to a pair of " + pregnancy.MonsterType
-                    + " twins — a rare blessing for a species that normally bears just one! (Sired by "
+                if (pregnancy.Children.Count == 1)
+                {
+                    string only = pregnancy.Children[0].Species;
+                    return carrier.displayName + " has given birth to the sole child of their 'mixed' brood, "
+                        + Utils.AnOrA(only) + " " + only + "! (Sired by " + pregnancy.Initiator + ".)" + eiconSuffix;
+                }
+                return carrier.displayName + " has given birth to a wonderfully mixed brood of " + pregnancy.BroodSize
+                    + ". " + DescribeMixedLitter(pregnancy.Children) + "! (Sired by "
                     + pregnancy.Initiator + ".)" + eiconSuffix;
             }
 
-            string broodPhrase = pregnancy.BroodSize > 1
-                ? "a brood of " + pregnancy.BroodSize + " " + pregnancy.MonsterType + "s"
-                : Utils.AnOrA(pregnancy.MonsterType) + " " + pregnancy.MonsterType;
+            // The normal announcement — a "random" mystery uses it unchanged (the line itself
+            // is the reveal), plus a wink.
+            string message;
+            if (pregnancy.IsRareTwins)
+            {
+                // Rare-twins flavor: the resolved brood range was [1,1] and the 1% roll fired.
+                message = carrier.displayName + " has miraculously given birth to a pair of " + pregnancy.MonsterType
+                    + " twins — a rare blessing for a species that normally bears just one! (Sired by "
+                    + pregnancy.Initiator + ".)";
+            }
+            else
+            {
+                string broodPhrase = pregnancy.BroodSize > 1
+                    ? "a brood of " + pregnancy.BroodSize + " " + TextFormat.PluralizeNoun(pregnancy.MonsterType)
+                    : Utils.AnOrA(pregnancy.MonsterType) + " " + pregnancy.MonsterType;
+                message = carrier.displayName + " has given birth to " + broodPhrase
+                    + "! (Sired by " + pregnancy.Initiator + ".)";
+            }
 
-            return carrier.displayName + " has given birth to " + broodPhrase
-                + "! (Sired by " + pregnancy.Initiator + ".)" + eiconSuffix;
+            if (pregnancy.IsMystery)
+            {
+                message += " Who would have guessed?";
+            }
+
+            return message + eiconSuffix;
+        }
+
+        /// <summary>
+        /// Pre-birth display name for a pregnancy: mystery pregnancies stay masked until the
+        /// birth announcement reveals them.
+        /// </summary>
+        private static string DescribePregnancyType(Pregnancy pregnancy)
+        {
+            if (pregnancy.IsMixedBrood) return "??? (mixed brood)";
+            if (pregnancy.IsMystery) return "???";
+            return pregnancy.MonsterType;
+        }
+
+        /// <summary>
+        /// Describe a mixed litter grouped by species in first-appearance order, e.g.
+        /// "2 kitsunes, a slime, and a dragon".
+        /// </summary>
+        internal static string DescribeMixedLitter(List<BroodChild> children)
+        {
+            var order = new List<string>();
+            var counts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            foreach (var child in children)
+            {
+                if (child == null || string.IsNullOrEmpty(child.Species)) continue;
+                if (!counts.ContainsKey(child.Species))
+                {
+                    counts[child.Species] = 0;
+                    order.Add(child.Species);
+                }
+                counts[child.Species]++;
+            }
+
+            var parts = order
+                .Select(s => counts[s] > 1
+                    ? counts[s] + " " + TextFormat.PluralizeNoun(s)
+                    : Utils.AnOrA(s) + " " + s)
+                .ToList();
+
+            if (parts.Count == 0) return "nothing at all, somehow";
+            if (parts.Count == 1) return parts[0];
+            if (parts.Count == 2) return parts[0] + " and " + parts[1];
+            return string.Join(", ", parts.Take(parts.Count - 1)) + ", and " + parts[parts.Count - 1];
         }
 
         private static string BuildReadyList(List<Pregnancy> ready)
@@ -238,7 +331,7 @@ namespace FChatDicebot.BotCommands
             int n = 1;
             foreach (var pregnancy in ready)
             {
-                msg += "\n" + n + ": [b]" + pregnancy.MonsterType + "[/b] sired by [user]" + pregnancy.Initiator + "[/user]";
+                msg += "\n" + n + ": [b]" + DescribePregnancyType(pregnancy) + "[/b] sired by [user]" + pregnancy.Initiator + "[/user]";
                 if (pregnancy.BroodSize > 1)
                 {
                     msg += " (brood of " + pregnancy.BroodSize + ")";

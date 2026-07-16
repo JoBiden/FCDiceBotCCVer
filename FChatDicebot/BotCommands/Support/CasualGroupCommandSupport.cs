@@ -123,7 +123,8 @@ namespace FChatDicebot.BotCommands.Support
                     pendingInteraction = BuildInteraction(characterName, recipient.userName, interactionType, identifier),
                     awaitingConsentFrom = recipient.userName,
                     groupId = groupId,
-                    consentState = PendingCommand.PendingConsentState
+                    consentState = PendingCommand.PendingConsentState,
+                    sourceChannel = channel
                 });
             }
 

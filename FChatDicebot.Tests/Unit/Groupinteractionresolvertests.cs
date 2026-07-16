@@ -235,6 +235,91 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
             Assert.Contains("forming a lap stack 5 people tall!", result.ChannelMessage);
         }
 
+        // ---- Timeout sweep selector (feedback 6a55cfa9): which groups are due a
+        // ---- timeout-fire, per the pure FindTimedOutGroupIds used by BotMain's sweep ----
+
+        [Fact]
+        public void FindTimedOutGroupIds_GroupWithExpiredPendingSeat_IsListed()
+        {
+            SeedProfiles("Alice", "Bob", "Carol");
+            var seats = CreateGroup("Alice", "cuddle", null, "Bob", "Carol");
+            ConsentSeat(seats[0]); // Bob consents
+            ExpireSeat(seats[1]);  // Carol never answers and times out
+
+            var due = GroupInteractionResolver.FindTimedOutGroupIds(
+                _database.GetAllGroupPendingCommands(), DateTime.UtcNow);
+
+            Assert.Equal(new[] { seats[0].groupId }, due);
+        }
+
+        [Fact]
+        public void FindTimedOutGroupIds_GroupStillInsideWindow_NotListed()
+        {
+            SeedProfiles("Alice", "Bob", "Carol");
+            var seats = CreateGroup("Alice", "cuddle", null, "Bob", "Carol");
+            ConsentSeat(seats[0]); // Bob consents; Carol's seat is fresh
+
+            var due = GroupInteractionResolver.FindTimedOutGroupIds(
+                _database.GetAllGroupPendingCommands(), DateTime.UtcNow);
+
+            Assert.Empty(due);
+        }
+
+        [Fact]
+        public void FindTimedOutGroupIds_ExpiredConsentedSeat_DoesNotCount()
+        {
+            SeedProfiles("Alice", "Bob");
+            var seats = CreateGroup("Alice", "cuddle", null, "Bob");
+            ConsentSeat(seats[0]);
+            ExpireSeat(seats[0]); // consented long ago — expiry only applies to un-consented seats
+
+            var due = GroupInteractionResolver.FindTimedOutGroupIds(
+                _database.GetAllGroupPendingCommands(), DateTime.UtcNow);
+
+            Assert.Empty(due);
+        }
+
+        [Fact]
+        public void TimedOutGroup_ResolvesWithConsentedSubset_ViaSweepSelectorPlusCheckAndResolve()
+        {
+            // End-to-end shape of the background sweep: selector finds the due group, then
+            // the ordinary CheckAndResolve fires it with whoever consented.
+            SeedProfiles("Alice", "Bob", "Carol");
+            var seats = CreateGroup("Alice", "cuddle", null, "Bob", "Carol");
+            ConsentSeat(seats[0]); // Bob
+            ExpireSeat(seats[1]);  // Carol times out
+
+            foreach (var groupId in GroupInteractionResolver.FindTimedOutGroupIds(
+                _database.GetAllGroupPendingCommands(), DateTime.UtcNow))
+            {
+                var result = GroupInteractionResolver.CheckAndResolve(_database, groupId);
+                Assert.True(result.Resolved);
+            }
+
+            Assert.Equal(1, _database.GetProfile("Alice").counts["cuddle"]);
+            Assert.Equal(1, _database.GetProfile("Bob").counts["cuddle"]);
+            Assert.False(_database.GetProfile("Carol").counts.ContainsKey("cuddle"));
+            Assert.Empty(_database.GetPendingCommandsByGroupId(seats[0].groupId));
+        }
+
+        [Fact]
+        public void TimedOutGroup_NobodyConsented_ClearsSilently()
+        {
+            SeedProfiles("Alice", "Bob", "Carol");
+            var seats = CreateGroup("Alice", "cuddle", null, "Bob", "Carol");
+            ExpireSeat(seats[0]);
+            ExpireSeat(seats[1]);
+
+            var due = GroupInteractionResolver.FindTimedOutGroupIds(
+                _database.GetAllGroupPendingCommands(), DateTime.UtcNow);
+            Assert.Equal(new[] { seats[0].groupId }, due);
+
+            var result = GroupInteractionResolver.CheckAndResolve(_database, seats[0].groupId);
+
+            Assert.False(result.Resolved);
+            Assert.Empty(_database.GetPendingCommandsByGroupId(seats[0].groupId));
+        }
+
         // ---- Helpers ----
 
         private void SeedProfiles(params string[] names)

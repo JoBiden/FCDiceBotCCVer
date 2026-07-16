@@ -16,6 +16,23 @@ namespace FChatDicebot
             return number == 1 ? "" : "s";
         }
 
+        /// <summary>
+        /// Naive English noun pluralization: -s/-x/-z/-ch/-sh take "es", consonant+y takes
+        /// "ies", everything else takes "s" (kiss → kisses, bully → bullies, cuddle → cuddles).
+        /// </summary>
+        public static string PluralizeNoun(string noun)
+        {
+            if (string.IsNullOrEmpty(noun))
+                return noun;
+            string lower = noun.ToLowerInvariant();
+            if (lower.EndsWith("s") || lower.EndsWith("x") || lower.EndsWith("z")
+                || lower.EndsWith("ch") || lower.EndsWith("sh"))
+                return noun + "es";
+            if (lower.Length >= 2 && lower.EndsWith("y") && "aeiou".IndexOf(lower[lower.Length - 2]) < 0)
+                return noun.Substring(0, noun.Length - 1) + "ies";
+            return noun + "s";
+        }
+
         public static string CapitalizeFirst(string s)
         {
             if (s != null && s.Length > 1)

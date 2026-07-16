@@ -11,12 +11,23 @@ Breed the recipient with new monster life, then have them birth at a time of the
 
 ```
 !breed [user]Bob[/user] {monster}
+!breed [user]Bob[/user] random
+!breed [user]Bob[/user] mixed
 ```
+
+### Mystery keywords (added 2026-07, feedback 6a51d2fa)
+
+`random` and `mixed` are reserved keywords, not catalog monsters:
+
+- **`random`** — one species is rolled (uniform over every catalog Identifier with category `"monster"`) for the whole brood. Gestation and brood size resolve from the rolled species exactly as a normal `!breed` of it would. `Pregnancy.MonsterType` holds the real species, `Pregnancy.MysteryKind = "random"`.
+- **`mixed`** — a **host** species is rolled for the womb math (gestation + brood size), then **each child** rolls its own species. `Pregnancy.MonsterType = "mixed"`, `MysteryKind = "mixed"`, and `Pregnancy.Children` holds one `{Species, Categories}` snapshot per child; the host contributes nothing beyond the numbers.
+
+The roll happens at breed time, but every pre-birth surface (gestation status DM, the `!birth` ready list) masks the species as `???` / `??? (mixed brood)` — the birth announcement is the reveal. A `random` birth uses the normal announcement for the rolled species followed by "Who would have guessed?"; mixed broods enumerate the litter, e.g. "2 slimes, a wasp, and an imp". Global `MonsterStats`: `random` counts pregnancy/offspring under the rolled species as usual; `mixed` counts +1 pregnancy per **distinct** species/category in the litter at breed time and +1 offspring per child at birth. Neither keyword ever gets a `monster:` counter of its own.
 
 ## `!breed` validation
 
 - Recipient must be registered.
-- `monster` must resolve via the existing monster catalog (`MonDB.getIdentifier(monster)` with category `"monster"`).
+- `monster` must resolve via the existing monster catalog (`MonDB.getIdentifier(monster)` with category `"monster"`), **or** be one of the mystery keywords above (valid only while at least one monster is registered to roll from).
 - The recipient's pregnancy slot count is **uncapped** (insect broods, etc.). Multiple pregnancies of the same monster type are allowed.
 - Initiator-side broken-state check (`break:dick` or `break:ball`) blocks `!breed`. The block is on the initiator, not the recipient — see [Break-and-Rest](Future-Interactions/Break-and-Rest.md) and `IStatusEffectContributor` validation surface.
 - Recipient-side `break:pussy` or `break:ass` may block depending on monster's gestation route — but for v1, treat `break:body` as the only recipient-side blocker. **Override** if a per-monster route map is desired.

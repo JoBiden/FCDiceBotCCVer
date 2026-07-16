@@ -56,7 +56,7 @@ New DB queries (both also used by B5):
    - If **zero** recipients consented, nothing fires — the group expires silently, exactly like a lapsed 1:1 today.
    - For directional/lapsit, a single consenter is enough to fire (initiator + 1).
 
-> **Implementation note — no background scheduler.** Expiry today is *lazy* (swept only when someone runs `!consent`). A group with a non-responding seat therefore won't resolve until the next time that sweep runs over it. Extend the sweep so it also runs from `!refuse`/`!withdraw`/`!consent` for any group it touches, and resolves the group when its last seat clears. A true timer is out of scope; accept the small "resolves when next poked after the 10-minute mark" delay and document it.
+> **Implementation note — background sweep (updated 2026-07, feedback 6a55cfa9).** Originally expiry was *lazy* (swept only when someone ran `!consent`/`!no`), so a group whose 10-minute window ran out sat unresolved until the next command touched it. Players read that as "the timeout doesn't work", so `BotMain.HandleGroupTimeoutsTick` now sweeps every ~30 seconds: any group holding an un-consented seat past the window is fed through the same `GroupInteractionResolver.CheckAndResolve` path, firing the moment with whoever consented (or clearing a group nobody answered). Seats carry a `sourceChannel` so the sweep knows where to post the completion message; the lazy path still runs on `!consent`/`!no` as before.
 
 ### Count accounting (B4.3)
 
@@ -289,7 +289,7 @@ Random completion descriptors per the casual pattern. Tokens: `{lapsitgiver}` = 
 ## Open items (confirm/decide at build time)
 
 1. ~~**Tall-stack height titles** (design TODO, owner)~~ — **Resolved/shipped 2026-06-22.** Owner provided the heights and wording; shipped as part of the broader [group-achievement titles](#group-achievement-titles-by-resolved-size--lap-stack-position) (size-based titles for every group-capable casual, plus the lapsit per-position "below"/"above" ladders).
-2. **No background scheduler** for timeout-fire of partially-consented groups — accept lazy resolution (see Implementation note) or build a timer.
+2. ~~**No background scheduler** for timeout-fire of partially-consented groups~~ — **Resolved 2026-07 (feedback 6a55cfa9):** built the timer; see the updated Implementation note above.
 3. **Group state storage** — duplicate shared params on each seat vs. one small group record. Either is fine; pick whichever is cleaner against the existing DB layer.
 4. **`!r` / `!w` alias availability** — verify before wiring (part of the alias audit).
 5. **`{licktaker}` token in multi-target lick** — pick first vs. random recipient.
