@@ -714,9 +714,9 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
             string randomWarning = _processor.GetConsentWarning(alice, bob, "random");
             string mixedWarning = _processor.GetConsentWarning(alice, bob, "mixed");
 
-            Assert.Contains("mystery", randomWarning);
+            Assert.Contains("unknown species", randomWarning);
             Assert.Contains("!consent", randomWarning);
-            Assert.Contains("mixed brood", mixedWarning);
+            Assert.Contains("mixed brood of new life", mixedWarning);
             Assert.Contains("!consent", mixedWarning);
         }
 

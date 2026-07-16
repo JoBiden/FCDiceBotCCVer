@@ -291,7 +291,7 @@ namespace FChatDicebot.Tests.Unit.BotCommands
 
             var result = ChateauBirth.ExecuteBirth(_database, "Bob", new string[0]);
 
-            Assert.Contains("mystery is finally revealed", result.ChannelMessage);
+            Assert.Contains("Who would have guessed?", result.ChannelMessage);
             Assert.Contains("slime", result.ChannelMessage);
         }
 

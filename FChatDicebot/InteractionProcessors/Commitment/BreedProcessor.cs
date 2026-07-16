@@ -370,14 +370,14 @@ namespace FChatDicebot.InteractionProcessors.Commitment
             if (string.Equals(identifier, Pregnancy.MysteryRandom, StringComparison.OrdinalIgnoreCase))
             {
                 return initiatorProfile.displayName + " has bred " + recipientProfile.displayName
-                    + " with new life of a mystery species! "
-                    + recipientProfile.displayName + " will carry the pregnancy until they're ready to !birth their young — and only then will anyone learn what's inside.";
+                    + " with new life of an unknown species! "
+                    + recipientProfile.displayName + " will carry the pregnancy until they're ready to !birth their young.";
             }
             if (string.Equals(identifier, Pregnancy.MysteryMixed, StringComparison.OrdinalIgnoreCase))
             {
                 return initiatorProfile.displayName + " has bred " + recipientProfile.displayName
-                    + " with a mixed brood of mystery life! "
-                    + recipientProfile.displayName + " will carry the pregnancy until they're ready to !birth their young — and only then will anyone learn what's inside.";
+                    + " with a mixed brood of new life! "
+                    + recipientProfile.displayName + " will carry the pregnancy until they're ready to !birth their young.";
             }
             return initiatorProfile.displayName + " has bred " + recipientProfile.displayName
                 + " with new " + identifier + " life! "
@@ -409,11 +409,11 @@ namespace FChatDicebot.InteractionProcessors.Commitment
             string lifePhrase = " with new " + identifier + " life!";
             if (string.Equals(identifier, Pregnancy.MysteryRandom, StringComparison.OrdinalIgnoreCase))
             {
-                lifePhrase = " with new life of a mystery species — nobody will know what it is until the !birth!";
+                lifePhrase = " with new life of an unknown species.";
             }
             else if (string.Equals(identifier, Pregnancy.MysteryMixed, StringComparison.OrdinalIgnoreCase))
             {
-                lifePhrase = " with a mixed brood — every child a mystery species until the !birth!";
+                lifePhrase = " with a mixed brood of new life.";
             }
 
             return initiatorProfile.displayName + " wants to breed " + recipientProfile.displayName

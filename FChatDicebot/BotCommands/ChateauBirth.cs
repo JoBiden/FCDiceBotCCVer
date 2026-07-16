@@ -248,41 +248,39 @@ namespace FChatDicebot.BotCommands
                 if (pregnancy.Children.Count == 1)
                 {
                     string only = pregnancy.Children[0].Species;
-                    return carrier.displayName + " has given birth to the sole child of their mixed brood — "
+                    return carrier.displayName + " has given birth to the sole child of their 'mixed' brood, "
                         + Utils.AnOrA(only) + " " + only + "! (Sired by " + pregnancy.Initiator + ".)" + eiconSuffix;
                 }
                 return carrier.displayName + " has given birth to a wonderfully mixed brood of " + pregnancy.BroodSize
-                    + " — " + DescribeMixedLitter(pregnancy.Children) + "! (Sired by "
+                    + ". " + DescribeMixedLitter(pregnancy.Children) + "! (Sired by "
                     + pregnancy.Initiator + ".)" + eiconSuffix;
             }
 
-            // Rare-twins flavor: the resolved brood range was [1,1] and the 1% roll fired.
+            // The normal announcement — a "random" mystery uses it unchanged (the line itself
+            // is the reveal), plus a wink.
+            string message;
             if (pregnancy.IsRareTwins)
             {
-                if (pregnancy.IsMystery)
-                {
-                    return carrier.displayName + " has given birth, and the mystery is finally revealed — a pair of "
-                        + pregnancy.MonsterType + " twins, a rare blessing for a species that normally bears just one! (Sired by "
-                        + pregnancy.Initiator + ".)" + eiconSuffix;
-                }
-                return carrier.displayName + " has miraculously given birth to a pair of " + pregnancy.MonsterType
+                // Rare-twins flavor: the resolved brood range was [1,1] and the 1% roll fired.
+                message = carrier.displayName + " has miraculously given birth to a pair of " + pregnancy.MonsterType
                     + " twins — a rare blessing for a species that normally bears just one! (Sired by "
-                    + pregnancy.Initiator + ".)" + eiconSuffix;
+                    + pregnancy.Initiator + ".)";
+            }
+            else
+            {
+                string broodPhrase = pregnancy.BroodSize > 1
+                    ? "a brood of " + pregnancy.BroodSize + " " + TextFormat.PluralizeNoun(pregnancy.MonsterType)
+                    : Utils.AnOrA(pregnancy.MonsterType) + " " + pregnancy.MonsterType;
+                message = carrier.displayName + " has given birth to " + broodPhrase
+                    + "! (Sired by " + pregnancy.Initiator + ".)";
             }
 
-            string broodPhrase = pregnancy.BroodSize > 1
-                ? "a brood of " + pregnancy.BroodSize + " " + TextFormat.PluralizeNoun(pregnancy.MonsterType)
-                : Utils.AnOrA(pregnancy.MonsterType) + " " + pregnancy.MonsterType;
-
-            // A "random" pregnancy announces the reveal.
             if (pregnancy.IsMystery)
             {
-                return carrier.displayName + " has given birth, and the mystery is finally revealed — "
-                    + broodPhrase + "! (Sired by " + pregnancy.Initiator + ".)" + eiconSuffix;
+                message += " Who would have guessed?";
             }
 
-            return carrier.displayName + " has given birth to " + broodPhrase
-                + "! (Sired by " + pregnancy.Initiator + ".)" + eiconSuffix;
+            return message + eiconSuffix;
         }
 
         /// <summary>
