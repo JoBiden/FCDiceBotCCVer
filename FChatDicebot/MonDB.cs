@@ -173,6 +173,35 @@ namespace FChatDicebot
             return GetDatabase().GetIdentifier(identifier);
         }
 
+        /// <summary>
+        /// Non-throwing identifier lookup for text-rendering fallbacks. Returns null (rather
+        /// than throwing, as <see cref="getIdentifier"/> / <see cref="GetDatabase"/> would)
+        /// when the database hasn't been initialized or the lookup fails for any reason.
+        ///
+        /// This exists specifically so the "ToText" display helpers in <see cref="Utils"/>
+        /// can consult an identifier's <see cref="Identifier.displayText"/> override without
+        /// forcing every caller to have a live database. When no database is available the
+        /// helpers simply fall through to their hardcoded dictionary, preserving the exact
+        /// pre-existing behavior (and keeping pure unit tests DB-free). It deliberately does
+        /// NOT undermine GetDatabase's fail-loud guard: that guard protects code that
+        /// requires the DB, whereas here a missing DB is a benign "use the code default".
+        /// </summary>
+        internal static Identifier tryGetIdentifier(string identifier)
+        {
+            if (_database == null || string.IsNullOrEmpty(identifier))
+            {
+                return null;
+            }
+            try
+            {
+                return _database.GetIdentifier(identifier);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
         internal static void removePendingInteraction(ObjectId idToRemove)
         {
             GetDatabase().DeletePendingCommand(idToRemove);

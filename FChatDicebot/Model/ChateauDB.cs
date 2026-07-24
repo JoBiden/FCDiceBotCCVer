@@ -249,6 +249,15 @@ namespace FChatDicebot.Model
         public string type { get; set; }
         public string description { get; set; }
         public string[] categories { get; set; }
+        // Optional flavor-text override consumed by category-specific "ToText" helpers
+        // (e.g. Utils.ObjectToText for "object" identifiers) instead of a hardcoded
+        // per-type dictionary in code. Unset means "use the identifier's own type" —
+        // so adding a new identifier to this collection never requires a code change
+        // just to make it render sensibly. [BsonIgnoreIfNull] keeps existing documents
+        // untouched — no migration required for identifiers that already read fine as
+        // their raw type.
+        [BsonIgnoreIfNull]
+        public string displayText { get; set; }
         // Per-monster overrides for the breed/birth interaction. Zero = unset; in that
         // case BreedProcessor falls back to its category-defaults table (and finally to
         // 1 day / brood 1 if no category matches). [BsonIgnoreIfDefault] keeps zero

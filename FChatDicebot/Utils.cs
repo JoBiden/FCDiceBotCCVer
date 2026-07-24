@@ -472,9 +472,33 @@ namespace FChatDicebot
             return returnText;
         }
 
-        public static string TrainingToText(string training)
+        /// <summary>
+        /// Resolves the <see cref="Identifier.displayText"/> override for an identifier key,
+        /// or null when there's no override to apply. This is the shared front-half of every
+        /// "ToText" helper below: it prefers an explicitly-passed <paramref name="identifier"/>
+        /// (used by unit tests so they stay database-free and deterministic) and otherwise
+        /// self-resolves via <see cref="MonDB.tryGetIdentifier"/>, which safely returns null
+        /// when no database is available. A null return means "no DB override — fall through
+        /// to the hardcoded dictionary", which preserves the exact pre-existing behavior.
+        ///
+        /// This is why a new identifier added to the Identifiers collection renders correctly
+        /// with no code change: set its <c>displayText</c> and every ToText helper picks it up.
+        /// </summary>
+        private static string DisplayOverride(string key, Identifier identifier)
         {
-            Dictionary<string, string> objectText = new Dictionary<string, string>
+            identifier = identifier ?? MonDB.tryGetIdentifier(key);
+            return string.IsNullOrEmpty(identifier?.displayText) ? null : identifier.displayText;
+        }
+
+        public static string TrainingToText(string training, Identifier identifier = null)
+        {
+            string over = DisplayOverride(training, identifier);
+            if (over != null)
+            {
+                return over;
+            }
+
+            Dictionary<string, string> trainingText = new Dictionary<string, string>
                     {
                         { "anal", "comfortably take it up the ass" },
                         { "corset", "wear a corset as tight as possible" },
@@ -488,18 +512,36 @@ namespace FChatDicebot
                         { "obedience", "happily do as they're told" },
                         { "ponygirl", "behave and dress as a pony" }
                     };
-            if (objectText.ContainsKey(training))
+            if (trainingText.ContainsKey(training))
             {
-                return objectText[training];
+                return trainingText[training];
             }
             else
             {
-                return "curiosity [spoiler]that means [user]Queen Contract[/user] needs to update Utils.ObjectToText to include " + training + ", go tell her to fix it!";
+                return "curiosity [spoiler]that means [user]Queen Contract[/user] needs to update Utils.TrainingToText to include " + training + ", go tell her to fix it!";
             };
         }
 
-        public static string ObjectToText(string objectType)
+        /// <summary>
+        /// Renders an "object" identifier's flavor text (e.g. for !objectify). Resolution
+        /// order (shared by every ToText helper): the identifier's own
+        /// <see cref="Identifier.displayText"/> override → the hardcoded legacy dictionary →
+        /// the identifier's raw type (safe for object nouns like "footwear") → the placeholder
+        /// (only when the identifier doesn't exist in the database at all).
+        /// </summary>
+        /// <param name="objectType">The identifier's type/key, e.g. "clothing".</param>
+        /// <param name="identifier">
+        /// Optionally the pre-resolved identifier record. When omitted, it's looked up via
+        /// <see cref="MonDB.tryGetIdentifier"/>; unit tests pass it explicitly to stay DB-free.
+        /// </param>
+        public static string ObjectToText(string objectType, Identifier identifier = null)
         {
+            identifier = identifier ?? MonDB.tryGetIdentifier(objectType);
+            if (!string.IsNullOrEmpty(identifier?.displayText))
+            {
+                return identifier.displayText;
+            }
+
             Dictionary<string, string> objectText = new Dictionary<string, string>
                     {
                         { "book", "book" },
@@ -522,10 +564,17 @@ namespace FChatDicebot
             {
                 return objectText[objectType];
             }
+            else if (identifier != null)
+            {
+                // A real "object" identifier that predates neither a dictionary entry nor a
+                // displayText override (e.g. a freshly-added "footwear") — its own type reads
+                // fine as a noun, so use it rather than the "go tell her to fix it" placeholder.
+                return objectType;
+            }
             else
             {
                 return "curiosity [spoiler]that means [user]Queen Contract[/user] needs to update Utils.ObjectToText to include " + objectType + ", go tell her to fix it!";
-            };
+            }
         }
 
         public static string Capitalize(string toCapitalize)
@@ -534,8 +583,14 @@ namespace FChatDicebot
             return toCapitalize.Substring(0, 1).ToUpper() + toCapitalize.Substring(1);
             }
 
-        public static string JobToText(string job)
+        public static string JobToText(string job, Identifier identifier = null)
         {
+            string over = DisplayOverride(job, identifier);
+            if (over != null)
+            {
+                return over;
+            }
+
             Dictionary<string, string> jobText = new Dictionary<string, string>
                     {
                         { "adventurer", "Adventurer" },
@@ -611,10 +666,14 @@ namespace FChatDicebot
             }
         }
 
-        public static string JobToPlural(string job)
+        public static string JobToPlural(string job, Identifier identifier = null)
         {
             // Plurals only need explicit overrides where naive -s/-es fails. The Default
             // path below mirrors JobToText for any job not listed here and adds an 's'.
+            // A DB displayText override (a new job with no code entry) has no way to express
+            // an irregular plural in a single field, so it flows through JobToText and gets a
+            // naive "s" — good enough for the "no code change needed" goal; a job that needs a
+            // special plural should still get a pluralOverrides entry.
             Dictionary<string, string> pluralOverrides = new Dictionary<string, string>
                     {
                         { "armcandy", "Pieces of Arm Candy" },
@@ -639,7 +698,7 @@ namespace FChatDicebot
             {
                 return pluralOverrides[job];
             }
-            string singular = JobToText(job);
+            string singular = JobToText(job, identifier);
             // JobToText returns the "Purveyor of New Professions [spoiler]..." string when
             // the job isn't in the catalog. Detect that and pluralize the friendlier prefix.
             if (singular.StartsWith("Purveyor of New Professions"))
@@ -1142,8 +1201,18 @@ namespace FChatDicebot
             return String.Join(", ", displayList);
         }
 
-        public static string LocationToText(string location, string initiatorDisplayName, string recipientDisplayName)
+        public static string LocationToText(string location, string initiatorDisplayName, string recipientDisplayName, Identifier identifier = null)
         {
+            // A location's displayText override is treated as a template: the tokens
+            // {initiator} and {recipient} are substituted with the display names, so a new
+            // location can be either static ("in the wine cellar") or name-relative
+            // ("in {recipient}'s dungeon") without a code change.
+            string over = DisplayOverride(location, identifier);
+            if (over != null)
+            {
+                return over.Replace("{initiator}", initiatorDisplayName).Replace("{recipient}", recipientDisplayName);
+            }
+
             Dictionary<string, string> locationText = new Dictionary<string, string>
                     {
                         { "theirroom", "in " + recipientDisplayName + "'s room" },
@@ -1198,8 +1267,14 @@ namespace FChatDicebot
             }
         }
 
-        public static string AttireToText(string attire)
+        public static string AttireToText(string attire, Identifier identifier = null)
         {
+            string over = DisplayOverride(attire, identifier);
+            if (over != null)
+            {
+                return over;
+            }
+
             Dictionary<string, string> attireText = new Dictionary<string, string>
                     {
                         { "bottomless", "a bottomless outfit" },
@@ -1246,8 +1321,14 @@ namespace FChatDicebot
             }
         }
 
-        public static string SubstanceToText(string substance)
+        public static string SubstanceToText(string substance, Identifier identifier = null)
         {
+            string over = DisplayOverride(substance, identifier);
+            if (over != null)
+            {
+                return over;
+            }
+
             Dictionary<string, string> substanceText = new Dictionary<string, string>
                     {
                         { "fire", "literal fire"},
@@ -1278,8 +1359,16 @@ namespace FChatDicebot
                 return "something ineffable [spoiler]that means [user]Queen Contract[/user] needs to update Utils.SubstanceToText to include " + substance + ", go tell her to fix it!";
             }
         }
-        public static string BodypartToText(string bodypart)
+        public static string BodypartToText(string bodypart, Identifier identifier = null)
         {
+            // Bodyparts already render as their own type (the only historic special-case is
+            // "lowerback" -> "lower back"), so the DB override mainly exists for future
+            // multiword parts that shouldn't read as a bare key.
+            string over = DisplayOverride(bodypart, identifier);
+            if (over != null)
+            {
+                return over;
+            }
 
             if (bodypart == "lowerback")
             {
@@ -1291,8 +1380,20 @@ namespace FChatDicebot
             }
         }
 
-        internal static string BondToPlural(string bond, bool initiatorPerspective)
+        internal static string BondToPlural(string bond, bool initiatorPerspective, Identifier identifier = null)
         {
+            // A bond has four display forms (initiator/recipient perspective × singular/plural)
+            // that a single displayText field can't encode. So for bonds the DB override is a
+            // symmetric fallback: when set, it's used for BOTH perspectives, pluralized with a
+            // naive "s". A bond that needs perspective-specific or irregular-plural wording
+            // (e.g. offspring/parent) should keep using the code dictionaries below and leave
+            // displayText unset.
+            string over = DisplayOverride(bond, identifier);
+            if (over != null)
+            {
+                return over + "s";
+            }
+
             Dictionary<string, string> bondText = new Dictionary<string, string> { };
             if (initiatorPerspective)
             {
@@ -1469,8 +1570,18 @@ namespace FChatDicebot
             }
         }
 
-        internal static string BondToText(string bond, bool initiatorPerspective)
+        internal static string BondToText(string bond, bool initiatorPerspective, Identifier identifier = null)
         {
+            // See BondToPlural: a single displayText can't encode a bond's four display forms,
+            // so a DB override is applied symmetrically to both perspectives. Bonds needing a
+            // perspective-specific label (e.g. offspring→"offspring"/"parent") stay in the
+            // code dictionaries and leave displayText unset.
+            string over = DisplayOverride(bond, identifier);
+            if (over != null)
+            {
+                return over;
+            }
+
             Dictionary<string, string> bondText = new Dictionary<string, string> { };
             if (initiatorPerspective)
             {
