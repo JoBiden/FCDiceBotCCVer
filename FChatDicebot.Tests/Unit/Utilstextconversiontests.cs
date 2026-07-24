@@ -1,4 +1,5 @@
 using FChatDicebot;
+using FChatDicebot.Model;
 using Xunit;
 
 namespace FChatDicebot.Tests.Unit
@@ -36,6 +37,19 @@ namespace FChatDicebot.Tests.Unit
 
             Assert.Contains("curiosity", result);
             Assert.Contains("unknowntraining", result);
+            // Regression: the fallback used to name the wrong function (Utils.ObjectToText),
+            // a copy-paste from when these dictionaries were first written.
+            Assert.Contains("Utils.TrainingToText", result);
+        }
+
+        [Fact]
+        public void TrainingToText_IdentifierWithDisplayText_ReturnsOverride()
+        {
+            var identifier = new Identifier { type = "yoga", displayText = "hold difficult yoga poses" };
+
+            string result = Utils.TrainingToText("yoga", identifier);
+
+            Assert.Equal("hold difficult yoga poses", result);
         }
 
         #endregion
@@ -44,31 +58,49 @@ namespace FChatDicebot.Tests.Unit
 
         [Theory]
         [InlineData("book", "book")]
-        [InlineData("building", "building")]
         [InlineData("clothing", "piece of clothing")]
-        [InlineData("dildo", "dildo")]
         [InlineData("furniture", "piece of furniture")]
-        [InlineData("onahole", "onahole")]
-        [InlineData("orb", "orb")]
-        [InlineData("painting", "painting")]
-        [InlineData("statue", "statue")]
         [InlineData("tableware", "piece of tableware")]
-        [InlineData("tool", "tool")]
-        [InlineData("toy", "toy")]
-        [InlineData("trash", "trash")]
-        [InlineData("trinket", "trinket")]
         [InlineData("vehicle", "vehicle")]
-        public void ObjectToText_KnownObject_ReturnsCorrectText(string objectType, string expected)
+        public void ObjectToText_KnownObjectNoOverride_UsesLegacyDictionary(string objectType, string expected)
         {
-            string result = Utils.ObjectToText(objectType);
+            // A known object with an identifier record but no displayText still resolves via
+            // the hardcoded dictionary — so the legacy wording ("piece of clothing") survives
+            // with no DB backfill required.
+            var identifier = new Identifier { type = objectType };
+
+            string result = Utils.ObjectToText(objectType, identifier);
 
             Assert.Equal(expected, result);
         }
 
         [Fact]
-        public void ObjectToText_UnknownObject_ReturnsFallbackMessage()
+        public void ObjectToText_IdentifierDisplayTextOverridesDictionary()
         {
-            string result = Utils.ObjectToText("unknownobject");
+            var identifier = new Identifier { type = "clothing", displayText = "designer ensemble" };
+
+            string result = Utils.ObjectToText("clothing", identifier);
+
+            Assert.Equal("designer ensemble", result);
+        }
+
+        [Fact]
+        public void ObjectToText_NewIdentifierNotInDictionary_FallsBackToRawType()
+        {
+            // Regression: a newly added "object" identifier (e.g. "footwear") that is neither
+            // in the hardcoded dictionary nor given a displayText override must still render as
+            // itself instead of the "go tell her to fix it" placeholder.
+            var identifier = new Identifier { type = "footwear" };
+
+            string result = Utils.ObjectToText("footwear", identifier);
+
+            Assert.Equal("footwear", result);
+        }
+
+        [Fact]
+        public void ObjectToText_NoMatchingIdentifierAndNotInDictionary_ReturnsFallbackMessage()
+        {
+            string result = Utils.ObjectToText("unknownobject", null);
 
             Assert.Contains("curiosity", result);
             Assert.Contains("unknownobject", result);
@@ -111,6 +143,28 @@ namespace FChatDicebot.Tests.Unit
             Assert.Contains("unknownjob", result);
         }
 
+        [Fact]
+        public void JobToText_IdentifierWithDisplayText_ReturnsOverride()
+        {
+            var identifier = new Identifier { type = "royalhandmaiden", displayText = "Royal Handmaiden" };
+
+            string result = Utils.JobToText("royalhandmaiden", identifier);
+
+            Assert.Equal("Royal Handmaiden", result);
+        }
+
+        [Fact]
+        public void JobToPlural_IdentifierWithDisplayText_NaivelyPluralizesOverride()
+        {
+            // A new job supplied only via displayText can't express an irregular plural, so it
+            // gets a naive "s" — good enough to avoid a code change for the common case.
+            var identifier = new Identifier { type = "royalhandmaiden", displayText = "Royal Handmaiden" };
+
+            string result = Utils.JobToPlural("royalhandmaiden", identifier);
+
+            Assert.Equal("Royal Handmaidens", result);
+        }
+
         #endregion
 
         #region AttireToText Tests
@@ -145,6 +199,16 @@ namespace FChatDicebot.Tests.Unit
 
             Assert.Contains("something ineffable", result);
             Assert.Contains("unknownattire", result);
+        }
+
+        [Fact]
+        public void AttireToText_IdentifierWithDisplayText_ReturnsOverride()
+        {
+            var identifier = new Identifier { type = "spacesuit", displayText = "a sealed spacesuit" };
+
+            string result = Utils.AttireToText("spacesuit", identifier);
+
+            Assert.Equal("a sealed spacesuit", result);
         }
 
         #endregion
@@ -194,6 +258,16 @@ namespace FChatDicebot.Tests.Unit
             Assert.Contains("unknownsubstance", result);
         }
 
+        [Fact]
+        public void SubstanceToText_IdentifierWithDisplayText_ReturnsOverride()
+        {
+            var identifier = new Identifier { type = "nectar", displayText = "sweet floral nectar" };
+
+            string result = Utils.SubstanceToText("nectar", identifier);
+
+            Assert.Equal("sweet floral nectar", result);
+        }
+
         #endregion
 
         #region BodypartToText Tests
@@ -212,6 +286,16 @@ namespace FChatDicebot.Tests.Unit
             string result = Utils.BodypartToText("chest");
 
             Assert.Equal("chest", result);
+        }
+
+        [Fact]
+        public void BodypartToText_IdentifierWithDisplayText_ReturnsOverride()
+        {
+            var identifier = new Identifier { type = "innerthigh", displayText = "inner thigh" };
+
+            string result = Utils.BodypartToText("innerthigh", identifier);
+
+            Assert.Equal("inner thigh", result);
         }
 
         #endregion
@@ -276,6 +360,28 @@ namespace FChatDicebot.Tests.Unit
             Assert.Contains("unknownlocation", result);
         }
 
+        [Fact]
+        public void LocationToText_StaticDisplayTextOverride_ReturnsAsIs()
+        {
+            var identifier = new Identifier { type = "winecellar", displayText = "in the wine cellar" };
+
+            string result = Utils.LocationToText("winecellar", "Alice", "Bob", identifier);
+
+            Assert.Equal("in the wine cellar", result);
+        }
+
+        [Fact]
+        public void LocationToText_TemplatedDisplayTextOverride_SubstitutesNames()
+        {
+            // A location displayText is treated as a template: {initiator}/{recipient} tokens
+            // are replaced with the display names, so name-relative locations work via the DB.
+            var identifier = new Identifier { type = "theirdungeon", displayText = "in {recipient}'s dungeon" };
+
+            string result = Utils.LocationToText("theirdungeon", "Alice", "Bob", identifier);
+
+            Assert.Equal("in Bob's dungeon", result);
+        }
+
         #endregion
 
         #region BondToText Tests
@@ -309,6 +415,20 @@ namespace FChatDicebot.Tests.Unit
 
             Assert.Contains("a mysterious bond", result);
             Assert.Contains("unknownbond", result);
+        }
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void BondToText_IdentifierWithDisplayText_ReturnsOverrideForBothPerspectives(bool initiatorPerspective)
+        {
+            // A single displayText can't encode a bond's four forms, so it's applied
+            // symmetrically — the same label from either perspective.
+            var identifier = new Identifier { type = "companion", displayText = "companion" };
+
+            string result = Utils.BondToText("companion", initiatorPerspective, identifier);
+
+            Assert.Equal("companion", result);
         }
 
         #endregion
@@ -346,6 +466,18 @@ namespace FChatDicebot.Tests.Unit
 
             Assert.Contains("mysterious bonds", result);
             Assert.Contains("unknownbond", result);
+        }
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void BondToPlural_IdentifierWithDisplayText_NaivelyPluralizesForBothPerspectives(bool initiatorPerspective)
+        {
+            var identifier = new Identifier { type = "companion", displayText = "companion" };
+
+            string result = Utils.BondToPlural("companion", initiatorPerspective, identifier);
+
+            Assert.Equal("companions", result);
         }
 
         #endregion
