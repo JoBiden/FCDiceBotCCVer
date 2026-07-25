@@ -19,6 +19,11 @@ namespace FChatDicebot.InteractionProcessors.Casual
         // Directional group model: initiator +R spankgive, each recipient +1 spanktake.
         public override GroupSpec GroupSpec => GroupSpec.Directional("spankgive", "spanktake");
 
+        // The spanked party's rear is what takes the hit, so their ass eicon shows. This is
+        // the general form of what used to be a hardcoded Queen Contract easter egg — she
+        // now carries [eicon]qcass[/eicon] as her own !seteicon ass, like anyone else.
+        public override BodypartEiconRule BodypartEiconRule => BodypartEiconRule.Part("ass", BodypartEiconOwner.Recipient);
+
         private static readonly List<string> SpankDescriptors = new List<string>
         {
             "a sharp spank!",
@@ -63,14 +68,7 @@ namespace FChatDicebot.InteractionProcessors.Casual
 
         public override string GetCompletionMessage(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
-            string message = $"{initiatorProfile.displayName} winds up and gives {recipientProfile.displayName} {GetRandomDescriptor(SpankDescriptors)}";
-
-            if (recipientProfile.userName == "Queen Contract")
-            {
-                message += " [eicon]qcass[/eicon]";
-            }
-
-            return message;
+            return $"{initiatorProfile.displayName} winds up and gives {recipientProfile.displayName} {GetRandomDescriptor(SpankDescriptors)}";
         }
 
         public override string GetGroupCompletionMessage(Profile initiatorProfile, IReadOnlyList<Profile> consentersInOrder, string identifier)
@@ -79,14 +77,7 @@ namespace FChatDicebot.InteractionProcessors.Casual
                 return GetCompletionMessage(initiatorProfile, consentersInOrder[0], identifier);
 
             string names = JoinNamesSerial(consentersInOrder.Select(p => p.displayName).ToList());
-            string message = $"{initiatorProfile.displayName} winds up and gives {names} {GetRandomDescriptor(SpankDescriptors)}";
-
-            if (consentersInOrder.Any(p => p.userName == "Queen Contract"))
-            {
-                message += " [eicon]qcass[/eicon]";
-            }
-
-            return message;
+            return $"{initiatorProfile.displayName} winds up and gives {names} {GetRandomDescriptor(SpankDescriptors)}";
         }
 
         public override string GetConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)

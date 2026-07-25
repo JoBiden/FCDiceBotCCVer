@@ -258,6 +258,14 @@ namespace FChatDicebot.Model
         // their raw type.
         [BsonIgnoreIfNull]
         public string displayText { get; set; }
+        // Optional bot-wide decorative icon for this identifier, stored as the full
+        // "[eicon]…[/eicon]" bbcode like every other stored eicon. Set with the admin-only
+        // !setidentifiereicon and surfaced in !whatis. Distinct from a resident's *personal*
+        // bodypart eicon (!seteicon ass), which is per-profile and is what interaction
+        // completions render — this one is the Chateau's own stock icon for the thing.
+        // [BsonIgnoreIfNull] keeps existing documents untouched — no migration.
+        [BsonIgnoreIfNull]
+        public string eicon { get; set; }
         // Per-monster overrides for the breed/birth interaction. Zero = unset; in that
         // case BreedProcessor falls back to its category-defaults table (and finally to
         // 1 day / brood 1 if no category matches). [BsonIgnoreIfDefault] keeps zero

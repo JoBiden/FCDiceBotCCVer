@@ -146,7 +146,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
             InteractionEiconSupport.SetInteractionEicon(bob, "pet", "bobPet");
             InteractionEiconSupport.SetInteractionEicon(carol, "pet", "carolPet");
 
-            string suffix = _processor.GetGroupEiconSuffix("pet", initiator, new List<Profile> { bob, carol });
+            string suffix = _processor.GetGroupEiconSuffix("pet", initiator, new List<Profile> { bob, carol }, "");
 
             Assert.Contains("bobPet", suffix);
             Assert.Contains("carolPet", suffix);

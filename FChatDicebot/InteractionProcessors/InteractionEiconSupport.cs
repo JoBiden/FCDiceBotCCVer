@@ -24,11 +24,25 @@ namespace FChatDicebot.InteractionProcessors
     /// excluded from the generic completion suffix (see <see cref="IsSelfRendered"/>) so it is
     /// never double-appended. <c>!seteicon mark</c> and the legacy <c>!setmark</c> both write
     /// that same slot.
+    ///
+    /// <c>!seteicon</c> also accepts <b>bodypart</b> identifiers (<c>!seteicon ass …</c>): those
+    /// live in a separate <see cref="BodypartKeyPrefix"/> namespace on the same characteristics
+    /// dictionary and are appended by interactions that involve that part (see
+    /// <c>InteractionProcessorBase.BodypartEiconRule</c>). Whether a token *is* a bodypart is a
+    /// database question, so that validation stays in the command layer — this class holds no
+    /// DB dependency and remains a pure, unit-testable store.
     /// </summary>
     public static class InteractionEiconSupport
     {
         /// <summary>Longest eicon token we accept, mirroring the legacy <c>!setmark</c> guard.</summary>
         public const int MaxEiconLength = 47;
+
+        /// <summary>
+        /// Characteristics-key namespace for personal bodypart eicons (<c>!seteicon ass …</c>).
+        /// Cannot collide with the <c>"eicon_" + verb</c> interaction keys because no interaction
+        /// verb starts with <c>part_</c>.
+        /// </summary>
+        public const string BodypartKeyPrefix = "eicon_part_";
 
         /// <summary>The verb whose eicon is stored/rendered specially (see class summary).</summary>
         public const string MarkVerbKey = "mark";
@@ -153,6 +167,60 @@ namespace FChatDicebot.InteractionProcessors
         {
             if (profile?.characteristics == null || string.IsNullOrEmpty(verbKey)) return;
             profile.characteristics.Remove(StorageKey(verbKey));
+        }
+
+        /// <summary>
+        /// Get a resident's stored eicon for one of their bodyparts, or empty string if unset.
+        /// One slot per part: the same ass eicon shows whether they're spanked, marked, or
+        /// hosed down — there is no per-interaction-per-part matrix.
+        /// </summary>
+        public static string GetBodypartEicon(Profile profile, string bodypart)
+        {
+            if (profile?.characteristics == null || string.IsNullOrEmpty(bodypart)) return string.Empty;
+            return profile.characteristics.TryGetValue(BodypartStorageKey(bodypart), out var eicon) ? eicon : string.Empty;
+        }
+
+        /// <summary>Store a resident's eicon for a bodypart (does not persist — caller saves).</summary>
+        public static void SetBodypartEicon(Profile profile, string bodypart, string eicon)
+        {
+            if (profile == null || string.IsNullOrEmpty(bodypart)) return;
+            if (profile.characteristics == null) profile.characteristics = new Dictionary<string, string>();
+            profile.characteristics[BodypartStorageKey(bodypart)] = eicon;
+        }
+
+        /// <summary>Remove a resident's eicon for a bodypart (does not persist — caller saves).</summary>
+        public static void ClearBodypartEicon(Profile profile, string bodypart)
+        {
+            if (profile?.characteristics == null || string.IsNullOrEmpty(bodypart)) return;
+            profile.characteristics.Remove(BodypartStorageKey(bodypart));
+        }
+
+        /// <summary>
+        /// Every bodypart the resident has an eicon set for, as (bodypart, eicon) pairs in
+        /// alphabetical part order. Reads the characteristics keys by prefix, so listing what
+        /// someone has set never needs a DB scan of the bodypart category.
+        /// </summary>
+        public static List<KeyValuePair<string, string>> GetAllBodypartEicons(Profile profile)
+        {
+            var result = new List<KeyValuePair<string, string>>();
+            if (profile?.characteristics == null) return result;
+
+            foreach (var entry in profile.characteristics)
+            {
+                if (entry.Key == null || !entry.Key.StartsWith(BodypartKeyPrefix, StringComparison.Ordinal)) continue;
+                if (string.IsNullOrEmpty(entry.Value)) continue;
+                result.Add(new KeyValuePair<string, string>(entry.Key.Substring(BodypartKeyPrefix.Length), entry.Value));
+            }
+            result.Sort((a, b) => string.Compare(a.Key, b.Key, StringComparison.Ordinal));
+            return result;
+        }
+
+        // Bodypart identifier types are stored lowercase in the Identifiers collection, so the
+        // key is normalized the same way whether the part arrives typed by a resident or read
+        // off an interaction's identifier.
+        private static string BodypartStorageKey(string bodypart)
+        {
+            return BodypartKeyPrefix + bodypart.Trim().ToLowerInvariant();
         }
 
         // Mark keeps its historical characteristics["mark"] slot so the dossier + existing marks

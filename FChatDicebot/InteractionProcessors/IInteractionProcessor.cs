@@ -81,10 +81,14 @@ namespace FChatDicebot.InteractionProcessors
         /// <summary>
         /// Custom <c>!seteicon</c> flourish for a resolved group moment, over the consenting
         /// recipients in consent order. Default: the initiator's eicon (plus every consenter's
-        /// for symmetric interactions); lapsit overrides for its per-position rule. Returns a
-        /// leading-space-prefixed string, or empty when nobody involved has one set.
+        /// for symmetric interactions), then any bodypart eicons the interaction's
+        /// <c>BodypartEiconRule</c> calls for; lapsit overrides for its per-position rule.
+        /// Returns a leading-space-prefixed string, or empty when nobody involved has one set.
+        ///
+        /// <paramref name="identifier"/> is the interaction's identifier, needed by the
+        /// bodypart rules that read the part the resident typed (mark / golden / break).
         /// </summary>
-        string GetGroupEiconSuffix(string interactionVerb, Profile initiatorProfile, IReadOnlyList<Profile> consentersInOrder);
+        string GetGroupEiconSuffix(string interactionVerb, Profile initiatorProfile, IReadOnlyList<Profile> consentersInOrder, string identifier);
 
         /// <summary>
         /// Drain any out-of-band private note the processor wants delivered to the

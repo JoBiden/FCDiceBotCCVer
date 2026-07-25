@@ -176,7 +176,7 @@ namespace FChatDicebot.InteractionProcessors
 
             // Custom per-interaction eicon (!seteicon), keyed to the verb actually typed so
             // shared-processor pairs keep distinct icons. Appended last, as a trailing flourish.
-            return withPostEffects + BuildOneToOneEiconSuffix(interactionVerb, initiatorProfile, recipientProfile);
+            return withPostEffects + BuildOneToOneEiconSuffix(interactionVerb, initiatorProfile, recipientProfile, identifier);
         }
 
         // ====================================================================
@@ -206,47 +206,109 @@ namespace FChatDicebot.InteractionProcessors
         }
 
         /// <summary>
+        /// Declares that this interaction involves a specific bodypart, so the part-owner's
+        /// personal <c>!seteicon {bodypart}</c> icon joins the completion flourish after the
+        /// interaction eicons. Null — the default — means no bodypart eicon for this
+        /// interaction. See <see cref="BodypartEiconRule"/>.
+        /// </summary>
+        public virtual BodypartEiconRule BodypartEiconRule => null;
+
+        /// <summary>
         /// 1:1 custom-eicon flourish: the acting party's eicon for the typed verb (see
         /// <see cref="GetEiconSubject"/>), plus the other party's when
-        /// <see cref="EiconAppliesToBothParties"/> and they're a different person. Empty when
-        /// nobody involved has one set, or for self-rendered verbs (mark).
+        /// <see cref="EiconAppliesToBothParties"/> and they're a different person, and then
+        /// the part-owner's bodypart eicon when this interaction declares a
+        /// <see cref="BodypartEiconRule"/>. Empty when nobody involved has anything set.
+        ///
+        /// Self-rendered verbs (mark) suppress only the <i>interaction</i> eicon — the mark
+        /// eicon is woven into the processor's own sentence, but the marked part's icon is a
+        /// separate decoration and still appends.
         /// </summary>
-        private string BuildOneToOneEiconSuffix(string interactionVerb, Profile initiatorProfile, Profile recipientProfile)
+        private string BuildOneToOneEiconSuffix(string interactionVerb, Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
             string verb = string.IsNullOrEmpty(interactionVerb) ? InteractionType : interactionVerb;
-            if (InteractionEiconSupport.IsSelfRendered(verb)) return string.Empty;
 
             var eicons = new List<string>();
-            Profile primary = GetEiconSubject(verb, initiatorProfile, recipientProfile);
-            AddInteractionEicon(eicons, primary, verb);
-            if (EiconAppliesToBothParties && !IsSameProfile(initiatorProfile, recipientProfile))
+            if (!InteractionEiconSupport.IsSelfRendered(verb))
             {
-                Profile other = IsSameProfile(primary, initiatorProfile) ? recipientProfile : initiatorProfile;
-                AddInteractionEicon(eicons, other, verb);
+                Profile primary = GetEiconSubject(verb, initiatorProfile, recipientProfile);
+                AddInteractionEicon(eicons, primary, verb);
+                if (EiconAppliesToBothParties && !IsSameProfile(initiatorProfile, recipientProfile))
+                {
+                    Profile other = IsSameProfile(primary, initiatorProfile) ? recipientProfile : initiatorProfile;
+                    AddInteractionEicon(eicons, other, verb);
+                }
             }
+
+            AddBodypartEicons(eicons, identifier, initiatorProfile, new[] { recipientProfile });
             return JoinEiconSuffix(eicons);
         }
 
         /// <summary>
         /// Group custom-eicon flourish over the consenting recipients in consent order.
-        /// Default: the initiator's eicon (plus every consenter's for symmetric interactions).
-        /// Lapsit overrides for its per-position rule.
+        /// Default: the initiator's eicon (plus every consenter's for symmetric interactions),
+        /// then any bodypart eicons this interaction declares. Lapsit overrides for its
+        /// per-position rule.
         /// </summary>
-        public virtual string GetGroupEiconSuffix(string interactionVerb, Profile initiatorProfile, IReadOnlyList<Profile> consentersInOrder)
+        public virtual string GetGroupEiconSuffix(string interactionVerb, Profile initiatorProfile, IReadOnlyList<Profile> consentersInOrder, string identifier)
         {
             string verb = string.IsNullOrEmpty(interactionVerb) ? InteractionType : interactionVerb;
-            if (InteractionEiconSupport.IsSelfRendered(verb)) return string.Empty;
 
             var eicons = new List<string>();
-            AddInteractionEicon(eicons, initiatorProfile, verb);
-            if (EiconAppliesToBothParties && consentersInOrder != null)
+            if (!InteractionEiconSupport.IsSelfRendered(verb))
             {
-                foreach (var consenter in consentersInOrder)
+                AddInteractionEicon(eicons, initiatorProfile, verb);
+                if (EiconAppliesToBothParties && consentersInOrder != null)
                 {
-                    AddInteractionEicon(eicons, consenter, verb);
+                    foreach (var consenter in consentersInOrder)
+                    {
+                        AddInteractionEicon(eicons, consenter, verb);
+                    }
                 }
             }
+
+            AddBodypartEicons(eicons, identifier, initiatorProfile, consentersInOrder);
             return JoinEiconSuffix(eicons);
+        }
+
+        /// <summary>
+        /// Append the bodypart eicons this interaction's <see cref="BodypartEiconRule"/> calls
+        /// for: the initiator's, each recipient's (in consent order), or both — initiator
+        /// first, and collapsed to one icon when the same resident sits on both sides.
+        ///
+        /// Like the interaction eicons, this deliberately does NOT de-duplicate across
+        /// recipients: three spanked residents who all picked the same booty icon get three
+        /// icons. Nothing is appended when the rule is absent, the part can't be resolved, or
+        /// nobody involved has an eicon set for it.
+        /// </summary>
+        protected void AddBodypartEicons(List<string> into, string identifier, Profile initiatorProfile, IReadOnlyList<Profile> recipientsInOrder)
+        {
+            var rule = BodypartEiconRule;
+            if (rule == null || rule.Source == BodypartEiconSource.None) return;
+
+            string part = rule.ResolvePart(identifier);
+            if (string.IsNullOrEmpty(part)) return;
+
+            bool wantsInitiator = rule.Owner == BodypartEiconOwner.Initiator || rule.Owner == BodypartEiconOwner.Both;
+            bool wantsRecipients = rule.Owner == BodypartEiconOwner.Recipient || rule.Owner == BodypartEiconOwner.Both;
+
+            if (wantsInitiator) AddBodypartEicon(into, initiatorProfile, part);
+            if (!wantsRecipients || recipientsInOrder == null) return;
+
+            foreach (var recipient in recipientsInOrder)
+            {
+                // On a self-interaction with a Both rule the initiator already contributed;
+                // one body, one icon.
+                if (wantsInitiator && IsSameProfile(initiatorProfile, recipient)) continue;
+                AddBodypartEicon(into, recipient, part);
+            }
+        }
+
+        /// <summary>Append a resident's stored eicon for <paramref name="part"/>, if they have one.</summary>
+        protected static void AddBodypartEicon(List<string> into, Profile profile, string part)
+        {
+            string eicon = InteractionEiconSupport.GetBodypartEicon(profile, part);
+            if (!string.IsNullOrEmpty(eicon)) into.Add(eicon);
         }
 
         /// <summary>

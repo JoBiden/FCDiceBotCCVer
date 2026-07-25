@@ -98,6 +98,13 @@ namespace FChatDicebot.Database
         Identifier GetIdentifier(string type);
         List<Identifier> GetIdentifiersByCategory(string category);
         List<Identifier> GetAllIdentifiers();
+        /// <summary>
+        /// Set (or clear, with a null/empty eicon) an identifier's bot-wide decorative eicon.
+        /// Returns false when no identifier of that type exists. Deliberately narrow: identifiers
+        /// are otherwise curated directly in the database, and this is the one cosmetic field
+        /// with an in-chat setter (<c>!setidentifiereicon</c>).
+        /// </summary>
+        bool SetIdentifierEicon(string type, string eicon);
 
         // Monster Stats Operations (global aggregate counts for breed/birth)
         MonsterStats GetMonsterStats(string key);

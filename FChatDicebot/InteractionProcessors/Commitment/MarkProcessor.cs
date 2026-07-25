@@ -14,6 +14,11 @@ namespace FChatDicebot.InteractionProcessors.Commitment
         public override string InteractionType => "mark";
         public override string InvestmentLevel => "commitment";
 
+        // The mark lands on the recipient's part, so it's their bodypart eicon that shows.
+        // (The mark eicon itself is woven into the completion sentence below; these are two
+        // different decorations and both appear.)
+        public override BodypartEiconRule BodypartEiconRule => BodypartEiconRule.Typed(BodypartEiconOwner.Recipient);
+
         /// <summary>
         /// Constructor for dependency injection (for testing)
         /// </summary>

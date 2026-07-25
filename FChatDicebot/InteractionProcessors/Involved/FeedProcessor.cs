@@ -12,6 +12,10 @@ namespace FChatDicebot.InteractionProcessors.Involved
         public override string InteractionType => "feed";
         public override string InvestmentLevel => "involved";
 
+        // Fed into the recipient's mouth, so their mouth eicon shows. (The typed identifier
+        // here is the substance, not a part, hence the fixed rule.)
+        public override BodypartEiconRule BodypartEiconRule => BodypartEiconRule.Part("mouth", BodypartEiconOwner.Recipient);
+
         private static readonly TimeSpan RateLimit = TimeSpan.FromMinutes(30);
 
         /// <summary>

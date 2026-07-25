@@ -174,6 +174,15 @@ namespace FChatDicebot
         }
 
         /// <summary>
+        /// Set (or clear) an identifier's bot-wide decorative eicon. Returns false when no
+        /// identifier of that type exists. Used by the admin-only <c>!setidentifiereicon</c>.
+        /// </summary>
+        internal static bool setIdentifierEicon(string identifier, string eicon)
+        {
+            return GetDatabase().SetIdentifierEicon(identifier, eicon);
+        }
+
+        /// <summary>
         /// Non-throwing identifier lookup for text-rendering fallbacks. Returns null (rather
         /// than throwing, as <see cref="getIdentifier"/> / <see cref="GetDatabase"/> would)
         /// when the database hasn't been initialized or the lookup fails for any reason.

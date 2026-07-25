@@ -23,6 +23,11 @@ namespace FChatDicebot.InteractionProcessors.Consequence
         public override string InteractionType => "break";
         public override string InvestmentLevel => "consequence";
 
+        // It's the recipient's part that gets broken, so their bodypart eicon shows. The
+        // break category also carries a few non-bodypart entries (mind); those simply find
+        // no stored eicon and nothing is appended.
+        public override BodypartEiconRule BodypartEiconRule => BodypartEiconRule.Typed(BodypartEiconOwner.Recipient);
+
         public const string BreakCategory = "break";
         public const int DefaultDays = 3;
         public const int MinDays = 1;

@@ -19,6 +19,9 @@ namespace FChatDicebot.InteractionProcessors.Casual
         // Mutual interaction: both parties' custom !seteicon eicons show on the completion.
         public override bool EiconAppliesToBothParties => true;
 
+        // Co-equal act: both parties' hand eicons show, matching the symmetric rule above.
+        public override BodypartEiconRule BodypartEiconRule => BodypartEiconRule.Part("hand", BodypartEiconOwner.Both);
+
         private static readonly List<string> HandholdDescriptors = new List<string>
         {
             "Cute.",
