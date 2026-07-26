@@ -90,7 +90,7 @@ namespace FChatDicebot.InteractionProcessors.Involved
             return $"{initiatorProfile.displayName} has dressed up {recipientProfile.displayName} in {Utils.AttireToText(identifier)}! Do a spin for everyone, let them admire your new garb!";
         }
 
-        public override string GetConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
+        protected override string BuildConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
             return initiatorProfile.displayName + " is going to dress up " + recipientProfile.displayName + " in " + Utils.AttireToText(identifier) + "! Do you !consent to the change of attire?";
         }

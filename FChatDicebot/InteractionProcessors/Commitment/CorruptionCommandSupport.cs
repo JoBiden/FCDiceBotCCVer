@@ -114,7 +114,8 @@ namespace FChatDicebot.InteractionProcessors.Commitment
             var processor = InteractionProcessorRegistry.GetProcessor(effectiveVerb);
             string consentMessage = processor != null
                 ? processor.GetConsentWarning(initiatorProfile, recipientProfile, interaction.identifier)
-                : (initiatorProfile.displayName + " wants to " + effectiveVerb + " " + recipientProfile.displayName + ". Do you !consent?");
+                : ConsentWarningText.WithDeclineHint(
+                    initiatorProfile.displayName + " wants to " + effectiveVerb + " " + recipientProfile.displayName + ". Do you !consent?");
             bot.SendMessageInChannel(consentMessage, channel);
         }
     }

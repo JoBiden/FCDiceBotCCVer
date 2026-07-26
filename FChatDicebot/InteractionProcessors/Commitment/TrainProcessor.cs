@@ -224,7 +224,7 @@ namespace FChatDicebot.InteractionProcessors.Commitment
                 + student + " benefitted from the time spent.";
         }
 
-        public override string GetConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
+        protected override string BuildConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
             return initiatorProfile.displayName + " wants to do some " + identifier
                 + " training with " + recipientProfile.displayName

@@ -81,7 +81,7 @@ namespace FChatDicebot.InteractionProcessors.Casual
             return $"{initiatorProfile.displayName} rests their chest atop {names}, one comfy hat at a time. {GetRandomDescriptor(BoobhatDescriptors)}";
         }
 
-        public override string GetConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
+        protected override string BuildConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
             return initiatorProfile.displayName + " wants to rest their chest atop " + recipientProfile.displayName + ". Do you !consent to the temporary headwear?";
         }

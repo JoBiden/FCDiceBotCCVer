@@ -90,7 +90,7 @@ namespace FChatDicebot.InteractionProcessors.Casual
             return $"{initiatorProfile.displayName} rounds up {names} and {GetRandomDescriptor(BullyDescriptors)}";
         }
 
-        public override string GetConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
+        protected override string BuildConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
             return initiatorProfile.displayName + " is gearing up to bully " + recipientProfile.displayName + ". Do you !consent to whatever is coming?";
         }

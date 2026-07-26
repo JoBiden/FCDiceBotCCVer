@@ -432,7 +432,7 @@ namespace FChatDicebot.InteractionProcessors.Consequence
             Scope = "curse"
         };
 
-        public override string GetConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
+        protected override string BuildConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
             string casterName = string.IsNullOrEmpty(initiatorProfile?.displayName)
                 ? initiatorProfile?.userName
@@ -466,7 +466,7 @@ namespace FChatDicebot.InteractionProcessors.Consequence
                 + "Do you !consent to this curse?";
 
             var effects = GetActiveStatusEffects(recipientProfile, StatusEffectCallSite.Consent, identifier, isInitiator: false);
-            return AppendStatusFragments(baseWarning, effects.ConsentWarnings);
+            return ComposeConsentWarning(baseWarning, effects.ConsentWarnings);
         }
     }
 }

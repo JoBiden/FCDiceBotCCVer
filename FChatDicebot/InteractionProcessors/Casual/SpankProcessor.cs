@@ -80,7 +80,7 @@ namespace FChatDicebot.InteractionProcessors.Casual
             return $"{initiatorProfile.displayName} winds up and gives {names} {GetRandomDescriptor(SpankDescriptors)}";
         }
 
-        public override string GetConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
+        protected override string BuildConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
             return initiatorProfile.displayName + " is about to give " + recipientProfile.displayName + " a spank. Do you !consent to that sting?";
         }

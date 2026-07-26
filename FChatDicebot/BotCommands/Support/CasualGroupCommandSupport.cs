@@ -109,7 +109,8 @@ namespace FChatDicebot.BotCommands.Support
 
                 string single = processor != null
                     ? processor.GetConsentWarning(initiatorProfile, only, identifier)
-                    : initiatorProfile.displayName + " wants to interact with " + only.displayName + ". Do you !consent?";
+                    : ConsentWarningText.WithDeclineHint(
+                        initiatorProfile.displayName + " wants to interact with " + only.displayName + ". Do you !consent?");
                 bot.SendMessageInChannel(single, channel);
                 return;
             }
@@ -130,7 +131,8 @@ namespace FChatDicebot.BotCommands.Support
 
             string announcement = processor != null
                 ? processor.GetGroupConsentWarning(initiatorProfile, recipientProfiles, identifier)
-                : initiatorProfile.displayName + " wants to interact with several residents. Each of you, do you !consent?";
+                : ConsentWarningText.WithDeclineHint(
+                    initiatorProfile.displayName + " wants to interact with several residents. Each of you, do you !consent?");
             bot.SendMessageInChannel(announcement, channel);
         }
 

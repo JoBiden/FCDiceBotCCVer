@@ -222,7 +222,9 @@ namespace FChatDicebot.InteractionProcessors.Casual
             return new ValidationResult { IsValid = true };
         }
 
-        public override string GetConsentWarning(
+        // Override the builder, not GetConsentWarning — the base entry point appends the
+        // "(or !no)" decline reminder to whatever you return here.
+        protected override string BuildConsentWarning(
             Profile initiatorProfile,
             Profile recipientProfile,
             string identifier)

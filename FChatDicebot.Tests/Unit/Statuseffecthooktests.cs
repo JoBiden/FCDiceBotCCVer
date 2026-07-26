@@ -224,8 +224,8 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
 
             Assert.Contains("Alice", warning);
             Assert.Contains("Bob", warning);
-            Assert.EndsWith("Do you !consent? [musk lingers]", warning);
-            Assert.DoesNotContain("?  [musk", warning);
+            Assert.EndsWith("Do you !consent? (or !no) [musk lingers]", warning);
+            Assert.DoesNotContain(")  [musk", warning);
         }
 
         [Fact]
@@ -239,7 +239,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
 
             string warning = _processor.GetConsentWarning(initiator, recipient, identifier: "");
 
-            Assert.EndsWith("Do you !consent? [scent A] [scent B]", warning);
+            Assert.EndsWith("Do you !consent? (or !no) [scent A] [scent B]", warning);
         }
 
         [Fact]
@@ -253,7 +253,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
 
             string warning = _processor.GetConsentWarning(initiator, recipient, identifier: "");
 
-            Assert.EndsWith("Do you !consent? [real]", warning);
+            Assert.EndsWith("Do you !consent? (or !no) [real]", warning);
         }
 
         [Fact]

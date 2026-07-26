@@ -215,7 +215,7 @@ namespace FChatDicebot.InteractionProcessors.Consequence
             Scope = "vice"
         };
 
-        public override string GetConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
+        protected override string BuildConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
             string vicePhrase = ViceText.ViceName(Database?.GetIdentifier(identifier), identifier, initiatorProfile?.displayName);
             string seriousness = ConsentWarningText.Block(
@@ -226,7 +226,7 @@ namespace FChatDicebot.InteractionProcessors.Consequence
                 + " with " + vicePhrase + "! " + seriousness + " "
                 + "Do you !consent?";
             var effects = GetActiveStatusEffects(recipientProfile, StatusEffectCallSite.Consent, identifier, isInitiator: false);
-            return AppendStatusFragments(baseWarning, effects.ConsentWarnings);
+            return ComposeConsentWarning(baseWarning, effects.ConsentWarnings);
         }
 
         /// <summary>

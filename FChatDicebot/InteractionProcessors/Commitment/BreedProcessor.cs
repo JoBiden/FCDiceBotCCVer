@@ -395,7 +395,7 @@ namespace FChatDicebot.InteractionProcessors.Commitment
             PeriodDays = 1
         };
 
-        public override string GetConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
+        protected override string BuildConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
             int existingPregnancies = recipientProfile.pregnancies != null ? recipientProfile.pregnancies.Count : 0;
             string pregnancyCountText = existingPregnancies > 0

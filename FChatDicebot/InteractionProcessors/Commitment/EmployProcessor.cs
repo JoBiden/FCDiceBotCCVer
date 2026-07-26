@@ -100,7 +100,7 @@ namespace FChatDicebot.InteractionProcessors.Consequence
             PeriodDays = 1
         };
 
-        public override string GetConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
+        protected override string BuildConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
             string seriousness = ConsentWarningText.Block(
                 ConsentWarningText.FrequencyRecipient("employed", Cooldown.PeriodDays));

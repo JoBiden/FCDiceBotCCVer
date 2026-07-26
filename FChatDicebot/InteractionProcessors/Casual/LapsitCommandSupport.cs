@@ -59,7 +59,8 @@ namespace FChatDicebot.InteractionProcessors.Casual
             var processor = InteractionProcessorRegistry.GetProcessor(typedVerb);
             string consentMessage = processor != null
                 ? processor.GetConsentWarning(initiatorProfile, recipientProfile, interaction.identifier)
-                : (initiatorProfile.displayName + " wants to share a lap with " + recipientProfile.displayName + ". Do you !consent?");
+                : ConsentWarningText.WithDeclineHint(
+                    initiatorProfile.displayName + " wants to share a lap with " + recipientProfile.displayName + ". Do you !consent?");
             bot.SendMessageInChannel(consentMessage, channel);
         }
     }

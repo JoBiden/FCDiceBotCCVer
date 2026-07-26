@@ -86,7 +86,7 @@ namespace FChatDicebot.InteractionProcessors.Casual
             return $"Ooh, {JoinNamesSerial(names)} hold hands in a chain! {GetRandomDescriptor(HandholdDescriptors)}";
         }
 
-        public override string GetConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
+        protected override string BuildConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
             return initiatorProfile.displayName + " wants to hold your hand (or equivalent appendage) " + recipientProfile.displayName + ". Do you !consent to some handholding?";
         }
