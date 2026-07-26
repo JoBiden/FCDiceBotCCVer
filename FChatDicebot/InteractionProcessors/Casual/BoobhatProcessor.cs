@@ -22,6 +22,9 @@ namespace FChatDicebot.InteractionProcessors.Casual
         // Directional group model: initiator +R boobhatgive, each recipient +1 boobhattake.
         public override GroupSpec GroupSpec => GroupSpec.Directional("boobhatgive", "boobhattake");
 
+        // The hat is the initiator's chest, so their breast eicon shows.
+        public override BodypartEiconRule BodypartEiconRule => BodypartEiconRule.Part("breast", BodypartEiconOwner.Initiator);
+
         private static readonly List<string> BoobhatDescriptors = new List<string>
         {
             "Nice hat!",

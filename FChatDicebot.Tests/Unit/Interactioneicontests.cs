@@ -129,7 +129,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
             var recipient = new ProfileBuilder().WithCharacteristic("eicon_spank", "[eicon]rbutt[/eicon]").Build();
             var processor = new SpankProcessor(_database);
 
-            string suffix = processor.GetGroupEiconSuffix("spank", initiator, new List<Profile> { recipient });
+            string suffix = processor.GetGroupEiconSuffix("spank", initiator, new List<Profile> { recipient }, "");
 
             Assert.Contains("[eicon]ihand[/eicon]", suffix);
             Assert.DoesNotContain("[eicon]rbutt[/eicon]", suffix);
@@ -158,7 +158,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
             var c2 = new ProfileBuilder().WithCharacteristic("eicon_pet", "[eicon]pet2[/eicon]").Build();
             var processor = new PetProcessor(_database);
 
-            string suffix = processor.GetGroupEiconSuffix("pet", initiator, new List<Profile> { c1, c2 });
+            string suffix = processor.GetGroupEiconSuffix("pet", initiator, new List<Profile> { c1, c2 }, "");
 
             // Each petted recipient's icon shows; the initiator's does not.
             Assert.Equal(" [eicon]pet1[/eicon] [eicon]pet2[/eicon]", suffix);
@@ -172,7 +172,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
             var c2 = new ProfileBuilder().WithCharacteristic("eicon_kiss", "[eicon]lips[/eicon]").Build(); // same icon as initiator
             var processor = new KissProcessor(_database);
 
-            string suffix = processor.GetGroupEiconSuffix("kiss", initiator, new List<Profile> { c1, c2 });
+            string suffix = processor.GetGroupEiconSuffix("kiss", initiator, new List<Profile> { c1, c2 }, "");
 
             // No de-dup: the duplicate "lips" shows once per participant that set it.
             Assert.Equal(" [eicon]lips[/eicon] [eicon]heart[/eicon] [eicon]lips[/eicon]", suffix);
@@ -187,7 +187,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
             var processor = new MarkProcessor(_database);
 
             // Mark renders its own reveal inline; the generic suffix must not double it.
-            Assert.Equal(string.Empty, processor.GetGroupEiconSuffix("mark", initiator, new List<Profile> { recipient }));
+            Assert.Equal(string.Empty, processor.GetGroupEiconSuffix("mark", initiator, new List<Profile> { recipient }, ""));
         }
 
         // ---- Lapsit per-position rule (bottom shows lap, riders show sit) ----
@@ -204,7 +204,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
             var c2 = new ProfileBuilder().WithCharacteristic("eicon_sit", "[eicon]C2SIT[/eicon]").Build();
             var processor = new LapsitProcessor(_database);
 
-            string suffix = processor.GetGroupEiconSuffix("lap", initiator, new List<Profile> { c1, c2 });
+            string suffix = processor.GetGroupEiconSuffix("lap", initiator, new List<Profile> { c1, c2 }, "");
 
             // Totem pole: one figure per line, topmost sitter (c2) first, bottom lap (initiator)
             // last. Bottom uses their lap eicon; riders use their sit eicon.
@@ -220,7 +220,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
             var c2 = new ProfileBuilder().WithCharacteristic("eicon_sit", "[eicon]C2SIT[/eicon]").Build();
             var processor = new LapsitProcessor(_database);
 
-            string suffix = processor.GetGroupEiconSuffix("sit", initiator, new List<Profile> { c1, c2 });
+            string suffix = processor.GetGroupEiconSuffix("sit", initiator, new List<Profile> { c1, c2 }, "");
 
             // Totem pole top -> bottom: topmost sitter c2, then initiator, then bottom lap c1
             // (their lap eicon). One figure per line.
@@ -241,7 +241,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
                 .WithCharacteristic("eicon_sit", "[eicon]C2SIT[/eicon]").Build();
             var processor = new LapsitProcessor(_database);
 
-            string suffix = processor.GetGroupEiconSuffix("lap", initiator, new List<Profile> { c1, c2 });
+            string suffix = processor.GetGroupEiconSuffix("lap", initiator, new List<Profile> { c1, c2 }, "");
 
             // Top -> bottom: c2's sit eicon, MiddleChar's fallback character icon, initiator's lap eicon.
             Assert.Equal("\n[eicon]C2SIT[/eicon]\n[icon]MiddleChar[/icon]\n[eicon]LAP[/eicon]", suffix);

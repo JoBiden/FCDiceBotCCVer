@@ -744,6 +744,20 @@ namespace FChatDicebot.Database
             return documents.Select(doc => BsonSerializer.Deserialize<Identifier>(doc)).ToList();
         }
 
+        public bool SetIdentifierEicon(string type, string eicon)
+        {
+            var collection = Database.GetCollection<BsonDocument>("Identifiers");
+            var filter = Builders<BsonDocument>.Filter.Eq("type", type);
+            // Clearing unsets the field rather than storing an empty string, matching the
+            // [BsonIgnoreIfNull] shape of identifiers that never had one.
+            var update = string.IsNullOrEmpty(eicon)
+                ? Builders<BsonDocument>.Update.Unset("eicon")
+                : Builders<BsonDocument>.Update.Set("eicon", eicon);
+
+            var result = collection.UpdateOne(filter, update);
+            return result.MatchedCount > 0;
+        }
+
         // Profile Query Operations (optimized - don't fetch entire profile)
         public string GetDisplayName(string userName)
         {

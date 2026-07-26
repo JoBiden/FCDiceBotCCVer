@@ -21,6 +21,9 @@ namespace FChatDicebot.InteractionProcessors.Casual
         // Directional group model: initiator +R lickgive, each recipient +1 licktake.
         public override GroupSpec GroupSpec => GroupSpec.Directional("lickgive", "licktake");
 
+        // The licker's tongue does the work, so the initiator's tongue eicon shows.
+        public override BodypartEiconRule BodypartEiconRule => BodypartEiconRule.Part("tongue", BodypartEiconOwner.Initiator);
+
         // {lickgiver} = the licker (initiator); {licktaker} = the licked (recipient; for a
         // multi-target lick this resolves to the first consenter — see GetGroupCompletionMessage).
         private static readonly List<string> LickDescriptors = new List<string>

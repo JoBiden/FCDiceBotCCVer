@@ -12,6 +12,10 @@ namespace FChatDicebot.InteractionProcessors.Consequence
         public override string InteractionType => "consume";
         public override string InvestmentLevel => "commitment";
 
+        // The devourer consumes *with* the named part (their mouth, tail, ...), so the
+        // initiator's bodypart eicon is the one that shows.
+        public override BodypartEiconRule BodypartEiconRule => BodypartEiconRule.Typed(BodypartEiconOwner.Initiator);
+
         public ConsumeProcessor(IChateauDatabase database) : base(database)
         {
         }

@@ -54,7 +54,7 @@ Design + as-implemented documentation for the Chateau Contract interaction syste
 
 | Spec | Adds |
 |------|------|
-| [Custom-Interaction-Eicons](Custom-Interaction-Eicons.md) | `!seteicon {interaction} [eicon]…[/eicon]` to pin your own eicon to any interaction (shown on its completion message). Verb-keyed storage (`InteractionEiconSupport`), `EiconAppliesToBothParties` directionality, group + lap-stack rules, `!birth` special-case. Subsumes `!setmark` (now a legacy alias). |
+| [Custom-Interaction-Eicons](Custom-Interaction-Eicons.md) | `!seteicon {interaction\|bodypart} [eicon]…[/eicon]` to pin your own eicon to any interaction (shown on its completion message) or to one of your bodyparts (shown on any interaction involving that part). Verb-keyed storage (`InteractionEiconSupport`), `EiconAppliesToBothParties` directionality, per-processor `BodypartEiconRule`, group + lap-stack rules, `!birth` special-case, and the admin-set `Identifier.eicon` surfaced in `!whatis`. Subsumes `!setmark` (now a legacy alias) and the hardcoded `qcass` easter egg. |
 
 ## Upcoming features
 

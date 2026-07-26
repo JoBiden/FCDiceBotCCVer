@@ -744,6 +744,35 @@ View detailed profile.
 - Bonds
 - Currencies
 
+#### !seteicon
+Pin one of your own eicons to an interaction, or to one of your bodyparts.
+
+**Usage:** `!seteicon {interaction} [eicon]YourEicon[/eicon]` or `!seteicon {bodypart} [eicon]YourEicon[/eicon]`
+Leave the eicon off to clear it (`!seteicon ass`), or send `!seteicon` alone to list everything you've set.
+
+**Interaction eicons** show on that interaction's completion message. Mutual interactions (`!kiss`, `!cuddle`, `!handhold`, `!bond`) and group interactions show every participant's; `!climax`/`!climaxfor` show the one climaxing; `!pet` shows the one being petted; everything else shows the initiator's.
+
+**Bodypart eicons** show whenever an interaction involves that part of your body. Any identifier in the `bodypart` category works — `!category bodypart` lists them.
+
+| Interaction | Part | Whose eicon shows |
+|---|---|---|
+| `!mark`, `!golden`, `!break` | the typed part | the recipient's |
+| `!consume` | the typed part | the initiator's |
+| `!spank` | ass | the recipient's |
+| `!feed` | mouth | the recipient's |
+| `!milk` | breast | the recipient's |
+| `!lick` | tongue | the initiator's |
+| `!boobhat` | breast | the initiator's |
+| `!handhold` | hand | both |
+
+Bodypart eicons come after the interaction eicons on the message. A part you haven't set an eicon for simply shows nothing.
+
+**Example:**
+```
+!seteicon ass [eicon]MyBooty[/eicon]
+→ Done! From now on, whenever an interaction involves your ass, onlookers will see [eicon]MyBooty[/eicon].
+```
+
 ### Title System
 
 #### !showtitles
@@ -857,6 +886,13 @@ Trigger manual backup.
 **Usage:** `!backup`
 
 **Note:** May not be implemented in all versions
+
+#### !setidentifiereicon (Admin)
+Set the decorative eicon the Chateau shows for an identifier, beside its name in `!whatis`.
+
+**Usage:** `!setidentifiereicon {identifier} [eicon]TheEicon[/eicon]` (leave the eicon off to clear it)
+
+**Note:** This is the bot-wide icon for the thing itself, not any resident's personal one — that's `!seteicon`.
 
 ## Command Aliases
 

@@ -12,6 +12,9 @@ namespace FChatDicebot.InteractionProcessors.Involved
         public override string InteractionType => "golden";
         public override string InvestmentLevel => "involved";
 
+        // Poured over the recipient's part, so their bodypart eicon shows.
+        public override BodypartEiconRule BodypartEiconRule => BodypartEiconRule.Typed(BodypartEiconOwner.Recipient);
+
         private static readonly TimeSpan RateLimit = TimeSpan.FromMinutes(30);
 
         /// <summary>

@@ -330,9 +330,11 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
         }
 
         [Fact]
-        public void GetCompletionMessage_QueenContract_AddsEicon()
+        public void GetCompletionMessage_QueenContract_NoLongerHardcodesEicon()
         {
-            // Arrange
+            // The recipient-side qcass easter egg is now a bodypart eicon like anyone else's:
+            // Queen Contract carries it via !seteicon ass, so the processor's own sentence
+            // carries no hardcoded icon (see the bodypart eicon tests for the rendering).
             var initiator = new ProfileBuilder()
                 .WithUserName("Alice")
                 .WithDisplayName("Alice")
@@ -343,11 +345,9 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
                 .WithDisplayName("Queen Contract")
                 .BuildAndSave(_database);
 
-            // Act
             string message = _processor.GetCompletionMessage(initiator, queenContract, "");
 
-            // Assert
-            Assert.Contains("[eicon]qcass[/eicon]", message);
+            Assert.DoesNotContain("[eicon]", message);
         }
 
         public void Dispose()

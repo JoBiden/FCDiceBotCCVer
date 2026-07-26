@@ -115,7 +115,7 @@ namespace FChatDicebot.InteractionProcessors.Casual
         /// order), not the initiator's. Mirrors the 1:1 <see cref="GetEiconSubject"/> redirect so
         /// a group pet surfaces every "being petted" icon rather than the petter's.
         /// </summary>
-        public override string GetGroupEiconSuffix(string interactionVerb, Profile initiatorProfile, IReadOnlyList<Profile> consentersInOrder)
+        public override string GetGroupEiconSuffix(string interactionVerb, Profile initiatorProfile, IReadOnlyList<Profile> consentersInOrder, string identifier)
         {
             string verb = string.IsNullOrEmpty(interactionVerb) ? InteractionType : interactionVerb;
             if (InteractionEiconSupport.IsSelfRendered(verb)) return string.Empty;
@@ -128,6 +128,9 @@ namespace FChatDicebot.InteractionProcessors.Casual
                     AddInteractionEicon(eicons, consenter, verb);
                 }
             }
+            // !pet declares no bodypart rule today; kept on the shared path so giving it one
+            // later renders without touching this override.
+            AddBodypartEicons(eicons, identifier, initiatorProfile, consentersInOrder);
             return JoinEiconSuffix(eicons);
         }
     }

@@ -352,48 +352,58 @@ void DeletePendingDuty(ObjectId dutyId)
 
 #### 7. Identifiers
 
-**Purpose:** Category-based identifiers for interactions
+**Purpose:** The vocabulary interactions draw on — one document per identifier, each tagged with the categories it belongs to.
 
 **Document Structure:**
 
 ```json
 {
   "_id": ObjectId("..."),
-  "category": "bodypart",
-  "identifiers": [
-    "collar",
-    "wrist",
-    "ankle",
-    "forehead",
-    "cheek",
-    "neck",
-    "shoulder"
-  ]
+  "type": "lowerback",
+  "description": "The small of the back, just above the hips.",
+  "categories": ["bodypart", "break"],
+  "displayText": "lower back",
+  "eicon": "[eicon]stockback[/eicon]"
 }
 ```
 
+| Field | Notes |
+|---|---|
+| `type` | The token residents type. Lowercase; unique. |
+| `description` | Prose shown by `!whatis`. |
+| `categories` | Every category this identifier belongs to. One identifier can be in several. |
+| `displayText` | Optional flavor-text override consumed by the `Utils.*ToText` helpers. Unset = render the raw `type`. |
+| `eicon` | Optional bot-wide decorative icon, full `[eicon]…[/eicon]` bbcode. Shown by `!whatis`; set with the admin-only `!setidentifiereicon`. |
+| `gestationDays`, `broodSizeMin`, `broodSizeMax` | Monster-only `!breed` overrides. Zero/absent = fall back to the category defaults. |
+
+`displayText`, `eicon`, and the brood fields are omitted from documents that don't set them, so adding either needs no migration.
+
 **Categories:**
-- `bodypart` - For marks
+- `bodypart` - For marks, and for personal bodypart eicons (`!seteicon`)
+- `break` - Valid `!break` targets (bodyparts plus a few non-physical ones like `mind`)
 - `substance` - For feeding
 - `attire` - For dressing
-- `species` - For monsterization
+- `species` / `monster` - For monsterization and breeding
 - `object` - For objectification
 - `plant` - For plant transformation
 
 **Key Methods:**
 
 ```csharp
-List<string> GetIdentifiers(string category)
-void AddIdentifier(string category, string identifier)
-bool ValidateIdentifier(string category, string identifier)
+Identifier GetIdentifier(string type);
+List<Identifier> GetIdentifiersByCategory(string category);
+List<Identifier> GetAllIdentifiers();
+bool SetIdentifierEicon(string type, string eicon);
 ```
+
+Identifiers are otherwise curated directly in Mongo — `SetIdentifierEicon` is the one in-chat write path, for the cosmetic `eicon` field only.
 
 **Usage Example:**
 
 ```csharp
-// When marking, validate body part:
-var bodyParts = GetIdentifiers("bodypart");
-if (!bodyParts.Contains(requestedPart)) {
+// When marking, validate the body part:
+var bodyParts = MonDB.getIdentifiers("bodypart");
+if (!bodyParts.Any(i => i.type == requestedPart)) {
     return "Invalid body part!";
 }
 ```

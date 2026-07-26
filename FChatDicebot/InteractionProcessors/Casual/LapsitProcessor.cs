@@ -279,8 +279,11 @@ namespace FChatDicebot.InteractionProcessors.Casual
         /// who hasn't set the relevant eicon falls back to their character icon
         /// (<c>[icon]{userName}[/icon]</c>) so the pole always carries one figure per person and
         /// the stack stays visually intact.
+        ///
+        /// Lapsit declares no <see cref="BodypartEiconRule"/>, and the pole's one-figure-per-line
+        /// shape has no room for extra icons, so <paramref name="identifier"/> goes unused here.
         /// </summary>
-        public override string GetGroupEiconSuffix(string interactionVerb, Profile initiatorProfile, IReadOnlyList<Profile> consentersInOrder)
+        public override string GetGroupEiconSuffix(string interactionVerb, Profile initiatorProfile, IReadOnlyList<Profile> consentersInOrder, string identifier)
         {
             string verb = string.IsNullOrEmpty(interactionVerb) ? InteractionType : interactionVerb;
             var stack = BuildStack(verb, initiatorProfile, consentersInOrder); // bottom -> top
