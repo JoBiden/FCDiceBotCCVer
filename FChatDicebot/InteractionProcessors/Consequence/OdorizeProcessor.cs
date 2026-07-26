@@ -150,7 +150,7 @@ namespace FChatDicebot.InteractionProcessors.Consequence
             Scope = "scent"
         };
 
-        public override string GetConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
+        protected override string BuildConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
             string phrase = ScentText.ScentPhrase(Database.GetIdentifier(identifier), identifier, initiatorProfile.displayName);
             string seriousness = ConsentWarningText.Block(

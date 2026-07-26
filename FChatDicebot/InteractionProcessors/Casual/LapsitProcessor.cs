@@ -147,7 +147,7 @@ namespace FChatDicebot.InteractionProcessors.Casual
             return $"{opener} {descriptor}";
         }
 
-        public override string GetConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
+        protected override string BuildConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
             if (InitiatorIsSitter(identifier))
             {
@@ -156,13 +156,17 @@ namespace FChatDicebot.InteractionProcessors.Casual
             return initiatorProfile.displayName + " wants to pull " + recipientProfile.displayName + " onto their lap. Do you !consent to taking a seat?";
         }
 
-        public override string GetGroupConsentWarning(Profile initiatorProfile, IReadOnlyList<Profile> recipients, string identifier)
+        protected override string BuildGroupConsentWarning(Profile initiatorProfile, IReadOnlyList<Profile> recipients, string identifier)
         {
             string names = JoinNamesSerial(recipients.Select(p => p.displayName).ToList());
             if (InitiatorIsSitter(identifier))
             {
-                // !sit: the first to consent becomes the bottom; the rest pile on above.
-                return initiatorProfile.displayName + " wants to start a lap stack with " + names + ". The first to !consent gets to be under " + initiatorProfile.displayName + "!";
+                // !sit: the first to consent becomes the bottom; the rest pile on above. This
+                // announces a race rather than asking a yes/no question, so the bare "(or !no)"
+                // would read as if declining just forfeited the bottom spot — spell it out.
+                return initiatorProfile.displayName + " wants to start a lap stack with " + names
+                    + ". The first to !consent gets to be under " + initiatorProfile.displayName + "! "
+                    + ConsentWarningText.DeclineHintVariant("to opt out entirely");
             }
             return initiatorProfile.displayName + " starts a lap stack, looking to pull " + names + " onto their lap one at a time. Do you each !consent to taking a seat?";
         }

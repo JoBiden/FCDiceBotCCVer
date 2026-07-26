@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 namespace FChatDicebot.InteractionProcessors
@@ -17,6 +18,46 @@ namespace FChatDicebot.InteractionProcessors
     {
         /// <summary>The fixed opening sentence of every seriousness block.</summary>
         public const string Opener = "This should not be taken lightly.";
+
+        /// <summary>
+        /// The reminder that declining is always an option, which every consent prompt carries
+        /// directly after its own question. Saying no is as much a part of the consent flow as
+        /// saying yes, so the prompt names both.
+        /// </summary>
+        public const string DeclineHint = "(or !no)";
+
+        /// <summary>
+        /// What counts as "this prompt already names <c>!no</c>". Matching on the stem rather
+        /// than the whole hint is what lets <see cref="DeclineHintVariant"/> stand in for the
+        /// default without <see cref="WithDeclineHint"/> adding a second reminder.
+        /// </summary>
+        private const string DeclineHintStem = "(or !no";
+
+        /// <summary>
+        /// Give a prompt its <see cref="DeclineHint"/>. Applied centrally by
+        /// <see cref="InteractionProcessorBase.GetConsentWarning"/> /
+        /// <see cref="InteractionProcessorBase.GetGroupConsentWarning"/>, so processors never
+        /// write the hint themselves and can't drift. A prompt that already names <c>!no</c>
+        /// anywhere — because it placed the hint mid-string ahead of trailing fragments, or
+        /// used a <see cref="DeclineHintVariant"/> — is returned untouched.
+        /// </summary>
+        public static string WithDeclineHint(string prompt)
+        {
+            if (string.IsNullOrWhiteSpace(prompt)) return prompt;
+            if (prompt.IndexOf(DeclineHintStem, StringComparison.Ordinal) >= 0) return prompt;
+            return prompt.TrimEnd() + " " + DeclineHint;
+        }
+
+        /// <summary>
+        /// A bespoke phrasing of the decline reminder, for the rare prompt whose shape doesn't
+        /// take the bare <see cref="DeclineHint"/> — e.g. the lap stack, which announces a
+        /// race to consent rather than asking a yes/no question, so its reminder reads
+        /// "(or !no to opt out entirely)". Suppresses the default hint.
+        /// </summary>
+        public static string DeclineHintVariant(string tail)
+        {
+            return "(or !no " + tail + ")";
+        }
 
         /// <summary>
         /// Wrap the opener followed by the supplied clauses (in order, empties skipped) in a

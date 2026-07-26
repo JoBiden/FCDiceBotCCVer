@@ -96,7 +96,7 @@ namespace FChatDicebot.InteractionProcessors.Casual
             return $"{initiatorProfile.displayName} pets {names}. {descriptor}";
         }
 
-        public override string GetConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
+        protected override string BuildConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
             return initiatorProfile.displayName + " wants to pet " + recipientProfile.displayName + ". Do you !consent to some scritches?";
         }

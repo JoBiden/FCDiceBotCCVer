@@ -515,7 +515,7 @@ Some interactions warn the recipient:
 **Rename Processor:**
 
 ```csharp
-public override string GetConsentWarning(
+protected override string BuildConsentWarning(
     Profile initiatorProfile,
     Profile recipientProfile,
     string identifier)
@@ -525,6 +525,37 @@ public override string GetConsentWarning(
            $"interactions until you are renamed again. Do you !consent?";
 }
 ```
+
+Override `BuildConsentWarning` (and, for group-capable casuals, `BuildGroupConsentWarning`) —
+never `GetConsentWarning` itself. `GetConsentWarning` is the non-virtual channel-bound entry
+point: it takes your body and applies `ConsentWarningText.DeclineHint` — `(or !no)` — so every
+consent prompt in the Chateau names the decline command as well as the accept one. Don't write
+that reminder into the body yourself.
+
+The reminder sits directly after the prompt's own question, and anything that trails the prompt
+follows it. If your builder appends status-effect fragments, return
+`ComposeConsentWarning(baseWarning, effects.ConsentWarnings)` rather than
+`AppendStatusFragments(...)` — otherwise the reminder ends up stranded behind the fragments:
+
+```csharp
+protected override string BuildConsentWarning(Profile init, Profile rec, string identifier)
+{
+    string baseWarning = /* ... */ " Do you !consent to this curse?";
+    var effects = GetActiveStatusEffects(rec, StatusEffectCallSite.Consent, identifier, isInitiator: false);
+    return ComposeConsentWarning(baseWarning, effects.ConsentWarnings);
+}
+```
+
+Two escape hatches:
+
+- Prompts composed outside a processor (e.g. `!break`, which needs the typed duration the
+  processor can't see) apply `ConsentWarningText.WithDeclineHint` themselves. It's idempotent,
+  keyed on the prompt naming `!no` anywhere, so double-wrapping is safe.
+- A prompt that announces something other than a yes/no question can substitute
+  `ConsentWarningText.DeclineHintVariant("to opt out entirely")`, which suppresses the default.
+  `!sit`'s lap stack is the one user of this.
+
+`ConsentDeclineHintTests` fails the build if a processor shadows the entry point.
 
 ## Title System
 

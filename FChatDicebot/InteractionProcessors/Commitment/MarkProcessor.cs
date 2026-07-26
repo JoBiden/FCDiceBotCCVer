@@ -135,7 +135,7 @@ namespace FChatDicebot.InteractionProcessors.Commitment
             PeriodDays = 1
         };
 
-        public override string GetConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
+        protected override string BuildConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
             string bodypartText = Utils.BodypartToText(identifier);
             string seriousness = ConsentWarningText.Block(

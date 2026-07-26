@@ -439,7 +439,7 @@ namespace FChatDicebot.InteractionProcessors.Involved
                 : recipientProfile;
         }
 
-        public override string GetConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
+        protected override string BuildConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
             // Consent warnings are only emitted for non-self-target paths, so we can
             // safely assume initiator != recipient here. The interaction's typeKey is
@@ -447,15 +447,22 @@ namespace FChatDicebot.InteractionProcessors.Involved
             // created), so callers must pass the typeKey via a wrapped identifier OR
             // we infer from the bot command layer. We default to ClimaxforType wording
             // and let the command layer override by calling a typed helper.
-            return GetConsentWarning(initiatorProfile, recipientProfile, identifier, ClimaxforType);
+            return BuildConsentWarning(initiatorProfile, recipientProfile, identifier, ClimaxforType);
         }
 
         /// <summary>
-        /// Typed overload of <see cref="GetConsentWarning"/> — the command layer knows
-        /// the verb the user actually typed and passes it through so the wording matches
-        /// (<c>climax for</c> vs <c>make you climax</c>).
+        /// Typed overload of <see cref="InteractionProcessorBase.GetConsentWarning"/> — the
+        /// command layer knows the verb the user actually typed and passes it through so the
+        /// wording matches (<c>climax for</c> vs <c>make you climax</c>). Applies the same
+        /// <c>(or !no)</c> reminder the untyped entry point does.
         /// </summary>
         public string GetConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier, string typeKey)
+        {
+            return ConsentWarningText.WithDeclineHint(
+                BuildConsentWarning(initiatorProfile, recipientProfile, identifier, typeKey));
+        }
+
+        private string BuildConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier, string typeKey)
         {
             string initName = initiatorProfile?.displayName ?? "Someone";
             string recName = recipientProfile?.displayName ?? "you";

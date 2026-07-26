@@ -201,17 +201,21 @@ namespace FChatDicebot.InteractionProcessors.Consequence
             Scope = "bodypart"
         };
 
-        public override string GetConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
+        protected override string BuildConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
             string baseWarning = ComposeConsentText(initiatorProfile.displayName, recipientProfile.displayName, identifier, DefaultDays, ClampDirection.None);
             var effects = GetActiveStatusEffects(recipientProfile, StatusEffectCallSite.Consent);
-            return AppendStatusFragments(baseWarning, effects.ConsentWarnings);
+            return ComposeConsentWarning(baseWarning, effects.ConsentWarnings);
         }
 
         /// <summary>
         /// Build the consent-warning body with the actual requested days. Callable from the
         /// command so the warning reflects the user's typed duration instead of always
         /// reading <see cref="DefaultDays"/>.
+        ///
+        /// Applies the decline reminder itself, because the clamp note is bookkeeping about
+        /// the initiator's input rather than part of the question — it belongs after the
+        /// reminder, in small print, not between the question and its answer.
         /// </summary>
         public static string ComposeConsentText(string initiatorName, string recipientName, string part, int days, ClampDirection clamp)
         {
@@ -221,16 +225,17 @@ namespace FChatDicebot.InteractionProcessors.Consequence
                 ConsentWarningText.FrequencyPerAxis(initiatorName, "break a given part of you", Cooldown.PeriodDays),
                 "While broken, your sore " + part + " will keep you from " + blockedVerbs
                     + ", and might be noticed during other interactions as well.");
-            string warning = initiatorName + " is going to break " + recipientName + "'s " + part
-                + " for " + days + " " + daysWord + "! " + seriousness + " Do you !consent?";
+            string warning = ConsentWarningText.WithDeclineHint(
+                initiatorName + " is going to break " + recipientName + "'s " + part
+                    + " for " + days + " " + daysWord + "! " + seriousness + " Do you !consent?");
 
             if (clamp == ClampDirection.Min)
             {
-                warning += " (Duration was adjusted to the minimum of " + MinDays + " day.)";
+                warning += " [sub]Duration was adjusted to the minimum of " + MinDays + " day.[/sub]";
             }
             else if (clamp == ClampDirection.Max)
             {
-                warning += " (Duration was adjusted to the maximum of " + MaxDays + " days.)";
+                warning += " [sub]Duration was adjusted to the maximum of " + MaxDays + " days.[/sub]";
             }
             return warning;
         }

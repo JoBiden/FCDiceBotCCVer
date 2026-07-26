@@ -481,7 +481,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
 
             string warning = _processor.GetConsentWarning(alice, bob, "magic");
 
-            Assert.Equal("Alice wants to do some magic training with Bob! Do you !consent to improving your skills together?", warning);
+            Assert.Equal("Alice wants to do some magic training with Bob! Do you !consent to improving your skills together? (or !no)", warning);
         }
 
         [Fact]

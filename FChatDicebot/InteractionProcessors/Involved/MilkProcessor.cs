@@ -303,7 +303,7 @@ namespace FChatDicebot.InteractionProcessors.Involved
                 + ". Bottled, sealed, and tagged." + flavorAppendix;
         }
 
-        public override string GetConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
+        protected override string BuildConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
             string substance = ParseSubstanceFromIdentifier(identifier);
             string substanceText = Utils.SubstanceToText(substance);

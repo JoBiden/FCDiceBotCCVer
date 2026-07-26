@@ -134,7 +134,7 @@ namespace FChatDicebot.InteractionProcessors.Commitment
             PeriodDays = 1
         };
 
-        public override string GetConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
+        protected override string BuildConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
             return $"{initiatorProfile.displayName} wants to grant you the title \"{identifier}\". [b]Custom titles cannot be received frequently, so be sure this is an important title for you.[/b] Do you !consent to receiving this title?";
         }

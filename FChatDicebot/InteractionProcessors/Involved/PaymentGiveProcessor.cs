@@ -41,7 +41,7 @@ namespace FChatDicebot.InteractionProcessors.Involved
             return $"{initiatorProfile.displayName} hands over some {identifier} to {recipientProfile.displayName}. Transaction complete!";
         }
 
-        public override string GetConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
+        protected override string BuildConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
             // identifier is "{amount} {currency}" (e.g. "100 gold") — see ChateauPay.Run.
             return $"{initiatorProfile.displayName} is going to pay {recipientProfile.displayName} {identifier}! Do you !consent to this transaction?";

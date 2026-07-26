@@ -98,7 +98,7 @@ namespace FChatDicebot.InteractionProcessors.Casual
             return $"{initiatorProfile.displayName} licks {names}. {descriptor}";
         }
 
-        public override string GetConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
+        protected override string BuildConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
             return initiatorProfile.displayName + " wants to give " + recipientProfile.displayName + " a lick. Do you !consent to being lapped at?";
         }

@@ -253,7 +253,7 @@ namespace FChatDicebot.InteractionProcessors.Consequence
             Scope = "parasite"
         };
 
-        public override string GetConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
+        protected override string BuildConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
             string costPhrase = CostPhrase(PurgeCostFor(identifier));
             int graceHours = (int)SpreadGracePeriod.TotalHours;
@@ -269,7 +269,7 @@ namespace FChatDicebot.InteractionProcessors.Consequence
                 + recipientProfile.displayName + " with " + parasiteWithArticle + "! " + seriousness + " "
                 + "Do you !consent to being made into a new host?";
             var effects = GetActiveStatusEffects(recipientProfile, StatusEffectCallSite.Consent, identifier, isInitiator: false);
-            return AppendStatusFragments(baseWarning, effects.ConsentWarnings);
+            return ComposeConsentWarning(baseWarning, effects.ConsentWarnings);
         }
     }
 }

@@ -130,8 +130,9 @@ namespace FChatDicebot.BotCommands
 
             MonDB.addPendingCommand(pendingBreak);
 
-            // Compose with the actual days (the processor's GetConsentWarning override
-            // can't see extraParameters, so we call the static helper directly).
+            // Compose with the actual days (the processor's consent-warning builder can't see
+            // extraParameters, so we call the static helper directly). That bypasses
+            // GetConsentWarning; ComposeConsentText applies the decline reminder itself.
             string warning = BreakProcessor.ComposeConsentText(
                 initiatorProfile.displayName, recipientProfile.displayName, part, requestedDays, clampDir);
             bot.SendMessageInChannel(warning, channel);

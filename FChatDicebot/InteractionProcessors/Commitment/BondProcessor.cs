@@ -110,7 +110,7 @@ namespace FChatDicebot.InteractionProcessors.Consequence
             return initiatorProfile.displayName + " is now " + recipientProfile.displayName + "'s " + Utils.BondToText(identifier, false) + ", and " + recipientProfile.displayName + " is now their " + Utils.BondToText(identifier, true) + "! May you enjoy a bright future together."; ;
         }
 
-        public override string GetConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
+        protected override string BuildConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
             // A bond puts a global cooldown on BOTH parties (not a per-pair limit), so the
             // recipient-framed clause speaks to the act of declaring a bond at all.

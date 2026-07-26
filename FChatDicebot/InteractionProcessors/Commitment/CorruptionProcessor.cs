@@ -264,7 +264,7 @@ namespace FChatDicebot.InteractionProcessors.Commitment
             QuotaMagnitude = DailyMagnitudeLimit
         };
 
-        public override string GetConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
+        protected override string BuildConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
             string verb = ParseVerbFromIdentifier(identifier);
             int requestedMagnitude = ParseMagnitudeFromIdentifier(identifier);

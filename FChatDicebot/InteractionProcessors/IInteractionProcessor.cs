@@ -48,7 +48,10 @@ namespace FChatDicebot.InteractionProcessors
         ValidationResult ValidateInteraction(string initiator, string recipient, string identifier);
 
         /// <summary>
-        /// Get the consent warning text shown to the recipient before they consent.
+        /// Get the consent warning text shown to the recipient before they consent, closing
+        /// with the <c>(or !no)</c> reminder that declining is equally an option. Processors
+        /// supply the body by overriding <c>BuildConsentWarning</c>; the reminder is appended
+        /// centrally so it can't drift between interactions.
         /// </summary>
         /// <param name="initiatorProfile">Profile of the initiator</param>
         /// <param name="recipientProfile">Profile of the recipient</param>
@@ -131,7 +134,11 @@ namespace FChatDicebot.InteractionProcessors
         /// <summary>Combined completion message for a resolved group moment.</summary>
         string GetGroupCompletionMessage(Profile initiatorProfile, IReadOnlyList<Profile> consentersInOrder, string identifier);
 
-        /// <summary>Channel announcement shown when a multi-target casual command is invoked.</summary>
+        /// <summary>
+        /// Channel announcement shown when a multi-target casual command is invoked, closing
+        /// with the same <c>(or !no)</c> reminder as the 1:1 prompt. Processors override
+        /// <c>BuildGroupConsentWarning</c> for the body.
+        /// </summary>
         string GetGroupConsentWarning(Profile initiatorProfile, IReadOnlyList<Profile> recipients, string identifier);
     }
 

@@ -18,9 +18,9 @@ A first-draft style guide for any string a resident will see — consent prompts
 
 ## 3. The consent-prompt template
 
-Every prompt ends `Do you !consent to ___?` and follows this shape:
+Every prompt asks `Do you !consent to ___?` and closes with `(or !no)`:
 
-> `{initiator} <intent verb> {recipient} <detail>! [b]<seriousness warning>[/b] Do you !consent to <recipient-framed action>?`
+> `{initiator} <intent verb> {recipient} <detail>! [b]<seriousness warning>[/b] Do you !consent to <recipient-framed action>? (or !no)`
 
 - **Intent verb phrases** vary by tier flavor: "wants to" (casual, friendly), "is going to" (most involved/consequence), "is about to", "intends for", "is gearing up to", "would like to declare", "graciously offers to". Match the tone of the act.
 - **The `to ___` blank rephrases the action from the recipient's perspective:** "to a smooch", "to that sting", "to becoming an object", "to being bred", "to this life-changing occasion", "to receiving this payment". It should read as something the recipient experiences, not what the initiator does.
@@ -28,6 +28,10 @@ Every prompt ends `Do you !consent to ___?` and follows this shape:
   > `[b]This should not be taken lightly, and can not be done frequently.[/b]`
 
   Casual prompts skip it. Custom warnings exist (e.g. `EntitleProcessor`, `RenameProcessor`) when there's something specific the recipient needs to know — keep them bold.
+- **Never write the `(or !no)` reminder yourself.** It's applied by `InteractionProcessorBase.GetConsentWarning` from `ConsentWarningText.DeclineHint`, so it stays identical everywhere and reaches group announcements too. It's there because a consent flow that only names the yes command isn't offering a real choice.
+- **The reminder belongs with the question, not at the very end.** Anything that trails the prompt — status-effect fragments, small-print notes — goes *after* it: `Do you !consent to some cuddles? (or !no) Bob is carrying a heavy musk.` A builder that appends status fragments must use `ComposeConsentWarning(baseWarning, fragments)` to get this ordering.
+- **Bookkeeping notes are `[sub]`, not parentheticals.** When a prompt has to report something about the initiator's input rather than the act itself, put it in small print after the reminder — see `!break`'s `[sub]Duration was adjusted to the minimum of 1 day.[/sub]`. Two parentheticals in a row read as a stutter.
+- **A prompt that doesn't ask a yes/no question needs a spelled-out reminder.** `ConsentWarningText.DeclineHintVariant("to opt out entirely")` yields `(or !no to opt out entirely)` and suppresses the default. The `!sit` lap stack uses it: it announces a race to consent, so a bare `(or !no)` would read as if declining only forfeited the bottom spot.
 
 ## 4. Completion-message template
 

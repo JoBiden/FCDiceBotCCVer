@@ -488,18 +488,45 @@ namespace FChatDicebot.InteractionProcessors
         }
 
         /// <summary>
-        /// Default consent warning. Appends any active status-effect consent fragments for the
-        /// recipient, prefixing each with a single space (contributors should not include
+        /// Channel-bound entry point for a 1:1 consent prompt: the processor's own
+        /// <see cref="BuildConsentWarning"/> with <see cref="ConsentWarningText.DeclineHint"/>
+        /// appended. Deliberately not virtual — every consent prompt must close by naming
+        /// <c>!no</c>, so processors override the builder and the reminder is added here once.
+        /// </summary>
+        public string GetConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
+        {
+            return ConsentWarningText.WithDeclineHint(
+                BuildConsentWarning(initiatorProfile, recipientProfile, identifier));
+        }
+
+        /// <summary>
+        /// Default consent warning body. Appends any active status-effect consent fragments for
+        /// the recipient, prefixing each with a single space (contributors should not include
         /// their own leading whitespace). Override to provide interaction-specific warnings;
         /// overrides that still want status-effect text should call
         /// <see cref="GetActiveStatusEffects"/> with <see cref="StatusEffectCallSite.Consent"/>
         /// and use <see cref="AppendStatusFragments"/> to apply the same spacing convention.
+        /// Do not write the <c>(or !no)</c> reminder here — <see cref="GetConsentWarning"/>
+        /// adds it for every interaction. Builders that append status-effect fragments should
+        /// use <see cref="ComposeConsentWarning"/> so the reminder still lands directly after
+        /// the question rather than trailing the fragments.
         /// </summary>
-        public virtual string GetConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
+        protected virtual string BuildConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
             string baseWarning = $"{initiatorProfile.displayName} wants to {InteractionType} with {recipientProfile.displayName}. Do you !consent?";
             var effects = GetActiveStatusEffects(recipientProfile, StatusEffectCallSite.Consent, identifier, isInitiator: false);
-            return AppendStatusFragments(baseWarning, effects.ConsentWarnings);
+            return ComposeConsentWarning(baseWarning, effects.ConsentWarnings);
+        }
+
+        /// <summary>
+        /// Finish a consent-warning body that carries status-effect fragments: the decline
+        /// reminder goes in first, directly after the prompt's own question, and the fragments
+        /// trail it. Without this the reminder would end up after the fragments, separating it
+        /// from the question it belongs to.
+        /// </summary>
+        protected static string ComposeConsentWarning(string baseWarning, IEnumerable<string> fragments)
+        {
+            return AppendStatusFragments(ConsentWarningText.WithDeclineHint(baseWarning), fragments);
         }
 
         /// <summary>
@@ -882,15 +909,27 @@ namespace FChatDicebot.InteractionProcessors
         }
 
         /// <summary>
-        /// Group consent announcement shown when a multi-target casual command is invoked.
-        /// Default reads "{initiator} wants to {verb} A, B, and C. Each of you, do you
-        /// !consent?". Processors with awkward infinitives (lapsit) override.
+        /// Channel-bound entry point for a group consent announcement: the processor's own
+        /// <see cref="BuildGroupConsentWarning"/> with
+        /// <see cref="ConsentWarningText.DeclineHint"/> appended. Not virtual, for the same
+        /// reason as <see cref="GetConsentWarning"/>.
         /// </summary>
-        public virtual string GetGroupConsentWarning(Profile initiatorProfile, IReadOnlyList<Profile> recipients, string identifier)
+        public string GetGroupConsentWarning(Profile initiatorProfile, IReadOnlyList<Profile> recipients, string identifier)
+        {
+            return ConsentWarningText.WithDeclineHint(
+                BuildGroupConsentWarning(initiatorProfile, recipients, identifier));
+        }
+
+        /// <summary>
+        /// Group consent announcement body shown when a multi-target casual command is invoked.
+        /// Default reads "{initiator} wants to {verb} A, B, and C. Do you each !consent?".
+        /// Processors with awkward infinitives (lapsit) override.
+        /// </summary>
+        protected virtual string BuildGroupConsentWarning(Profile initiatorProfile, IReadOnlyList<Profile> recipients, string identifier)
         {
             string names = JoinNamesSerial(recipients.Select(p => p.displayName).ToList());
             string verb = GetInteractionVerb(VerbTense.Infinitive);
-            return $"{initiatorProfile.displayName} wants to {verb} {names}. Do you each !consent? (or !no)";
+            return $"{initiatorProfile.displayName} wants to {verb} {names}. Do you each !consent?";
         }
 
         /// <summary>

@@ -102,7 +102,7 @@ namespace FChatDicebot.InteractionProcessors.Involved
             return $"{initiatorProfile.displayName} breathes a sigh of relief as a golden fluid pours over {recipientProfile.displayName}'s {Utils.BodypartToText(identifier)}.";
         }
 
-        public override string GetConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
+        protected override string BuildConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
             return initiatorProfile.displayName + " is going to relieve themselves using " + recipientProfile.displayName + "'s " + Utils.BodypartToText(identifier) + "! Do you !consent to being used like that?";
         }
