@@ -24,6 +24,9 @@ namespace FChatDicebot.BotCommands
             RequireChannelAdmin = false;
             RequireChannel = false;
             LockCategory = CommandLockCategory.NONE;
+            // Takes an interaction type as its second argument; flagged so bare-name
+            // resolution treats "cuddle" as that argument rather than an unknown resident.
+            TakesInteractionType = true;
         }
 
         public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, MessageAddress address, UserGeneratedCommand command)

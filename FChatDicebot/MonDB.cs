@@ -251,6 +251,11 @@ namespace FChatDicebot
             return GetDatabase().GetDisplayName(userName);
         }
 
+        internal static List<ProfileName> getProfileNames()
+        {
+            return GetDatabase().GetProfileNames();
+        }
+
         internal static Dictionary<string, int> getCurrencies(string userName)
         {
             return GetDatabase().GetCurrencies(userName);

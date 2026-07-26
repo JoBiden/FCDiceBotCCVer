@@ -50,6 +50,14 @@ namespace FChatDicebot.Database
 
         // Profile Query Operations (optimized queries that don't fetch entire profile)
         string GetDisplayName(string userName);
+
+        /// <summary>
+        /// Every registered resident's names, and nothing else. Backs bare-name targeting,
+        /// which needs the whole roster on the command hot path — GetAllProfiles would
+        /// deserialize every full profile document to answer the same question.
+        /// </summary>
+        List<ProfileName> GetProfileNames();
+
         Dictionary<string, int> GetCurrencies(string userName);
         string GetCharacteristic(string userName, string characteristic);
 

@@ -110,6 +110,10 @@ namespace FChatDicebot.BotCommands
 
                 oldProfile.userName = newUserName;
                 oldProfile.displayName = newUserName;
+
+                // Both names just changed, so the bare-name roster is stale.
+                ProfileNameCache.Invalidate();
+
                 message = message + targetProfile + " username has been changed to " + newUserName;
                 bot.SendPrivateMessage(message, characterName);
             }
