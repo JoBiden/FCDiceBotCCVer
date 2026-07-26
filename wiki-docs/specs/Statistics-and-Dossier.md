@@ -256,6 +256,80 @@ For dossier:
 - **Dossier counts row is split into two:** `Casual interactions:` (existing, unchanged) and a new `Notable counts:` row that holds the give/take split for non-casual counters (`Orgasms`, `Bodyparts Exhausted`, `Curses Endured`, `Costume Changes`, `Golden Showers`, `Personal Payments`) plus summed entries (`Marks Shared`, `Meals Shared`). The original spec left section title as implementer's call; this is the as-shipped split.
 - **`ChateauStatisticsSupport` is a shared helper** under [FChatDicebot/BotCommands/Support/](../../FChatDicebot/BotCommands/Support/), not collocated with any single command. The auto-registration loop scans `FChatDicebot.BotCommands` for `ChatBotCommand` subclasses and crashes on static classes in that namespace — `Support` is a sibling namespace to keep the static helper out of its path.
 
+## Dossier layout pass (2026-07-26)
+
+The per-resident blocks above each picked their own render shape, which made the most active
+residents' dossiers enormous. `Currently employs` was the trigger — a bare headcount per job,
+one job per line — but the underlying problem was that `Days of Experience` (job → number) had
+always rendered as a single inline row while `Currently employs` (job → number) rendered one
+line per job. Same data shape, opposite treatment.
+
+**Every block now has one of two shapes, chosen by what a row holds:**
+
+| Shape | Row holds | Renders as | Blocks |
+|---|---|---|---|
+| Inline | short label + a single number | one wrapped row | Casual interactions, Notable counts, Offspring, Has personally planted, Days of Experience, Active Breaks, Active Scents |
+| Lines | names or prose | one line per row | Active Curses, Active Parasites, Bonds, Marks, Currently employs |
+
+**Spoiler collapse.** A Lines block over `ChateauDossier.SpoilerLineThreshold` (6) rows wraps its
+body in `[spoiler]` and shows a count summary beside the header (`Currently employs: 23 residents
+across 11 roles`). Collapsing hides, never truncates — every entry is still inside. Inline blocks
+are one line by construction and never collapse. This mirrors the existing pattern in
+[ChateauConsent.cs](../../FChatDicebot/BotCommands/ChateauConsent.cs), which spoilers its channel
+message past 500 chars.
+
+Threshold is measured in rendered rows, not characters or wrapped visual lines — chosen over a
+character count so the rule matches what makes a dossier *feel* long. A very wide inline row
+(e.g. a resident with experience in all 62 jobs) still wraps in-client without collapsing.
+
+**Section order** is grouped into themed clusters, separated by blank lines, replacing the
+feature-shipped-in-this-order sequence: identity & job → current state → relationships →
+lifetime tallies → recent activity. Empty clusters emit no separator.
+
+**Other changes in this pass:**
+- **`Currently employs` names its employees**, like Bonds does, instead of printing a headcount.
+  Roles sort by headcount descending; names within a role sort alphabetically. This makes it a
+  roster, so it moved into the relationships cluster. It does not duplicate `!business`, which is
+  the employer's private *earnings* ledger rather than a public roster.
+- **`Sired` + `Birthed` merged** into one `Offspring:` row; either half renders alone.
+- **`Titles earned` + `Most abundant currency` merged** into one at-a-glance row.
+- **Empty-state detection rewritten.** The new-arrival note used to be triggered by string-equality
+  against `header + "\n\n"`, which would silently stop firing on any reorder; it now checks whether
+  the four content clusters are all empty.
+- **Fixed: unclosed `[spoiler]` in `Utils.JobToText`.** The unknown-job fallback string opened a
+  spoiler and never closed it — the only one of the eight "go tell her to fix it" strings missing
+  its closer. An unrecognised job in the employs or experience block swallowed the entire rest of
+  the dossier into a spoiler. Covered by `BuildFullDossier_HasNoUnbalancedSpoilerTags`.
+- **Fixed: self-employed residents' job line** read as a bare fragment (`as a Boss`) because the
+  "Currently working" lead-in only existed inside the employer branch.
+- **Fixed: mark and break bodypart labels** rendered lowercase (`neck:`) while every other labelled
+  row capitalised.
+- **Fixed: mark rows with no resolvable marker** emitted a label with nothing after it and inflated
+  the "across N places" summary; they're now skipped.
+
+**Private messages now always get thousands separators.** `ShowCommasInNumbers` is a per-channel
+setting and a PM has no channel, so `GetChannelSettings` returned null and *no* PM ever got commas
+however large the figure — the dossier's `Most abundant currency` line is what surfaced it.
+[BotMain.SendPrivateMessage](../../FChatDicebot/BotMain.cs) now calls `TextFormat.ApplyNumberCommas`
+unconditionally instead of the `IfNecessary` variant.
+
+Making that safe required hardening the formatter. It matched a bare `\d+` across the whole
+message, so it comma'd anything containing digits — `[eicon]kanna1000[/eicon]` became a broken
+icon, `[user]Robot2000[/user]` a broken name tag, `2026-05-26` became `2,026-05-26`. It now only
+formats *standalone* numbers (digit runs not touching a word character, hyphen, dot or slash) and
+passes through BBCode tags plus the full contents of the identifier-bearing ones
+(`eicon`/`icon`/`user`/`session`), which protects an entirely-numeric name like `[eicon]1000[/eicon]`
+that the standalone rule can't distinguish from a figure. Formatting tags are unaffected, so
+`[b]14837[/b]` still becomes `[b]14,837[/b]`. An overlong digit run is now left alone rather than
+throwing `long.Parse` and silently discarding formatting for the whole message. Covered by
+[Textformatnumbercommastests.cs](../../FChatDicebot.Tests/Unit/Textformatnumbercommastests.cs).
+
+This also fixes the same corruption in channels that had `ShowCommasInNumbers` switched on.
+
+**Unrelated drive-by:** `ChateauConsent`'s in-channel spoiler threshold went from 500 to 1000
+characters — ordinary-sized consent readouts were collapsing behind a click more often than the
+length warranted.
+
 ## Files (as-shipped)
 
 **New:**

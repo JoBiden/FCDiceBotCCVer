@@ -120,6 +120,32 @@ namespace FChatDicebot
                 return chatMessage;
         }
 
+        // Matches, in priority order: an identifier-bearing BBCode element and its contents,
+        // any other BBCode tag, or a standalone number. Only the last is reformatted.
+        //
+        // The first alternative exists because those tags wrap a *name*, and a name that
+        // happens to be numeric ("[eicon]1000[/eicon]") would otherwise be comma'd into a
+        // broken icon — the digits touch only brackets, so the standalone rule alone can't
+        // see the difference. Contents can't contain brackets, so [^\[\]]* is both precise
+        // and backtracking-safe.
+        //
+        // "Standalone" then excludes any digit run touching a word character, hyphen, dot or
+        // slash, keeping the formatter off:
+        //   [user]Robot2000[/user]    F-Chat names may contain digits
+        //   2026-05-26                dates, which otherwise render as "2,026-05-26"
+        //   1.5 / example.com/1234    decimals and URLs
+        // A bare "14837 gold" still formats, and so does "[b]14837[/b]". This used to be a
+        // plain \d+ over the whole string, which mangled all of the above wherever number
+        // commas were switched on.
+        private static readonly Regex StandaloneNumberRegex = new Regex(
+            @"(?<wrapped>\[(?<tagname>eicon|icon|user|session)\][^\[\]]*\[/\k<tagname>\])" +
+            @"|(?<tag>\[[^\]]*\])" +
+            @"|(?<![\w\-./])(?<num>\d+)(?![\w\-./])",
+            RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
+        /// <summary>Digits beyond this can't fit a long, so they're left alone rather than throwing.</summary>
+        private const int MaxFormattableDigits = 18;
+
         public static string ApplyNumberCommas(string chatMessage)
         {
             try
@@ -130,14 +156,20 @@ namespace FChatDicebot
                     return chatMessage;
                 }
 
-                // Regular expression to match sequences of digits
-                var regex = new Regex(@"\d+");
-
-                // Replace each match with a formatted version that includes commas
-                return regex.Replace(chatMessage, match =>
+                return StandaloneNumberRegex.Replace(chatMessage, match =>
                 {
-                    // Format the number with commas
-                    return long.Parse(match.Value).ToString("N0");
+                    if (match.Groups["wrapped"].Success || match.Groups["tag"].Success)
+                    {
+                        return match.Value;
+                    }
+
+                    string digits = match.Groups["num"].Value;
+                    if (digits.Length > MaxFormattableDigits)
+                    {
+                        return digits;
+                    }
+
+                    return long.Parse(digits).ToString("N0");
                 });
             }
             catch (Exception exc)
