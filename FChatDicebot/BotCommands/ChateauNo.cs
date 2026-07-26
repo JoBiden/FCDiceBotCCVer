@@ -36,6 +36,10 @@ namespace FChatDicebot.BotCommands
             RequireChannelAdmin = false;
             RequireChannel = true;
             LockCategory = CommandLockCategory.NONE;
+            // Usage documents a {name} argument rather than a [user] tag, so the derived
+            // default can't see that this command targets someone. Bare names already work
+            // here via LifecycleTargeting; the flag adds multi-word and display-name matching.
+            AcceptsRecipient = true;
         }
 
         public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, MessageAddress address, UserGeneratedCommand command)

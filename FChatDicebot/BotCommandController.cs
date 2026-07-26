@@ -171,6 +171,17 @@ namespace FChatDicebot
                 return;
             }
 
+            // Hoisted out of the registration check below so bare-name targeting can be gated
+            // on it too — an unregistered resident should hear about registering, not about
+            // which of three residents they might have meant.
+            bool callerIsRegistered = MonDB.getProfile(command.characterName) != null;
+
+            if (callerIsRegistered && c.ResolvesRecipient())
+            {
+                if (!TryResolveBareRecipient(c, command, address))
+                    return;
+            }
+
             string[] terms = Utils.LowercaseStrings(command.rawTerms);
             terms = Utils.TrimStringsAndRemoveEmpty(terms);
             terms = Utils.FixComparators(terms);
@@ -180,7 +191,7 @@ namespace FChatDicebot
             bool characterIsAdmin = Utils.IsCharacterAdmin(Bot.AccountSettings.AdminCharacters, command.characterName);
 
             bool fromChannel = MessageCameFromChannel(address);
-            if (MonDB.getProfile(command.characterName) == null && command.commandName != "joinchateau")
+            if (!callerIsRegistered && command.commandName != "joinchateau")
             {
                 Bot.SendPrivateMessage(ChateauInteractionHandler.notRegisteredText(), address);
             }
@@ -560,6 +571,115 @@ namespace FChatDicebot
             return potionAlias;
         }
 
+        /// <summary>
+        /// Lets a resident type a bare name where a <c>[user]</c> tag is expected
+        /// ("!cuddle bob smith", "!dose queen contract lust") by rewriting
+        /// <c>command.rawTerms</c> to carry the tag they didn't type. Every parser downstream
+        /// then sees the shape it already understands, which is why this is a normalization
+        /// pass here rather than a change to each of the ~55 targeting commands.
+        ///
+        /// Returns false when the resident clearly named someone but we couldn't place them —
+        /// either it matched more than one resident or it matched none. They've been told who
+        /// they might have meant; the command must not run on a guess or on an empty target.
+        /// </summary>
+        private bool TryResolveBareRecipient(ChatBotCommand c, UserGeneratedCommand command, MessageAddress address)
+        {
+            try
+            {
+                List<ProfileName> knownNames = ProfileNameCache.GetNames();
+
+                RecipientResolution resolution = RecipientResolver.Resolve(
+                    command.rawTerms,
+                    GetNonNameArgumentTerms(c),
+                    knownNames);
+
+                if (resolution.IsAmbiguous)
+                {
+                    Bot.SendPrivateMessage(
+                        ChateauInteractionHandler.ambiguousNameText(
+                            resolution.TypedText,
+                            DisplayNamesFor(resolution.Candidates, knownNames)),
+                        address);
+                    return false;
+                }
+
+                if (!string.IsNullOrEmpty(resolution.UnresolvedText))
+                {
+                    // Words that nothing else in the command accounts for and that match no
+                    // resident. The command's own recipient lookup is about to fail on this,
+                    // and it would report an empty name — say who we didn't recognize instead.
+                    List<string> suggestions = RecipientResolver.SuggestSimilarNames(
+                        resolution.UnresolvedText, knownNames, 3);
+
+                    Bot.SendPrivateMessage(
+                        ChateauInteractionHandler.nameNotRecognizedText(
+                            resolution.UnresolvedText,
+                            DisplayNamesFor(suggestions, knownNames)),
+                        address);
+                    return false;
+                }
+
+                if (!string.IsNullOrEmpty(resolution.ResolvedName))
+                {
+                    command.rawTerms = resolution.Terms;
+                }
+            }
+            catch (Exception ex)
+            {
+                // Inferring a name is a convenience laid over a parse that already works with
+                // an explicit tag, so a database hiccup here must not take the command down —
+                // fall through and let it run on exactly what was typed.
+                Console.WriteLine("TryResolveBareRecipient: skipped for " + command.commandName + " - " + ex.Message);
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Every term this command could be parsing as something other than a name — the
+        /// identifiers of its declared category, plus interaction types where it takes one.
+        /// What's left over after these is a name attempt.
+        /// </summary>
+        private IEnumerable<string> GetNonNameArgumentTerms(ChatBotCommand c)
+        {
+            var argumentTerms = new List<string>();
+
+            if (!string.IsNullOrEmpty(c.IdentifierCategory))
+            {
+                List<Identifier> identifiers = MonDB.getIdentifiers(c.IdentifierCategory);
+                if (identifiers != null)
+                {
+                    argumentTerms.AddRange(identifiers
+                        .Where(a => a != null && !string.IsNullOrEmpty(a.type))
+                        .Select(a => a.type));
+                }
+            }
+
+            if (c.TakesInteractionType)
+            {
+                List<string> interactionTypes = InteractionProcessors.InteractionProcessorRegistry.GetAllInteractionTypes();
+                if (interactionTypes != null)
+                    argumentTerms.AddRange(interactionTypes.Where(a => !string.IsNullOrEmpty(a)));
+            }
+
+            return argumentTerms;
+        }
+
+        /// <summary>
+        /// Residents are always shown their display names, never F-Chat handles (style guide
+        /// §2), so map the resolver's canonical userNames back before putting them in a message.
+        /// </summary>
+        private List<string> DisplayNamesFor(List<string> userNames, List<ProfileName> knownNames)
+        {
+            return userNames.Select(userName =>
+            {
+                ProfileName match = knownNames.FirstOrDefault(
+                    a => string.Equals(a.userName, userName, StringComparison.OrdinalIgnoreCase));
+                string display = match == null ? null : RecipientResolver.StripDisplayName(match.displayName);
+                return string.IsNullOrWhiteSpace(display) ? userName : display;
+            }).ToList();
+        }
+
         public string GetUserNameFromCommandTerms(string[] terms)
         {
             bool isName = false;
@@ -718,60 +838,65 @@ namespace FChatDicebot
             return null;
         }
 
+        /// <summary>
+        /// First plain-text term that isn't part of a <c>[user]</c> / <c>[eicon]</c> / quoted
+        /// span — the interaction type in <c>!pledge {name} {interactiontype}</c> and friends.
+        ///
+        /// Every caller passes <c>rawTerms</c>, which <see cref="BotMain.SeparateCommandTerms"/>
+        /// has already stripped the command name from. This used to skip a leading term anyway
+        /// and require three terms, which worked only by accident: a two-word character name
+        /// fills two array slots, so the counting came out right. A single-word name left the
+        /// interaction type sitting in the skipped slot, so <c>!pledge [user]Bob[/user] cuddle</c>
+        /// silently found no type at all.
+        /// </summary>
         public string GetInteractionTypeFromCommandTerms(string[] terms)
         {
-            // Get the first plain text term that's not part of special tags
-            // This is typically the term after the command and username
-            if (terms != null && terms.Length >= 3)
+            if (terms == null)
+                return null;
+
+            bool inUserTag = false;
+            bool inQuotes = false;
+            bool inEIcon = false;
+
+            foreach (string term in terms)
             {
-                bool inUserTag = false;
-                bool inQuotes = false;
-                bool inEIcon = false;
-                int termsSeen = 0;
+                if (string.IsNullOrEmpty(term))
+                    continue;
 
-                foreach (string term in terms)
+                // Track if we're inside [user] tags
+                if (term.StartsWith("[user]"))
+                    inUserTag = true;
+                if (term.EndsWith("[/user]"))
                 {
-                    // Track if we're inside [user] tags
-                    if (term.StartsWith("[user]"))
-                        inUserTag = true;
-                    if (term.EndsWith("[/user]"))
-                    {
-                        inUserTag = false;
-                        continue;
-                    }
+                    inUserTag = false;
+                    continue;
+                }
 
-                    // Track if we're inside [eicon] tags
-                    if (term.StartsWith("[eicon]"))
-                        inEIcon = true;
-                    if (term.EndsWith("[/eicon]"))
-                    {
-                        inEIcon = false;
-                        continue;
-                    }
+                // Track if we're inside [eicon] tags
+                if (term.StartsWith("[eicon]"))
+                    inEIcon = true;
+                if (term.EndsWith("[/eicon]"))
+                {
+                    inEIcon = false;
+                    continue;
+                }
 
-                    // Track if we're inside quotes
-                    if (term.StartsWith("\""))
-                        inQuotes = true;
-                    if (term.EndsWith("\""))
-                    {
-                        inQuotes = false;
-                        continue;
-                    }
+                // Track if we're inside quotes
+                if (term.StartsWith("\""))
+                    inQuotes = true;
+                if (term.EndsWith("\""))
+                {
+                    inQuotes = false;
+                    continue;
+                }
 
-                    // Skip command name (first term) and any terms inside special tags
-                    if (termsSeen == 0)
-                    {
-                        termsSeen++;
-                        continue;
-                    }
-
-                    // If we're not in any special tags, this is our interaction type
-                    if (!inUserTag && !inQuotes && !inEIcon)
-                    {
-                        return term.ToLower();
-                    }
+                // If we're not in any special tags, this is our interaction type
+                if (!inUserTag && !inQuotes && !inEIcon)
+                {
+                    return term.ToLower();
                 }
             }
+
             return null;
         }
 

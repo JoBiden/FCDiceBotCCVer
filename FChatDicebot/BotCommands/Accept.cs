@@ -20,6 +20,9 @@ namespace FChatDicebot.BotCommands
             RequireChannelAdmin = false;
             RequireChannel = true;
             LockCategory = CommandLockCategory.NONE;
+            // A bare alias with no Usage of its own, so the derived default can't see that
+            // it targets someone. Matches !consent, which this delegates to.
+            AcceptsRecipient = true;
         }
 
         public override void Run(BotMain bot, BotCommandController commandController, string[] rawTerms, string[] terms, MessageAddress address, UserGeneratedCommand command)

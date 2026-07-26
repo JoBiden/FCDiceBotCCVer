@@ -36,6 +36,11 @@ namespace FChatDicebot.BotCommands
             string characterName = address.character;
             string channel = address.channel;
             string confirmMessage = MonDB.registerUserChateau(characterName);
+
+            // A resident who just registered should be targetable by name straight away,
+            // rather than after the name cache's TTL lapses.
+            ProfileNameCache.Invalidate();
+
             if (!commandController.MessageCameFromChannel(address))
             {
                 bot.SendPrivateMessage(confirmMessage, characterName);

@@ -4,7 +4,13 @@ using Xunit;
 namespace FChatDicebot.Tests.Unit
 {
     /// <summary>
-    /// Tests for BotCommandController.GetInteractionTypeFromCommandTerms method
+    /// Tests for BotCommandController.GetInteractionTypeFromCommandTerms method.
+    ///
+    /// Terms are passed the way production passes them: BotMain.SeparateCommandTerms strips
+    /// the command name before dispatch, so the array starts at the first argument. These
+    /// tests used to include a leading "!pledge" term that no caller ever sends, which is
+    /// what hid the single-word-name bug (a one-slot [user] tag left the interaction type in
+    /// the position the parser was skipping as "the command name").
     /// </summary>
     public class BotCommandControllerInteractionTypeTests
     {
@@ -21,7 +27,7 @@ namespace FChatDicebot.Tests.Unit
         [Fact]
         public void GetInteractionTypeFromCommandTerms_SimpleCase_ReturnsInteractionType()
         {
-            string[] terms = { "!pledge", "[user]Bob[/user]", "feed" };
+            string[] terms = { "[user]Bob[/user]", "feed" };
 
             string result = _controller.GetInteractionTypeFromCommandTerms(terms);
 
@@ -31,7 +37,7 @@ namespace FChatDicebot.Tests.Unit
         [Fact]
         public void GetInteractionTypeFromCommandTerms_MultiWordUsername_ReturnsInteractionType()
         {
-            string[] terms = { "!pledge", "[user]Bob", "Smith[/user]", "mark" };
+            string[] terms = { "[user]Bob", "Smith[/user]", "mark" };
 
             string result = _controller.GetInteractionTypeFromCommandTerms(terms);
 
@@ -41,7 +47,7 @@ namespace FChatDicebot.Tests.Unit
         [Fact]
         public void GetInteractionTypeFromCommandTerms_AfterQuotedText_ReturnsInteractionType()
         {
-            string[] terms = { "!command", "\"some", "quoted", "text\"", "feed" };
+            string[] terms = { "\"some", "quoted", "text\"", "feed" };
 
             string result = _controller.GetInteractionTypeFromCommandTerms(terms);
 
@@ -51,7 +57,7 @@ namespace FChatDicebot.Tests.Unit
         [Fact]
         public void GetInteractionTypeFromCommandTerms_AfterEIcon_ReturnsInteractionType()
         {
-            string[] terms = { "!command", "[eicon]heart[/eicon]", "entitle" };
+            string[] terms = { "[eicon]heart[/eicon]", "entitle" };
 
             string result = _controller.GetInteractionTypeFromCommandTerms(terms);
 
@@ -61,7 +67,7 @@ namespace FChatDicebot.Tests.Unit
         [Fact]
         public void GetInteractionTypeFromCommandTerms_MixedCase_ReturnsLowercase()
         {
-            string[] terms = { "!pledge", "[user]Bob[/user]", "FEED" };
+            string[] terms = { "[user]Bob[/user]", "FEED" };
 
             string result = _controller.GetInteractionTypeFromCommandTerms(terms);
 
@@ -69,9 +75,9 @@ namespace FChatDicebot.Tests.Unit
         }
 
         [Fact]
-        public void GetInteractionTypeFromCommandTerms_NotEnoughTerms_ReturnsNull()
+        public void GetInteractionTypeFromCommandTerms_OnlyUserTag_ReturnsNull()
         {
-            string[] terms = { "!pledge", "[user]Bob[/user]" };
+            string[] terms = { "[user]Bob[/user]" };
 
             string result = _controller.GetInteractionTypeFromCommandTerms(terms);
 
@@ -101,7 +107,7 @@ namespace FChatDicebot.Tests.Unit
         [Fact]
         public void GetInteractionTypeFromCommandTerms_ComplexCase_ReturnsFirstPlainText()
         {
-            string[] terms = { "!fulfill", "[user]Alice[/user]", "monsterize" };
+            string[] terms = { "[user]Alice[/user]", "monsterize" };
 
             string result = _controller.GetInteractionTypeFromCommandTerms(terms);
 
@@ -111,7 +117,7 @@ namespace FChatDicebot.Tests.Unit
         [Fact]
         public void GetInteractionTypeFromCommandTerms_WithMultipleUserTags_ReturnsFirstAfterTags()
         {
-            string[] terms = { "!command", "[user]Bob[/user]", "[user]Alice[/user]", "consume" };
+            string[] terms = { "[user]Bob[/user]", "[user]Alice[/user]", "consume" };
 
             string result = _controller.GetInteractionTypeFromCommandTerms(terms);
 

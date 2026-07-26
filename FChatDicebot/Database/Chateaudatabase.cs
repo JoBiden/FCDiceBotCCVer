@@ -773,6 +773,36 @@ namespace FChatDicebot.Database
             return null;
         }
 
+        public List<ProfileName> GetProfileNames()
+        {
+            var collection = Database.GetCollection<BsonDocument>("RegisteredProfiles");
+            var projection = Builders<BsonDocument>.Projection.Include("userName").Include("displayName");
+            var documents = collection.Find(Builders<BsonDocument>.Filter.Empty).Project(projection).ToList();
+
+            var names = new List<ProfileName>();
+            foreach (var document in documents)
+            {
+                // A document written before displayName existed (or with an explicit null) is
+                // still a targetable resident — fall back to the login name rather than
+                // dropping them out of the roster entirely.
+                BsonValue userNameValue;
+                if (!document.TryGetValue("userName", out userNameValue) || !userNameValue.IsString)
+                    continue;
+
+                BsonValue displayNameValue;
+                string displayName = document.TryGetValue("displayName", out displayNameValue) && displayNameValue.IsString
+                    ? displayNameValue.AsString
+                    : userNameValue.AsString;
+
+                names.Add(new ProfileName
+                {
+                    userName = userNameValue.AsString,
+                    displayName = displayName,
+                });
+            }
+            return names;
+        }
+
         public Dictionary<string, int> GetCurrencies(string userName)
         {
             var collection = Database.GetCollection<BsonDocument>("RegisteredProfiles");

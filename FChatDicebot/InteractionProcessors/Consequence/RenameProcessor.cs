@@ -70,6 +70,9 @@ namespace FChatDicebot.InteractionProcessors.Consequence
             // Save the updated profile
             Database.SetProfile(recipient, recipientProfile);
 
+            // Their new name should be usable for bare-name targeting immediately.
+            ProfileNameCache.Invalidate();
+
             // Remove pending interaction
             Database.DeletePendingCommand(command.Id);
 

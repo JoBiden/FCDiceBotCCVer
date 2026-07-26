@@ -68,6 +68,47 @@ namespace FChatDicebot
             return "The user " + targetUser + " could not be found. Either they're not registered, or you're looking for someone else (check your case sensitive spelling, and make sure you have a [user] tag! Pro tip: you can start typing the name, then use Tab to auto complete with the [user] tag.)";
         }
 
+        /// <summary>
+        /// Fired when a resident typed a bare name (no [user] tag) that fits more than one of
+        /// our residents. We'd rather ask than pick one for them — the wrong guess sends a
+        /// consent request to a stranger.
+        /// </summary>
+        public static string ambiguousNameText(string typedText, List<string> displayNames)
+        {
+            string names = displayNames == null ? "" : string.Join(", ", displayNames);
+            return "We know more than one resident by that name! \"" + typedText + "\" could be " + names
+                + ". Please type a little more of the name, or use a [user] tag (start typing the name, then use Tab to auto complete).";
+        }
+
+        /// <summary>
+        /// Fired when a resident typed a bare name we couldn't place — no [user] tag, and
+        /// nothing else in the command accounted for those words. Better than letting the
+        /// command fall through to notFoundText with an empty name.
+        /// </summary>
+        public static string nameNotRecognizedText(string typedText, List<string> suggestions)
+        {
+            string opening = "We couldn't find anyone in our records called \"" + typedText + "\"!";
+
+            if (suggestions != null && suggestions.Count > 0)
+            {
+                return opening + " Did you mean " + joinWithOr(suggestions)
+                    + "? You can also start typing a name, then use Tab to auto complete it into a [user] tag.";
+            }
+
+            return opening + " Mind your spelling! Pro tip: you can start typing the name, then use Tab to"
+                + " auto complete it into a [user] tag.";
+        }
+
+        private static string joinWithOr(List<string> items)
+        {
+            if (items.Count == 1)
+                return items[0];
+            if (items.Count == 2)
+                return items[0] + " or " + items[1];
+
+            return string.Join(", ", items.Take(items.Count - 1)) + ", or " + items[items.Count - 1];
+        }
+
         public static string notRegisteredText()
         {
             return "It appears as if you aren't registered with the Chateau yet! We have a firm policy of consent, and that means you should know what you're signing up for. If you are registered, then others will be allowed to [i]Interact[/i] with you using commands (so long as you explicitly [i]!consent[/i]), read a [i]!dossier[/i] of your character's current state in the Chateau, and see stored [i]Interactions[/i] that involve your character. Registering also means that you will do your best to follow the rules, be a respectful member of the community, and will abide by our Moderators decisions in times of dispute.\n\nIf that all sounds reasonable to you, then use [b]!joinchateau[/b] to register. Thank you for your interest either way!";

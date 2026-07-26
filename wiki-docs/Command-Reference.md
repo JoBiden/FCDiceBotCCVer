@@ -12,6 +12,18 @@ Complete reference of all FCDiceBot commands organized by category.
 - **Admin** - Requires bot admin privileges
 - **Op** - Requires channel op privileges
 
+## Naming someone
+
+Anywhere a command below shows a `[user]Name[/user]` slot, you can also just type the name:
+`!cuddle bob smith` works the same as `!cuddle [user]Bob Smith[/user]`. Capitalisation doesn't
+matter, a renamed resident's current name works as well as their F-Chat handle, and an
+unambiguous first name is enough (`!cuddle queen` finds Queen Contract). Group casuals take
+several bare names in a row — `!cuddle bob smith jane doe` — though everyone after the first
+has to be named in full.
+
+A `[user]` tag is still the unambiguous way to say who you mean, and it always wins over
+name-guessing. Type the start of a name and press Tab to have F-Chat complete it into one.
+
 ## General Commands
 
 ### Registration
