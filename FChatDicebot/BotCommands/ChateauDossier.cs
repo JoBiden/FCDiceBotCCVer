@@ -146,6 +146,83 @@ namespace FChatDicebot.BotCommands
             { "dosetake", "Addicted" }
         };
 
+        // ---------------------------------------------------------------------------
+        // Section rendering
+        //
+        // Every block in the dossier is one of two shapes, decided by what a row holds:
+        //
+        //   Inline  — the row is a short label and a single number ("Maids: 5"). The whole
+        //             block renders as one wrapped row. Used for the tally blocks.
+        //   Lines   — the row carries names or prose ("Spouses: Alice, Bob, Carol"). Each
+        //             row gets its own line.
+        //
+        // Before this, blocks with identical data shape disagreed: "Days of Experience"
+        // (job -> number) was inline while "Currently employs" (job -> number) was one line
+        // per job, which is what made a heavy employer's dossier enormous.
+        //
+        // A Lines block longer than SpoilerLineThreshold collapses into a [spoiler], with a
+        // count summary left visible so the reader knows the scale without opening it.
+        // Inline blocks are one line by construction and never collapse.
+        // ---------------------------------------------------------------------------
+
+        /// <summary>Row count above which a Lines-shaped section collapses into a spoiler.</summary>
+        public const int SpoilerLineThreshold = 6;
+
+        /// <summary>Gap between entries in an Inline-shaped section.</summary>
+        private const string InlineSeparator = "   ";
+
+        /// <summary>
+        /// Renders an Inline section: one wrapped row of "label: value" cells under a header.
+        /// <paramref name="header"/> carries its own BBCode and trailing colon. Returns empty
+        /// for an empty cell list so callers can append unconditionally.
+        /// </summary>
+        private static string RenderInlineSection(string header, IList<string> cells)
+        {
+            if (cells == null || cells.Count == 0) return string.Empty;
+            return header + " " + string.Join(InlineSeparator, cells) + "\n";
+        }
+
+        /// <summary>
+        /// Renders a Lines section: one line per row under a header. Past
+        /// <see cref="SpoilerLineThreshold"/> rows the body is wrapped in a spoiler and
+        /// <paramref name="summary"/> (e.g. "23 residents across 11 roles") is shown beside
+        /// the header so the collapsed block still reports its own size.
+        /// </summary>
+        private static string RenderLineSection(string header, string summary, IList<string> rows)
+        {
+            if (rows == null || rows.Count == 0) return string.Empty;
+
+            StringBuilder sb = new StringBuilder();
+            sb.Append(header);
+            if (rows.Count > SpoilerLineThreshold)
+            {
+                if (!string.IsNullOrEmpty(summary))
+                {
+                    sb.Append(' ').Append(summary);
+                }
+                sb.Append(" [spoiler]\n");
+                sb.Append(string.Join("\n", rows));
+                sb.Append("[/spoiler]\n");
+            }
+            else
+            {
+                sb.Append('\n');
+                sb.Append(string.Join("\n", rows));
+                sb.Append('\n');
+            }
+            return sb.ToString();
+        }
+
+        /// <summary>
+        /// Joins the cluster strings that actually produced content, separating each with a
+        /// blank line. Skipping empties is what stops a resident with no active curses from
+        /// getting a stray gap where the state cluster would have been.
+        /// </summary>
+        private static string JoinClusters(params string[] clusters)
+        {
+            return string.Join("\n", clusters.Where(c => !string.IsNullOrEmpty(c)));
+        }
+
         /// <summary>
         /// Constructor for dependency injection (for testing)
         /// </summary>
@@ -199,64 +276,57 @@ namespace FChatDicebot.BotCommands
         }
 
         /// <summary>
-        /// Builds the complete dossier by calling all section builders
+        /// Builds the complete dossier, grouped into themed clusters separated by blank
+        /// lines: who they are, what's currently affecting them, who they're connected to,
+        /// what they've racked up, and what happened lately. Sections were previously
+        /// emitted in the order the features shipped, which scattered related facts.
         /// </summary>
         private string BuildFullDossier(Profile profile, string targetUser)
         {
-            StringBuilder sb = new StringBuilder();
-
-            // Build all sections
+            // Who they are.
             string header = BuildNameTitleSpecialties(profile, targetUser);
             string jobSection = BuildJobSection(profile);
-            string activeCurses = BuildActiveCursesSection(profile);
-            string activeParasites = BuildActiveParasitesSection(profile);
-            string activeBreaks = BuildActiveBreaksSection(profile);
-            string activeOdorizes = BuildActiveOdorizesSection(profile);
-            string casualSection = BuildCasualInteractionsSection(profile);
-            string interactionCountsSection = BuildInteractionCountsSection(profile);
-            string marksSection = BuildMarksSection(profile);
-            string bondsSection = BuildBondsSection(profile);
-            string siredSection = BuildSiredSection(targetUser);
-            string birthedSection = BuildBirthedSection(profile);
-            string plantedSection = BuildPersonallyPlantedSection(targetUser);
-            string employsSection = BuildCurrentlyEmploysSection(targetUser);
-            string titlesEarnedSection = BuildTitlesEarnedSection(profile);
-            string abundantCurrencySection = BuildMostAbundantCurrencySection(profile);
-            string experienceSection = BuildJobExperienceSection(profile);
-            string lastReportedSection = BuildLastReportedSection(targetUser);
-            string lastSeenSection = BuildLastSeenSection(targetUser);
+            string identity = header + jobSection;
 
-            // Assemble the full dossier
-            sb.Append(header);
-            sb.Append(jobSection);
-            sb.Append(activeCurses);
-            sb.Append(activeParasites);
-            sb.Append(activeBreaks);
-            sb.Append(activeOdorizes);
-            sb.Append("\n");
-            sb.Append(casualSection);
-            sb.Append(interactionCountsSection);
-            sb.Append(marksSection);
-            sb.Append(bondsSection);
-            sb.Append(siredSection);
-            sb.Append(birthedSection);
-            sb.Append(plantedSection);
-            sb.Append(employsSection);
-            sb.Append(titlesEarnedSection);
-            sb.Append(abundantCurrencySection);
-            sb.Append(experienceSection);
-            sb.Append("\n");
-            sb.Append(lastReportedSection);
-            sb.Append(lastSeenSection);
+            // What's currently on them.
+            string state =
+                BuildActiveCursesSection(profile) +
+                BuildActiveParasitesSection(profile) +
+                BuildActiveBreaksSection(profile) +
+                BuildActiveOdorizesSection(profile);
 
-            // Check if this is a new arrival with no meaningful content
-            string finalText = sb.ToString();
-            if (finalText == header + "\n\n")
+            // Who they know. "Currently employs" lives here rather than with the tallies
+            // because it now names the residents, making it a roster like Bonds and Marks.
+            string relationships =
+                BuildBondsSection(profile) +
+                BuildMarksSection(profile) +
+                BuildCurrentlyEmploysSection(targetUser);
+
+            // What they've done.
+            string tallies =
+                BuildCasualInteractionsSection(profile) +
+                BuildInteractionCountsSection(profile) +
+                BuildOffspringSection(profile, targetUser) +
+                BuildPersonallyPlantedSection(targetUser) +
+                BuildAtAGlanceSection(profile) +
+                BuildJobExperienceSection(profile);
+
+            // What happened lately.
+            string lately =
+                BuildLastReportedSection(targetUser) +
+                BuildLastSeenSection(targetUser);
+
+            // A profile with nothing but a name gets the new-arrival note. Checking the
+            // content sections directly (rather than the old string-equality check against
+            // header + "\n\n") keeps this correct as sections get added or reordered. A job
+            // counts as content — it's something in their file, even with no interactions yet.
+            if (jobSection.Length == 0 && state.Length == 0 && relationships.Length == 0
+                && tallies.Length == 0 && lately.Length == 0)
             {
-                sb.Append("[sub]A recent arrival to the Chateau. There doesn't seem to be much in their file... there will be more to read once they interact with others. Maybe you should give them a !kiss[/sub]");
+                return identity + "\n[sub]A recent arrival to the Chateau. There doesn't seem to be much in their file... there will be more to read once they interact with others. Maybe you should give them a !kiss[/sub]";
             }
 
-            return sb.ToString();
+            return JoinClusters(identity, state, relationships, tallies, lately);
         }
 
         /// <summary>
@@ -371,12 +441,17 @@ namespace FChatDicebot.BotCommands
             StringBuilder sb = new StringBuilder();
             string job = Utils.JobToText(profile.characteristics["job"]);
 
+            // Both branches need the "Currently working" lead-in: without it a self-employed
+            // resident's line rendered as a bare fragment ("as a Boss") with nothing in front
+            // of it, because the lead-in only existed inside the employer branch.
+            sb.Append("Currently working ");
+
             if (profile.characteristics.ContainsKey("employer"))
             {
                 Profile employerProfile = _database.GetProfile(profile.characteristics["employer"]);
                 if (employerProfile != null)
                 {
-                    sb.Append("Currently working under ");
+                    sb.Append("under ");
                     sb.Append(employerProfile.displayName);
                     sb.Append(" ");
                 }
@@ -398,16 +473,15 @@ namespace FChatDicebot.BotCommands
         private string BuildActiveCursesSection(Profile profile)
         {
             var curses = CurseInstance.LoadAll(profile);
-            if (curses.Count == 0) return string.Empty;
-            StringBuilder sb = new StringBuilder();
-            sb.Append("[b]Active Curses:[/b]");
+            List<string> rows = new List<string>();
             foreach (var curse in curses)
             {
                 string applierName = string.IsNullOrEmpty(curse.AppliedBy) ? "someone" : ResolveDisplayName(curse.AppliedBy);
-                sb.Append("\n[u]").Append(Utils.Capitalize(curse.Curse ?? string.Empty)).Append(":[/u] from ").Append(applierName);
+                rows.Add("[u]" + Utils.Capitalize(curse.Curse ?? string.Empty) + ":[/u] from " + applierName);
             }
-            sb.Append('\n');
-            return sb.ToString();
+            // Bare count: the header already names what's being counted, so "7 curses" here
+            // would just repeat itself.
+            return RenderLineSection("[b]Active Curses:[/b]", rows.Count.ToString(), rows);
         }
 
         /// <summary>
@@ -418,20 +492,19 @@ namespace FChatDicebot.BotCommands
         private string BuildActiveParasitesSection(Profile profile)
         {
             var parasites = ParasiteInstance.LoadAll(profile);
-            if (parasites.Count == 0) return string.Empty;
-            StringBuilder sb = new StringBuilder();
-            sb.Append("[b]Active Parasites:[/b]");
+            List<string> rows = new List<string>();
             foreach (var p in parasites)
             {
                 string infesterName = string.IsNullOrEmpty(p.InfestedBy) ? "an unknown source" : ResolveDisplayName(p.InfestedBy);
-                sb.Append("\n[u]").Append(ScentText.Capitalize(ParasiteText.ParasiteName(p.Parasite))).Append(":[/u] from ").Append(infesterName);
+                string row = "[u]" + ScentText.Capitalize(ParasiteText.ParasiteName(p.Parasite)) + ":[/u] from " + infesterName;
                 if (p.SpreadFromContact && DateTime.UtcNow < p.GraceUntil)
                 {
-                    sb.Append(" (still within !purge grace window)");
+                    row += " (still within !purge grace window)";
                 }
+                rows.Add(row);
             }
-            sb.Append('\n');
-            return sb.ToString();
+            // Bare count, as with Active Curses — the header already says what these are.
+            return RenderLineSection("[b]Active Parasites:[/b]", rows.Count.ToString(), rows);
         }
 
         /// <summary>
@@ -442,16 +515,11 @@ namespace FChatDicebot.BotCommands
         private string BuildActiveBreaksSection(Profile profile)
         {
             var breaks = BreakInstance.LoadAll(profile);
-            if (breaks.Count == 0) return string.Empty;
-            StringBuilder sb = new StringBuilder();
-            sb.Append("[b]Active Breaks:[/b]");
-            foreach (var b in breaks)
-            {
-                sb.Append("\n[u]").Append(Utils.BodypartToText(b.Part ?? string.Empty)).Append(":[/u] ")
-                  .Append(b.Severity).Append(b.Severity == 1 ? " day remaining" : " days remaining");
-            }
-            sb.Append('\n');
-            return sb.ToString();
+            List<string> cells = breaks
+                .Select(b => "[u]" + Utils.Capitalize(Utils.BodypartToText(b.Part ?? string.Empty)) + ":[/u] "
+                    + b.Severity + (b.Severity == 1 ? " day left" : " days left"))
+                .ToList();
+            return RenderInlineSection("[b]Active Breaks:[/b]", cells);
         }
 
         /// <summary>
@@ -460,9 +528,7 @@ namespace FChatDicebot.BotCommands
         private string BuildActiveOdorizesSection(Profile profile)
         {
             var scents = ScentLayer.LoadAll(profile);
-            if (scents.Count == 0) return string.Empty;
-            StringBuilder sb = new StringBuilder();
-            sb.Append("[b]Active Scents:[/b]");
+            List<string> cells = new List<string>();
             foreach (var s in scents)
             {
                 // Route through the SSOT scent-phrase helper (same one !odorize itself uses)
@@ -472,11 +538,10 @@ namespace FChatDicebot.BotCommands
                 string appliedByDisplay = _database.GetDisplayName(s.AppliedBy) ?? s.AppliedBy;
                 string scentPhrase = ScentText.ScentPhrase(scentIdentifier, s.Scent, appliedByDisplay);
 
-                sb.Append("\n[u]").Append(Utils.Capitalize(scentPhrase)).Append(":[/u] ")
-                  .Append(s.Layers).Append(s.Layers == 1 ? " layer" : " layers");
+                cells.Add("[u]" + Utils.Capitalize(scentPhrase) + ":[/u] "
+                    + s.Layers + (s.Layers == 1 ? " layer" : " layers"));
             }
-            sb.Append('\n');
-            return sb.ToString();
+            return RenderInlineSection("[b]Active Scents:[/b]", cells);
         }
 
         /// <summary>
@@ -487,6 +552,20 @@ namespace FChatDicebot.BotCommands
         {
             var sired = Support.ChateauStatisticsSupport.SiredByMonsterType(_database.GetAllProfiles(), targetUser);
             return BuildPerMonsterBlock("Sired", sired);
+        }
+
+        /// <summary>
+        /// Sired and Birthed are both per-monster offspring tallies and both usually short,
+        /// so they share one row instead of owning a header each.
+        /// </summary>
+        private string BuildOffspringSection(Profile profile, string targetUser)
+        {
+            List<string> cells = new List<string>();
+            string sired = BuildSiredSection(targetUser);
+            string birthed = BuildBirthedSection(profile);
+            if (!string.IsNullOrEmpty(sired)) cells.Add(sired);
+            if (!string.IsNullOrEmpty(birthed)) cells.Add(birthed);
+            return RenderInlineSection("[b]Offspring:[/b]", cells);
         }
 
         /// <summary>
@@ -516,26 +595,27 @@ namespace FChatDicebot.BotCommands
                 if (!byPlant.ContainsKey(plant)) byPlant[plant] = 0;
                 byPlant[plant]++;
             }
-            if (byPlant.Count == 0) return string.Empty;
-            StringBuilder sb = new StringBuilder();
-            sb.Append("[b]Has personally planted:[/b]");
-            foreach (var kv in byPlant.OrderByDescending(kv => kv.Value).ThenBy(kv => kv.Key))
-            {
-                string label = kv.Value == 1 ? Utils.Capitalize(kv.Key) : Utils.Capitalize(kv.Key) + "s";
-                sb.Append("\n[u]").Append(label).Append(":[/u] ").Append(kv.Value);
-            }
-            sb.Append('\n');
-            return sb.ToString();
+            List<string> cells = byPlant
+                .OrderByDescending(kv => kv.Value).ThenBy(kv => kv.Key)
+                .Select(kv => "[u]" + (kv.Value == 1 ? Utils.Capitalize(kv.Key) : Utils.Capitalize(kv.Key) + "s") + ":[/u] " + kv.Value)
+                .ToList();
+            return RenderInlineSection("[b]Has personally planted:[/b]", cells);
         }
 
         /// <summary>
-        /// Per-job current headcount for residents this user employs. Scans all profiles for
+        /// Per-job roster of residents this user employs, naming each employee the way the
+        /// Bonds section names bonded residents. Scans all profiles for
         /// <c>characteristics["employer"]</c> matching the target's userName.
+        ///
+        /// This used to print a bare headcount per job, one job per line, which is what made
+        /// a large employer's dossier balloon — the same job-to-number shape that "Days of
+        /// Experience" had always rendered as a single inline row. Now that the rows carry
+        /// names it's a Lines section, and the spoiler threshold keeps the length in check.
         /// </summary>
         private string BuildCurrentlyEmploysSection(string targetUser)
         {
             var allProfiles = _database.GetAllProfiles();
-            Dictionary<string, int> byJob = new Dictionary<string, int>();
+            Dictionary<string, List<string>> byJob = new Dictionary<string, List<string>>();
             foreach (var p in allProfiles)
             {
                 if (p?.characteristics == null) continue;
@@ -545,19 +625,22 @@ namespace FChatDicebot.BotCommands
                 if (string.Equals(p.userName, targetUser, StringComparison.OrdinalIgnoreCase)) continue; // skip self
                 string job = (p.characteristics["job"] ?? string.Empty).ToLowerInvariant();
                 if (string.IsNullOrEmpty(job)) continue;
-                if (!byJob.ContainsKey(job)) byJob[job] = 0;
-                byJob[job]++;
+                if (!byJob.ContainsKey(job)) byJob[job] = new List<string>();
+                byJob[job].Add(string.IsNullOrEmpty(p.displayName) ? p.userName : p.displayName);
             }
             if (byJob.Count == 0) return string.Empty;
-            StringBuilder sb = new StringBuilder();
-            sb.Append("[b]Currently employs:[/b]");
-            foreach (var entry in byJob.OrderByDescending(kv => kv.Value).ThenBy(kv => kv.Key))
-            {
-                string label = entry.Value == 1 ? Utils.JobToText(entry.Key) : Utils.JobToPlural(entry.Key);
-                sb.Append("\n[u]").Append(label).Append(":[/u] ").Append(entry.Value);
-            }
-            sb.Append('\n');
-            return sb.ToString();
+
+            // Biggest teams first (ties alphabetical by job) so the roles that define this
+            // employer lead; names within a role are alphabetical for a stable read.
+            List<string> rows = byJob
+                .OrderByDescending(kv => kv.Value.Count).ThenBy(kv => kv.Key)
+                .Select(kv => "[u]" + (kv.Value.Count == 1 ? Utils.JobToText(kv.Key) : Utils.JobToPlural(kv.Key)) + ":[/u] "
+                    + string.Join(", ", kv.Value.OrderBy(n => n, StringComparer.OrdinalIgnoreCase)))
+                .ToList();
+
+            int totalEmployees = byJob.Sum(kv => kv.Value.Count);
+            string summary = totalEmployees + " residents across " + rows.Count + " roles";
+            return RenderLineSection("[b]Currently employs:[/b]", summary, rows);
         }
 
         /// <summary>
@@ -568,7 +651,23 @@ namespace FChatDicebot.BotCommands
         {
             int count = profile.titles?.Count ?? 0;
             if (count <= 0) return string.Empty;
-            return "[b]Titles earned:[/b] " + count + "\n";
+            return "[b]Titles earned:[/b] " + count;
+        }
+
+        /// <summary>
+        /// Two standalone one-line facts — titles earned and wealthiest currency — sharing a
+        /// row so they read as an at-a-glance stat line rather than owning a line each.
+        /// Either half renders alone when the other is absent.
+        /// </summary>
+        private string BuildAtAGlanceSection(Profile profile)
+        {
+            List<string> cells = new List<string>();
+            string titles = BuildTitlesEarnedSection(profile);
+            string currency = BuildMostAbundantCurrencySection(profile);
+            if (!string.IsNullOrEmpty(titles)) cells.Add(titles);
+            if (!string.IsNullOrEmpty(currency)) cells.Add(currency);
+            if (cells.Count == 0) return string.Empty;
+            return string.Join(InlineSeparator, cells) + "\n";
         }
 
         /// <summary>
@@ -584,27 +683,26 @@ namespace FChatDicebot.BotCommands
             int max = positive.Max(kv => kv.Value);
             var top = positive.Where(kv => kv.Value == max).Select(kv => kv.Key).OrderBy(k => k).ToList();
             string currencyText = string.Join("/", top);
-            return "[b]Most abundant currency:[/b] " + max + " " + currencyText + "\n";
+            return "[b]Most abundant currency:[/b] " + max + " " + currencyText;
         }
 
         /// <summary>
-        /// Shared block layout for the Sired / Birthed / similar per-monster sections.
-        /// Mirrors the Bonds section style — header on its own line, then "Type: count"
-        /// rows.
+        /// Shared fragment for the Sired / Birthed per-monster tallies. Returns a single
+        /// labelled cell ("[u]Sired:[/u] Goblins: 12, Ogres: 4") for the caller to place in
+        /// an Inline section, or empty when nothing is countable.
         /// </summary>
         private string BuildPerMonsterBlock(string label, Dictionary<string, int> counts)
         {
             if (counts == null || counts.Count == 0) return string.Empty;
-            StringBuilder sb = new StringBuilder();
-            sb.Append("[b]").Append(label).Append(":[/b]");
+            List<string> parts = new List<string>();
             foreach (var entry in counts.OrderByDescending(kv => kv.Value).ThenBy(kv => kv.Key))
             {
                 if (entry.Value <= 0) continue;
                 string monster = entry.Value == 1 ? Utils.Capitalize(entry.Key) : Utils.Capitalize(entry.Key) + "s";
-                sb.Append("\n[u]").Append(monster).Append(":[/u] ").Append(entry.Value);
+                parts.Add(monster + ": " + entry.Value);
             }
-            sb.Append('\n');
-            return sb.ToString();
+            if (parts.Count == 0) return string.Empty;
+            return "[u]" + label + ":[/u] " + string.Join(", ", parts);
         }
 
         /// <summary>
@@ -638,28 +736,11 @@ namespace FChatDicebot.BotCommands
                 }
             }
 
-            if (casualCounts.Count == 0)
-            {
-                return string.Empty;
-            }
-
-            StringBuilder sb = new StringBuilder();
-            sb.Append("[b]Casual interactions:[/b] ");
-
-            foreach (var count in casualCounts)
-            {
-                if (CountDisplayNames.ContainsKey(count.Key))
-                {
-                    sb.Append("[u]");
-                    sb.Append(CountDisplayNames[count.Key]);
-                    sb.Append(":[/u] ");
-                    sb.Append(count.Value);
-                    sb.Append("   ");
-                }
-            }
-
-            sb.Append("\n");
-            return sb.ToString();
+            List<string> cells = casualCounts
+                .Where(c => CountDisplayNames.ContainsKey(c.Key))
+                .Select(c => "[u]" + CountDisplayNames[c.Key] + ":[/u] " + c.Value)
+                .ToList();
+            return RenderInlineSection("[b]Casual interactions:[/b]", cells);
         }
 
         /// <summary>
@@ -693,20 +774,16 @@ namespace FChatDicebot.BotCommands
                 if (total > 0) summed[pair.Key] = total;
             }
 
-            if (individual.Count == 0 && summed.Count == 0) return string.Empty;
-
-            StringBuilder sb = new StringBuilder();
-            sb.Append("[b]Notable counts:[/b] ");
+            List<string> cells = new List<string>();
             foreach (var entry in summed)
             {
-                sb.Append("[u]").Append(entry.Key).Append(":[/u] ").Append(entry.Value).Append("   ");
+                cells.Add("[u]" + entry.Key + ":[/u] " + entry.Value);
             }
             foreach (var entry in individual.OrderBy(kv => CountDisplayNames[kv.Key]))
             {
-                sb.Append("[u]").Append(CountDisplayNames[entry.Key]).Append(":[/u] ").Append(entry.Value).Append("   ");
+                cells.Add("[u]" + CountDisplayNames[entry.Key] + ":[/u] " + entry.Value);
             }
-            sb.Append('\n');
-            return sb.ToString();
+            return RenderInlineSection("[b]Notable counts:[/b]", cells);
         }
 
         /// <summary>
@@ -719,42 +796,39 @@ namespace FChatDicebot.BotCommands
                 return string.Empty;
             }
 
-            StringBuilder sb = new StringBuilder();
-            bool hasMarks = false;
+            List<string> rows = new List<string>();
+            int totalMarks = 0;
 
             foreach (var list in profile.lists)
             {
                 if (list.Key.EndsWith("marks") && list.Value.Count > 0)
                 {
-                    if (!hasMarks)
-                    {
-                        sb.Append("Currently known [b]Marks[/b]");
-                        hasMarks = true;
-                    }
-
                     string bodyPart = list.Key.Substring(0, list.Key.Length - 5);
-                    sb.Append("\n[u]");
-                    sb.Append(Utils.BodypartToText(bodyPart));
-                    sb.Append(":[/u]");
 
+                    // A listed marker only shows up if their profile still carries a "mark"
+                    // characteristic, so gather the symbols first: a bodypart whose markers
+                    // all failed to resolve would otherwise emit a label with nothing after
+                    // it and still inflate the "across N places" summary.
+                    List<string> symbols = new List<string>();
                     foreach (string marker in list.Value)
                     {
                         Profile markerProfile = _database.GetProfile(marker);
                         if (markerProfile != null && markerProfile.characteristics.ContainsKey("mark"))
                         {
-                            sb.Append(" ");
-                            sb.Append(markerProfile.characteristics["mark"]);
+                            symbols.Add(markerProfile.characteristics["mark"]);
                         }
                     }
+                    if (symbols.Count == 0) continue;
+
+                    totalMarks += symbols.Count;
+                    // BodypartToText returns a bare lowercase key ("neck"); every other
+                    // labelled row in the dossier capitalises, so capitalise here too.
+                    rows.Add("[u]" + Utils.Capitalize(Utils.BodypartToText(bodyPart)) + ":[/u] "
+                        + string.Join(" ", symbols));
                 }
             }
 
-            if (hasMarks)
-            {
-                sb.Append("\n");
-            }
-
-            return sb.ToString();
+            return RenderLineSection("Currently known [b]Marks[/b]:", totalMarks + " across " + rows.Count + " places", rows);
         }
 
         /// <summary>
@@ -767,19 +841,13 @@ namespace FChatDicebot.BotCommands
                 return string.Empty;
             }
 
-            StringBuilder sb = new StringBuilder();
-            bool hasBonds = false;
+            List<string> rows = new List<string>();
+            int totalBonds = 0;
 
             foreach (var list in profile.lists)
             {
                 if (list.Key.StartsWith("bond") && list.Value.Count > 0)
                 {
-                    if (!hasBonds)
-                    {
-                        sb.Append("\nCurrently known [b]Bonds[/b]:");
-                        hasBonds = true;
-                    }
-
                     string bondType = string.Empty;
                     bool isInitiated = false;
 
@@ -796,10 +864,6 @@ namespace FChatDicebot.BotCommands
 
                     if (!string.IsNullOrEmpty(bondType))
                     {
-                        sb.Append("\n[u]");
-                        sb.Append(Utils.Capitalize(Utils.BondToPlural(bondType, isInitiated)));
-                        sb.Append(":[/u] ");
-
                         List<string> displayNames = new List<string>();
                         foreach (string bonder in list.Value)
                         {
@@ -810,17 +874,14 @@ namespace FChatDicebot.BotCommands
                             }
                         }
 
-                        sb.Append(string.Join(", ", displayNames));
+                        totalBonds += displayNames.Count;
+                        rows.Add("[u]" + Utils.Capitalize(Utils.BondToPlural(bondType, isInitiated)) + ":[/u] "
+                            + string.Join(", ", displayNames));
                     }
                 }
             }
 
-            if (hasBonds)
-            {
-                sb.Append("\n");
-            }
-
-            return sb.ToString();
+            return RenderLineSection("Currently known [b]Bonds[/b]:", totalBonds + " across " + rows.Count + " kinds", rows);
         }
 
         /// <summary>
@@ -833,20 +894,10 @@ namespace FChatDicebot.BotCommands
                 return string.Empty;
             }
 
-            StringBuilder sb = new StringBuilder();
-            sb.Append("\nDays of [b]Experience[/b] working as... \n");
-
-            foreach (var jobExp in profile.jobExperience)
-            {
-                sb.Append("[u]");
-                sb.Append(Utils.JobToText(jobExp.Key));
-                sb.Append(":[/u] ");
-                sb.Append(jobExp.Value);
-                sb.Append("   ");
-            }
-
-            sb.Append("\n");
-            return sb.ToString();
+            List<string> cells = profile.jobExperience
+                .Select(jobExp => "[u]" + Utils.JobToText(jobExp.Key) + ":[/u] " + jobExp.Value)
+                .ToList();
+            return RenderInlineSection("Days of [b]Experience[/b] working as...", cells);
         }
 
         /// <summary>

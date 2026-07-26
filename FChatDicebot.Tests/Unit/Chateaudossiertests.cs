@@ -535,9 +535,80 @@ namespace FChatDicebot.Tests.Unit
             string result = InvokeBuildCurrentlyEmploysSection("Boss");
 
             Assert.Contains("Currently employs", result);
-            Assert.Contains("Maids", result);
-            Assert.Contains("2", result);
-            Assert.Contains("Cook", result);
+            // Roles are pluralised by headcount and name their employees, mirroring Bonds.
+            Assert.Contains("[u]Maids:[/u] Worker 1, Worker 2", result);
+            Assert.Contains("[u]Cook:[/u] Other", result);
+            // Two roles is under the threshold, so nothing is hidden.
+            Assert.DoesNotContain("[spoiler]", result);
+        }
+
+        [Fact]
+        public void BuildCurrentlyEmploysSection_UnderThreshold_NoSpoilerOrSummary()
+        {
+            new ProfileBuilder().WithUserName("Boss").WithDisplayName("Boss").BuildAndSave(_fixture.Database);
+            foreach (string job in new[] { "maid", "cook", "artist", "athlete", "bartender", "builder" })
+            {
+                new ProfileBuilder()
+                    .WithUserName("W_" + job)
+                    .WithDisplayName("W " + job)
+                    .WithCharacteristic("employer", "Boss")
+                    .WithCharacteristic("job", job)
+                    .BuildAndSave(_fixture.Database);
+            }
+
+            string result = InvokeBuildCurrentlyEmploysSection("Boss");
+
+            // Exactly at SpoilerLineThreshold (6 roles) — still fully visible.
+            Assert.DoesNotContain("[spoiler]", result);
+            Assert.DoesNotContain("residents across", result);
+        }
+
+        [Fact]
+        public void BuildCurrentlyEmploysSection_OverThreshold_CollapsesWithCountSummary()
+        {
+            new ProfileBuilder().WithUserName("Boss").WithDisplayName("Boss").BuildAndSave(_fixture.Database);
+            string[] jobs = { "maid", "cook", "artist", "athlete", "bartender", "builder", "brute" };
+            foreach (string job in jobs)
+            {
+                new ProfileBuilder()
+                    .WithUserName("W_" + job)
+                    .WithDisplayName("W " + job)
+                    .WithCharacteristic("employer", "Boss")
+                    .WithCharacteristic("job", job)
+                    .BuildAndSave(_fixture.Database);
+            }
+
+            string result = InvokeBuildCurrentlyEmploysSection("Boss");
+
+            // 7 roles is past the threshold: header and scale stay visible, detail collapses.
+            Assert.Contains("[b]Currently employs:[/b] 7 residents across 7 roles [spoiler]", result);
+            Assert.EndsWith("[/spoiler]\n", result);
+            // Every employee is still present inside the spoiler — collapsing hides, never truncates.
+            foreach (string job in jobs)
+            {
+                Assert.Contains("W " + job, result);
+            }
+        }
+
+        [Fact]
+        public void BuildCurrentlyEmploysSection_OrdersByHeadcountThenNamesAlphabetically()
+        {
+            new ProfileBuilder().WithUserName("Boss").WithDisplayName("Boss").BuildAndSave(_fixture.Database);
+            new ProfileBuilder().WithUserName("Solo").WithDisplayName("Solo")
+                .WithCharacteristic("employer", "Boss").WithCharacteristic("job", "cook")
+                .BuildAndSave(_fixture.Database);
+            foreach (string name in new[] { "Zara", "Alice", "Mabel" })
+            {
+                new ProfileBuilder().WithUserName(name).WithDisplayName(name)
+                    .WithCharacteristic("employer", "Boss").WithCharacteristic("job", "maid")
+                    .BuildAndSave(_fixture.Database);
+            }
+
+            string result = InvokeBuildCurrentlyEmploysSection("Boss");
+
+            // Biggest team leads, and names within a role read alphabetically.
+            Assert.True(result.IndexOf("Maids:") < result.IndexOf("Cook:"));
+            Assert.Contains("[u]Maids:[/u] Alice, Mabel, Zara", result);
         }
 
         [Fact]
@@ -703,6 +774,234 @@ namespace FChatDicebot.Tests.Unit
 
         #endregion
 
+        #region Section shape rules (inline tallies vs. line lists vs. spoilers)
+
+        [Fact]
+        public void InlineSections_RenderAsASingleRow()
+        {
+            // The whole point of the layout pass: a block whose rows are "label: number"
+            // is one wrapped row, not one line per entry. Previously "Currently employs"
+            // and "Days of Experience" disagreed despite identical data shape.
+            var profile = new ProfileBuilder()
+                .WithUserName("TestUser")
+                .WithDisplayName("Test User")
+                .WithJobExperience("maid", 5)
+                .WithJobExperience("cook", 3)
+                .WithJobExperience("artist", 2)
+                .BuildAndSave(_fixture.Database);
+
+            string result = InvokeBuildJobExperienceSection(profile);
+
+            Assert.Equal(1, result.Split('\n').Length - 1); // exactly one trailing newline
+            Assert.Contains("[u]Maid:[/u] 5", result);
+            Assert.Contains("[u]Cook:[/u] 3", result);
+            Assert.DoesNotContain("[spoiler]", result);
+        }
+
+        [Fact]
+        public void InlineSections_DoNotTrailASeparator()
+        {
+            var profile = new ProfileBuilder()
+                .WithUserName("TestUser")
+                .WithDisplayName("Test User")
+                .WithCount("kiss", 10)
+                .BuildAndSave(_fixture.Database);
+
+            string result = InvokeBuildCasualInteractionsSection(profile);
+
+            Assert.EndsWith("10\n", result);
+        }
+
+        [Fact]
+        public void BuildBondsSection_OverThreshold_CollapsesWithCountSummary()
+        {
+            var builder = new ProfileBuilder().WithUserName("TestUser").WithDisplayName("Test User");
+            string[] bondTypes = { "marriage", "sibling", "ally", "rival", "client", "pet", "thrall" };
+            foreach (string bondType in bondTypes)
+            {
+                new ProfileBuilder().WithUserName("B_" + bondType).WithDisplayName("B " + bondType)
+                    .BuildAndSave(_fixture.Database);
+                builder.WithListItem("bond" + bondType + "initiated", "B_" + bondType);
+            }
+            var profile = builder.BuildAndSave(_fixture.Database);
+
+            string result = InvokeBuildBondsSection(profile);
+
+            Assert.Contains("7 across 7 kinds [spoiler]", result);
+            Assert.EndsWith("[/spoiler]\n", result);
+            foreach (string bondType in bondTypes)
+            {
+                Assert.Contains("B " + bondType, result);
+            }
+        }
+
+        [Fact]
+        public void BuildOffspringSection_MergesSiredAndBirthedIntoOneRow()
+        {
+            new ProfileBuilder()
+                .WithUserName("Carrier")
+                .WithDisplayName("Carrier")
+                .WithListItem("offspring", "2026-05-26: ogre brood of 4 (parent: TestUser)")
+                .BuildAndSave(_fixture.Database);
+            var profile = new ProfileBuilder()
+                .WithUserName("TestUser")
+                .WithDisplayName("Test User")
+                .WithListItem("offspring", "2026-05-26: goblin brood of 5 (parent: Someone)")
+                .BuildAndSave(_fixture.Database);
+
+            string result = InvokeBuildOffspringSection(profile, "TestUser");
+
+            Assert.StartsWith("[b]Offspring:[/b]", result);
+            Assert.Contains("[u]Sired:[/u] Ogres: 4", result);
+            Assert.Contains("[u]Birthed:[/u] Goblins: 5", result);
+            Assert.Equal(1, result.Split('\n').Length - 1);
+        }
+
+        [Fact]
+        public void BuildOffspringSection_RendersOneHalfAloneWhenTheOtherIsAbsent()
+        {
+            var profile = new ProfileBuilder()
+                .WithUserName("TestUser")
+                .WithDisplayName("Test User")
+                .WithListItem("offspring", "2026-05-26: goblin brood of 5 (parent: Someone)")
+                .BuildAndSave(_fixture.Database);
+
+            string result = InvokeBuildOffspringSection(profile, "TestUser");
+
+            Assert.Contains("[u]Birthed:[/u] Goblins: 5", result);
+            Assert.DoesNotContain("Sired", result);
+        }
+
+        [Fact]
+        public void BuildAtAGlanceSection_MergesTitlesAndCurrency()
+        {
+            var profile = new ProfileBuilder()
+                .WithUserName("TestUser")
+                .WithDisplayName("Test User")
+                .WithCurrency("gold", 12)
+                .BuildAndSave(_fixture.Database);
+            profile.titles = new List<Title> { new Title { titleText = "The Brave", givenBy = "Alice" } };
+            _fixture.Database.SetProfile("TestUser", profile);
+
+            string result = InvokeBuildAtAGlanceSection(_fixture.Database.GetProfile("TestUser"));
+
+            Assert.Contains("[b]Titles earned:[/b] 1", result);
+            Assert.Contains("[b]Most abundant currency:[/b] 12 gold", result);
+            Assert.Equal(1, result.Split('\n').Length - 1);
+        }
+
+        [Fact]
+        public void BuildAtAGlanceSection_NoTitlesOrCurrency_ReturnsEmpty()
+        {
+            var profile = new ProfileBuilder()
+                .WithUserName("TestUser")
+                .WithDisplayName("Test User")
+                .BuildAndSave(_fixture.Database);
+
+            Assert.Empty(InvokeBuildAtAGlanceSection(profile));
+        }
+
+        [Fact]
+        public void BuildFullDossier_BareProfile_GetsRecentArrivalNote()
+        {
+            var profile = new ProfileBuilder()
+                .WithUserName("TestUser")
+                .WithDisplayName("Test User")
+                .BuildAndSave(_fixture.Database);
+
+            string result = InvokeBuildFullDossier(profile, "TestUser");
+
+            Assert.Contains("A recent arrival to the Chateau", result);
+        }
+
+        [Fact]
+        public void BuildFullDossier_JobButNoInteractions_HasNoRecentArrivalNote()
+        {
+            // A job is content in its own right, so it suppresses the note even before the
+            // resident has interacted with anyone.
+            var profile = new ProfileBuilder()
+                .WithUserName("TestUser")
+                .WithDisplayName("Test User")
+                .WithCharacteristic("job", "butler")
+                .BuildAndSave(_fixture.Database);
+
+            string result = InvokeBuildFullDossier(profile, "TestUser");
+
+            Assert.DoesNotContain("A recent arrival to the Chateau", result);
+            Assert.Contains("Currently working as a", result);
+        }
+
+        [Fact]
+        public void BuildFullDossier_ProfileWithContent_HasNoRecentArrivalNote()
+        {
+            var profile = new ProfileBuilder()
+                .WithUserName("TestUser")
+                .WithDisplayName("Test User")
+                .WithCount("kiss", 3)
+                .BuildAndSave(_fixture.Database);
+
+            string result = InvokeBuildFullDossier(profile, "TestUser");
+
+            Assert.DoesNotContain("A recent arrival to the Chateau", result);
+            Assert.Contains("Casual interactions", result);
+        }
+
+        [Fact]
+        public void BuildFullDossier_GroupsRelationshipsBeforeTallies()
+        {
+            new ProfileBuilder().WithUserName("Hire").WithDisplayName("Hire")
+                .WithCharacteristic("employer", "TestUser").WithCharacteristic("job", "maid")
+                .BuildAndSave(_fixture.Database);
+            var profile = new ProfileBuilder()
+                .WithUserName("TestUser")
+                .WithDisplayName("Test User")
+                .WithCount("kiss", 3)
+                .WithJobExperience("maid", 4)
+                .BuildAndSave(_fixture.Database);
+
+            string result = InvokeBuildFullDossier(profile, "TestUser");
+
+            // Employs is a roster now, so it sits with the relationship blocks rather than
+            // among the numeric tallies.
+            Assert.True(result.IndexOf("Currently employs") < result.IndexOf("Casual interactions"));
+            Assert.True(result.IndexOf("Casual interactions") < result.IndexOf("Days of [b]Experience[/b]"));
+        }
+
+        [Fact]
+        public void BuildFullDossier_HasNoUnbalancedSpoilerTags()
+        {
+            new ProfileBuilder().WithUserName("Hire").WithDisplayName("Hire")
+                .WithCharacteristic("employer", "TestUser").WithCharacteristic("job", "maid")
+                .BuildAndSave(_fixture.Database);
+            var profile = new ProfileBuilder()
+                .WithUserName("TestUser")
+                .WithDisplayName("Test User")
+                .WithCount("kiss", 3)
+                // An unrecognised job used to emit an unclosed [spoiler] via JobToText,
+                // swallowing every later section of the dossier.
+                .WithJobExperience("notarealjob", 4)
+                .BuildAndSave(_fixture.Database);
+
+            string result = InvokeBuildFullDossier(profile, "TestUser");
+
+            Assert.Equal(
+                CountOccurrences(result, "[spoiler]"),
+                CountOccurrences(result, "[/spoiler]"));
+        }
+
+        private static int CountOccurrences(string haystack, string needle)
+        {
+            int count = 0, index = 0;
+            while ((index = haystack.IndexOf(needle, index, StringComparison.Ordinal)) != -1)
+            {
+                count++;
+                index += needle.Length;
+            }
+            return count;
+        }
+
+        #endregion
+
         #region Helper Methods for Reflection
 
         private string InvokeBuildJobSection(Profile profile)
@@ -794,6 +1093,27 @@ namespace FChatDicebot.Tests.Unit
             var method = typeof(ChateauDossier).GetMethod("BuildInteractionCountsSection",
                 BindingFlags.NonPublic | BindingFlags.Instance);
             return (string)method.Invoke(_dossier, new object[] { profile });
+        }
+
+        private string InvokeBuildOffspringSection(Profile profile, string targetUser)
+        {
+            var method = typeof(ChateauDossier).GetMethod("BuildOffspringSection",
+                BindingFlags.NonPublic | BindingFlags.Instance);
+            return (string)method.Invoke(_dossier, new object[] { profile, targetUser });
+        }
+
+        private string InvokeBuildAtAGlanceSection(Profile profile)
+        {
+            var method = typeof(ChateauDossier).GetMethod("BuildAtAGlanceSection",
+                BindingFlags.NonPublic | BindingFlags.Instance);
+            return (string)method.Invoke(_dossier, new object[] { profile });
+        }
+
+        private string InvokeBuildFullDossier(Profile profile, string targetUser)
+        {
+            var method = typeof(ChateauDossier).GetMethod("BuildFullDossier",
+                BindingFlags.NonPublic | BindingFlags.Instance);
+            return (string)method.Invoke(_dossier, new object[] { profile, targetUser });
         }
 
         #endregion

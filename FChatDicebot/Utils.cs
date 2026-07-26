@@ -662,7 +662,11 @@ namespace FChatDicebot
             }
             else
             {
-                return "Purveyor of New Professions [spoiler]that means [user]Queen Contract[/user] needs to update Utils.JobToText to include " + job + ", go tell her to fix it!";
+                // The [/spoiler] here is load-bearing: every other "go tell her to fix it"
+                // string closes its tag, and this one didn't — so an unrecognised job
+                // rendered anywhere mid-message (the dossier's employs/experience blocks
+                // being the worst case) swallowed everything after it into the spoiler.
+                return "Purveyor of New Professions [spoiler]that means [user]Queen Contract[/user] needs to update Utils.JobToText to include " + job + ", go tell her to fix it![/spoiler]";
             }
         }
 

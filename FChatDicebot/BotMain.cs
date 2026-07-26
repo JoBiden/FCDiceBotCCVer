@@ -1598,7 +1598,12 @@ namespace FChatDicebot
         public void SendPrivateMessage(string message, MessageAddress address)// string recipient)
         {
             ChannelSettings settings = GetChannelSettings(address);
-            message = TextFormat.ApplyNumberCommasIfNecessary(message, settings);
+            // Private messages always get thousands separators. ShowCommasInNumbers is a
+            // per-channel setting and a PM has no channel — GetChannelSettings returns null
+            // for a channel-less address — so routing through ApplyNumberCommasIfNecessary
+            // meant no PM ever got commas, however large the figure (the dossier's "Most
+            // abundant currency" line being the one that made this obvious).
+            message = TextFormat.ApplyNumberCommas(message);
             message = TextFormat.SubstituteInCurrencyName(message, settings);
             message = TextFormat.SpoilerAllIfEnabled(message, settings);
 

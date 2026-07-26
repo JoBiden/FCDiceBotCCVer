@@ -52,7 +52,9 @@ namespace FChatDicebot.BotCommands
 
             var database = MonDB.GetDatabase();
             int pendingMinutesKeep = InteractionProcessors.GroupInteractionResolver.PendingMinutesKeep;
-            int maxNoSpoilerLength = 500;
+            // Raised from 500: consent readouts were collapsing into a spoiler more often
+            // than the length really warranted, hiding ordinary-sized results behind a click.
+            int maxNoSpoilerLength = 1000;
             string privateMessage = string.Empty;
             string channelMessage = string.Empty;
 
