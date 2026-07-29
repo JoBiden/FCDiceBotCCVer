@@ -116,12 +116,14 @@ namespace FChatDicebot.BotCommands
 
             // Group seats defer (mark consented; resolve when the last seat clears); 1:1 seats
             // process immediately as before.
+            var consentedGroupIds = new List<string>();
             foreach (PendingCommand seat in toActOn)
             {
                 if (seat.IsGroupSeat)
                 {
                     InteractionProcessors.GroupInteractionResolver.MarkSeatConsented(database, seat);
                     touchedGroups.Add(seat.groupId);
+                    consentedGroupIds.Add(seat.groupId);
                 }
                 else
                 {
@@ -139,6 +141,22 @@ namespace FChatDicebot.BotCommands
                     if (!string.IsNullOrEmpty(channelMessage)) channelMessage += "\n\n";
                     channelMessage += groupMessage;
                 }
+            }
+
+            // Consenting into a group is the one path where saying yes produces nothing visible
+            // — the moment is still waiting on someone else — so acknowledge it privately with
+            // how long the group can still take to fire on its own. Skipped for a group that
+            // just resolved above (its seats are gone), which announced itself in-channel.
+            foreach (string groupId in consentedGroupIds.Distinct())
+            {
+                var remainingSeats = database.GetPendingCommandsByGroupId(groupId);
+                if (remainingSeats.Count == 0) continue;
+
+                string waitMessage = InteractionProcessors.GroupInteractionResolver
+                    .BuildSeatConsentedWaitMessage(remainingSeats, DateTime.UtcNow);
+                if (privateMessage.Contains(waitMessage)) continue; // '!consent all' across groups
+                if (privateMessage != string.Empty) privateMessage += "\n\n";
+                privateMessage += waitMessage;
             }
 
             if (channelMessage.Length > maxNoSpoilerLength)

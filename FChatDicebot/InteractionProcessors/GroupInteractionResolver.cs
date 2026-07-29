@@ -23,6 +23,44 @@ namespace FChatDicebot.InteractionProcessors
         // Mirrors the 10-minute window ChateauConsent sweeps with.
         public const int PendingMinutesKeep = 10;
 
+        // ==================== Seat-acknowledgement strings (owner review) ====================
+        // A group seat is the one consent path where answering does nothing visible: the moment
+        // waits on everyone else, so without a reply the resident can't tell their !consent /
+        // !no even registered. Both are PM'd, like the random-event accept reply.
+
+        /// <summary>
+        /// PM'd to a resident whose group seat just consented while the group is still waiting
+        /// on someone. <c>{time}</c> is the wall-clock wait until the timeout sweep fires the
+        /// moment without the remaining seats — filled in by
+        /// <see cref="BuildSeatConsentedWaitMessage"/>.
+        /// </summary>
+        public const string SeatConsentedWaitMessage =
+            "You're in! Wait for the other members of the group to respond, or for the interaction to resolve automatically in {time}.";
+
+        /// <summary>PM'd to a resident who declined a group seat with <c>!no</c>.</summary>
+        public const string SeatDeclinedMessage =
+            "Understood and respected! The group interaction will not include you this time.";
+
+        /// <summary>
+        /// Fill <see cref="SeatConsentedWaitMessage"/>'s <c>{time}</c> from the seats a group
+        /// still holds. Consented seats never expire, so the group fires on its own once the
+        /// last un-consented seat passes the 10-minute mark — that's the deadline quoted.
+        /// Pure so it can be unit-tested.
+        /// </summary>
+        public static string BuildSeatConsentedWaitMessage(IEnumerable<PendingCommand> groupSeats, DateTime utcNow)
+        {
+            DateTime deadline = (groupSeats ?? Enumerable.Empty<PendingCommand>())
+                .Where(s => s != null && !s.HasConsented)
+                .Select(s => s.startTime)
+                // No un-consented seat left means the group is resolving right now; quoting a
+                // fresh 10 minutes would be a lie, so fall back to an already-elapsed deadline.
+                .DefaultIfEmpty(utcNow.AddMinutes(-PendingMinutesKeep))
+                .Max()
+                .AddMinutes(PendingMinutesKeep);
+
+            return SeatConsentedWaitMessage.Replace("{time}", Utils.TimeDifferenceText(utcNow, deadline));
+        }
+
         /// <summary>
         /// Stamp a group seat as consented: assign the next consent-order number for its group
         /// and flip its state. Caller is expected to follow up with

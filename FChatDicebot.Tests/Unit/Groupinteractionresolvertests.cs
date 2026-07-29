@@ -320,6 +320,42 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
             Assert.Empty(_database.GetPendingCommandsByGroupId(seats[0].groupId));
         }
 
+        // ---- Seat acknowledgements ----
+
+        [Fact]
+        public void SeatConsentedWait_QuotesTimeUntilTheLastUnconsentedSeatExpires()
+        {
+            SeedProfiles("Alice", "Bob", "Carol");
+            var seats = CreateGroup("Alice", "cuddle", null, "Bob", "Carol");
+            ConsentSeat(seats[0]); // Bob is in; Carol's seat is what the group now waits on
+
+            // Carol has been sitting on her seat for 4 of the 10 minutes.
+            seats[1].startTime = DateTime.UtcNow.AddMinutes(-4);
+            _database.UpdatePendingCommand(seats[1]);
+
+            string message = GroupInteractionResolver.BuildSeatConsentedWaitMessage(
+                _database.GetPendingCommandsByGroupId(seats[0].groupId), DateTime.UtcNow);
+
+            Assert.StartsWith("You're in!", message);
+            Assert.Contains("resolve automatically in 5 minutes.", message);
+            Assert.DoesNotContain("{time}", message);
+        }
+
+        [Fact]
+        public void SeatConsentedWait_AllSeatsConsented_DoesNotQuoteAFreshWindow()
+        {
+            // Degenerate case: the group is resolving this instant, so quoting the full ten
+            // minutes would be a lie.
+            SeedProfiles("Alice", "Bob", "Carol");
+            var seats = CreateGroup("Alice", "cuddle", null, "Bob", "Carol");
+            ConsentInOrder(seats);
+
+            string message = GroupInteractionResolver.BuildSeatConsentedWaitMessage(
+                _database.GetPendingCommandsByGroupId(seats[0].groupId), DateTime.UtcNow);
+
+            Assert.Contains("resolve automatically in less than a minute.", message);
+        }
+
         // ---- Helpers ----
 
         private void SeedProfiles(params string[] names)

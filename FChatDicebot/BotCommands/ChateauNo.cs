@@ -117,9 +117,14 @@ namespace FChatDicebot.BotCommands
             }
 
             // Clear the caller's own seat(s). For a group seat this leaves the rest intact.
+            bool declinedAGroupSeat = false;
             foreach (PendingCommand seat in toRefuse)
             {
-                if (seat.IsGroupSeat) touchedGroups.Add(seat.groupId);
+                if (seat.IsGroupSeat)
+                {
+                    touchedGroups.Add(seat.groupId);
+                    declinedAGroupSeat = true;
+                }
                 MonDB.removePendingInteraction(seat.Id);
             }
 
@@ -128,6 +133,15 @@ namespace FChatDicebot.BotCommands
                 Profile caller = MonDB.getProfile(characterName);
                 string callerName = caller != null ? caller.displayName : characterName;
                 channelMessage = RefuseAnnouncement.Replace("{recipient}", callerName);
+            }
+
+            // That announcement speaks to the initiator; declining a group seat also gets a
+            // private acknowledgement, since the group carries on without you and there's
+            // otherwise nothing telling you your own seat is gone.
+            if (declinedAGroupSeat)
+            {
+                if (privateMessage != string.Empty) privateMessage += "\n\n";
+                privateMessage += InteractionProcessors.GroupInteractionResolver.SeatDeclinedMessage;
             }
 
             // A declined group seat may complete the group for whoever else already consented.
