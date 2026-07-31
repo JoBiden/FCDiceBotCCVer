@@ -113,6 +113,8 @@ namespace FChatDicebot.InteractionProcessors.StatusEffectContributors
         /// <item><description><c>!feed</c> where the substance identifier == vice name.</description></item>
         /// <item><description><c>!odorize</c> where the scent identifier == vice name.</description></item>
         /// <item><description><c>!dose</c> where the vice identifier == vice name (the escalating dose itself).</description></item>
+        /// <item><description><c>!drink</c> where the bottle's substance == vice name — the only
+        /// satisfaction route that doesn't need a second consenting resident.</description></item>
         /// </list>
         /// All comparisons are case-insensitive. Climax interactions intentionally don't
         /// match — they dose the partner instead of satisfying anyone.
@@ -125,7 +127,15 @@ namespace FChatDicebot.InteractionProcessors.StatusEffectContributors
             if (string.Equals(parentInteractionType, "feed", StringComparison.OrdinalIgnoreCase)) return true;
             if (string.Equals(parentInteractionType, "odorize", StringComparison.OrdinalIgnoreCase)) return true;
             if (string.Equals(parentInteractionType, DoseProcessor.DoseType, StringComparison.OrdinalIgnoreCase)) return true;
+            if (string.Equals(parentInteractionType, DrinkType, StringComparison.OrdinalIgnoreCase)) return true;
             return false;
         }
+
+        /// <summary>
+        /// Interaction-type key <c>!drink</c> passes when it invokes the contributors through
+        /// <see cref="SelfCommandStatusEffects"/>. Lives here rather than on the command so the
+        /// satisfaction rule and its trigger can't drift apart.
+        /// </summary>
+        public const string DrinkType = "drink";
     }
 }

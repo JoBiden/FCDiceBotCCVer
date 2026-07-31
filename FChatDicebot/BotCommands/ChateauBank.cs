@@ -128,8 +128,36 @@ namespace FChatDicebot.BotCommands
                     bankText = bankText.TrimEnd(' ', '|');
                 }
 
+                // Bottles live outside the vault, so they hang off both branches: a resident with
+                // no currency but a full collection was previously told they owned nothing.
+                string collectionLine = BuildCollectionLine(profile, ownAccount);
+                if (!string.IsNullOrEmpty(collectionLine))
+                {
+                    bankText += "\n" + collectionLine;
+                }
             }
             bot.SendPrivateMessage(bankText, characterName);
+        }
+
+        /// <summary>
+        /// One-line summary of the resident's bottle collection, pointing at !bottles for the
+        /// detail. Empty string when they hold nothing, so an untouched collection adds no noise.
+        /// </summary>
+        public static string BuildCollectionLine(Profile profile, bool ownAccount)
+        {
+            if (profile == null || profile.milkInventory == null) return string.Empty;
+            int full = profile.milkInventory.Count(b => b != null && !b.IsEmpty);
+            int empty = profile.milkInventory.Count(b => b != null && b.IsEmpty);
+            if (full == 0 && empty == 0) return string.Empty;
+
+            var pieces = new List<string>();
+            if (full > 0) pieces.Add("[b]" + full + " bottle" + (full == 1 ? "" : "s") + "[/b]");
+            if (empty > 0) pieces.Add("[b]" + empty + " empt" + (empty == 1 ? "y" : "ies") + "[/b]");
+            string held = string.Join(" and ", pieces);
+
+            return ownAccount
+                ? $"You're also holding {held} of your own. Use !bottles to look them over."
+                : $"{profile.displayName} is also holding {held}.";
         }
     }
 }

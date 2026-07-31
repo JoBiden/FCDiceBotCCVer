@@ -31,9 +31,9 @@ namespace FChatDicebot.BotCommands
             Aliases = new string[] { };
             Category = "General";
             ShortDescription = "Sell bottled substances, obtained when you !milk others.";
-            LongDescription = "Sell bottled fluid from your personal inventory to the Chateau. Pricing depends on the substance's rarity and whether it is corrupt or pure. One empty bottle is returned per bottle sold. With no arguments, sells most recent bottle. With an amount, sells that many bottles in reverse of the order acquired, optionally filtered by substance and/or original source.";
+            LongDescription = "Sell bottled fluid from your personal collection to the Chateau. Pricing depends on the substance's rarity and whether it is corrupt or pure. The Chateau keeps the bottle, so its number leaves your collection for good, and one empty bottle is returned per bottle sold. With no arguments, sells your most recent bottle. With an amount, sells that many bottles in reverse of the order acquired, optionally filtered by substance and/or original source. Bottles you've already drunk stay with you and can't be sold.";
             Usage = "!sell\nor\n!sell {amount}\nor\n!sell {amount} {substance}\nor\n!sell {amount} {substance} [noparse][user]NameInUserTag[/user][/noparse]";
-            RelatedCommands = new string[] { "milk", "bank" };
+            RelatedCommands = new string[] { "milk", "bottles", "drink", "bank" };
             CooldownDuration = null;
             CooldownAppliesTo = null;
             IdentifierCategory = "substance";
@@ -53,9 +53,9 @@ namespace FChatDicebot.BotCommands
                 bot.SendPrivateMessage(ChateauInteractionHandler.notRegisteredText(), characterName);
                 return;
             }
-            if (profile.milkInventory == null || profile.milkInventory.Count == 0)
+            if (BottleInventory.SelectFull(profile, null, null).Count == 0)
             {
-                bot.SendPrivateMessage("You don't have any bottles in your inventory to sell.", characterName);
+                bot.SendPrivateMessage("You don't have any bottles in your collection to sell.", characterName);
                 return;
             }
 
@@ -87,7 +87,7 @@ namespace FChatDicebot.BotCommands
             if (sellResult.BottlesSold == 0)
             {
                 bot.SendPrivateMessage(
-                    "No bottles in your inventory matched that filter. Use !bank or your !dossier to review what you've got bottled up.",
+                    "No bottles in your collection matched that filter. Use !bottles to review what you've got bottled up.",
                     characterName);
                 return;
             }
@@ -122,6 +122,11 @@ namespace FChatDicebot.BotCommands
             // Distinct (substance, source) pairs touched, in sell order (newest first).
             // Used to build a readable summary line for the channel message.
             public List<SellLineItem> LineItems = new List<SellLineItem>();
+            /// <summary>
+            /// Serial numbers that left the collection, in sell order. Sold bottles go to the
+            /// Chateau outright, so these numbers are retired rather than kept as empties.
+            /// </summary>
+            public List<int> SoldSerials = new List<int>();
         }
 
         public class SellLineItem
@@ -148,12 +153,10 @@ namespace FChatDicebot.BotCommands
                 return result;
             }
 
-            // LIFO: newest first. We pull from the front of this ordering; entries are
-            // looked at one at a time and either consumed whole or partially.
-            var ordered = profile.milkInventory
-                .Where(b => MatchesFilters(b, substanceFilter, sourceFilter))
-                .OrderByDescending(b => b.milkedAt)
-                .ToList();
+            // Newest first, full bottles only — an empty has nothing the Chateau would pay for,
+            // and it's the resident's keepsake now. Shared with !drink/!bottles/!pay so the
+            // four commands can never disagree about what a filter means.
+            var ordered = BottleInventory.SelectFull(profile, substanceFilter, sourceFilter);
 
             // Index payout summary by (substance, source) so the result message can
             // collapse multiple sessions of the same kind into one line.
@@ -176,6 +179,7 @@ namespace FChatDicebot.BotCommands
                 result.BottlesSold += take;
                 result.PayoutCopper += payout;
                 result.BottlesReturned += take;
+                if (bottle.serial > 0) result.SoldSerials.Add(bottle.serial);
 
                 string key = (bottle.substance ?? "") + "|" + (bottle.sourceName ?? "");
                 if (!lineItems.TryGetValue(key, out var line))
@@ -209,21 +213,6 @@ namespace FChatDicebot.BotCommands
             return result;
         }
 
-        private static bool MatchesFilters(MilkBottle bottle, string substanceFilter, string sourceFilter)
-        {
-            if (!string.IsNullOrEmpty(substanceFilter)
-                && !string.Equals(bottle.substance, substanceFilter, StringComparison.OrdinalIgnoreCase))
-            {
-                return false;
-            }
-            if (!string.IsNullOrEmpty(sourceFilter)
-                && !string.Equals(bottle.sourceName, sourceFilter, StringComparison.OrdinalIgnoreCase))
-            {
-                return false;
-            }
-            return true;
-        }
-
         private static string BuildResultMessage(string sellerDisplayName, SellResult result)
         {
             string lineSummary;
@@ -232,7 +221,7 @@ namespace FChatDicebot.BotCommands
                 var line = result.LineItems[0];
                 lineSummary = result.BottlesSold + " bottle" + (result.BottlesSold == 1 ? "" : "s")
                     + " of " + Utils.SubstanceToText(line.Substance)
-                    + " (sourced from " + (line.SourceName ?? "an unknown donor") + ")";
+                    + " (sourced from " + DonorText(line.SourceName) + ")";
             }
             else
             {
@@ -240,15 +229,29 @@ namespace FChatDicebot.BotCommands
                 foreach (var line in result.LineItems)
                 {
                     pieces.Add(line.Bottles + " of " + Utils.SubstanceToText(line.Substance)
-                        + " from " + (line.SourceName ?? "an unknown donor"));
+                        + " from " + DonorText(line.SourceName));
                 }
                 lineSummary = result.BottlesSold + " bottles ("
                     + string.Join(", ", pieces) + ")";
             }
 
-            return sellerDisplayName + " sold " + lineSummary + " for [b]" + result.PayoutCopper
+            string serials = BottleInventory.FormatSerials(result.SoldSerials, ChateauCurrency.BottleSerialDisplayCap);
+            string serialText = string.IsNullOrEmpty(serials) ? string.Empty : " (" + serials + ")";
+
+            return sellerDisplayName + " sold " + lineSummary + serialText + " for [b]" + result.PayoutCopper
                 + " " + ChateauCurrency.SellPayoutCurrency + "[/b]. Empty bottles returned: "
                 + result.BottlesReturned + ".";
+        }
+
+        /// <summary>
+        /// Donor names are stored as userNames and must be resolved before a resident reads them:
+        /// a userName survives renames as the raw handle, which is not what anyone should see.
+        /// </summary>
+        private static string DonorText(string sourceName)
+        {
+            if (string.IsNullOrEmpty(sourceName)) return "an unknown donor";
+            string displayName = MonDB.getDisplayName(sourceName);
+            return string.IsNullOrEmpty(displayName) ? sourceName : displayName;
         }
     }
 }

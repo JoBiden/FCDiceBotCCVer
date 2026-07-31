@@ -65,6 +65,9 @@ namespace FChatDicebot.Tests.Fixtures
             Database.ClearCollection("Feedback");
             Database.ClearCollection("SlotsJackpots");
             Database.ClearCollection("RandomEvents");
+            // Bottle serials come from a counter document here. Resetting it keeps serial
+            // assertions stable rather than dependent on how many bottles earlier tests milked.
+            Database.ClearCollection("Counters");
         }
 
         /// <summary>

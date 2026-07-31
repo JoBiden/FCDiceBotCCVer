@@ -562,6 +562,19 @@ Give/receive payment.
 → Alice wants to pay Bob 50 tokens! Do you !consent?
 ```
 
+#### !pay
+Transfer currency, or pass along bottles from your collection. A negative amount bills the other resident instead.
+
+**Usage:** `!pay [user]Name[/user] {amount} {currency}` or `!pay [user]Name[/user] {amount} bottles {substance}` or `!pay [user]Name[/user] bottles #12 #13`
+
+Bottles keep their number, their donor and their corrupt/pure tag when they change hands. Naming bottles by number is the only way to pass along an empty; an amount always means full bottles.
+
+**Example:**
+```
+!pay [user]Bob[/user] bottles #142 #143
+→ Alice is going to pass Bob 2 bottles: two of the milk from Carol (corrupt)! Do you !consent to receiving them? (or !no)
+```
+
 ### Commitment Interactions (24 hour cooldown)
 
 #### !mark
@@ -711,6 +724,42 @@ Try other jobs without being employed.
 ```
 
 **Note:** Volunteers earn less than employees
+
+### Bottle Collection
+
+Bottles come from `!milk`. Every bottle carries a permanent number, the resident it came from, and a corrupt/pure tag if the donor was far enough one way or the other.
+
+#### !bottles
+Look over the bottles you're holding. Private reply.
+
+**Usage:** `!bottles` or `!bottles {substance}` or `!bottles {substance} [user]Name[/user]`
+
+**Example:**
+```
+!bottles
+→ Our records show you're holding 2 bottles:
+  milk from Carol, corrupt | #142, #143 | 7 copper each
+  Empties: #12, #40
+  That's 14 copper if you choose to !sell the lot to the Chateau on the cheap...
+```
+
+#### !drink
+Drink one bottle from your collection. Channel-only, since everyone gets to see what it does to you.
+
+**Usage:** `!drink` or `!drink {substance}` or `!drink #{number}`
+
+Drinking empties the bottle but you keep it: the number stays in your collection as a record of what you drank. A corrupt or pure bottle shifts you the same way (up to 3 per day), a substance you're addicted to quiets the craving, and there's a small chance you find yourself wanting more.
+
+**Example:**
+```
+!drink #142
+→ Alice uncorks bottle #142 and drinks down the tasty milk from Carol. Not a drop wasted! How delightfully dark and rich~ Alice gains 1 corruption.
+```
+
+#### !sell
+Sell full bottles to the Chateau. The Chateau keeps the bottle, so its number leaves your collection for good. Empties can't be sold.
+
+**Usage:** `!sell` or `!sell {amount}` or `!sell {amount} {substance}` or `!sell {amount} {substance} [user]Name[/user]`
 
 ### Statistics & Profiles
 
@@ -917,6 +966,8 @@ Many commands have shorter aliases:
 | `!coinflip` | `!flip` |
 | `!consent` | `!accept` |
 | `!reject` | `!deny` |
+| `!bottles` | `!collection` |
+| `!drink` | `!imbibe`, `!swig` |
 
 ## Tips
 

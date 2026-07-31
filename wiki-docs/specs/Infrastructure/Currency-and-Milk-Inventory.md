@@ -25,7 +25,9 @@ public class MilkBottle
 }
 ```
 
-Different milking sessions of the same `(substance, sourceName)` stay as separate entries so each retains its own `milkedAt` and `corruptionTag`. Bottles cannot be transferred between users — they are either kept as a trophy or sold.
+Different milking sessions of the same `(substance, sourceName)` stay as separate entries so each retains its own `milkedAt` and `corruptionTag`.
+
+> **Superseded 2026-07-29 by [Bottle-Consumption-And-Transfer](../Bottle-Consumption-And-Transfer.md).** This document originally stated that bottles cannot be transferred between residents. They can now, through `!pay`. That later feature also adds a permanent `serial` and an `emptiedAt` to `MilkBottle`, splits aggregated `quantity > 1` entries into one entry per physical bottle, and adds `!bottles` and `!drink`. Read this document for the original inventory and pricing model; read that one for the current shape.
 
 There is **no `emptyBottles` field** on `Profile`. The original spec proposed one as a precondition for `!milk`; that gate was dropped before merge. The Chateau always provides the empty bottles needed to milk.
 
@@ -40,7 +42,9 @@ Two new constants in [`ChateauCurrency.cs`](../../../FChatDicebot/ChateauCurrenc
 | `SellPayoutCurrency` | `"copper"` | The currency `!sell` deposits substance-value proceeds into. |
 | `BottleCurrency` | `"bottle"` | A side-currency credited one-per-bottle when the Chateau takes the empty back at `!sell` time, or in the self-milk shortcut. |
 
-Players accumulate `currencies["bottle"]` over time. The bottle currency is purely a tally today — no command spends it. Future features (a milking achievement, an item the bottle currency unlocks, etc.) can hook into it without changing this layer.
+Players accumulate `currencies["bottle"]` over time. The bottle currency is purely a tally — no command spends it.
+
+> **Depreciated 2026-07-29 by [Bottle-Consumption-And-Transfer](../Bottle-Consumption-And-Transfer.md).** Once drinking a bottle leaves you holding the numbered empty, the tally is no longer the only record that a bottle passed through your hands, and the empty is far more specific. `!sell` and the self-milk shortcut still credit it so existing balances aren't stranded, but `!drink` does not, and nothing new should be built on it.
 
 ## Sell pricing
 

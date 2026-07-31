@@ -332,6 +332,32 @@ namespace FChatDicebot.Database
             collection.ReplaceOne(filter, document);
         }
 
+        /// <summary>
+        /// Server-side atomic $inc against a single counter document, returning the post-increment
+        /// value. Reserving the whole block in one round-trip (rather than N single increments) is
+        /// what makes a 3-bottle milking cheap and keeps the claimed serials contiguous. IsUpsert
+        /// seeds the counter on first use, so no migration step is needed to create it.
+        /// </summary>
+        public int ClaimBottleSerials(int count)
+        {
+            if (count <= 0) return 0;
+            var collection = Database.GetCollection<BsonDocument>("Counters");
+            var filter = Builders<BsonDocument>.Filter.Eq("_id", BottleSerialCounterId);
+            var update = Builders<BsonDocument>.Update.Inc("value", count);
+            var options = new FindOneAndUpdateOptions<BsonDocument>
+            {
+                IsUpsert = true,
+                ReturnDocument = ReturnDocument.After,
+            };
+            var result = collection.FindOneAndUpdate(filter, update, options);
+            int lastClaimed = result["value"].ToInt32();
+            // $inc returns the LAST number in the block; callers want the first.
+            return lastClaimed - count + 1;
+        }
+
+        /// <summary>Counter document key backing <see cref="ClaimBottleSerials"/>.</summary>
+        public const string BottleSerialCounterId = "bottleSerial";
+
         public void ChangeCurrency(string userName, string currencyLabel, int changeAmount)
         {
             // Server-side atomic $inc (not a read-modify-write ReplaceOne). This matters for the

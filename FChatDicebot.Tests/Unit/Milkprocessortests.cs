@@ -204,7 +204,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
         // -------------------------------------------------------------------
 
         [Fact]
-        public void ProcessInteraction_AppendsBottleToInitiator()
+        public void ProcessInteraction_AppendsOneEntryPerBottleToInitiator()
         {
             new ProfileBuilder().WithUserName("Alice").WithDisplayName("Alice").BuildAndSave(_database);
             new ProfileBuilder().WithUserName("Bob").WithDisplayName("Bob").BuildAndSave(_database);
@@ -215,13 +215,33 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
             _processor.ProcessInteraction(pending);
 
             var alice = _database.GetProfile("Alice");
-            Assert.Single(alice.milkInventory);
-            var bottle = alice.milkInventory[0];
-            Assert.Equal("cum", bottle.substance);
-            Assert.Equal("Bob", bottle.sourceName);
-            // 0.5 sample over [1, 4) → 2 bottles
-            Assert.Equal(2, bottle.quantity);
-            Assert.Null(bottle.corruptionTag); // Bob has neutral corruption
+            // 0.5 sample over [1, 4) → 2 bottles, and a serial names one bottle, so a
+            // 2-bottle milking writes two entries rather than one entry of quantity 2.
+            Assert.Equal(2, alice.milkInventory.Count);
+            foreach (var entry in alice.milkInventory)
+            {
+                Assert.Equal("cum", entry.substance);
+                Assert.Equal("Bob", entry.sourceName);
+                Assert.Equal(1, entry.quantity);
+                Assert.Null(entry.corruptionTag); // Bob has neutral corruption
+                Assert.False(entry.IsEmpty);
+                Assert.True(entry.serial > 0);
+            }
+        }
+
+        [Fact]
+        public void ProcessInteraction_ClaimsConsecutiveSerials()
+        {
+            new ProfileBuilder().WithUserName("Alice").WithDisplayName("Alice").BuildAndSave(_database);
+            new ProfileBuilder().WithUserName("Bob").WithDisplayName("Bob").BuildAndSave(_database);
+
+            _processor.ProcessInteraction(SaveAndReturn(BuildPendingCommand("Alice", "Bob", "cum")));
+
+            var serials = _database.GetProfile("Alice").milkInventory
+                .Select(b => b.serial).OrderBy(s => s).ToList();
+            Assert.Equal(2, serials.Count);
+            // Reserved as one contiguous block so a concurrent milking can't interleave.
+            Assert.Equal(serials[0] + 1, serials[1]);
         }
 
         [Fact]
