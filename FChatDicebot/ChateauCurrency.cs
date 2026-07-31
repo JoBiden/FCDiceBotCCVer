@@ -43,6 +43,34 @@ namespace FChatDicebot
         public const int MilkRollMax = 3;
 
         // -----------------------------------------------------------------------
+        // !drink
+        // -----------------------------------------------------------------------
+
+        /// <summary>
+        /// Corruption moved onto the drinker per tagged bottle: a "corrupt" bottle shifts them
+        /// this far toward corruption, a "purified" one this far toward purity. Untagged
+        /// bottles move nothing.
+        /// </summary>
+        public const int DrinkCorruptionShiftPerBottle = 1;
+
+        /// <summary>
+        /// How much corruption a resident can absorb by drinking in one Chateau day. Tracked
+        /// under its own <c>drinkshift_</c> key so it never draws from the per-pair
+        /// <c>!corrupt</c> quota. This is the load-bearing balance lever: bottles can be pooled
+        /// through <c>!pay</c>, so supply scarcity alone would not bound the drift.
+        /// </summary>
+        public const int DrinkCorruptionDailyLimit = 3;
+
+        /// <summary>
+        /// Chance that drinking a substance deepens an addiction the drinker already carries.
+        /// Intensify-only — a first bottle can never hook a clean resident.
+        /// </summary>
+        public const double DrinkAddictionChance = 0.10;
+
+        /// <summary>Serial numbers listed per group in <c>!bottles</c> before the "and N more" tail.</summary>
+        public const int BottleSerialDisplayCap = 8;
+
+        // -----------------------------------------------------------------------
         // Corruption tag thresholds (applied at milking time)
         // -----------------------------------------------------------------------
 

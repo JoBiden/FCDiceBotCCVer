@@ -7,8 +7,9 @@ using System.Linq;
 namespace FChatDicebot.InteractionProcessors.Involved
 {
     /// <summary>
-    /// Processor for <c>!milk</c>. Produces 1–3 tagged bottles (rolled at process time)
-    /// in the initiator's <see cref="Profile.milkInventory"/> and applies a 24-hour daily
+    /// Processor for <c>!milk</c>. Produces 1–3 tagged bottles (rolled at process time), each a
+    /// separate serial-numbered entry in the initiator's <see cref="Profile.milkInventory"/>,
+    /// and applies a 24-hour daily
     /// per-direction lock so a given milker can only milk a given resident once per
     /// Chateau day, regardless of substance. The lock is directional: it does not stop
     /// the recipient from milking the initiator back the same day. The Chateau provides
@@ -227,19 +228,29 @@ namespace FChatDicebot.InteractionProcessors.Involved
                 string corruptionTag = ChateauCurrency.GetCorruptionTagForValue(
                     Commitment.CorruptionProcessor.ReadCorruption(recipientProfile));
 
-                var bottle = new MilkBottle
-                {
-                    substance = substance,
-                    sourceName = recipient,
-                    milkedAt = DateTime.UtcNow,
-                    quantity = produced,
-                    corruptionTag = corruptionTag,
-                };
                 if (initiatorProfile.milkInventory == null)
                 {
                     initiatorProfile.milkInventory = new List<MilkBottle>();
                 }
-                initiatorProfile.milkInventory.Add(bottle);
+
+                // One entry per physical bottle, each with its own serial, rather than a single
+                // entry carrying a count. A serial names one bottle, so an aggregated entry has
+                // nothing to name. The whole block is reserved in one call so the numbers stay
+                // contiguous and a concurrent milking can't interleave into the middle of them.
+                DateTime milkedAt = DateTime.UtcNow;
+                int firstSerial = Database.ClaimBottleSerials(produced);
+                for (int i = 0; i < produced; i++)
+                {
+                    initiatorProfile.milkInventory.Add(new MilkBottle
+                    {
+                        serial = firstSerial + i,
+                        substance = substance,
+                        sourceName = recipient,
+                        milkedAt = milkedAt,
+                        quantity = 1,
+                        corruptionTag = corruptionTag,
+                    });
+                }
 
                 // Per-direction 24h lock — until the *next* day-boundary regardless of
                 // time-of-day. Stamped on the milker only and scoped to the milked

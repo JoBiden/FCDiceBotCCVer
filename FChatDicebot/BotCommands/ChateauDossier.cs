@@ -664,10 +664,43 @@ namespace FChatDicebot.BotCommands
             List<string> cells = new List<string>();
             string titles = BuildTitlesEarnedSection(profile);
             string currency = BuildMostAbundantCurrencySection(profile);
+            string bottled = BuildBottledSection(profile);
             if (!string.IsNullOrEmpty(titles)) cells.Add(titles);
             if (!string.IsNullOrEmpty(currency)) cells.Add(currency);
+            if (!string.IsNullOrEmpty(bottled)) cells.Add(bottled);
             if (cells.Count == 0) return string.Empty;
             return string.Join(InlineSeparator, cells) + "\n";
+        }
+
+        /// <summary>
+        /// Single-line bottle collection tally. Substance counts only, deliberately: the dossier
+        /// is public and a bottle's sourceName amounts to "who has this resident milked", which
+        /// is the donor's business rather than the reader's. Serial numbers are likewise omitted
+        /// so a public page can't be used to shop someone else's collection.
+        /// </summary>
+        private string BuildBottledSection(Profile profile)
+        {
+            if (profile.milkInventory == null || profile.milkInventory.Count == 0) return string.Empty;
+
+            var full = profile.milkInventory.Where(b => b != null && !b.IsEmpty).ToList();
+            int emptyCount = profile.milkInventory.Count(b => b != null && b.IsEmpty);
+            if (full.Count == 0 && emptyCount == 0) return string.Empty;
+
+            List<string> parts = new List<string>();
+            if (full.Count > 0)
+            {
+                var breakdown = BottleInventory.CountsBySubstance(full)
+                    .Select(kv => kv.Value + " " + Utils.SubstanceToText(kv.Key))
+                    .ToList();
+                parts.Add(full.Count + " bottle" + (full.Count == 1 ? "" : "s")
+                    + (breakdown.Count > 0 ? " (" + string.Join(", ", breakdown) + ")" : ""));
+            }
+            if (emptyCount > 0)
+            {
+                parts.Add(emptyCount + " empt" + (emptyCount == 1 ? "y" : "ies"));
+            }
+
+            return "[b]Bottled:[/b] " + string.Join(" and ", parts);
         }
 
         /// <summary>

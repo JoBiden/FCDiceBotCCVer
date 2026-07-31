@@ -26,7 +26,7 @@ namespace FChatDicebot.BotCommands
             ShortDescription = "Milk a substance from another resident.";
             LongDescription = "Milk a specified substance from another resident, gaining 1 to 3 bottles. The bottles might be pure or corrupted based on who was milked. You can only milk a specified resident once per day.";
             Usage = "!milk [noparse][user]NameInUserTag[/user][/noparse] {substance}";
-            RelatedCommands = new string[] { "sell", "feed", "golden", "consent", "dossier" };
+            RelatedCommands = new string[] { "bottles", "sell", "drink", "feed", "golden", "consent", "dossier" };
             CooldownDuration = "1 day, per-direction";
             CooldownAppliesTo = "initiator (per recipient)";
             IdentifierCategory = "substance";

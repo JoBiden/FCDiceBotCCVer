@@ -65,6 +65,24 @@ namespace FChatDicebot.InteractionProcessors.Involved
             string payer = IsGive ? initiator : recipient;
             string payee = IsGive ? recipient : initiator;
 
+            // Bottles aren't a currency bucket, so they move as objects rather than through the
+            // atomic $inc below. What they get instead is exactness: the promised serials are
+            // re-checked against the payer's collection, in the state the recipient agreed to.
+            if (BottlePayment.IsBottlePayment(command.pendingInteraction))
+            {
+                var promises = BottlePayment.ReadPromises(command.pendingInteraction);
+                if (!BottlePayment.TryTransfer(Database, payer, payee, promises, out string bottleFailure))
+                {
+                    _lastInitiatorPrivateMessage = bottleFailure;
+                    Database.DeletePendingCommand(command.Id);
+                    return "NoInteraction";
+                }
+
+                Database.AddInteraction(command.pendingInteraction);
+                Database.DeletePendingCommand(command.Id);
+                return InteractionType;
+            }
+
             // Debit is atomic and guarded (>= magnitude unless the currency allows negative
             // balances), so this can never mint currency on self-pay (initiator == recipient
             // nets the same $inc twice back to zero) and never overdraws a currency that

@@ -12,7 +12,8 @@ Design + as-implemented documentation for the Chateau Contract interaction syste
 | Spec | Adds | Used by |
 |------|------|---------|
 | [Status-Effect-Hook](Infrastructure/Status-Effect-Hook.md) | `IStatusEffectContributor` + registry + base-class helpers | Corrupt/Purify, Odorize/Wash, future status interactions |
-| [Currency-and-Milk-Inventory](Infrastructure/Currency-and-Milk-Inventory.md) | `MilkBottle` model, `Profile.milkInventory`, `ChateauCurrency` constants, `!sell` command, bottle side-currency | Milk |
+| [Currency-and-Milk-Inventory](Infrastructure/Currency-and-Milk-Inventory.md) | `MilkBottle` model, `Profile.milkInventory`, `ChateauCurrency` constants, `!sell` command, bottle side-currency | Milk, Bottle-Consumption-And-Transfer |
+| [Bottle-Consumption-And-Transfer](Bottle-Consumption-And-Transfer.md) | Bottle serial numbers + `BottleInventory` selection, persistent empties, `!bottles`, `!drink`, bottle transfer through `!pay`, `SelfCommandStatusEffects` | Milk |
 
 ### Reporting
 
@@ -24,7 +25,7 @@ Design + as-implemented documentation for the Chateau Contract interaction syste
 
 | Spec | Reversal | Depends on |
 |------|----------|------------|
-| [Milk](Milk.md) | none (sold via `!sell`) | Currency-and-Milk-Inventory, Status-Effect-Hook |
+| [Milk](Milk.md) | none (sold via `!sell`, drunk via `!drink`) | Currency-and-Milk-Inventory, Status-Effect-Hook |
 
 ### Commitment
 

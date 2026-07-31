@@ -35,6 +35,15 @@ namespace FChatDicebot.Database
         /// caller's own GetProfile.
         /// </summary>
         void SetMilkInventory(string userName, List<MilkBottle> inventory);
+
+        /// <summary>
+        /// Atomically reserve a block of <paramref name="count"/> consecutive bottle serial
+        /// numbers and return the first one. A milking that produces three bottles makes one
+        /// call and takes the returned value, +1, +2. Serials are globally unique and never
+        /// reused, so two simultaneous milkings can never collide on a number.
+        /// </summary>
+        int ClaimBottleSerials(int count);
+
         void ChangeCurrency(string userName, string currencyLabel, int changeAmount);
 
         /// <summary>

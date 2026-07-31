@@ -38,12 +38,22 @@ namespace FChatDicebot.InteractionProcessors.Involved
 
         public override string GetCompletionMessage(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
+            if (BottlePayment.IsBottlePayment(identifier))
+            {
+                return $"{initiatorProfile.displayName} accepts the bottles from {recipientProfile.displayName}. Is that a vintage?";
+            }
             return $"{recipientProfile.displayName} pays {identifier} to {initiatorProfile.displayName}. Transaction complete!";
         }
 
         protected override string BuildConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
-            // identifier is "{amount} {currency}" (e.g. "100 gold") — see ChateauPay.Run.
+            // identifier is "{amount} {currency}" (e.g. "100 gold") for a currency payment, or the
+            // rendered bottle summary from BottlePayment.Describe for a bottle transfer — see
+            // ChateauPay.Run / ChateauPay.RunBottlePayment.
+            if (BottlePayment.DescribesBottles(identifier))
+            {
+                return $"{initiatorProfile.displayName} is asking {recipientProfile.displayName} for {identifier}! Do you !consent to handing them over?";
+            }
             return $"{initiatorProfile.displayName} is requesting {recipientProfile.displayName} pay them {identifier}! Do you !consent to this transaction?";
         }
     }
