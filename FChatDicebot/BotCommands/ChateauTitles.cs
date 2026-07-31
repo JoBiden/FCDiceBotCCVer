@@ -65,9 +65,7 @@ namespace FChatDicebot.BotCommands
 
         private string BuildTitlesText(Profile profile, bool viewingOwnTitles)
         {
-            string header = viewingOwnTitles
-                ? "[b][u]Your Titles[/u][/b]\n"
-                : $"[b][u]{profile.displayName}'s Titles[/u][/b]\n";
+            string header = ReadoutText.Title("Titles of " + profile.displayName) + "\n";
 
             if (profile.titles == null || profile.titles.Count == 0)
             {
@@ -77,43 +75,31 @@ namespace FChatDicebot.BotCommands
             }
 
             StringBuilder sb = new StringBuilder(header);
-            DateTime Dat = DateTime.UtcNow;
-            sb.AppendLine($"Total titles: {profile.titles.Count}\n");
-            //version that includes dates
-            //sb.AppendLine($"Total titles: {profile.titles.Count}\n Dates are provided in Unified Time of Chateau. It is currently the " + Dat.Day + Utils.GetDaySuffix(Dat.Day) + " day, " + Dat.Month.ToString() + Utils.GetDaySuffix(Dat.Month) + " month, in year 1" + Dat.Year.ToString() +  " of our Queen");
+            sb.Append(ReadoutText.Row("Total titles", ReadoutText.Num(profile.titles.Count))).Append('\n');
 
-            for (int i = 0; i < profile.titles.Count; i++)
-            {
-                Title title = profile.titles[i];
-                string formattedTitle = title.GetFormattedTitle();
-                string grantedBy = title.IsSystemTitle ? "[i]Chateau[/i]" : MonDB.getDisplayName(title.givenBy);
-                string grantedDate = title.grantedTime.ToString("dd-MM-1yyyy");
+            // Every earned title, on one wrapped row. Was a manual four-space join that also
+            // left a trailing separator on the last entry.
+            sb.Append(ReadoutText.InlineSection("All titles", ReadoutDomain.Relationship,
+                profile.titles.Select(t => t.GetFormattedTitle()).ToList()));
 
-                sb.Append($"{formattedTitle}    ");
-                //version that includes dates
-                //sb.AppendLine($"{formattedTitle}    [sub]Granted by: {grantedBy} on {grantedDate}[/sub]");
-            }
-
-            // Show which titles are currently displayed
+            // Which of them the resident has pinned to their dossier. Only filled slots are
+            // listed: rendering all nine unconditionally meant a resident using two of them got
+            // seven numbered rows with nothing after the colon.
             if (profile.displayedTitleSlots != null)
             {
-                sb.AppendLine("");
-                sb.AppendLine("[u]Currently Displayed Titles[/u]");
-                int slotCount = 0;
-                foreach (int slot in profile.displayedTitleSlots)
+                List<string> displayed = new List<string>();
+                for (int i = 0; i < profile.displayedTitleSlots.Length; i++)
                 {
-                    slotCount++;
-                    sb.Append($"    {slotCount}: ");
-                    if (slot >= 0)
-                    {
-                        sb.Append(profile.titles[slot].GetFormattedTitle());
-                    }
+                    int slot = profile.displayedTitleSlots[i];
+                    if (slot < 0 || slot >= profile.titles.Count) continue;
+                    displayed.Add(ReadoutText.Row((i + 1).ToString(), profile.titles[slot].GetFormattedTitle()));
                 }
+                sb.Append(ReadoutText.InlineSection("Currently displayed", ReadoutDomain.Relationship, displayed));
             }
 
             if (viewingOwnTitles)
             {
-                sb.AppendLine("\n[sub]You can use !settitle {slot number} {\"title text in quotes\"} to set which titles display in your dossier (up to 9).[/sub]");
+                sb.Append(ReadoutText.Footer("You can use !settitle {slot number} {\"title text in quotes\"} to set which titles display in your dossier (up to 9)."));
             }
 
             return sb.ToString();

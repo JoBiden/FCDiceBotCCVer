@@ -40,11 +40,11 @@ namespace FChatDicebot.BotCommands
 
             if (!commandController.MessageCameFromChannel(address))
             {
-                bot.SendPrivateMessage("Chateau Contract has been online for " + DoubleTime.PrintTimeFromSeconds(onlineTime), address);
+                bot.SendPrivateMessage("Chateau Contract has been online for " + Model.ReadoutText.Num(DoubleTime.PrintTimeFromSeconds(onlineTime)), address);
             }
             else
             {
-                bot.SendMessageInChannel("Chateau Contract has been online for " + DoubleTime.PrintTimeFromSeconds(onlineTime), address);
+                bot.SendMessageInChannel("Chateau Contract has been online for " + Model.ReadoutText.Num(DoubleTime.PrintTimeFromSeconds(onlineTime)), address);
             }
         }
     }

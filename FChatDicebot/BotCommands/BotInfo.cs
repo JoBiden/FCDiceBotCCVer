@@ -39,14 +39,16 @@ namespace FChatDicebot.BotCommands
                 onlineTime = DoubleTime.GetCurrentTimestampSeconds() - bot.DiscordLoginTime;
             }
 
-            string resultMessageString = "Chateau Contract Bot was developed by [user]Queen Contract[/user] as an adaptation of Dice Bot, developed by [user]Ambitious Syndra[/user]"
-                + "\nCurrent version " + BotMain.Version
-                + "\nCurrently operating in " + channelsNumber + " channels."
-                + "\nOnline for " + DoubleTime.PrintTimeFromSeconds(onlineTime)
-                + "\nCurrent Game Sessions Active: " + (bot.DiceBot.GameSessions != null? bot.DiceBot.GameSessions.Count() : 0)
-                + "\nCurrent Chip Piles Recorded: " + (bot.DiceBot.ChipPiles != null ? bot.DiceBot.ChipPiles.Count() : 0)
-                + "\nCurrent Tables Recorded: " + (bot.SavedTables != null ? bot.SavedTables.Count() : 0)
-                + "\nFor a list of dice commands, use !dicehelp. See the profiles [user]Chateau Contract[/user] and [user]Dice Bot[/user] for more detailed information (this bot may not be up to date with Dice Bot)";
+            string resultMessageString = Model.ReadoutText.Title("Chateau Contract Bot")
+                + "\nDeveloped by [user]Queen Contract[/user] as an adaptation of Dice Bot, developed by [user]Ambitious Syndra[/user]"
+                + "\n" + Model.ReadoutText.Section("Status", Model.ReadoutDomain.Reference)
+                + "\n" + Model.ReadoutText.RowIndent + Model.ReadoutText.Row("Version", Model.ReadoutText.Num(BotMain.Version))
+                + "\n" + Model.ReadoutText.RowIndent + Model.ReadoutText.Row("Channels", Model.ReadoutText.Num(channelsNumber))
+                + "\n" + Model.ReadoutText.RowIndent + Model.ReadoutText.Row("Online For", Model.ReadoutText.Num(DoubleTime.PrintTimeFromSeconds(onlineTime)))
+                + "\n" + Model.ReadoutText.RowIndent + Model.ReadoutText.Row("Game Sessions Active", Model.ReadoutText.Num(bot.DiceBot.GameSessions != null ? bot.DiceBot.GameSessions.Count() : 0))
+                + "\n" + Model.ReadoutText.RowIndent + Model.ReadoutText.Row("Chip Piles Recorded", Model.ReadoutText.Num(bot.DiceBot.ChipPiles != null ? bot.DiceBot.ChipPiles.Count() : 0))
+                + "\n" + Model.ReadoutText.RowIndent + Model.ReadoutText.Row("Tables Recorded", Model.ReadoutText.Num(bot.SavedTables != null ? bot.SavedTables.Count() : 0))
+                + "\n" + Model.ReadoutText.Footer("For a list of dice commands, use !dicehelp. See the profiles [user]Chateau Contract[/user] and [user]Dice Bot[/user] for more detailed information (this bot may not be up to date with Dice Bot)");
 
             if (!commandController.MessageCameFromChannel(address))
             {

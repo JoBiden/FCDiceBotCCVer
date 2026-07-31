@@ -1,4 +1,4 @@
-using FChatDicebot;
+﻿using FChatDicebot;
 using FChatDicebot.BotCommands;
 using FChatDicebot.Database;
 using FChatDicebot.Model;
@@ -48,9 +48,9 @@ namespace FChatDicebot.Tests.Unit
 
             string text = ChateauBottles.BuildCollectionText(_database, profile, null, null);
 
-            Assert.Contains("[b]2 bottles[/b]", text);
+            Assert.Contains("[b]2[/b] bottles", text);
             Assert.Contains("#11, #12", text);
-            Assert.Contains(ChateauCurrency.StandardBottlePrice + " " + ChateauCurrency.SellPayoutCurrency + " each", text);
+            Assert.Contains(ReadoutText.Num(ChateauCurrency.StandardBottlePrice) + " " + ChateauCurrency.SellPayoutCurrency + " each", text);
         }
 
         [Fact]
@@ -78,9 +78,9 @@ namespace FChatDicebot.Tests.Unit
 
             string text = ChateauBottles.BuildCollectionText(_database, profile, null, null);
 
-            Assert.Contains("[b]1 bottle[/b]", text);
-            Assert.Contains("[b]" + ChateauCurrency.StandardBottlePrice + " "
-                + ChateauCurrency.SellPayoutCurrency + "[/b] if you choose to !sell", text);
+            Assert.Contains("[b]1[/b] bottle", text);
+            Assert.Contains(ReadoutText.Num(ChateauCurrency.StandardBottlePrice) + " "
+                + ChateauCurrency.SellPayoutCurrency + " if you choose to !sell", text);
         }
 
         [Fact]
@@ -93,7 +93,7 @@ namespace FChatDicebot.Tests.Unit
             string text = ChateauBottles.BuildCollectionText(_database, profile, null, null);
 
             Assert.DoesNotContain("0 bottles", text);
-            Assert.Contains("[b]1 empty[/b]", text);
+            Assert.Contains("[b]1[/b] empty", text);
             Assert.Contains("#12", text);
         }
 
@@ -109,7 +109,7 @@ namespace FChatDicebot.Tests.Unit
 
             string text = ChateauBottles.BuildCollectionText(_database, profile, null, null);
 
-            Assert.Contains("Empties: #12", text);
+            Assert.Contains(ReadoutText.Section("Empties", ReadoutDomain.Economy) + " #12", text);
         }
 
         [Fact]
@@ -119,7 +119,7 @@ namespace FChatDicebot.Tests.Unit
                 .WithMilkBottle(Bottle(11, "cum", "Bob", hour: 1))
                 .Build();
 
-            Assert.DoesNotContain("Empties:", ChateauBottles.BuildCollectionText(_database, profile, null, null));
+            Assert.DoesNotContain("Empties", ChateauBottles.BuildCollectionText(_database, profile, null, null));
         }
 
         [Fact]
@@ -161,8 +161,9 @@ namespace FChatDicebot.Tests.Unit
             string text = ChateauBottles.BuildCollectionText(_database, profile, null, null);
 
             // Three separate milkings collapse into one readable line.
+            // Title, lead-in, the one group line, footer.
             Assert.Contains("#11, #12, #13", text);
-            Assert.Equal(3, text.Split('\n').Length);
+            Assert.Equal(4, text.Split('\n').Length);
         }
 
         [Fact]
@@ -185,8 +186,8 @@ namespace FChatDicebot.Tests.Unit
 
             string line = ChateauBank.BuildCollectionLine(profile, ownAccount: true);
 
-            Assert.Contains("[b]1 bottle[/b]", line);
-            Assert.Contains("[b]1 empty[/b]", line);
+            Assert.Contains("[b]1[/b] bottle", line);
+            Assert.Contains("[b]1[/b] empty", line);
             Assert.Contains("!bottles", line);
         }
 

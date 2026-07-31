@@ -1,4 +1,4 @@
-using FChatDicebot.BotCommands;
+﻿using FChatDicebot.BotCommands;
 using FChatDicebot.Model;
 using FChatDicebot.Tests.Builders;
 using FChatDicebot.Tests.Fixtures;
@@ -336,7 +336,7 @@ namespace FChatDicebot.Tests.Unit
 
             // Assert
             Assert.NotEmpty(result);
-            Assert.Contains("Experience", result);
+            Assert.Contains("Days of experience", result);
             Assert.Contains("5", result);
             Assert.Contains("3", result);
         }
@@ -536,8 +536,8 @@ namespace FChatDicebot.Tests.Unit
 
             Assert.Contains("Currently employs", result);
             // Roles are pluralised by headcount and name their employees, mirroring Bonds.
-            Assert.Contains("[u]Maids:[/u] Worker 1, Worker 2", result);
-            Assert.Contains("[u]Cook:[/u] Other", result);
+            Assert.Contains(ReadoutText.RowIndent + "[u]Maids:[/u] Worker 1, Worker 2", result);
+            Assert.Contains(ReadoutText.RowIndent + "[u]Cook:[/u] Other", result);
             // Two roles is under the threshold, so nothing is hidden.
             Assert.DoesNotContain("[spoiler]", result);
         }
@@ -581,7 +581,7 @@ namespace FChatDicebot.Tests.Unit
             string result = InvokeBuildCurrentlyEmploysSection("Boss");
 
             // 7 roles is past the threshold: header and scale stay visible, detail collapses.
-            Assert.Contains("[b]Currently employs:[/b] 7 residents across 7 roles [spoiler]", result);
+            Assert.Contains(ReadoutText.Section("Currently employs", ReadoutDomain.Relationship) + " 7 residents across 7 roles [spoiler]", result);
             Assert.EndsWith("[/spoiler]\n", result);
             // Every employee is still present inside the spoiler — collapsing hides, never truncates.
             foreach (string job in jobs)
@@ -608,7 +608,7 @@ namespace FChatDicebot.Tests.Unit
 
             // Biggest team leads, and names within a role read alphabetically.
             Assert.True(result.IndexOf("Maids:") < result.IndexOf("Cook:"));
-            Assert.Contains("[u]Maids:[/u] Alice, Mabel, Zara", result);
+            Assert.Contains(ReadoutText.RowIndent + "[u]Maids:[/u] Alice, Mabel, Zara", result);
         }
 
         [Fact]
@@ -630,7 +630,7 @@ namespace FChatDicebot.Tests.Unit
 
             string result = InvokeBuildTitlesEarnedSection(updated);
 
-            Assert.Contains("Titles earned", result);
+            Assert.Contains("Titles Earned", result);
             Assert.Contains("3", result);
         }
 
@@ -646,7 +646,7 @@ namespace FChatDicebot.Tests.Unit
 
             string result = InvokeBuildMostAbundantCurrencySection(profile);
 
-            Assert.Contains("Most abundant currency", result);
+            Assert.Contains("Richest Currency", result);
             Assert.Contains("5", result);
             Assert.Contains("lustessence", result);
         }
@@ -793,8 +793,8 @@ namespace FChatDicebot.Tests.Unit
             string result = InvokeBuildJobExperienceSection(profile);
 
             Assert.Equal(1, result.Split('\n').Length - 1); // exactly one trailing newline
-            Assert.Contains("[u]Maid:[/u] 5", result);
-            Assert.Contains("[u]Cook:[/u] 3", result);
+            Assert.Contains("[u]Maid:[/u] [b]5[/b]", result);
+            Assert.Contains("[u]Cook:[/u] [b]3[/b]", result);
             Assert.DoesNotContain("[spoiler]", result);
         }
 
@@ -809,7 +809,7 @@ namespace FChatDicebot.Tests.Unit
 
             string result = InvokeBuildCasualInteractionsSection(profile);
 
-            Assert.EndsWith("10\n", result);
+            Assert.EndsWith("[b]10[/b]\n", result);
         }
 
         [Fact]
@@ -851,9 +851,9 @@ namespace FChatDicebot.Tests.Unit
 
             string result = InvokeBuildOffspringSection(profile, "TestUser");
 
-            Assert.StartsWith("[b]Offspring:[/b]", result);
-            Assert.Contains("[u]Sired:[/u] Ogres: 4", result);
-            Assert.Contains("[u]Birthed:[/u] Goblins: 5", result);
+            Assert.StartsWith(ReadoutText.Section("Offspring", ReadoutDomain.Record), result);
+            Assert.Contains("[u]Sired:[/u] Ogres: [b]4[/b]", result);
+            Assert.Contains("[u]Birthed:[/u] Goblins: [b]5[/b]", result);
             Assert.Equal(1, result.Split('\n').Length - 1);
         }
 
@@ -868,7 +868,7 @@ namespace FChatDicebot.Tests.Unit
 
             string result = InvokeBuildOffspringSection(profile, "TestUser");
 
-            Assert.Contains("[u]Birthed:[/u] Goblins: 5", result);
+            Assert.Contains("[u]Birthed:[/u] Goblins: [b]5[/b]", result);
             Assert.DoesNotContain("Sired", result);
         }
 
@@ -885,8 +885,8 @@ namespace FChatDicebot.Tests.Unit
 
             string result = InvokeBuildAtAGlanceSection(_fixture.Database.GetProfile("TestUser"));
 
-            Assert.Contains("[b]Titles earned:[/b] 1", result);
-            Assert.Contains("[b]Most abundant currency:[/b] 12 gold", result);
+            Assert.Contains("[u]Titles Earned:[/u] [b]1[/b]", result);
+            Assert.Contains("[u]Richest Currency:[/u] [b]12[/b] gold", result);
             Assert.Equal(1, result.Split('\n').Length - 1);
         }
 
@@ -964,7 +964,7 @@ namespace FChatDicebot.Tests.Unit
             // Employs is a roster now, so it sits with the relationship blocks rather than
             // among the numeric tallies.
             Assert.True(result.IndexOf("Currently employs") < result.IndexOf("Casual interactions"));
-            Assert.True(result.IndexOf("Casual interactions") < result.IndexOf("Days of [b]Experience[/b]"));
+            Assert.True(result.IndexOf("Casual interactions") < result.IndexOf("Days of experience"));
         }
 
         [Fact]

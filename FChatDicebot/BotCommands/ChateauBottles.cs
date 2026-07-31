@@ -79,47 +79,53 @@ namespace FChatDicebot.BotCommands
             }
 
             var lines = new List<string>();
+            // "Bottle Collection" rather than bare "Collection" so it doesn't read as a
+            // collection of residents.
+            lines.Add(ReadoutText.Title("Bottle Collection of " + profile.displayName));
 
             // A resident who has drunk everything they own still has a collection worth
             // showing, but "you're holding 0 bottles" would be a strange way to open it.
             if (full.Count == 0)
             {
                 string emptyWord = empties.Count == 1 ? "empty" : "empties";
-                lines.Add("Nothing left to drink, but our records show you're keeping [b]"
-                    + empties.Count + " " + emptyWord + "[/b]:");
-                lines.Add(BottleInventory.FormatSerials(
+                lines.Add("Nothing left to drink, but our records show you're keeping "
+                    + ReadoutText.Num(empties.Count) + " " + emptyWord + ":");
+                lines.Add(ReadoutText.RowIndent + BottleInventory.FormatSerials(
                     empties.Select(b => b.serial), ChateauCurrency.BottleSerialDisplayCap));
-                lines.Add("Go !milk a willing resident if you'd like something to drink.");
+                lines.Add(ReadoutText.Footer("Go !milk a willing resident if you'd like something to drink."));
                 return string.Join("\n", lines);
             }
 
             string bottleWord = full.Count == 1 ? "bottle" : "bottles";
-            lines.Add("Our records show you're holding [b]" + full.Count + " " + bottleWord + "[/b]:");
+            lines.Add("Our records show you're holding " + ReadoutText.Num(full.Count) + " " + bottleWord + ":");
 
             int totalValue = 0;
             foreach (var group in BottleInventory.Group(full))
             {
                 int pricePer = ChateauCurrency.GetSellPricePerBottle(group.Substance, group.CorruptionTag);
                 totalValue += pricePer * group.Count;
-                lines.Add(BuildGroupLine(database, group, pricePer));
+                lines.Add(ReadoutText.RowIndent + BuildGroupLine(database, group, pricePer));
             }
 
             if (empties.Count > 0)
             {
-                lines.Add("Empties: " + BottleInventory.FormatSerials(
-                    empties.Select(b => b.serial), ChateauCurrency.BottleSerialDisplayCap));
+                lines.Add(ReadoutText.Section("Empties", ReadoutDomain.Economy) + " "
+                    + BottleInventory.FormatSerials(
+                        empties.Select(b => b.serial), ChateauCurrency.BottleSerialDisplayCap));
             }
 
-            lines.Add("That's [b]" + totalValue + " " + ChateauCurrency.SellPayoutCurrency
-                + "[/b] if you choose to !sell the lot to the Chateau on the cheap, but someone might be"
-                + " willing to let you !pay them with a few bottles... or you could always have a !drink.");
+            lines.Add(ReadoutText.Footer("That's " + ReadoutText.Num(totalValue) + " " + ChateauCurrency.SellPayoutCurrency
+                + " if you choose to !sell the lot to the Chateau on the cheap, but someone might be"
+                + " willing to let you !pay them with a few bottles... or you could always have a !drink."));
 
             return string.Join("\n", lines);
         }
 
         private static string BuildGroupLine(IChateauDatabase database, BottleInventory.BottleGroup group, int pricePer)
         {
-            string line = "[b]" + Utils.SubstanceToText(group.Substance) + "[/b] from "
+            // Substance is the row's label, so it takes [u] like every other labelled row;
+            // corrupt/pure stay bold because they're a state flag, not a heading.
+            string line = ReadoutText.Label(ReadoutText.CapitalizePastTags(Utils.SubstanceToText(group.Substance))) + " from "
                 + DonorText(database, group.SourceName);
 
             if (group.CorruptionTag == ChateauCurrency.CorruptTag)
@@ -131,8 +137,10 @@ namespace FChatDicebot.BotCommands
                 line += ", [b]pure[/b]";
             }
 
-            line += " | " + BottleInventory.FormatSerials(group.Serials, ChateauCurrency.BottleSerialDisplayCap)
-                + " | " + pricePer + " " + ChateauCurrency.SellPayoutCurrency + " each";
+            line += ReadoutText.InlineSeparator
+                + BottleInventory.FormatSerials(group.Serials, ChateauCurrency.BottleSerialDisplayCap)
+                + ReadoutText.InlineSeparator
+                + ReadoutText.Num(pricePer) + " " + ChateauCurrency.SellPayoutCurrency + " each";
             return line;
         }
 

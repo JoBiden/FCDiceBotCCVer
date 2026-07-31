@@ -160,68 +160,20 @@ namespace FChatDicebot.BotCommands
         // (job -> number) was inline while "Currently employs" (job -> number) was one line
         // per job, which is what made a heavy employer's dossier enormous.
         //
-        // A Lines block longer than SpoilerLineThreshold collapses into a [spoiler], with a
-        // count summary left visible so the reader knows the scale without opening it.
-        // Inline blocks are one line by construction and never collapse.
+        // Both shapes now come from ReadoutText, shared with every other readout, so the
+        // dossier's header/label/number conventions can't drift from !bank's or !statistics'
+        // again. Section colours come from the ReadoutDomain passed at each call site.
         // ---------------------------------------------------------------------------
 
-        /// <summary>Row count above which a Lines-shaped section collapses into a spoiler.</summary>
-        public const int SpoilerLineThreshold = 6;
+        /// <summary>
+        /// Row count above which a Lines-shaped section collapses into a spoiler. Forwards to
+        /// the shared grammar; kept as a member so callers and tests can name it on the class
+        /// that owns the behaviour they're exercising.
+        /// </summary>
+        public const int SpoilerLineThreshold = ReadoutText.SpoilerLineThreshold;
 
         /// <summary>Gap between entries in an Inline-shaped section.</summary>
-        private const string InlineSeparator = "   ";
-
-        /// <summary>
-        /// Renders an Inline section: one wrapped row of "label: value" cells under a header.
-        /// <paramref name="header"/> carries its own BBCode and trailing colon. Returns empty
-        /// for an empty cell list so callers can append unconditionally.
-        /// </summary>
-        private static string RenderInlineSection(string header, IList<string> cells)
-        {
-            if (cells == null || cells.Count == 0) return string.Empty;
-            return header + " " + string.Join(InlineSeparator, cells) + "\n";
-        }
-
-        /// <summary>
-        /// Renders a Lines section: one line per row under a header. Past
-        /// <see cref="SpoilerLineThreshold"/> rows the body is wrapped in a spoiler and
-        /// <paramref name="summary"/> (e.g. "23 residents across 11 roles") is shown beside
-        /// the header so the collapsed block still reports its own size.
-        /// </summary>
-        private static string RenderLineSection(string header, string summary, IList<string> rows)
-        {
-            if (rows == null || rows.Count == 0) return string.Empty;
-
-            StringBuilder sb = new StringBuilder();
-            sb.Append(header);
-            if (rows.Count > SpoilerLineThreshold)
-            {
-                if (!string.IsNullOrEmpty(summary))
-                {
-                    sb.Append(' ').Append(summary);
-                }
-                sb.Append(" [spoiler]\n");
-                sb.Append(string.Join("\n", rows));
-                sb.Append("[/spoiler]\n");
-            }
-            else
-            {
-                sb.Append('\n');
-                sb.Append(string.Join("\n", rows));
-                sb.Append('\n');
-            }
-            return sb.ToString();
-        }
-
-        /// <summary>
-        /// Joins the cluster strings that actually produced content, separating each with a
-        /// blank line. Skipping empties is what stops a resident with no active curses from
-        /// getting a stray gap where the state cluster would have been.
-        /// </summary>
-        private static string JoinClusters(params string[] clusters)
-        {
-            return string.Join("\n", clusters.Where(c => !string.IsNullOrEmpty(c)));
-        }
+        private const string InlineSeparator = ReadoutText.InlineSeparator;
 
         /// <summary>
         /// Constructor for dependency injection (for testing)
@@ -323,10 +275,10 @@ namespace FChatDicebot.BotCommands
             if (jobSection.Length == 0 && state.Length == 0 && relationships.Length == 0
                 && tallies.Length == 0 && lately.Length == 0)
             {
-                return identity + "\n[sub]A recent arrival to the Chateau. There doesn't seem to be much in their file... there will be more to read once they interact with others. Maybe you should give them a !kiss[/sub]";
+                return identity + "\n" + ReadoutText.Small("A recent arrival to the Chateau. There doesn't seem to be much in their file... there will be more to read once they interact with others. Maybe you should give them a !kiss");
             }
 
-            return JoinClusters(identity, state, relationships, tallies, lately);
+            return ReadoutText.JoinClusters(identity, state, relationships, tallies, lately);
         }
 
         /// <summary>
@@ -335,7 +287,6 @@ namespace FChatDicebot.BotCommands
         private string BuildNameTitleSpecialties(Profile profile, string targetUser)
         {
             StringBuilder sb = new StringBuilder();
-            sb.Append("[b][u]");
             sb.Append(profile.displayName);
 
             // Compose the header parts in order: optional monster, optional specialist titles.
@@ -375,57 +326,55 @@ namespace FChatDicebot.BotCommands
                 specialistTitles.Add(consequenceSpecialist);
             }
 
-            // Render: "{name} the {monster}; {specialty1} and {specialty2} Specialist"
-            // Each portion is added only when populated; separators glue exactly the parts
-            // present so no trailing "; " or stray "the " can appear.
-            bool anyAfterName = !string.IsNullOrEmpty(monsterPart) || specialistTitles.Count > 0;
-            if (anyAfterName)
-            {
-                sb.Append(" the ");
-            }
+            // Title line is "{name} the {monster}"; the specialist run moves to its own line
+            // below. The deferred-separator handling that stopped a monsterless profile
+            // trailing "the " is preserved — it just has one fewer part to glue now.
             if (!string.IsNullOrEmpty(monsterPart))
             {
-                sb.Append(monsterPart);
-                if (specialistTitles.Count > 0)
+                sb.Append(" the ").Append(monsterPart);
+            }
+
+            // "{specialty1} and {specialty2} Specialist", built the same way as before.
+            StringBuilder specialistRun = new StringBuilder();
+            for (int i = 0; i < specialistTitles.Count; i++)
+            {
+                specialistRun.Append(specialistTitles[i]);
+
+                int remaining = specialistTitles.Count - i;
+                if (remaining == 1)
                 {
-                    sb.Append("; ");
+                    specialistRun.Append(" Specialist");
+                }
+                else if (remaining == 2)
+                {
+                    specialistRun.Append(" and ");
+                }
+                else
+                {
+                    specialistRun.Append(", ");
                 }
             }
+
+            // The name-and-monster line is the readout's Title and takes bold-underline; the
+            // specialist run and the displayed titles get their own lines below it. Previously
+            // all three were inside one [b][u]...[/u][/b], so a decorated resident opened their
+            // dossier with a four-line underlined block that swamped everything under it.
+            StringBuilder header = new StringBuilder();
+            header.Append(ReadoutText.Title(sb.ToString()));
+
             if (specialistTitles.Count > 0)
             {
-                for (int i = 0; i < specialistTitles.Count; i++)
-                {
-                    sb.Append(specialistTitles[i]);
-
-                    int remaining = specialistTitles.Count - i;
-                    if (remaining == 1)
-                    {
-                        sb.Append(" Specialist");
-                    }
-                    else if (remaining == 2)
-                    {
-                        sb.Append(" and ");
-                    }
-                    else
-                    {
-                        sb.Append(", ");
-                    }
-                }
+                header.Append('\n').Append(ReadoutText.Small(specialistRun.ToString()));
             }
 
-            // Add displayed titles
             string displayedTitles = Utils.GetDisplayedTitlesText(profile);
             if (!string.IsNullOrEmpty(displayedTitles))
             {
-                if (anyAfterName)
-                {
-                    sb.AppendLine("");
-                }
-                sb.Append(displayedTitles);
+                header.Append('\n').Append(displayedTitles);
             }
 
-            sb.Append("[/u][/b]\n");
-            return sb.ToString();
+            header.Append('\n');
+            return header.ToString();
         }
 
         /// <summary>
@@ -457,11 +406,13 @@ namespace FChatDicebot.BotCommands
                 }
             }
 
+            // Bold only: bold-underline is reserved for the readout's Title line, so a job
+            // no longer competes with the resident's own name for the eye.
             sb.Append("as ");
             sb.Append(Utils.AnOrA(job));
-            sb.Append(" [b][u]");
-            sb.Append(job);
-            sb.Append("[/u][/b]\n");
+            sb.Append(' ');
+            sb.Append("[b]" + job + "[/b]");
+            sb.Append(".\n");
 
             return sb.ToString();
         }
@@ -481,7 +432,7 @@ namespace FChatDicebot.BotCommands
             }
             // Bare count: the header already names what's being counted, so "7 curses" here
             // would just repeat itself.
-            return RenderLineSection("[b]Active Curses:[/b]", rows.Count.ToString(), rows);
+            return ReadoutText.LineSection("Active curses", ReadoutDomain.Affliction, rows.Count.ToString(), rows);
         }
 
         /// <summary>
@@ -503,8 +454,8 @@ namespace FChatDicebot.BotCommands
                 }
                 rows.Add(row);
             }
-            // Bare count, as with Active Curses — the header already says what these are.
-            return RenderLineSection("[b]Active Parasites:[/b]", rows.Count.ToString(), rows);
+            // Bare count, as with Active curses — the header already says what these are.
+            return ReadoutText.LineSection("Active parasites", ReadoutDomain.Affliction, rows.Count.ToString(), rows);
         }
 
         /// <summary>
@@ -516,10 +467,11 @@ namespace FChatDicebot.BotCommands
         {
             var breaks = BreakInstance.LoadAll(profile);
             List<string> cells = breaks
-                .Select(b => "[u]" + Utils.Capitalize(Utils.BodypartToText(b.Part ?? string.Empty)) + ":[/u] "
-                    + b.Severity + (b.Severity == 1 ? " day left" : " days left"))
+                .Select(b => ReadoutText.Row(
+                    Utils.Capitalize(Utils.BodypartToText(b.Part ?? string.Empty)),
+                    ReadoutText.Num(b.Severity) + (b.Severity == 1 ? " day left" : " days left")))
                 .ToList();
-            return RenderInlineSection("[b]Active Breaks:[/b]", cells);
+            return ReadoutText.InlineSection("Active breaks", ReadoutDomain.Affliction, cells);
         }
 
         /// <summary>
@@ -538,10 +490,11 @@ namespace FChatDicebot.BotCommands
                 string appliedByDisplay = _database.GetDisplayName(s.AppliedBy) ?? s.AppliedBy;
                 string scentPhrase = ScentText.ScentPhrase(scentIdentifier, s.Scent, appliedByDisplay);
 
-                cells.Add("[u]" + Utils.Capitalize(scentPhrase) + ":[/u] "
-                    + s.Layers + (s.Layers == 1 ? " layer" : " layers"));
+                cells.Add(ReadoutText.Row(
+                    Utils.Capitalize(scentPhrase),
+                    ReadoutText.Num(s.Layers) + (s.Layers == 1 ? " layer" : " layers")));
             }
-            return RenderInlineSection("[b]Active Scents:[/b]", cells);
+            return ReadoutText.InlineSection("Active scents", ReadoutDomain.Affliction, cells);
         }
 
         /// <summary>
@@ -565,7 +518,7 @@ namespace FChatDicebot.BotCommands
             string birthed = BuildBirthedSection(profile);
             if (!string.IsNullOrEmpty(sired)) cells.Add(sired);
             if (!string.IsNullOrEmpty(birthed)) cells.Add(birthed);
-            return RenderInlineSection("[b]Offspring:[/b]", cells);
+            return ReadoutText.InlineSection("Offspring", ReadoutDomain.Record, cells);
         }
 
         /// <summary>
@@ -597,9 +550,11 @@ namespace FChatDicebot.BotCommands
             }
             List<string> cells = byPlant
                 .OrderByDescending(kv => kv.Value).ThenBy(kv => kv.Key)
-                .Select(kv => "[u]" + (kv.Value == 1 ? Utils.Capitalize(kv.Key) : Utils.Capitalize(kv.Key) + "s") + ":[/u] " + kv.Value)
+                .Select(kv => ReadoutText.Row(
+                    kv.Value == 1 ? Utils.Capitalize(kv.Key) : Utils.Capitalize(kv.Key) + "s",
+                    ReadoutText.Num(kv.Value)))
                 .ToList();
-            return RenderInlineSection("[b]Has personally planted:[/b]", cells);
+            return ReadoutText.InlineSection("Has personally planted", ReadoutDomain.Record, cells);
         }
 
         /// <summary>
@@ -634,13 +589,14 @@ namespace FChatDicebot.BotCommands
             // employer lead; names within a role are alphabetical for a stable read.
             List<string> rows = byJob
                 .OrderByDescending(kv => kv.Value.Count).ThenBy(kv => kv.Key)
-                .Select(kv => "[u]" + (kv.Value.Count == 1 ? Utils.JobToText(kv.Key) : Utils.JobToPlural(kv.Key)) + ":[/u] "
-                    + string.Join(", ", kv.Value.OrderBy(n => n, StringComparer.OrdinalIgnoreCase)))
+                .Select(kv => ReadoutText.Row(
+                    kv.Value.Count == 1 ? Utils.JobToText(kv.Key) : Utils.JobToPlural(kv.Key),
+                    string.Join(", ", kv.Value.OrderBy(n => n, StringComparer.OrdinalIgnoreCase))))
                 .ToList();
 
             int totalEmployees = byJob.Sum(kv => kv.Value.Count);
             string summary = totalEmployees + " residents across " + rows.Count + " roles";
-            return RenderLineSection("[b]Currently employs:[/b]", summary, rows);
+            return ReadoutText.LineSection("Currently employs", ReadoutDomain.Relationship, summary, rows);
         }
 
         /// <summary>
@@ -651,13 +607,17 @@ namespace FChatDicebot.BotCommands
         {
             int count = profile.titles?.Count ?? 0;
             if (count <= 0) return string.Empty;
-            return "[b]Titles earned:[/b] " + count;
+            return ReadoutText.Row("Titles Earned", ReadoutText.Num(count));
         }
 
         /// <summary>
-        /// Two standalone one-line facts — titles earned and wealthiest currency — sharing a
-        /// row so they read as an at-a-glance stat line rather than owning a line each.
-        /// Either half renders alone when the other is absent.
+        /// Three standalone one-line facts — titles earned, wealthiest currency and bottle
+        /// count — sharing a row so they read as an at-a-glance stat line rather than owning a
+        /// line each. Any one renders alone when the others are absent.
+        ///
+        /// These used to be bare "[b]Label:[/b] value" fragments with no header of their own,
+        /// which made three unrelated facts look like three separate sections. They're cells
+        /// now, under one header like every other inline block.
         /// </summary>
         private string BuildAtAGlanceSection(Profile profile)
         {
@@ -668,8 +628,7 @@ namespace FChatDicebot.BotCommands
             if (!string.IsNullOrEmpty(titles)) cells.Add(titles);
             if (!string.IsNullOrEmpty(currency)) cells.Add(currency);
             if (!string.IsNullOrEmpty(bottled)) cells.Add(bottled);
-            if (cells.Count == 0) return string.Empty;
-            return string.Join(InlineSeparator, cells) + "\n";
+            return ReadoutText.InlineSection("At a glance", ReadoutDomain.Economy, cells);
         }
 
         /// <summary>
@@ -690,17 +649,17 @@ namespace FChatDicebot.BotCommands
             if (full.Count > 0)
             {
                 var breakdown = BottleInventory.CountsBySubstance(full)
-                    .Select(kv => kv.Value + " " + Utils.SubstanceToText(kv.Key))
+                    .Select(kv => kv.Value + " " + ReadoutText.CapitalizePastTags(Utils.SubstanceToText(kv.Key)))
                     .ToList();
-                parts.Add(full.Count + " bottle" + (full.Count == 1 ? "" : "s")
+                parts.Add(ReadoutText.Num(full.Count) + " bottle" + (full.Count == 1 ? "" : "s")
                     + (breakdown.Count > 0 ? " (" + string.Join(", ", breakdown) + ")" : ""));
             }
             if (emptyCount > 0)
             {
-                parts.Add(emptyCount + " empt" + (emptyCount == 1 ? "y" : "ies"));
+                parts.Add(ReadoutText.Num(emptyCount) + " empt" + (emptyCount == 1 ? "y" : "ies"));
             }
 
-            return "[b]Bottled:[/b] " + string.Join(" and ", parts);
+            return ReadoutText.Row("Bottled", string.Join(" and ", parts));
         }
 
         /// <summary>
@@ -716,7 +675,7 @@ namespace FChatDicebot.BotCommands
             int max = positive.Max(kv => kv.Value);
             var top = positive.Where(kv => kv.Value == max).Select(kv => kv.Key).OrderBy(k => k).ToList();
             string currencyText = string.Join("/", top);
-            return "[b]Most abundant currency:[/b] " + max + " " + currencyText;
+            return ReadoutText.Row("Richest Currency", ReadoutText.Num(max) + " " + currencyText);
         }
 
         /// <summary>
@@ -732,10 +691,10 @@ namespace FChatDicebot.BotCommands
             {
                 if (entry.Value <= 0) continue;
                 string monster = entry.Value == 1 ? Utils.Capitalize(entry.Key) : Utils.Capitalize(entry.Key) + "s";
-                parts.Add(monster + ": " + entry.Value);
+                parts.Add(monster + ": " + ReadoutText.Num(entry.Value));
             }
             if (parts.Count == 0) return string.Empty;
-            return "[u]" + label + ":[/u] " + string.Join(", ", parts);
+            return ReadoutText.Row(label, string.Join(", ", parts));
         }
 
         /// <summary>
@@ -771,9 +730,9 @@ namespace FChatDicebot.BotCommands
 
             List<string> cells = casualCounts
                 .Where(c => CountDisplayNames.ContainsKey(c.Key))
-                .Select(c => "[u]" + CountDisplayNames[c.Key] + ":[/u] " + c.Value)
+                .Select(c => ReadoutText.Row(CountDisplayNames[c.Key], ReadoutText.Num(c.Value)))
                 .ToList();
-            return RenderInlineSection("[b]Casual interactions:[/b]", cells);
+            return ReadoutText.InlineSection("Casual interactions", ReadoutDomain.Record, cells);
         }
 
         /// <summary>
@@ -810,13 +769,13 @@ namespace FChatDicebot.BotCommands
             List<string> cells = new List<string>();
             foreach (var entry in summed)
             {
-                cells.Add("[u]" + entry.Key + ":[/u] " + entry.Value);
+                cells.Add(ReadoutText.Row(entry.Key, ReadoutText.Num(entry.Value)));
             }
             foreach (var entry in individual.OrderBy(kv => CountDisplayNames[kv.Key]))
             {
-                cells.Add("[u]" + CountDisplayNames[entry.Key] + ":[/u] " + entry.Value);
+                cells.Add(ReadoutText.Row(CountDisplayNames[entry.Key], ReadoutText.Num(entry.Value)));
             }
-            return RenderInlineSection("[b]Notable counts:[/b]", cells);
+            return ReadoutText.InlineSection("Notable counts", ReadoutDomain.Record, cells);
         }
 
         /// <summary>
@@ -856,12 +815,14 @@ namespace FChatDicebot.BotCommands
                     totalMarks += symbols.Count;
                     // BodypartToText returns a bare lowercase key ("neck"); every other
                     // labelled row in the dossier capitalises, so capitalise here too.
-                    rows.Add("[u]" + Utils.Capitalize(Utils.BodypartToText(bodyPart)) + ":[/u] "
-                        + string.Join(" ", symbols));
+                    rows.Add(ReadoutText.Row(
+                        Utils.Capitalize(Utils.BodypartToText(bodyPart)),
+                        string.Join(" ", symbols)));
                 }
             }
 
-            return RenderLineSection("Currently known [b]Marks[/b]:", totalMarks + " across " + rows.Count + " places", rows);
+            return ReadoutText.LineSection("Marks", ReadoutDomain.Relationship,
+                totalMarks + " across " + rows.Count + " places", rows);
         }
 
         /// <summary>
@@ -908,13 +869,15 @@ namespace FChatDicebot.BotCommands
                         }
 
                         totalBonds += displayNames.Count;
-                        rows.Add("[u]" + Utils.Capitalize(Utils.BondToPlural(bondType, isInitiated)) + ":[/u] "
-                            + string.Join(", ", displayNames));
+                        rows.Add(ReadoutText.Row(
+                            Utils.Capitalize(Utils.BondToPlural(bondType, isInitiated)),
+                            string.Join(", ", displayNames)));
                     }
                 }
             }
 
-            return RenderLineSection("Currently known [b]Bonds[/b]:", totalBonds + " across " + rows.Count + " kinds", rows);
+            return ReadoutText.LineSection("Bonds", ReadoutDomain.Relationship,
+                totalBonds + " across " + rows.Count + " kinds", rows);
         }
 
         /// <summary>
@@ -928,9 +891,9 @@ namespace FChatDicebot.BotCommands
             }
 
             List<string> cells = profile.jobExperience
-                .Select(jobExp => "[u]" + Utils.JobToText(jobExp.Key) + ":[/u] " + jobExp.Value)
+                .Select(jobExp => ReadoutText.Row(Utils.JobToText(jobExp.Key), ReadoutText.Num(jobExp.Value)))
                 .ToList();
-            return RenderInlineSection("Days of [b]Experience[/b] working as...", cells);
+            return ReadoutText.InlineSection("Days of experience", ReadoutDomain.Economy, cells);
         }
 
         /// <summary>
@@ -953,12 +916,10 @@ namespace FChatDicebot.BotCommands
                 }
             }
 
-            StringBuilder sb = new StringBuilder();
-            sb.Append("[b]Last reported:[/b]\n");
-            sb.Append(Utils.GetInteractionDescription(mostRecent));
-            sb.Append("\n");
-
-            return sb.ToString();
+            // One line rather than two: the description is a single short sentence, so the
+            // header owned an entire line to introduce a fragment shorter than itself.
+            return ReadoutText.Section("Last reported", ReadoutDomain.None) + " "
+                + Utils.GetInteractionDescription(mostRecent) + "\n";
         }
 
         /// <summary>
@@ -990,12 +951,8 @@ namespace FChatDicebot.BotCommands
                 }
             }
 
-            StringBuilder sb = new StringBuilder();
-            sb.Append("[b]Last seen:[/b]\n");
-            sb.Append(Utils.GetInteractionDescription(mostRecent));
-            sb.Append("\n");
-
-            return sb.ToString();
+            return ReadoutText.Section("Last seen", ReadoutDomain.None) + " "
+                + Utils.GetInteractionDescription(mostRecent) + "\n";
         }
 
         /// <summary>

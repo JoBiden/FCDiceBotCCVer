@@ -1,4 +1,4 @@
-using FChatDicebot.BotCommands.Base;
+﻿using FChatDicebot.BotCommands.Base;
 using FChatDicebot.BotCommands.Support;
 using FChatDicebot.Model;
 using System.Collections.Generic;
@@ -48,13 +48,17 @@ namespace FChatDicebot.BotCommands
                 return "Nothing has ever been planted in the Chateau gardens. The earth waits for its first !plant.";
             }
             var sb = new System.Text.StringBuilder();
+            sb.Append(ReadoutText.Title("The Chateau Gardens")).Append('\n');
             sb.Append("Plants ever cultivated in the Chateau gardens:\n");
             foreach (var entry in counts.OrderByDescending(kv => kv.Value).ThenBy(kv => kv.Key))
             {
-                sb.Append("  ").Append(Utils.Capitalize(entry.Key)).Append(": ")
-                  .Append(entry.Value.ToString("N0", CultureInfo.InvariantCulture)).Append('\n');
+                sb.Append(ReadoutText.RowIndent)
+                  .Append(ReadoutText.Row(Utils.Capitalize(entry.Key),
+                      ReadoutText.Num(entry.Value.ToString("N0", CultureInfo.InvariantCulture))))
+                  .Append('\n');
             }
-            return sb.ToString().TrimEnd('\n');
+            sb.Append(ReadoutText.Footer("See !statistics for the Chateau-wide overview."));
+            return sb.ToString();
         }
     }
 }

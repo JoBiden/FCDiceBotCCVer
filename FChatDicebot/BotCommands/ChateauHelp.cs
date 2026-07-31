@@ -217,20 +217,19 @@ namespace FChatDicebot.BotCommands
         {
             StringBuilder sb = new StringBuilder();
 
-            // Command name and aliases
-            sb.Append("[b]!");
-            sb.Append(cmd.Name);
-            sb.Append("[/b]");
+            // Command name and aliases. The name is this readout's Title line.
+            sb.Append(ReadoutText.Title("!" + cmd.Name));
 
             if (cmd.Aliases != null && cmd.Aliases.Length > 0)
             {
-                sb.Append("[sub]");
-                sb.Append(string.Join(", ", cmd.Aliases.Select(a => "!" + a)));
-                sb.Append("[/sub]");
+                sb.Append(' ');
+                sb.Append(ReadoutText.Small(string.Join(", ", cmd.Aliases.Select(a => "!" + a))));
             }
             sb.AppendLine("");
 
-            // Category
+            // Category. These colours are deliberately NOT the ReadoutDomain palette: the tier
+            // line is a stoplight (green -> yellow -> orange -> red) reading as escalating
+            // seriousness, which is worth more here than palette consistency. Owner-confirmed.
             if (!string.IsNullOrEmpty(cmd.Category))
             {
                 switch (cmd.Category)
@@ -275,12 +274,12 @@ namespace FChatDicebot.BotCommands
                 sb.AppendLine("");
             }
 
-            // Usage
+            // Usage. Field headings are Reference-domain sections (purple), consistent across
+            // every field below.
             if (!string.IsNullOrEmpty(cmd.Usage))
             {
-                sb.AppendLine("[u]Usage:[/u]");
-                sb.AppendLine(cmd.Usage);
-                sb.AppendLine("");
+                sb.AppendLine(ReadoutText.Section("Usage", ReadoutDomain.Reference));
+                sb.AppendLine(Indent(cmd.Usage));
             }
 
             // Identifier list (if applicable)
@@ -289,11 +288,11 @@ namespace FChatDicebot.BotCommands
                 List<Model.Identifier> identifiers = MonDB.getIdentifiers(cmd.IdentifierCategory);
                 if (identifiers != null && identifiers.Count > 0)
                 {
-                    sb.Append("[u]Available ");
-                    sb.Append(cmd.IdentifierCategory.EndsWith("y") ? (cmd.IdentifierCategory.TrimEnd('y') + "ie") : cmd.IdentifierCategory);
-                    sb.AppendLine("s:[/u]");
-                    sb.AppendLine(Utils.sortedListDisplayText(identifiers.Select(i => i.type).ToList()));
-                    sb.AppendLine("");
+                    string categoryPlural = (cmd.IdentifierCategory.EndsWith("y")
+                        ? cmd.IdentifierCategory.TrimEnd('y') + "ie"
+                        : cmd.IdentifierCategory) + "s";
+                    sb.AppendLine(ReadoutText.Section("Available " + categoryPlural, ReadoutDomain.Reference));
+                    sb.AppendLine(Indent(Utils.sortedListDisplayText(identifiers.Select(i => i.type).ToList())));
                 }
             }
 
@@ -314,44 +313,49 @@ namespace FChatDicebot.BotCommands
             }
             if (!string.IsNullOrEmpty(cooldownDuration))
             {
-                sb.Append("[u]Cooldown:[/u] ");
-                sb.Append(cooldownDuration);
+                sb.Append(ReadoutText.Section("Cooldown", ReadoutDomain.Reference)).Append(' ');
+                sb.Append(ReadoutText.Num(cooldownDuration));
                 if (!string.IsNullOrEmpty(cooldownAppliesTo))
                 {
-                    sb.Append(" (applies to ");
-                    sb.Append(cooldownAppliesTo);
-                    sb.Append(")");
+                    sb.Append(' ').Append(ReadoutText.Small("(applies to " + cooldownAppliesTo + ")"));
                 }
                 if (cmd.Category == "Casual Interaction")
                 {
-                    sb.Append(" [sub](Casual command cooldowns are only for incrementing dossier counts, and can still be performed at any time)[/sub]");
+                    sb.Append(' ').Append(ReadoutText.Small("(Casual command cooldowns are only for incrementing dossier counts, and can still be performed at any time)"));
                 }
                 else if (cmd.Category == "Involved Interaction")
                 {
-                    sb.Append(" [sub](Involved command cooldowns are only for incrementing dossier counts, and can still be performed at any time[/sub])");
+                    // Closing bracket used to sit outside the [sub], rendering as a stray ")".
+                    sb.Append(' ').Append(ReadoutText.Small("(Involved command cooldowns are only for incrementing dossier counts, and can still be performed at any time)"));
                 }
-                sb.AppendLine("\n");
+                sb.AppendLine("");
             }
 
             // Channel requirement
-            if (cmd.RequireChannel)
-            {
-                sb.Append("[u]Channel Required:[/u] Yes\n\n");
-            }
-            else
-            {
-                sb.Append("[u]Channel Required:[/u] No\n\n");
-            }
+            sb.Append(ReadoutText.Section("Channel required", ReadoutDomain.Reference))
+              .Append(cmd.RequireChannel ? " Yes\n" : " No\n");
 
             // Related commands
             if (cmd.RelatedCommands != null && cmd.RelatedCommands.Length > 0)
             {
-                sb.Append("[u]Related Commands:[/u] ");
-                sb.Append(string.Join(", ", cmd.RelatedCommands.Select(c => "!" + c)));
+                sb.Append(ReadoutText.Footer("Related commands: "
+                    + string.Join(", ", cmd.RelatedCommands.Select(c => "!" + c))));
                 sb.Append("\n");
             }
 
             return sb.ToString();
+        }
+
+        /// <summary>
+        /// Indents every line of a multi-line help field so it sits under its section header
+        /// the way rows do in the other readouts. <c>Usage</c> is frequently multi-line
+        /// ("!bank\nor\n!bank [user]...[/user]"), so this can't just prepend once.
+        /// </summary>
+        private static string Indent(string text)
+        {
+            if (string.IsNullOrEmpty(text)) return text;
+            return ReadoutText.RowIndent
+                + text.Replace("\n", "\n" + ReadoutText.RowIndent);
         }
     }
 }

@@ -59,16 +59,20 @@ namespace FChatDicebot.BotCommands
             }
 
             var sb = new System.Text.StringBuilder();
+            sb.Append(ReadoutText.Title("Monsterkind of the Chateau")).Append('\n');
             sb.Append("Currently dwelling in the Chateau as monsters:\n");
             var ordered = bySpecies.OrderByDescending(kv => kv.Value.Count).ThenBy(kv => kv.Key);
             foreach (var entry in ordered)
             {
                 entry.Value.Sort();
-                sb.Append("  ").Append(Utils.Capitalize(entry.Key)).Append(": ")
-                  .Append(entry.Value.Count).Append(" — ")
-                  .Append(string.Join(", ", entry.Value)).Append('\n');
+                // Em-dash removed per the style guide's "no em-dashes in user-facing strings".
+                sb.Append(ReadoutText.RowIndent)
+                  .Append(ReadoutText.Row(Utils.Capitalize(entry.Key),
+                      ReadoutText.Num(entry.Value.Count) + " (" + string.Join(", ", entry.Value) + ")"))
+                  .Append('\n');
             }
-            return sb.ToString().TrimEnd('\n');
+            sb.Append(ReadoutText.Footer("See !statistics for the Chateau-wide overview."));
+            return sb.ToString();
         }
     }
 }

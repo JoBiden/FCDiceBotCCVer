@@ -67,15 +67,16 @@ namespace FChatDicebot.BotCommands
             List<FeedbackEntry> ordered = entries.OrderByDescending(e => e.submittedAt).ToList();
 
             StringBuilder sb = new StringBuilder();
-            sb.Append("[b]Recent feedback submissions:[/b]\n");
+            sb.Append(ReadoutText.Title("Recent Feedback Submissions")).Append('\n');
 
             int shown = 0;
             foreach (FeedbackEntry e in ordered)
             {
-                string relative = Utils.TimeDifferenceText(e.submittedAt, now) + " ago";
-                string cat = string.IsNullOrEmpty(e.category) ? ChateauFeedback.DefaultCategory : e.category;
-                string name = string.IsNullOrEmpty(e.submitterDisplayName) ? e.submitterUserName : e.submitterDisplayName;
-                string block = "\n" + relative + " — [b]" + name + "[/b] ([i]" + cat + "[/i]): " + e.text + "\n";
+                // One prefix builder for both the normal and the truncation path: they used to
+                // be built separately, so the budget arithmetic could drift from what was
+                // actually emitted.
+                string prefix = "\n" + EntryPrefix(e, now);
+                string block = prefix + e.text + "\n";
 
                 if (shown == 0 && block.Length > maxChars)
                 {
@@ -83,18 +84,18 @@ namespace FChatDicebot.BotCommands
                     // let this through unconditionally, producing an over-cap message the
                     // caller's PM layer would silently drop entirely. Truncate this entry's
                     // own text instead of skipping straight to "nothing shown".
-                    string prefix = "\n" + relative + " — [b]" + name + "[/b] ([i]" + cat + "[/i]): ";
-                    int textBudget = Math.Max(0, maxChars - prefix.Length - "\n(truncated)\n".Length);
+                    string truncNote = "\n" + ReadoutText.Small("(truncated)") + "\n";
+                    int textBudget = Math.Max(0, maxChars - prefix.Length - truncNote.Length);
                     string truncatedText = e.text.Length > textBudget ? e.text.Substring(0, textBudget) : e.text;
-                    sb.Append(prefix).Append(truncatedText).Append("\n(truncated)\n");
+                    sb.Append(prefix).Append(truncatedText).Append(truncNote);
                     shown++;
                     continue;
                 }
 
                 if (shown > 0 && sb.Length + block.Length > maxChars)
                 {
-                    sb.Append("\n…(output truncated — showing the ").Append(shown)
-                      .Append(" most recent of ").Append(ordered.Count).Append(')');
+                    sb.Append('\n').Append(ReadoutText.Small("(output truncated, showing the " + shown
+                        + " most recent of " + ordered.Count + ")"));
                     break;
                 }
 
@@ -103,6 +104,21 @@ namespace FChatDicebot.BotCommands
             }
 
             return sb.ToString().TrimEnd('\n');
+        }
+
+        /// <summary>
+        /// "  [u]Alice:[/u] [sub](bug, 2 hours ago)[/sub] " — the submitter is the row label,
+        /// with category and age as small print beside it. Was
+        /// "2 hours ago — [b]Alice[/b] ([i]bug[/i]): ", which led with the timestamp and used
+        /// an em-dash the style guide bans.
+        /// </summary>
+        private static string EntryPrefix(FeedbackEntry e, DateTime now)
+        {
+            string relative = Utils.TimeDifferenceText(e.submittedAt, now) + " ago";
+            string cat = string.IsNullOrEmpty(e.category) ? ChateauFeedback.DefaultCategory : e.category;
+            string name = string.IsNullOrEmpty(e.submitterDisplayName) ? e.submitterUserName : e.submitterDisplayName;
+            return ReadoutText.RowIndent + ReadoutText.Label(name) + " "
+                + ReadoutText.Small("(" + cat + ", " + relative + ")") + " ";
         }
 
         // First-draft empty-state wording, pending owner review.

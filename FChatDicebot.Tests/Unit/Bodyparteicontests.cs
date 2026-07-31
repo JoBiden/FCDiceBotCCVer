@@ -1,4 +1,4 @@
-using FChatDicebot.BotCommands;
+﻿using FChatDicebot.BotCommands;
 using FChatDicebot.Database;
 using FChatDicebot.InteractionProcessors;
 using FChatDicebot.InteractionProcessors.Casual;
@@ -499,7 +499,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
 
             string message = ChateauIdentifier.BuildIdentifierMessage(identifier, "Nobody");
 
-            Assert.StartsWith("[b]ass[/b] [eicon]stockbooty[/eicon]\nThe rear end.", message);
+            Assert.StartsWith(ReadoutText.Title("ass") + " [eicon]stockbooty[/eicon]\nThe rear end.", message);
         }
 
         [Fact]
@@ -514,7 +514,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
 
             string message = ChateauIdentifier.BuildIdentifierMessage(identifier, "Nobody");
 
-            Assert.StartsWith("[b]ass[/b]\nThe rear end.", message);
+            Assert.StartsWith(ReadoutText.Title("ass") + "\nThe rear end.", message);
         }
 
         [Fact]
@@ -530,7 +530,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
 
             string message = ChateauIdentifier.BuildIdentifierMessage(identifier, "Alice");
 
-            Assert.EndsWith("\n[i]Your personal eicon: [eicon]MyBooty[/eicon][/i]", message);
+            Assert.EndsWith("\n" + ReadoutText.Small("Your personal eicon: [eicon]MyBooty[/eicon]"), message);
         }
 
         [Fact]

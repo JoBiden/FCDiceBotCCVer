@@ -1,4 +1,4 @@
-using FChatDicebot.BotCommands.Base;
+﻿using FChatDicebot.BotCommands.Base;
 using FChatDicebot.BotCommands.Support;
 using FChatDicebot.Model;
 using System.Collections.Generic;
@@ -53,35 +53,42 @@ namespace FChatDicebot.BotCommands
             }
 
             var sb = new System.Text.StringBuilder();
-            sb.Append("The Chateau's current workforce:\n");
+            sb.Append(ReadoutText.Title("The Chateau Payroll")).Append('\n');
+
+            sb.Append(ReadoutText.Section("Current workforce", ReadoutDomain.Economy)).Append('\n');
             if (employed.Count == 0)
             {
-                sb.Append("  Nobody is currently employed.\n");
+                sb.Append(ReadoutText.RowIndent).Append(ReadoutText.Small("Nobody is currently employed.")).Append('\n');
             }
             else
             {
                 foreach (var entry in employed.OrderByDescending(kv => kv.Value).ThenBy(kv => kv.Key))
                 {
                     string label = entry.Value == 1 ? Utils.JobToText(entry.Key) : Utils.JobToPlural(entry.Key);
-                    sb.Append("  ").Append(label).Append(": ").Append(entry.Value.ToString("N0", CultureInfo.InvariantCulture)).Append('\n');
+                    sb.Append(ReadoutText.RowIndent)
+                      .Append(ReadoutText.Row(label, ReadoutText.Num(entry.Value.ToString("N0", CultureInfo.InvariantCulture))))
+                      .Append('\n');
                 }
             }
 
-            sb.Append("\nDuties completed by job:\n");
+            sb.Append(ReadoutText.Section("Duties completed by job", ReadoutDomain.Economy)).Append('\n');
             if (duties.Count == 0 || duties.Values.Sum() == 0)
             {
-                sb.Append("  No duties have been completed yet.\n");
+                sb.Append(ReadoutText.RowIndent).Append(ReadoutText.Small("No duties have been completed yet.")).Append('\n');
             }
             else
             {
                 foreach (var entry in duties.OrderByDescending(kv => kv.Value).ThenBy(kv => kv.Key))
                 {
                     if (entry.Value <= 0) continue;
-                    sb.Append("  ").Append(Utils.JobToText(entry.Key)).Append(": ")
-                      .Append(entry.Value.ToString("N0", CultureInfo.InvariantCulture)).Append('\n');
+                    sb.Append(ReadoutText.RowIndent)
+                      .Append(ReadoutText.Row(Utils.JobToText(entry.Key),
+                          ReadoutText.Num(entry.Value.ToString("N0", CultureInfo.InvariantCulture))))
+                      .Append('\n');
                 }
             }
-            return sb.ToString().TrimEnd('\n');
+            sb.Append(ReadoutText.Footer("Employers can see their own kickbacks with !business."));
+            return sb.ToString();
         }
     }
 }

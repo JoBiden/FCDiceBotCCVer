@@ -105,30 +105,34 @@ namespace FChatDicebot.BotCommands
             string returnText = string.Empty;
             if (terms.Length < 1 || terms == null)
             {
-                returnText = "Use this command to list out the currently available identifiers within a certain category. If you want to see the description of a specific identifier, use !identifier instead. Please note that only the first category provided will be listed out, and any additional terms will be ignored.\n\nThe currently available categories are: \n";
-                returnText += Utils.sortedListDisplayText(categoryDisplay.Keys.ToList());
-                returnText += "\n\nCurrently available subcategories are: \n";
-                returnText += Utils.sortedListDisplayText(subCategoryDisplay.Keys.ToList());
+                returnText = ReadoutText.Title("Identifier Categories") + "\n"
+                    + "Use this command to list out the currently available identifiers within a certain category. If you want to see the description of a specific identifier, use !identifier instead. Please note that only the first category provided will be listed out, and any additional terms will be ignored.\n\n";
+                returnText += ReadoutText.Section("Categories", ReadoutDomain.Reference) + "\n";
+                returnText += ReadoutText.RowIndent + Utils.sortedListDisplayText(categoryDisplay.Keys.ToList());
+                returnText += "\n" + ReadoutText.Section("Subcategories", ReadoutDomain.Reference) + "\n";
+                returnText += ReadoutText.RowIndent + Utils.sortedListDisplayText(subCategoryDisplay.Keys.ToList());
             }
             else if (categoryDisplay.ContainsKey(lowerTerm))
             {
-                returnText = "Currently known [b]" + categoryDisplay[lowerTerm] + "[/b] are: \n";
+                returnText = ReadoutText.Title("Known " + categoryDisplay[lowerTerm]) + "\n";
                 List<string> categoryList = new List<string>();
                 foreach (Identifier identifier in MonDB.getIdentifiers(lowerTerm))
                 {
                     categoryList.Add(identifier.type);
                 }
-                returnText += Utils.sortedListDisplayText(categoryList);
+                returnText += ReadoutText.RowIndent + Utils.sortedListDisplayText(categoryList);
+                returnText += "\n" + ReadoutText.Footer("Use !identifier {name} for a description of any one of these.");
             }
             else if (subCategoryDisplay.ContainsKey(lowerTerm))
             {
-                returnText = "Currently known [b]" + subCategoryDisplay[lowerTerm] + "[/b] are: \n";
+                returnText = ReadoutText.Title("Known " + subCategoryDisplay[lowerTerm]) + "\n";
                 List<string> subCategoryList = new List<string>();
                 foreach (Identifier identifier in MonDB.getIdentifiers(lowerTerm))
                 {
                     subCategoryList.Add(identifier.type);
                 }
-                returnText += Utils.sortedListDisplayText(subCategoryList);
+                returnText += ReadoutText.RowIndent + Utils.sortedListDisplayText(subCategoryList);
+                returnText += "\n" + ReadoutText.Footer("Use !identifier {name} for a description of any one of these.");
             }
             else
             {

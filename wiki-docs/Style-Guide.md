@@ -70,6 +70,49 @@ If you add a new interaction whose past/present/future form isn't a regular `-ed
 
 `[user]…[/user]` appears in literal usage examples and inside error text — not in narration.
 
+### 7a. Colour
+
+F-Chat resolves `[color=x]` to a **fixed hex regardless of theme** (`scss/_flist_derived.scss` in `f-list/exported`; only `blue` is redefined per theme, `#00f` → `#06f` on dark). The palette was tuned for a black background, so most of it has poor contrast on the light theme. Measured against the real backgrounds (`#000` dark, `#e5e5e5` light):
+
+| Colour | Contrast dark / light | Use |
+|--------|----------------------|-----|
+| `blue`, `purple`, `brown`, `red` | ≥3:1 on both | the readout section palette — safe anywhere |
+| `orange`, `green`, `yellow`, `cyan`, `pink`, `gray` | fails on light | sparingly, and only where losing it on one theme is acceptable |
+| `black`, `white` | each invisible on one theme | **never** |
+
+The `!help` tier line deliberately keeps green → yellow → orange → red because the stoplight ramp reads as escalating seriousness, which is worth more there than palette consistency. `ViceText` likewise keeps `[color=yellow]` for golden fluid.
+
+### 7b. The readout grammar
+
+Every informative readout (`!dossier`, `!bank`, `!statistics`, `!bottles`, `!titles`, `!pledges`, `!business`, `!help`, the drill-downs) builds its output from `Model/ReadoutText.cs`. Don't hand-assemble these tags — the helpers exist because five commands had drifted into five different conventions for the same data shape.
+
+| Element | Helper | Form |
+|---------|--------|------|
+| Title line | `ReadoutText.Title(text)` | `[b][u]Title[/u][/b]` — exactly one, first line, the only bold-underline in the readout |
+| Section header | `ReadoutText.Section(header, domain)` | `[b][color=x]Header:[/color][/b]` — Sentence case, colon applied by the helper |
+| Row label | `ReadoutText.Label(label)` / `Row(label, value)` | `[u]Label:[/u] value` — Title Case |
+| Number | `ReadoutText.Num(value)` | `[b]148[/b]` — the unit stays outside the tag |
+| Small print | `ReadoutText.Small(text)` | `[sub]…[/sub]` |
+| Footer | `ReadoutText.Footer(text)` | `[sub]…[/sub]` on its own last line, pointing at sibling commands |
+| Empty slot | `ReadoutText.None()` | `[sub]None[/sub]` — never a bare body-weight "None" |
+| Row indent | `ReadoutText.RowIndent` | two spaces, for rows under a section header |
+| Inline separator | `ReadoutText.InlineSeparator` | three spaces, the only separator |
+| One-line block | `ReadoutText.InlineSection(header, domain, cells)` | header plus cells on one line |
+| Multi-line block | `ReadoutText.LineSection(header, domain, summary, rows)` | one indented row per line; collapses to `[spoiler]` past 6 rows with the count left visible |
+
+`ReadoutDomain` picks the section colour so the same kind of fact wears the same colour in every readout:
+
+| Domain | Colour | Covers |
+|--------|--------|--------|
+| `Affliction` | red | curses, parasites, breaks, scents, corruption |
+| `Relationship` | purple | bonds, marks, employment rosters, populations, pledges |
+| `Record` | blue | interaction counts, offspring, lifetime totals |
+| `Economy` | brown | vaults, collections, payroll, workforce |
+| `Reference` | purple | `!help` fields, identifier lookups |
+| `None` | none | history and neutral sections |
+
+**A section with no qualifying rows is hidden entirely, header included.** Both `InlineSection` and `LineSection` return empty for an empty row list; hand-rolled blocks must do the same. A bare coloured heading introducing nothing reads as a bug.
+
 ## 8. Punctuation and flavor
 
 - **Exclamation marks are abundant.** Nearly every completion and most consent prompts end with `!`. The Chateau is enthusiastic. Use them.
