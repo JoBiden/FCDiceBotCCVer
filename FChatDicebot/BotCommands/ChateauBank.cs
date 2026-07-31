@@ -67,10 +67,16 @@ namespace FChatDicebot.BotCommands
                         selfEmployed = true;
                     }
                 }
+                // Every readout opens with a Title line naming whose it is. Deliberately the
+                // displayName rather than "Your" even when you're reading your own: displayName
+                // carries the "[s]old[/s] new" form after a rename, so the title doubles as a
+                // reminder of who the Chateau currently has you filed under.
+                bankText = ReadoutText.Title("Account of " + profile.displayName) + "\n";
+
                 if (profile.currencies == null || profile.currencies.Count == 0)
                 {
                     // No currencies - build appropriate message based on situation
-                    bankText = ownAccount
+                    bankText += ownAccount
                         ? "It doesn't look like you're storing any currency in our vault yet."
                         : $"It doesn't look like {profile.displayName} is storing any currency in our vault.";
 
@@ -110,22 +116,25 @@ namespace FChatDicebot.BotCommands
 
                     if (profile.characteristics.ContainsKey("job")) //has currencies and a job
                     {
-                        bankText = "Our records show ";
+                        bankText += "Our records show ";
                         bankText += selfEmployed
                             ? (ownAccount ? "you are self-employed" : $"{profile.displayName} is self-employed")
                             : (ownAccount ? $"you are employed by {employerDisplayName}" : $"{profile.displayName} is employed by {employerDisplayName}");
-                        bankText += " as " + Utils.AnOrA(Utils.JobToText(profile.characteristics["job"])) + " " + Utils.JobToText(profile.characteristics["job"]) + ". ";
+                        bankText += " as " + Utils.AnOrA(Utils.JobToText(profile.characteristics["job"])) + " [b]" + Utils.JobToText(profile.characteristics["job"]) + "[/b]. ";
                     }
                     bankText += ownAccount
                         ? "Through your hard !work and !volunteer efforts, as well as other exploits, you have amassed:\n"
                         : $"{profile.displayName}'s account contains:\n";
 
-                    var alphabatizedCurrencyList = profile.currencies.OrderBy(kv => kv.Key).ToList();
-                    foreach (var currency in alphabatizedCurrencyList)
-                    {
-                        bankText += $"[b]{currency.Value} {currency.Key}[/b] | ";
-                    }
-                    bankText = bankText.TrimEnd(' ', '|');
+                    // Was a pipe-separated run of "[b]340 gold[/b]" cells, which bolded the
+                    // whole phrase and put the label after the number — the inverse of every
+                    // other readout. Now label-then-bold-number, on the shared separator.
+                    var currencyCells = profile.currencies
+                        .OrderBy(kv => kv.Key)
+                        .Select(kv => ReadoutText.Row(Utils.Capitalize(kv.Key), ReadoutText.Num(kv.Value)))
+                        .ToList();
+                    bankText += ReadoutText.InlineSection("In the vault", ReadoutDomain.Economy, currencyCells)
+                        .TrimEnd('\n');
                 }
 
                 // Bottles live outside the vault, so they hang off both branches: a resident with
@@ -151,13 +160,14 @@ namespace FChatDicebot.BotCommands
             if (full == 0 && empty == 0) return string.Empty;
 
             var pieces = new List<string>();
-            if (full > 0) pieces.Add("[b]" + full + " bottle" + (full == 1 ? "" : "s") + "[/b]");
-            if (empty > 0) pieces.Add("[b]" + empty + " empt" + (empty == 1 ? "y" : "ies") + "[/b]");
+            if (full > 0) pieces.Add(ReadoutText.Num(full) + " bottle" + (full == 1 ? "" : "s"));
+            if (empty > 0) pieces.Add(ReadoutText.Num(empty) + " empt" + (empty == 1 ? "y" : "ies"));
             string held = string.Join(" and ", pieces);
 
-            return ownAccount
-                ? $"You're also holding {held} of your own. Use !bottles to look them over."
-                : $"{profile.displayName} is also holding {held}.";
+            // Bottles sit outside the vault, so they get their own section rather than trailing
+            // the currency line as loose prose.
+            return ReadoutText.Section("Held personally", ReadoutDomain.Economy) + " " + held
+                + (ownAccount ? "\n" + ReadoutText.Footer("Use !bottles to look them over, or !sell to trade them in.") : "");
         }
     }
 }

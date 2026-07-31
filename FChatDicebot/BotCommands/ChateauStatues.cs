@@ -44,8 +44,9 @@ namespace FChatDicebot.BotCommands
             List<Interaction> petrifyInteractions = MonDB.getInteractionsByType("petrify");
             if (terms.Length < 1 || terms == null)
             {
-                returnText = "Listed below are the number of 'statues' or otherwise petrified beings in every location. To see the individuals petrified at a given location, use !statues {location}.\n";
-                
+                returnText = ReadoutText.Title("Statues of the Chateau") + "\n"
+                    + "Listed below are the number of 'statues' or otherwise petrified beings in every location. To see the individuals petrified at a given location, use !statues {location}.\n";
+
                 Dictionary<string, int> statueNum = new Dictionary<string, int> { };
                 foreach (Interaction interaction in petrifyInteractions)
                 {
@@ -56,14 +57,19 @@ namespace FChatDicebot.BotCommands
                     else
                     {
                         statueNum[interaction.identifier]++;
-                    } 
+                    }
                 }
                 foreach (KeyValuePair<string,int> count in statueNum)
                 {
-                    returnText += "\nStatues " + Utils.LocationToText(count.Key, "the initiator", "the recipient") + ": " + count.Value;
+                    returnText += ReadoutText.RowIndent
+                        + ReadoutText.Row(
+                            Utils.Capitalize(Utils.LocationToText(count.Key, "the initiator", "the recipient")),
+                            ReadoutText.Num(count.Value))
+                        + "\n";
                 }
+                returnText += ReadoutText.Footer("Use !statues {location} to see who stands where.");
             }
-            
+
             else
             {
                 if (location == null)
@@ -72,14 +78,16 @@ namespace FChatDicebot.BotCommands
                 }
                 else
                 {
-                    returnText = "Listed below is the identity of every resident that has been petrified " + Utils.LocationToText(location, "the initiator", "the recipient") + ", as well as their species (if known) to indicate their appearance.\n";
+                    string locationText = Utils.LocationToText(location, "the initiator", "the recipient");
+                    returnText = ReadoutText.Title("Statues " + locationText) + "\n"
+                        + "Listed below is the identity of every resident that has been petrified " + locationText + ", as well as their species (if known) to indicate their appearance.\n";
                     foreach (Interaction interaction in petrifyInteractions)
                     {
                         if (interaction.identifier == location)
                         {
                             Profile statue = MonDB.getProfile(interaction.recipient);
                             if (statue == null) continue; // petrified resident's profile no longer exists (L13)
-                            returnText += "\n" + statue.displayName;
+                            returnText += ReadoutText.RowIndent + statue.displayName;
                             if (statue.characteristics.ContainsKey("monster"))
                             {
                                 returnText += ", " + statue.characteristics["monster"];
@@ -89,6 +97,7 @@ namespace FChatDicebot.BotCommands
                             {
                                 returnText += " " + Utils.LocationToText(location, interaction.initiator, interaction.recipient);
                             }
+                            returnText += "\n";
                         }
                     }
                 }

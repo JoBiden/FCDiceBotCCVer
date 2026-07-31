@@ -1,4 +1,4 @@
-using FChatDicebot.BotCommands.Base;
+﻿using FChatDicebot.BotCommands.Base;
 using FChatDicebot.BotCommands.Support;
 using FChatDicebot.Model;
 using System.Collections.Generic;
@@ -49,13 +49,17 @@ namespace FChatDicebot.BotCommands
                 return "No currency has been accumulated by any resident yet. The vaults are quiet.";
             }
             var sb = new System.Text.StringBuilder();
+            sb.Append(ReadoutText.Title("The Chateau's Wealth")).Append('\n');
             sb.Append("The accumulated wealth of Chateau residents, by currency:\n");
             foreach (var entry in positive.OrderByDescending(kv => kv.Value).ThenBy(kv => kv.Key))
             {
-                sb.Append("  ").Append(entry.Key).Append(": ")
-                  .Append(entry.Value.ToString("N0", CultureInfo.InvariantCulture)).Append('\n');
+                sb.Append(ReadoutText.RowIndent)
+                  .Append(ReadoutText.Row(Utils.Capitalize(entry.Key),
+                      ReadoutText.Num(entry.Value.ToString("N0", CultureInfo.InvariantCulture))))
+                  .Append('\n');
             }
-            return sb.ToString().TrimEnd('\n');
+            sb.Append(ReadoutText.Footer("See !bank for your own account, or !statistics for the overview."));
+            return sb.ToString();
         }
     }
 }

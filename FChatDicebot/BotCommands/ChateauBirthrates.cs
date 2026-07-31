@@ -70,18 +70,22 @@ namespace FChatDicebot.BotCommands
             }
 
             var sb = new System.Text.StringBuilder();
+            sb.Append(ReadoutText.Title("Births of the Chateau")).Append('\n');
             sb.Append("Monsters born to the Chateau:\n");
             foreach (var entry in offspring.OrderByDescending(kv => kv.Value).ThenBy(kv => kv.Key))
             {
                 if (entry.Value <= 0) continue;
                 int preg = pregnancies.ContainsKey(entry.Key) ? pregnancies[entry.Key] : 0;
-                sb.Append("  ").Append(Utils.Capitalize(entry.Key)).Append(": ")
-                  .Append(entry.Value.ToString("N0", CultureInfo.InvariantCulture))
-                  .Append(" offspring across ")
-                  .Append(preg.ToString("N0", CultureInfo.InvariantCulture))
-                  .Append(preg == 1 ? " pregnancy\n" : " pregnancies\n");
+                sb.Append(ReadoutText.RowIndent)
+                  .Append(ReadoutText.Row(Utils.Capitalize(entry.Key),
+                      ReadoutText.Num(entry.Value.ToString("N0", CultureInfo.InvariantCulture))
+                      + " offspring across "
+                      + ReadoutText.Num(preg.ToString("N0", CultureInfo.InvariantCulture))
+                      + (preg == 1 ? " pregnancy" : " pregnancies")))
+                  .Append('\n');
             }
-            return sb.ToString().TrimEnd('\n');
+            sb.Append(ReadoutText.Footer("See !statistics for the Chateau-wide overview."));
+            return sb.ToString();
         }
     }
 }

@@ -1,4 +1,4 @@
-using FChatDicebot.BotCommands.Support;
+﻿using FChatDicebot.BotCommands.Support;
 using FChatDicebot.Model;
 using FChatDicebot.Tests.Builders;
 using System;
@@ -98,10 +98,11 @@ namespace FChatDicebot.Tests.Unit
 
             string result = BondTreeSupport.BuildBondTree("Alice", 1, familyOnly: false, Lookup);
 
-            Assert.Contains("Bond tree for Alice, up to 1 degree:", result);
-            Assert.Contains("1st degree:", result);
-            Assert.Contains("Bob (Alice's pet)", result);     // initiated → BondToText(type, true)
-            Assert.Contains("Dom (Alice's dominant)", result); // received  → BondToText(type, false)
+            Assert.Contains(ReadoutText.Title("Bond Tree of Alice"), result);
+            Assert.Contains("Up to 1 degree", result);
+            Assert.Contains(ReadoutText.Section("1st degree", ReadoutDomain.Relationship), result);
+            Assert.Contains("Bob [sub](Alice's pet)[/sub]", result);     // initiated → BondToText(type, true)
+            Assert.Contains("Dom [sub](Alice's dominant)[/sub]", result); // received  → BondToText(type, false)
         }
 
         // ---- Second degree + dedup to shallowest ---------------------------
@@ -123,11 +124,11 @@ namespace FChatDicebot.Tests.Unit
 
             string result = BondTreeSupport.BuildBondTree("Alice", 2, familyOnly: false, Lookup);
 
-            Assert.Contains("Carol (Alice's ally)", result);  // reached at 1st degree, via Alice
-            Assert.DoesNotContain("Carol (Bob's", result);    // never the 2nd-degree label
-            Assert.Equal(1, Count(result, "Carol ("));        // appears exactly once
-            Assert.Contains("2nd degree:", result);
-            Assert.Contains("Dave (Bob's sibling)", result);  // genuine 2nd-degree node
+            Assert.Contains("Carol [sub](Alice's ally)[/sub]", result);  // reached at 1st degree, via Alice
+            Assert.DoesNotContain("Carol [sub](Bob's", result);    // never the 2nd-degree label
+            Assert.Equal(1, Count(result, "Carol [sub]("));        // appears exactly once
+            Assert.Contains(ReadoutText.Section("2nd degree", ReadoutDomain.Relationship), result);
+            Assert.Contains("Dave [sub](Bob's sibling)[/sub]", result);  // genuine 2nd-degree node
         }
 
         // ---- Cycles --------------------------------------------------------
@@ -150,9 +151,9 @@ namespace FChatDicebot.Tests.Unit
             string result = BondTreeSupport.BuildBondTree("A", 3, familyOnly: false, Lookup);
 
             // Each non-root node appears exactly once; the root is never listed as a connection.
-            Assert.Equal(1, Count(result, "B (A's ally)"));
-            Assert.Equal(1, Count(result, "C (A's ally)"));
-            Assert.DoesNotContain("A (", result);
+            Assert.Equal(1, Count(result, "B [sub](A's ally)[/sub]"));
+            Assert.Equal(1, Count(result, "C [sub](A's ally)[/sub]"));
+            Assert.DoesNotContain(ReadoutText.RowIndent + "A [sub](", result);
         }
 
         // ---- Family-only filter --------------------------------------------
@@ -213,7 +214,7 @@ namespace FChatDicebot.Tests.Unit
 
             string result = BondTreeSupport.BuildBondTree("Alpha", 5, familyOnly: false, Lookup);
 
-            Assert.Contains("up to 3 degrees:", result);
+            Assert.Contains("Up to 3 degrees", result);
             Assert.Contains("Bravo", result);
             Assert.Contains("Charlie", result);
             Assert.Contains("Delta", result);
@@ -237,8 +238,8 @@ namespace FChatDicebot.Tests.Unit
 
             string result = BondTreeSupport.BuildBondTree("Alice", 2, familyOnly: false, Lookup);
 
-            Assert.Contains("Ghost (Alice's pet)", result); // falls back to the stored userName
-            Assert.Contains("Bob (Alice's sibling)", result); // traversal still reaches the rest
+            Assert.Contains("Ghost [sub](Alice's pet)[/sub]", result); // falls back to the stored userName
+            Assert.Contains("Bob [sub](Alice's sibling)[/sub]", result); // traversal still reaches the rest
         }
     }
 }

@@ -62,41 +62,52 @@ namespace FChatDicebot.BotCommands
             pledgesGiven = pledgesGiven.Where(p => p.IsActive).ToList();
             pledgesReceived = pledgesReceived.Where(p => p.IsActive).ToList();
 
-            StringBuilder message = new StringBuilder($"[b]{userProfile.displayName}'s Pledges:[/b]\n\n");
-            
+            StringBuilder message = new StringBuilder(
+                ReadoutText.Title("Pledges of " + userProfile.displayName) + "\n");
 
             // Show pledges this user has made
+            string givenHeader = viewingSelf ? "Pledges made" : "Pledges " + userProfile.displayName + " has made";
             if (pledgesGiven.Count > 0)
             {
-                message.AppendLine (viewingSelf ? "[b]Pledges You Have Made:[/b]" : $"[b]Pledges {userProfile.displayName} Has Made:[/b]");
+                message.AppendLine(ReadoutText.Section(givenHeader, ReadoutDomain.Relationship));
                 foreach (var pledge in pledgesGiven)
                 {
                     string pledgeeName = MonDB.getDisplayName(pledge.pledgee);
                     string timeAgo = Utils.TimeDifferenceText(pledge.pledgeTime, DateTime.UtcNow);
-                    message.Append( $"  • Pledged to {Utils.interactionToVerb(pledge.interactionType, false)} {pledgeeName} ({timeAgo} ago)\n");
+                    message.Append(ReadoutText.RowIndent)
+                        .Append($"Pledged to {Utils.interactionToVerb(pledge.interactionType, false)} {pledgeeName} ")
+                        .AppendLine(ReadoutText.Small($"({timeAgo} ago)"));
                 }
-                message.AppendLine();
             }
             else
             {
-                message.AppendLine(viewingSelf ? "[b]Pledges You Have Made:[/b] None\n" : $"[b]Pledges {userProfile.displayName} Has Made:[/b] None\n");
+                // Small print rather than body weight: an empty slot shouldn't read as loudly
+                // as a real pledge.
+                message.AppendLine(ReadoutText.Section(givenHeader, ReadoutDomain.Relationship) + " " + ReadoutText.None());
             }
 
             // Show pledges others have made to this user
+            string receivedHeader = viewingSelf ? "Pledges made to you" : "Pledges made to " + userProfile.displayName;
             if (pledgesReceived.Count > 0)
             {
-                message.AppendLine(viewingSelf ? "[b]Pledges Made to You:[/b]" : $"[b]Pledges Others Have Made to {userProfile.displayName}:[/b]");
+                message.AppendLine(ReadoutText.Section(receivedHeader, ReadoutDomain.Relationship));
                 foreach (var pledge in pledgesReceived)
                 {
                     string pledgerName = MonDB.getDisplayName(pledge.pledger);
                     string timeAgo = Utils.TimeDifferenceText(pledge.pledgeTime, DateTime.UtcNow);
-                    message.AppendLine( viewingSelf ? $"  • {pledgerName} pledged to {Utils.interactionToVerb(pledge.interactionType, false)} you ({timeAgo} ago)" : $"  • {pledgerName} pledged to {Utils.interactionToVerb(pledge.interactionType, false)} {userProfile.displayName} ({timeAgo} ago)");
+                    string who = viewingSelf ? "you" : userProfile.displayName;
+                    message.Append(ReadoutText.RowIndent)
+                        .Append($"{pledgerName} pledged to {Utils.interactionToVerb(pledge.interactionType, false)} {who} ")
+                        .AppendLine(ReadoutText.Small($"({timeAgo} ago)"));
                 }
             }
             else
             {
-                message.Append(viewingSelf ? "[b]Pledges Made to You:[/b] None" : $"[b]Pledges Others Have Made to {userProfile.displayName}:[/b] None (Maybe you could be the first?)");
+                message.AppendLine(ReadoutText.Section(receivedHeader, ReadoutDomain.Relationship) + " " + ReadoutText.None()
+                    + (viewingSelf ? "" : " " + ReadoutText.Small("(Maybe you could be the first?)")));
             }
+
+            message.Append(ReadoutText.Footer("Use !fulfill to make good on a pledge, or !abandonpledge to let one go."));
             bot.SendPrivateMessage(message.ToString(), characterName);
         }
     }

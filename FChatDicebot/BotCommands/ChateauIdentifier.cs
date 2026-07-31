@@ -67,14 +67,15 @@ namespace FChatDicebot.BotCommands
             // The identifier's own bot-wide eicon (if the Chateau has one on file for it)
             // rides on the title line.
             string titleEicon = string.IsNullOrEmpty(identifier.eicon) ? string.Empty : " " + identifier.eicon;
-            string returnText = "[b]" + identifier.type + "[/b]" + titleEicon + "\n" + identifier.description;
+            string returnText = ReadoutText.Title(identifier.type) + titleEicon + "\n" + identifier.description;
 
             if (identifier.categories != null && identifier.categories.Contains("monster", StringComparer.OrdinalIgnoreCase))
             {
                 BreedProcessor.ResolveGestationAndBroodRange(identifier, out int gestationDays, out int broodSizeMin, out int broodSizeMax);
                 string broodText = broodSizeMin == broodSizeMax ? broodSizeMin.ToString() : broodSizeMin + "-" + broodSizeMax;
                 string dayWord = gestationDays == 1 ? "day" : "days";
-                returnText += "\n[i]Gestation: " + gestationDays + " " + dayWord + ". Brood size: " + broodText + ".[/i]";
+                returnText += "\n" + ReadoutText.Row("Gestation", ReadoutText.Num(gestationDays) + " " + dayWord)
+                    + ReadoutText.InlineSeparator + ReadoutText.Row("Brood size", ReadoutText.Num(broodText));
             }
 
             // For bodyparts, remind the asker what they've pinned to their own (this reply is
@@ -101,7 +102,7 @@ namespace FChatDicebot.BotCommands
             string personalEicon = InteractionEiconSupport.GetBodypartEicon(profile, identifier.type);
             return string.IsNullOrEmpty(personalEicon)
                 ? string.Empty
-                : "\n[i]Your personal eicon: " + personalEicon + "[/i]";
+                : "\n" + ReadoutText.Small("Your personal eicon: " + personalEicon);
         }
     }
 }

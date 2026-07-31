@@ -1,4 +1,4 @@
-using FChatDicebot.BotCommands;
+﻿using FChatDicebot.BotCommands;
 using FChatDicebot.Model;
 using FChatDicebot.Tests.Builders;
 using System;
@@ -115,8 +115,8 @@ namespace FChatDicebot.Tests.Unit
 
             string output = ChateauBusiness.BuildBusiness(profile, un => "Alice");
 
-            Assert.Contains("Alice: [b]42 copper[/b]", output);
-            Assert.Contains("Total earned from all employees: [b]42 copper[/b]", output);
+            Assert.Contains("[u]Alice:[/u] Copper: [b]42[/b]", output);
+            Assert.Contains(ReadoutText.Section("Total from all employees", ReadoutDomain.Economy) + " Copper: [b]42[/b]", output);
         }
 
         [Fact]
@@ -138,11 +138,11 @@ namespace FChatDicebot.Tests.Unit
             Assert.True(iAlice < iBob, "Higher earner Alice should render before Bob");
 
             // Currencies within a row are alphabetical.
-            Assert.Contains("Alice: [b]42 copper[/b] | [b]3 silver[/b]", output);
-            Assert.Contains("Bob: [b]18 copper[/b]", output);
+            Assert.Contains("[u]Alice:[/u] Copper: [b]42[/b]" + ReadoutText.InlineSeparator + "Silver: [b]3[/b]", output);
+            Assert.Contains("[u]Bob:[/u] Copper: [b]18[/b]", output);
 
             // Grand totals sum across employees, per currency.
-            Assert.Contains("Total earned from all employees: [b]60 copper[/b] | [b]3 silver[/b]", output);
+            Assert.Contains(ReadoutText.Section("Total from all employees", ReadoutDomain.Economy) + " Copper: [b]60[/b]" + ReadoutText.InlineSeparator + "Silver: [b]3[/b]", output);
         }
 
         [Fact]
@@ -158,10 +158,10 @@ namespace FChatDicebot.Tests.Unit
             var names = new Dictionary<string, string> { { "alice", "Alice" }, { "bob", "Bob" } };
             string output = ChateauBusiness.BuildBusiness(profile, un => names[un]);
 
-            Assert.Contains("Alice: [b]10 copper[/b]", output);
+            Assert.Contains("[u]Alice:[/u] Copper: [b]10[/b]", output);
             Assert.DoesNotContain("silver", output);
             Assert.DoesNotContain("Bob", output);
-            Assert.Contains("Total earned from all employees: [b]10 copper[/b]", output);
+            Assert.Contains(ReadoutText.Section("Total from all employees", ReadoutDomain.Economy) + " Copper: [b]10[/b]", output);
         }
 
         [Fact]
@@ -174,7 +174,7 @@ namespace FChatDicebot.Tests.Unit
             // Resolver returns null (profile gone) -> the stored userName key is shown.
             string output = ChateauBusiness.BuildBusiness(profile, un => null);
 
-            Assert.Contains("ghost_user: [b]5 copper[/b]", output);
+            Assert.Contains("[u]ghost_user:[/u] Copper: [b]5[/b]", output);
         }
     }
 }

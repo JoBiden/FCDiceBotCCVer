@@ -63,6 +63,7 @@ namespace FChatDicebot.BotCommands
             }
 
             var sb = new System.Text.StringBuilder();
+            sb.Append(ReadoutText.Title("Parasites of the Chateau")).Append('\n');
             sb.Append("Parasites recorded in the Chateau:\n");
             var ordered = allParasites
                 .Select(p => new
@@ -78,12 +79,15 @@ namespace FChatDicebot.BotCommands
 
             foreach (var entry in ordered)
             {
-                sb.Append("  ").Append(Utils.Capitalize(ParasiteText.ParasiteName(entry.Name))).Append(": ")
-                  .Append(entry.Current.ToString("N0", CultureInfo.InvariantCulture)).Append(" currently infested, ")
-                  .Append(entry.Spread.ToString("N0", CultureInfo.InvariantCulture)).Append(" spread, ")
-                  .Append(entry.Purged.ToString("N0", CultureInfo.InvariantCulture)).Append(" purged\n");
+                sb.Append(ReadoutText.RowIndent)
+                  .Append(ReadoutText.Row(Utils.Capitalize(ParasiteText.ParasiteName(entry.Name)),
+                      ReadoutText.Num(entry.Current.ToString("N0", CultureInfo.InvariantCulture)) + " currently infested, "
+                      + ReadoutText.Num(entry.Spread.ToString("N0", CultureInfo.InvariantCulture)) + " spread, "
+                      + ReadoutText.Num(entry.Purged.ToString("N0", CultureInfo.InvariantCulture)) + " purged"))
+                  .Append('\n');
             }
-            return sb.ToString().TrimEnd('\n');
+            sb.Append(ReadoutText.Footer("Carrying one yourself? !purge will see to it."));
+            return sb.ToString();
         }
     }
 }

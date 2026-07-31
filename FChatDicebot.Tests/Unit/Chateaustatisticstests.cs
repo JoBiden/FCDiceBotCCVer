@@ -1,4 +1,4 @@
-using FChatDicebot.BotCommands;
+﻿using FChatDicebot.BotCommands;
 using FChatDicebot.BotCommands.Support;
 using FChatDicebot.InteractionProcessors.Commitment;
 using FChatDicebot.Model;
@@ -56,19 +56,22 @@ namespace FChatDicebot.Tests.Unit
                 corruptInteractions: new List<Interaction>(),
                 purifyInteractions: new List<Interaction>());
 
-            // Section headers always show, but the zero-count rows beneath them are hidden.
-            Assert.Contains("Population", result);
-            Assert.Contains("Influence", result);
-            Assert.Contains("Workforce", result);
+            // A section with no qualifying rows is hidden entirely, header included — a bare
+            // "Influence" heading introducing nothing is worse than no heading at all.
+            Assert.DoesNotContain("Population", result);
+            Assert.DoesNotContain("Influence", result);
+            Assert.DoesNotContain("Workforce", result);
+            // The title line and the drill-down pointers still stand on their own.
+            Assert.Contains("The Chateau at a Glance", result);
             Assert.Contains("!flora", result);
             Assert.DoesNotContain("Converted to Monsterkind", result);
-            Assert.DoesNotContain("Monsters birthed", result);
-            Assert.DoesNotContain("Parasites spread", result);
-            Assert.DoesNotContain("Climaxes recorded", result);
+            Assert.DoesNotContain("Monsters Birthed", result);
+            Assert.DoesNotContain("Parasites Spread", result);
+            Assert.DoesNotContain("Climaxes Recorded", result);
             Assert.DoesNotContain("Corruption Cultivated", result);
             Assert.DoesNotContain("Balanced, as all things should be", result);
-            Assert.DoesNotContain("Total employees", result);
-            Assert.DoesNotContain("Most earned currencies", result);
+            Assert.DoesNotContain("Total Employees", result);
+            Assert.DoesNotContain("Most Earned", result);
         }
 
         [Fact]
@@ -99,17 +102,17 @@ namespace FChatDicebot.Tests.Unit
                 corruptInteractions, purifyInteractions);
 
             // Two monsterized, both goblins — most common: goblin.
-            Assert.Contains("Converted to Monsterkind: 2 (most common: goblin)", result);
+            Assert.Contains("[u]Converted to Monsterkind:[/u] [b]2[/b] [sub](most common: goblin)[/sub]", result);
             // Birthed total only from monster:* rows, not category:*. Should be 30 + 4 = 34.
-            Assert.Contains("Monsters birthed: 34 (most bred: goblin)", result);
+            Assert.Contains("[u]Monsters Birthed:[/u] [b]34[/b] [sub](most bred: goblin)[/sub]", result);
             // Corruption ahead by 4.
             Assert.Contains("Corruption Conquers Purity by 4", result);
             // Workforce totals.
-            Assert.Contains("Total employees: 2", result);
-            Assert.Contains("Duties completed: 7", result);
+            Assert.Contains("[u]Total Employees:[/u] [b]2[/b]", result);
+            Assert.Contains("[u]Duties Completed:[/u] [b]7[/b]", result);
             // Top currencies — silvercoin > gold by raw count.
-            Assert.Contains("Silvercoin: 1,000", result);
-            Assert.Contains("Gold: 150", result);
+            Assert.Contains("Silvercoin: [b]1,000[/b]", result);
+            Assert.Contains("Gold: [b]150[/b]", result);
         }
 
         [Fact]

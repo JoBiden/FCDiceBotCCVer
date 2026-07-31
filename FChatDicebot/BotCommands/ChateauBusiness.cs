@@ -95,12 +95,15 @@ namespace FChatDicebot.BotCommands
 
             var grandTotals = new Dictionary<string, int>();
             var sb = new StringBuilder();
+            sb.Append(ReadoutText.Title("Business of " + profile.displayName)).Append('\n');
             sb.Append("Here's what your employees have earned you:\n");
+            sb.Append(ReadoutText.Section("Earnings by employee", ReadoutDomain.Economy)).Append('\n');
             foreach (EmployeeRow row in rows)
             {
-                sb.Append("  ").Append(row.DisplayName).Append(": ");
-                sb.Append(string.Join(" | ", row.Currencies.Select(c => "[b]" + c.Value + " " + c.Key + "[/b]")));
-                sb.Append('\n');
+                sb.Append(ReadoutText.RowIndent)
+                  .Append(ReadoutText.Row(row.DisplayName, string.Join(ReadoutText.InlineSeparator,
+                      row.Currencies.Select(c => Utils.Capitalize(c.Key) + ": " + ReadoutText.Num(c.Value)))))
+                  .Append('\n');
 
                 foreach (var c in row.Currencies)
                 {
@@ -111,10 +114,12 @@ namespace FChatDicebot.BotCommands
                 }
             }
 
-            string totalChips = string.Join(" | ", grandTotals
+            string totalChips = string.Join(ReadoutText.InlineSeparator, grandTotals
                 .OrderBy(c => c.Key, StringComparer.OrdinalIgnoreCase)
-                .Select(c => "[b]" + c.Value + " " + c.Key + "[/b]"));
-            sb.Append("Total earned from all employees: ").Append(totalChips);
+                .Select(c => Utils.Capitalize(c.Key) + ": " + ReadoutText.Num(c.Value)));
+            sb.Append(ReadoutText.Section("Total from all employees", ReadoutDomain.Economy))
+              .Append(' ').Append(totalChips).Append('\n');
+            sb.Append(ReadoutText.Footer("See !payroll for the Chateau-wide workforce, or !bank for your own account."));
 
             return sb.ToString();
         }

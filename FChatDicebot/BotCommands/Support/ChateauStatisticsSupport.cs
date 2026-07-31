@@ -43,7 +43,7 @@ namespace FChatDicebot.BotCommands.Support
             foreach (var entry in top)
             {
                 string label = entry.Value == 1 ? Utils.JobToText(entry.Key) : Utils.JobToPlural(entry.Key);
-                parts.Add(entry.Value + " " + label);
+                parts.Add(ReadoutText.Num(entry.Value) + " " + label);
             }
             return string.Join(", ", parts);
         }

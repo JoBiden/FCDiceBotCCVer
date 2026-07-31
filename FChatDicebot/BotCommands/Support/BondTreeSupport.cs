@@ -1,4 +1,4 @@
-using FChatDicebot.Model;
+﻿using FChatDicebot.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -173,24 +173,25 @@ namespace FChatDicebot.BotCommands.Support
                     : rootDisplay + " has no bonds yet.";
             }
 
-            string treeLabel = familyOnly ? "Family tree" : "Bond tree";
-            string header = "[b]" + treeLabel + " for " + rootDisplay + ", up to " + degrees +
-                            (degrees == 1 ? " degree:" : " degrees:") + "[/b]";
+            string treeLabel = familyOnly ? "Family Tree" : "Bond Tree";
+            string header = ReadoutText.Title(treeLabel + " of " + rootDisplay) + "\n"
+                + ReadoutText.Small("Up to " + degrees + (degrees == 1 ? " degree" : " degrees"));
 
             StringBuilder body = new StringBuilder();
             foreach (KeyValuePair<int, List<Connection>> kv in byDegree)
             {
                 if (kv.Value.Count == 0) continue;
-                body.Append("\n[u]").Append(kv.Key).Append(Utils.GetDaySuffix(kv.Key)).Append(" degree:[/u]");
+                body.Append('\n').Append(ReadoutText.Section(
+                    kv.Key + Utils.GetDaySuffix(kv.Key) + " degree", ReadoutDomain.Relationship));
                 foreach (Connection c in kv.Value.OrderBy(c => c.Name, StringComparer.OrdinalIgnoreCase))
                 {
-                    body.Append("\n  ").Append(c.Name).Append(" (").Append(c.ConnectorName)
-                        .Append("'s ").Append(c.Role).Append(")");
+                    body.Append('\n').Append(ReadoutText.RowIndent).Append(c.Name).Append(' ')
+                        .Append(ReadoutText.Small("(" + c.ConnectorName + "'s " + c.Role + ")"));
                 }
             }
             if (capReached)
             {
-                body.Append("\n…and more (limit reached)");
+                body.Append('\n').Append(ReadoutText.Small("...and more (limit reached)"));
             }
 
             string bodyText = body.ToString();
