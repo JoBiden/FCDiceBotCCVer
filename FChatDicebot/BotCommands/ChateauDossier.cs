@@ -176,6 +176,13 @@ namespace FChatDicebot.BotCommands
         private const string InlineSeparator = ReadoutText.InlineSeparator;
 
         /// <summary>
+        /// Letterhead occupying the dossier's first line, where F-Chat prepends the sender name
+        /// and timestamp. Superscript because it's a document header rather than content, and
+        /// it needs to stay visually subordinate to the resident's name on the line below.
+        /// </summary>
+        public const string Masthead = "[sup]Official Chateau Contract Dossier[/sup]\n";
+
+        /// <summary>
         /// Constructor for dependency injection (for testing)
         /// </summary>
         public ChateauDossier(IChateauDatabase database)
@@ -235,10 +242,15 @@ namespace FChatDicebot.BotCommands
         /// </summary>
         private string BuildFullDossier(Profile profile, string targetUser)
         {
-            // Who they are.
-            string header = BuildNameTitleSpecialties(profile, targetUser);
+            // Who they are. The masthead exists to absorb the client's own prefix: F-Chat puts
+            // the sender name and timestamp ahead of the first line only, so whatever lands
+            // there is indented relative to everything below it. Spending that line on a
+            // letterhead means the resident's name — and every section under it — starts flush
+            // left instead of the name alone sitting adrift.
+            string identity = Masthead
+                + BuildNameTitleSpecialties(profile, targetUser);
             string jobSection = BuildJobSection(profile);
-            string identity = header + jobSection;
+            identity += jobSection;
 
             // What's currently on them.
             string state =
@@ -254,13 +266,19 @@ namespace FChatDicebot.BotCommands
                 BuildMarksSection(profile) +
                 BuildCurrentlyEmploysSection(targetUser);
 
-            // What they've done.
-            string tallies =
+            // What they've done. Kept apart from the holdings cluster below so the blue
+            // record sections and the brown economy sections don't butt up against each other
+            // with no breathing room — every other colour change in the dossier gets a blank
+            // line, and this one was the exception.
+            string records =
                 BuildCasualInteractionsSection(profile) +
                 BuildInteractionCountsSection(profile) +
                 BuildOffspringSection(profile, targetUser) +
-                BuildPersonallyPlantedSection(targetUser) +
-                BuildAtAGlanceSection(profile) +
+                BuildPersonallyPlantedSection(targetUser);
+
+            // What they hold.
+            string holdings =
+                BuildCollectionsSection(profile) +
                 BuildJobExperienceSection(profile);
 
             // What happened lately.
@@ -273,12 +291,12 @@ namespace FChatDicebot.BotCommands
             // header + "\n\n") keeps this correct as sections get added or reordered. A job
             // counts as content — it's something in their file, even with no interactions yet.
             if (jobSection.Length == 0 && state.Length == 0 && relationships.Length == 0
-                && tallies.Length == 0 && lately.Length == 0)
+                && records.Length == 0 && holdings.Length == 0 && lately.Length == 0)
             {
                 return identity + "\n" + ReadoutText.Small("A recent arrival to the Chateau. There doesn't seem to be much in their file... there will be more to read once they interact with others. Maybe you should give them a !kiss");
             }
 
-            return ReadoutText.JoinClusters(identity, state, relationships, tallies, lately);
+            return ReadoutText.JoinClusters(identity, state, relationships, records, holdings, lately);
         }
 
         /// <summary>
@@ -612,14 +630,14 @@ namespace FChatDicebot.BotCommands
 
         /// <summary>
         /// Three standalone one-line facts — titles earned, wealthiest currency and bottle
-        /// count — sharing a row so they read as an at-a-glance stat line rather than owning a
-        /// line each. Any one renders alone when the others are absent.
+        /// count — sharing a row rather than owning a line each. Any one renders alone when
+        /// the others are absent.
         ///
         /// These used to be bare "[b]Label:[/b] value" fragments with no header of their own,
         /// which made three unrelated facts look like three separate sections. They're cells
         /// now, under one header like every other inline block.
         /// </summary>
-        private string BuildAtAGlanceSection(Profile profile)
+        private string BuildCollectionsSection(Profile profile)
         {
             List<string> cells = new List<string>();
             string titles = BuildTitlesEarnedSection(profile);
@@ -628,7 +646,7 @@ namespace FChatDicebot.BotCommands
             if (!string.IsNullOrEmpty(titles)) cells.Add(titles);
             if (!string.IsNullOrEmpty(currency)) cells.Add(currency);
             if (!string.IsNullOrEmpty(bottled)) cells.Add(bottled);
-            return ReadoutText.InlineSection("At a glance", ReadoutDomain.Economy, cells);
+            return ReadoutText.InlineSection("Collections", ReadoutDomain.Economy, cells);
         }
 
         /// <summary>
