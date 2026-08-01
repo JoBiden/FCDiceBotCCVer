@@ -873,7 +873,7 @@ namespace FChatDicebot.Tests.Unit
         }
 
         [Fact]
-        public void BuildAtAGlanceSection_MergesTitlesAndCurrency()
+        public void BuildCollectionsSection_MergesTitlesAndCurrency()
         {
             var profile = new ProfileBuilder()
                 .WithUserName("TestUser")
@@ -883,7 +883,7 @@ namespace FChatDicebot.Tests.Unit
             profile.titles = new List<Title> { new Title { titleText = "The Brave", givenBy = "Alice" } };
             _fixture.Database.SetProfile("TestUser", profile);
 
-            string result = InvokeBuildAtAGlanceSection(_fixture.Database.GetProfile("TestUser"));
+            string result = InvokeBuildCollectionsSection(_fixture.Database.GetProfile("TestUser"));
 
             Assert.Contains("[u]Titles Earned:[/u] [b]1[/b]", result);
             Assert.Contains("[u]Richest Currency:[/u] [b]12[/b] gold", result);
@@ -891,14 +891,14 @@ namespace FChatDicebot.Tests.Unit
         }
 
         [Fact]
-        public void BuildAtAGlanceSection_NoTitlesOrCurrency_ReturnsEmpty()
+        public void BuildCollectionsSection_NoTitlesOrCurrency_ReturnsEmpty()
         {
             var profile = new ProfileBuilder()
                 .WithUserName("TestUser")
                 .WithDisplayName("Test User")
                 .BuildAndSave(_fixture.Database);
 
-            Assert.Empty(InvokeBuildAtAGlanceSection(profile));
+            Assert.Empty(InvokeBuildCollectionsSection(profile));
         }
 
         [Fact]
@@ -1102,9 +1102,9 @@ namespace FChatDicebot.Tests.Unit
             return (string)method.Invoke(_dossier, new object[] { profile, targetUser });
         }
 
-        private string InvokeBuildAtAGlanceSection(Profile profile)
+        private string InvokeBuildCollectionsSection(Profile profile)
         {
-            var method = typeof(ChateauDossier).GetMethod("BuildAtAGlanceSection",
+            var method = typeof(ChateauDossier).GetMethod("BuildCollectionsSection",
                 BindingFlags.NonPublic | BindingFlags.Instance);
             return (string)method.Invoke(_dossier, new object[] { profile });
         }

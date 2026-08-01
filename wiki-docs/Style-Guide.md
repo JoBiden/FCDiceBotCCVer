@@ -89,6 +89,7 @@ Every informative readout (`!dossier`, `!bank`, `!statistics`, `!bottles`, `!tit
 | Element | Helper | Form |
 |---------|--------|------|
 | Title line | `ReadoutText.Title(text)` | `[b][u]Title[/u][/b]` — exactly one, first line, the only bold-underline in the readout |
+| Masthead | `ChateauDossier.Masthead` | `[sup]…[/sup]` letterhead above the title line. `!dossier` only — see below |
 | Section header | `ReadoutText.Section(header, domain)` | `[b][color=x]Header:[/color][/b]` — Sentence case, colon applied by the helper |
 | Row label | `ReadoutText.Label(label)` / `Row(label, value)` | `[u]Label:[/u] value` — Title Case |
 | Number | `ReadoutText.Num(value)` | `[b]148[/b]` — the unit stays outside the tag |
@@ -112,6 +113,10 @@ Every informative readout (`!dossier`, `!bank`, `!statistics`, `!bottles`, `!tit
 | `None` | none | history and neutral sections |
 
 **A section with no qualifying rows is hidden entirely, header included.** Both `InlineSection` and `LineSection` return empty for an empty row list; hand-rolled blocks must do the same. A bare coloured heading introducing nothing reads as a bug.
+
+**Leave a blank line between colour changes.** Sections of the same `ReadoutDomain` sit flush against each other; a change of domain gets a blank line, so the colour shift reads as a new part of the document rather than a stray highlight. `ChateauDossier.BuildFullDossier` does this by grouping sections into clusters and joining them with `ReadoutText.JoinClusters`, which also drops empty clusters so an absent group leaves no gap.
+
+**`!dossier` opens with a masthead, not its title line.** F-Chat prepends the sender name and timestamp to the first line of a message only, so whatever lands there is indented relative to everything below it. `!dossier` spends that line on `[sup]Official Chateau Contract Dossier[/sup]` and puts the resident's name on line two, flush left with the rest of the document. Other readouts are short enough that the indent on their title line doesn't matter; if that changes, reuse this pattern rather than inventing a second one.
 
 ## 8. Punctuation and flavor
 
