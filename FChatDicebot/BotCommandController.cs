@@ -18,6 +18,11 @@ namespace FChatDicebot
 
         public List<ChatBotCommand> BotCommands;
 
+        // alias -> the command that owns it, built once at load from every command's Aliases
+        // array. Aliases are a fallback, never an override: FindCommandByName tries real Names
+        // first, so adding an alias can't shadow a command that already exists.
+        private Dictionary<string, ChatBotCommand> AliasIndex;
+
         private object SavedTablesFileLock = new object();
         private object SavedChannelsFileLock = new object();
         private object ChannelDecksLock = new object();
@@ -31,6 +36,7 @@ namespace FChatDicebot
             BotCommands = new List<ChatBotCommand>();
 
             LoadChatBotCommands();
+            BuildAliasIndex();
         }
 
         private void LoadChatBotCommands()
@@ -72,20 +78,84 @@ namespace FChatDicebot
             }
         }
 
+        // Index every command's Aliases array so aliases dispatch without a delegating class of
+        // their own. Two rules keep an added alias from breaking anything: a real command Name
+        // always wins over an alias, and the first claim on an alias wins over a later one. Both
+        // are logged, because a silently ignored alias reads as "my alias doesn't work".
+        private void BuildAliasIndex()
+        {
+            AliasIndex = new Dictionary<string, ChatBotCommand>(StringComparer.OrdinalIgnoreCase);
+
+            var commandNames = new HashSet<string>(
+                BotCommands.Where(a => !string.IsNullOrEmpty(a.Name)).Select(a => a.Name),
+                StringComparer.OrdinalIgnoreCase);
+
+            foreach (ChatBotCommand c in BotCommands)
+            {
+                if (c.Aliases == null)
+                    continue;
+
+                foreach (string rawAlias in c.Aliases)
+                {
+                    if (string.IsNullOrWhiteSpace(rawAlias))
+                        continue;
+
+                    string alias = rawAlias.Trim();
+
+                    if (commandNames.Contains(alias))
+                    {
+                        Console.WriteLine("BuildAliasIndex: alias '" + alias + "' declared on !" + c.Name
+                            + " is already a command name; the command wins and the alias is ignored.");
+                        continue;
+                    }
+
+                    ChatBotCommand owner;
+                    if (AliasIndex.TryGetValue(alias, out owner))
+                    {
+                        if (owner != c)
+                        {
+                            // Reflection order decides which command got here first, so name both
+                            // rather than implying the winner was chosen deliberately.
+                            Console.WriteLine("BuildAliasIndex: alias '" + alias + "' is claimed by both !"
+                                + owner.Name + " and !" + c.Name + "; keeping !" + owner.Name + ".");
+                        }
+                        continue;
+                    }
+
+                    AliasIndex[alias] = c;
+                }
+            }
+        }
+
         // Resolve a command by name deterministically. Commands are loaded by reflection
         // (LoadChatBotCommands), so when a legacy DiceBot command and a Chateau command share a
         // Name (historically "work" = Work/ChateauWork, "help" = DiceHelp/ChateauHelp), a plain
         // FirstOrDefault picked a non-deterministic winner by metadata-token order. The Chateau
         // command is always the intended one in this deployment, so on a collision we prefer the
         // class whose type name is the Chateau implementation.
+        //
+        // Falls back to the alias index, so "!hug" resolves to the ChateauCuddle instance itself
+        // rather than to a stub class that forwarded to it.
         public ChatBotCommand FindCommandByName(string commandName)
         {
-            var matches = BotCommands.Where(a => a.Name == commandName).ToList();
-            if (matches.Count <= 1)
-                return matches.FirstOrDefault();
+            if (string.IsNullOrEmpty(commandName))
+                return null;
 
-            return matches.FirstOrDefault(a => a.GetType().Name.StartsWith("Chateau", StringComparison.Ordinal))
-                ?? matches[0];
+            var matches = BotCommands.Where(a => a.Name == commandName).ToList();
+            if (matches.Count == 1)
+                return matches[0];
+
+            if (matches.Count > 1)
+            {
+                return matches.FirstOrDefault(a => a.GetType().Name.StartsWith("Chateau", StringComparison.Ordinal))
+                    ?? matches[0];
+            }
+
+            ChatBotCommand aliased;
+            if (AliasIndex != null && AliasIndex.TryGetValue(commandName, out aliased))
+                return aliased;
+
+            return null;
         }
 
         public void RunChatBotCommand(UserGeneratedCommand command)

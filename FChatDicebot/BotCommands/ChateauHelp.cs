@@ -10,6 +10,75 @@ namespace FChatDicebot.BotCommands
 {
     public class ChateauHelp : ChatBotCommand
     {
+        // The general !help listing, by section. These name commands only — the alias subtext
+        // beside a name is read off that command's Aliases array by ListEntry, so the listing
+        // can't fall out of step with what the bot actually answers to. Which commands are
+        // worth listing stays a curated choice (admin and test commands are deliberately out),
+        // which is why these aren't generated from the command table; a test checks every name
+        // here still resolves.
+
+        public static readonly string[] GeneralCommands =
+        {
+            "dossier", "bondtree", "familytree", "work", "volunteer", "bank", "titles",
+            "settitle", "category", "identifier", "pledges", "abandonpledge", "bottles", "sell",
+            "statues", "statistics", "populations", "flora", "birthrates", "parasites", "payroll",
+            "economics", "business", "joinchateau", "modmessage", "random", "feedback",
+            "seteicon", "help", "botinfo", "uptime"
+        };
+
+        public static readonly string[] RecoveryCommands =
+        {
+            "cleanse", "detox", "purge", "rest", "wash"
+        };
+
+        // "Requires channel" but not an interaction with another resident, so it belongs here
+        // rather than under one of the four coloured interaction tiers: !drink announces itself
+        // in the room, which is why it can't sit with !bottles / !sell in the general list.
+        public static readonly string[] RoomCommands =
+        {
+            "consent", "no", "oops", "pledge", "fulfill", "drink"
+        };
+
+        public static readonly string[] CasualCommands =
+        {
+            "kiss", "handhold", "cuddle", "spank", "bully", "boobhat", "lick", "pet", "lap", "sit"
+        };
+
+        public static readonly string[] InvolvedCommands =
+        {
+            "dressup", "feed", "golden", "pay", "milk", "climax", "climaxfor"
+        };
+
+        public static readonly string[] CommitmentCommands =
+        {
+            "petrify", "plant", "objectify", "consume", "mark", "employ", "bond", "entitle",
+            "corrupt", "purify", "breed", "birth", "train"
+        };
+
+        public static readonly string[] ConsequenceCommands =
+        {
+            "rename", "monsterize", "curse", "infest", "dose", "odorize", "break"
+        };
+
+        public static readonly string[] DicebotCommands =
+        {
+            "joingame", "startgame", "leavegame", "cancelgame", "gamestatus", "gamecommand",
+            "showgames", "roll", "rolltable", "showlastroll", "coinflip", "fitd", "tipdie",
+            "rock", "paper", "scissors", "lizard", "spock", "fen"
+        };
+
+        /// <summary>Every section of the general listing, for tests that check all of them.</summary>
+        public static IEnumerable<string> AllListedCommands
+        {
+            get
+            {
+                return GeneralCommands
+                    .Concat(RecoveryCommands).Concat(RoomCommands).Concat(CasualCommands)
+                    .Concat(InvolvedCommands).Concat(CommitmentCommands)
+                    .Concat(ConsequenceCommands).Concat(DicebotCommands);
+            }
+        }
+
         public ChateauHelp()
         {
             Name = "help";
@@ -35,10 +104,10 @@ namespace FChatDicebot.BotCommands
             // Check if user is requesting help for a specific command
             if (terms.Length > 0)
             {
+                // Same resolver the dispatcher uses, so "!help hug" and "!hug" can't disagree
+                // about which command an alias means.
                 string requestedCommand = terms[0].ToLower();
-                ChatBotCommand cmd = commandController.BotCommands.FirstOrDefault(c =>
-                    c.Name.ToLower() == requestedCommand ||
-                    (c.Aliases != null && c.Aliases.Any(a => a.ToLower() == requestedCommand)));
+                ChatBotCommand cmd = commandController.FindCommandByName(requestedCommand);
 
                 if (cmd != null)
                 {
@@ -53,135 +122,15 @@ namespace FChatDicebot.BotCommands
                 }
             }
 
-            // Original general help display
-            List<string> generalCommands = new List<string>()
-            {
-                "!dossier [sub]!profile, !bio[/sub] ",
-                "!bondtree",
-                "!familytree",
-                "!work [sub]!w[/sub]",
-                "!volunteer [sub]!v[/sub]",
-                "!bank [sub]!balance, !money[/sub]",
-                "!titles",
-                "!settitle",
-                "!category [sub]!list[/sub] ",
-                "!identifier [sub]!whatis[/sub]",
-                "!pledges",
-                "!abandonpledge",
-                "!sell",
-                "!statues",
-                "!statistics [sub]!stats[/sub]",
-                "!populations",
-                "!flora",
-                "!birthrates",
-                "!parasites",
-                "!payroll",
-                "!economics",
-                "!business",
-                "!joinchateau",
-                "!modmessage",
-                "!random",
-                "!feedback [sub]!suggestion[/sub]",
-                "!seteicon",
-                "!help [sub]!commands[/sub]",
-                "!botinfo",
-                "!uptime"
-            };
-
-            List<string> recoveryCommands = new List<string>()
-            {
-                "!cleanse",
-                "!detox",
-                "!purge",
-                "!rest",
-                "!wash"
-            };
-
-            List<string> roomCommands = new List<string>()
-            {
-                "!consent [sub]!c, !accept[/sub] ",
-                "!no [sub]!refuse, !decline[/sub]",
-                "!oops [sub]!o, !withdraw, !cancel[/sub]",
-                "!pledge",
-                "!fulfill"
-            };
-
-            List<string> casualCommands = new List<string>()
-            {
-                "!kiss",
-                "!handhold",
-                "!cuddle [sub]!hug[/sub]",
-                "!spank",
-                "!bully",
-                "!boobhat",
-                "!lick",
-                "!pet",
-                "!lap",
-                "!sit"
-            };
-
-            List<string> involvedCommands = new List<string>()
-            {
-                "!dressup [sub]!dress[/sub]",
-                "!feed",
-                "!golden",
-                "!pay",
-                "!milk",
-                "!climax",
-                "!climaxfor"
-            };
-
-            List<string> commitmentCommands = new List<string>()
-            {
-                "!petrify",
-                "!plant",
-                "!objectify",
-                "!consume",
-                "!mark",
-                "!employ [sub]!hire[/sub]",
-                "!bond",
-                "!entitle",
-                "!corrupt",
-                "!purify",
-                "!breed",
-                "!birth",
-                "!train"
-            };
-
-            List<string> consequenceCommands = new List<string>()
-            {
-                "!rename",
-                "!monsterize",
-                "!curse",
-                "!infest",
-                "!dose",
-                "!odorize",
-                "!break"
-            };
-
-            List<string> dicebotCommands = new List<string>()
-            {
-                "!joingame",
-                "!startgame",
-                "!leavegame",
-                "!cancelgame",
-                "!gamestatus",
-                "!gamecommand [sub]!gc, !g[/sub]",
-                "!showgames",
-                "!roll",
-                "!rolltable",
-                "!showlastroll",
-                "!coinflip",
-                "!fitd",
-                "!tipdie",
-                "!rock",
-                "!paper",
-                "!scissors",
-                "!lizard",
-                "!spock",
-                "!fen"
-            };
-            string messageText = "These are all of the commands native to the [user]Chateau Contract[/user] bot, as of [b]June 29th 2026.[/b] For detailed description of their use, please see the [user]Chateau Contract[/user] profile or use !help [command] Commands in subtext are alternate names of the same command - all documentation will be for the first listed names.\n\n" +
+            List<string> generalCommands = ListEntries(commandController, GeneralCommands);
+            List<string> recoveryCommands = ListEntries(commandController, RecoveryCommands);
+            List<string> roomCommands = ListEntries(commandController, RoomCommands);
+            List<string> casualCommands = ListEntries(commandController, CasualCommands);
+            List<string> involvedCommands = ListEntries(commandController, InvolvedCommands);
+            List<string> commitmentCommands = ListEntries(commandController, CommitmentCommands);
+            List<string> consequenceCommands = ListEntries(commandController, ConsequenceCommands);
+            List<string> dicebotCommands = ListEntries(commandController, DicebotCommands);
+            string messageText = "These are all of the commands native to the [user]Chateau Contract[/user] bot, as of [b]August 2nd 2026.[/b] For detailed description of their use, please see the [user]Chateau Contract[/user] profile or use !help [command] Commands in subtext are alternate names of the same command - all documentation will be for the first listed names.\n\n" +
                     "[u]Does not require channel[/u]\n" +
                     Utils.sortedListDisplayText(generalCommands) + "\n" +
                     "[color=blue]Recovery Commands:[/color] " + Utils.sortedListDisplayText(recoveryCommands) + "\n\n" +
@@ -211,6 +160,28 @@ namespace FChatDicebot.BotCommands
                 
             }
             bot.SendPrivateMessage(messageText + "\nMost of [user]Chateau Contract[/user]'s functions are designed for use in the [session=Château Contract]adh-ac1885cd73f31adfaefb[/session] channel. Be sure to !joinchateau if you plan to stick around ♥", characterName);
+        }
+
+        /// <summary>Renders one listing line per named command, in the order given.</summary>
+        private static List<string> ListEntries(BotCommandController commandController, string[] commandNames)
+        {
+            return commandNames.Select(n => ListEntry(commandController, n)).ToList();
+        }
+
+        /// <summary>
+        /// One listing entry: <c>!name</c>, followed by its aliases in subtext if it has any.
+        /// A name that resolves to nothing is still printed — better a listed command with no
+        /// alias subtext than a silently missing line if a command is ever renamed.
+        /// </summary>
+        public static string ListEntry(BotCommandController commandController, string commandName)
+        {
+            ChatBotCommand cmd = commandController.FindCommandByName(commandName);
+            string[] aliases = cmd != null ? cmd.Aliases : null;
+
+            if (aliases == null || aliases.Length == 0)
+                return "!" + commandName;
+
+            return "!" + commandName + " " + ReadoutText.Small(string.Join(", ", aliases.Select(a => "!" + a)));
         }
 
         private string BuildDetailedCommandHelp(ChatBotCommand cmd)

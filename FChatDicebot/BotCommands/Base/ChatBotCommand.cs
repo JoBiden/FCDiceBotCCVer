@@ -10,7 +10,17 @@ namespace FChatDicebot.BotCommands.Base
     public abstract class ChatBotCommand
     {
         public string Name;
-        public string[] Aliases;
+
+        /// <summary>
+        /// Other names this command answers to. This array is the single source of truth for
+        /// aliases: <see cref="BotCommandController.FindCommandByName"/> dispatches on it, and
+        /// <c>!help</c> both looks commands up by it and prints it. Adding an alias is one entry
+        /// here — aliases used to need a delegating command class of their own, and no longer do.
+        /// A name that's already a command's <see cref="Name"/> is ignored (the real command
+        /// wins), so an alias can never shadow an existing command.
+        /// </summary>
+        public string[] Aliases = new string[0];
+
         public string Category; // "casual", "involved", "commitment", "consequence", "recovery", "general", "admin"
         public string ShortDescription; // One-liner for list views
         public string LongDescription; // Detailed explanation with examples/notes
@@ -43,6 +53,18 @@ namespace FChatDicebot.BotCommands.Base
         /// name it failed to recognize.
         /// </summary>
         public bool TakesInteractionType;
+
+        /// <summary>
+        /// Whether <paramref name="name"/> is one of this command's aliases. Case-insensitive,
+        /// because a resident types whatever case they like and the dispatcher lowercases.
+        /// </summary>
+        public bool HasAlias(string name)
+        {
+            if (Aliases == null || string.IsNullOrEmpty(name))
+                return false;
+
+            return Aliases.Any(a => string.Equals(a, name, StringComparison.OrdinalIgnoreCase));
+        }
 
         public bool ResolvesRecipient()
         {

@@ -36,7 +36,7 @@ namespace FChatDicebot.BotCommands
         public ChateauDrink()
         {
             Name = "drink";
-            Aliases = new string[] { "imbibe", "swig" };
+            Aliases = new string[] { };
             Category = "General";
             ShortDescription = "Drink down one of the bottles you're holding.";
             LongDescription = "Uncork and drink a bottle from your collection, keeping the empty. Whatever was inside affects you: a corrupt or pure bottle shifts you the same way, up to 3 bottles per day, and a substance you're addicted to will quiet the craving. There's always a small chance you find yourself wanting more. Name a bottle by its number, or leave it off to drink your newest.";

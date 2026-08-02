@@ -31,7 +31,7 @@ New `ChatBotCommand`: [ChateauFeedback.cs](../../FChatDicebot/BotCommands/Chatea
 | Field | Value |
 |-------|-------|
 | `Name` | `feedback` |
-| `Aliases` | `{ "suggestion" }` (display only — see real alias below) |
+| `Aliases` | `{ "suggestion" }` |
 | `Category` | `General` |
 | `ShortDescription` | "Send the staff an idea or a bug report" |
 | `Usage` | `!feedback <your idea or bug>`  •  `!feedback [bug\|idea\|other] <text>` |
@@ -40,7 +40,7 @@ New `ChatBotCommand`: [ChateauFeedback.cs](../../FChatDicebot/BotCommands/Chatea
 | `RequireChannel` | `false` (works in channel or PM) |
 | `RequireBotAdmin` / `RequireChannelAdmin` | `false` / `false` |
 
-**`!suggestion` alias** = its own delegating class [ChateauSuggestion.cs](../../FChatDicebot/BotCommands/ChateauSuggestion.cs), `Name="suggestion"`, whose `Run` calls `new ChateauFeedback().Run(...)` (the [ChateauW.cs](../../FChatDicebot/BotCommands/ChateauW.cs) pattern — the `Aliases` array does **not** route; see the [cluster README](Future-Social/README.md#cluster-wide-implementation-note-aliases-are-separate-command-classes)).
+**`!suggestion` alias** = the `Aliases` entry above, nothing more. The array routes: `BotCommandController` indexes it at load and dispatches `!suggestion` to this same command object (see the [cluster README](Future-Social/README.md#cluster-wide-implementation-note-aliases-are-one-array-entry)). *(This shipped as a delegating `ChateauSuggestion` class, which was deleted when aliases became array-driven.)*
 
 **Optional leading category (B9.2).** If the first term is one of a small known set (`bug`, `idea`, `other` — extend freely), strip it and store it as `category`; otherwise `category = "general"` and the whole message is the text. Keep this trivial: a single first-token check. **If it complicates parsing in practice, drop it entirely** and store every submission as `general` — the owner has explicitly OK'd dropping the category rather than fighting the parser.
 
@@ -113,7 +113,6 @@ Stored in a new **`Feedback`** Mongo collection. Unlike B6, this **does** touch 
 
 **Create:**
 - `FChatDicebot/BotCommands/ChateauFeedback.cs` — `!feedback` submission.
-- `FChatDicebot/BotCommands/ChateauSuggestion.cs` — `!suggestion` delegating alias.
 - `FChatDicebot/BotCommands/ChateauFeedbackList.cs` — admin `!feedbacklist` (+ static `BuildFeedbackList`).
 - `FChatDicebot.Tests/Unit/Chateaufeedbacklisttests.cs` — `BuildFeedbackList` rendering tests; submission validation tests (empty rejected, category parse, cooldown set).
 
