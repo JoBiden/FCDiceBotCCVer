@@ -1,12 +1,8 @@
 Features and changes, big and small, that have been proposed but not thoroughly scoped out for implementation.
 
-* remove '\[b]The bot is currently under construction. If you are seeing this message, your profile will almost certainly be reset before release, so don't get too attached!\[/b]' warning text in !joinchateau now that the bot is mature and a reset is highly unlikely.
-* Revisit all '\[b]This should not be taken lightly, and can not be done frequently\[/b]' text to better indicate actual cool down information (recipient or initiator, how frequent, etc).
-* Revisit corruption text to indicate it will be visible in other interactions, and other implications
-* A system to include multiple people in a casual interaction, and possibly other interactions.
-* !cancel and !decline (initiator and recipient geared 'remove pending interaction' commands) on top of existing time out parameters.
-* additional casual commands. lapsit, boobhat, lick, possibly more. Will it take up too much dossier space? Do they have reasonable titles to accrue?
-* Some way to resurface chips, poker, other games from the underlying dicebot functionality (currently, Chateau Work has overwritten the dicebot work). Save this for after original dice bot developer pushes their most recent dicebot changes to Git, for ease of merging
-* Audit existing commands for sensible new aliases (and check for collisions before adding any). Surfaced while speccing !refuse/!withdraw, whose short aliases !r and !w need a collision check against the live command table.
-* Author more !random events (see `wiki-docs/specs/Future-Social/Random-Events.md`). The engine/scheduler shipped 2026-06-29 but only one starter event ("Cutie says {word}") exists in the `RandomEvents` collection so far — needs a real pool (varied response types, winner rules, and reward types) so the ambient events don't feel repetitive.
+When an item here gets specced, move it into `specs/` (Future-* subfolder) and delete it from this list; when it ships, the spec's as-implemented notes are the record — this page should only ever hold still-open ideas.
 
+* Some way to resurface chips, poker, other games from the underlying dicebot functionality (currently, Chateau Work has overwritten the dicebot work). Save this for after original dice bot developer pushes their most recent dicebot changes to Git, for ease of merging. (Partial: dice games can now be wagered in Chateau currencies via `!joingame {game} {amount} {currency}`.)
+* Author more !random events (see `wiki-docs/specs/Future-Social/Random-Events.md`). The engine/scheduler shipped 2026-06-29 but only one starter event ("Cutie says {word}") exists in the `RandomEvents` collection so far — needs a real pool (varied response types, winner rules, and reward types) so the ambient events don't feel repetitive. Authoring UI: `scripts/random-event-builder`.
+
+Shipped since this list was started (see the matching specs in `wiki-docs/specs/` for as-implemented details): !joinchateau welcome cleanup, cooldown-accurate consent warnings (`CooldownSpec`/`ConsentWarningText`), corruption visibility disclosure, multi-person casual groups, `!no`/`!oops` lifecycle commands (with `!decline`/`!cancel` aliases), the lapsit/boobhat/lick casuals, and the command alias audit (aliases now route via the `Aliases` array).

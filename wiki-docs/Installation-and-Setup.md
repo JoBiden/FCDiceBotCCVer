@@ -6,9 +6,9 @@ This guide will walk you through setting up FCDiceBot from scratch.
 
 ### Software Requirements
 
-1. **Visual Studio 2013 or later** (for C# development)
-   - Community Edition is sufficient
-   - Ensure .NET Framework support is installed
+1. **.NET Framework 4.8 developer pack + dotnet CLI** (Visual Studio optional)
+   - `dotnet build FChatDicebot.sln` builds everything; the test project is SDK-style
+   - If using Visual Studio, don't add files via Solution Explorer — the main csproj globs `**\*.cs` and the IDE can expand the wildcard back into explicit entries
 
 2. **MongoDB** (for database)
    - Download from [mongodb.com](https://www.mongodb.com/try/download/community)
@@ -36,11 +36,13 @@ git clone https://github.com/JoBiden/FCDiceBotCCVer.git
 cd FCDiceBotCCVer
 ```
 
-### 2. Open in Visual Studio
+### 2. Build
 
-1. Open `FChatDicebot/FCDicebot.sln` in Visual Studio
-2. Restore NuGet packages (right-click solution → Restore NuGet Packages)
-3. Build the solution to ensure all dependencies are resolved
+```
+dotnet build FChatDicebot.sln
+```
+
+(The solution file is `FChatDicebot.sln` at the repository root. NuGet packages are committed under `packages\`.)
 
 ### 3. Set Up Directory Structure
 
@@ -66,22 +68,19 @@ mkdir C:\BotData\DiceBot\ImmediateBackup
 
 Create `C:\BotData\DiceBot\account_settings.txt` with your F-List credentials:
 
+The file is JSON of `SavedData/AccountSettings.cs` — that class is the authoritative field list. The core fields:
+
 ```json
 {
   "AccountName": "your_flist_account",
+  "AccountPassword": "your_password",
   "CharacterName": "BotCharacterName",
-  "Password": "your_password",
   "CName": "FCDiceBot",
   "AdminCharacters": ["YourMainCharacter", "AnotherAdminCharacter"]
 }
 ```
 
-**Fields:**
-- `AccountName` - Your F-List account name (for login)
-- `CharacterName` - The character the bot will use
-- `Password` - Your F-List account password
-- `CName` - Client name (can be anything, "FCDiceBot" is standard)
-- `AdminCharacters` - Array of character names with bot admin privileges
+Optional fields cover the other integrations: `DiscordBotToken`, `VcAccountName` / `VcAccountPassword` (VelvetCuff), `TrustedCharacters`, `AllowedChessEiconChannels`, `FullCosmeticsUnlockCharacters`, `MonsterGeneratorPresharedKey`.
 
 **Security Note:** Keep this file secure. It contains your F-List password.
 
@@ -103,13 +102,7 @@ The bot will automatically create the `ChateauDb` database and collections on fi
 
 #### Option B: Remote MongoDB
 
-If using a remote MongoDB instance, update the connection string in:
-
-`FChatDicebot/Database/Chateaudatabase.cs`
-
-```csharp
-const string connectionString = "mongodb://your-remote-host:27017";
-```
+If using a remote MongoDB instance, update the connection string passed to `MonDB.Initialize(...)` in `BotMain.Run()` (`FChatDicebot/BotMain.cs`) — it defaults to `mongodb://localhost:27017` with database `ChateauDb`.
 
 ### 6. Configure Channel Settings (Optional)
 
@@ -155,10 +148,10 @@ Create `C:\BotData\DiceBot\channel_settings.txt` to configure per-channel settin
 The bot will:
 1. Load account settings
 2. Backup existing data files
-3. Connect to MongoDB
+3. Connect to MongoDB (`MonDB.Initialize`)
 4. Get F-List authentication ticket
 5. Connect to WebSocket
-6. Join starting channels (defined in code)
+6. Join starting channels (saved channel settings with `StartupChannel` set)
 7. Set status to online
 
 ### Production Mode (Compiled)
@@ -176,6 +169,8 @@ Run the executable:
 FChatDicebot.exe
 ```
 
+Run modes: `-flist` (default), `-discord`, `-both`, `-none` (starts without connecting to any chat server — useful for debugging startup).
+
 ## Initial Configuration
 
 ### 1. Test the Connection
@@ -190,14 +185,14 @@ Test with a simple command:
 !roll 1d20
 ```
 
-### 2. Register for Chateau Features
+### 2. Register
 
-In a channel with the bot:
-```
-!register
-```
+Two separate registrations exist:
 
-This creates your profile in the Chateau database and grants starting chips (if enabled).
+```
+!register      ← legacy dicebot: creates your per-channel chip pile (grants starting chips if enabled)
+!joinchateau   ← Chateau Contract: creates your profile in the Chateau database
+```
 
 ### 3. Add Admin Characters
 
@@ -209,18 +204,7 @@ Admin characters are defined in `account_settings.txt`. They can:
 
 ### 4. Configure Channels
 
-Join the bot to channels:
-
-In F-List, invite the bot character to your channel, or modify the starting channels in `BotMain.cs`:
-
-```csharp
-private void JoinStartingChannels()
-{
-    JoinChannel("adh-channelid1");
-    JoinChannel("adh-channelid2");
-    // Add more as needed
-}
-```
+Join the bot to channels with the admin command `!joinchannel adh-channelid` (or invite the bot character in F-List). Mark a channel to auto-join on startup with `!setstartingchannel`; review with `!viewstartupchannels`.
 
 ## Troubleshooting
 
@@ -261,8 +245,7 @@ private void JoinStartingChannels()
 
 **Issue:** Bot joins but ignores commands
 - **Check:** Command prefix (default: `!`)
-- **Check:** Bot is registered in channel (for Chateau commands)
-- **Check:** User is registered (use `!register`)
+- **Check:** User is registered (`!joinchateau` for Chateau commands, `!register` for chips)
 - **Check:** Console for error messages
 
 ### Rate Limiting Issues
@@ -274,57 +257,23 @@ private void JoinStartingChannels()
 
 ## Advanced Configuration
 
-### Customizing Starting Channels
+### Timing constants
 
-Edit `BotMain.cs`, method `JoinStartingChannels()`:
-
-```csharp
-private void JoinStartingChannels()
-{
-    JoinChannel("adh-yourchannel1");
-    JoinChannel("adh-yourchannel2");
-    JoinChannel("adh-yourchannel3");
-}
-```
-
-### Customizing Bot Behavior
-
-**Change message rate limit** (not recommended, F-List may ban):
-
-In `BotMain.cs`:
-```csharp
-public static int MessageIntervalMiliseconds = 1500; // Default: 1.5 seconds
-```
-
-**Change tick rate:**
-
-In `BotMain.cs`:
-```csharp
-public static int TickTimeMiliseconds = 200; // Default: 200ms
-```
-
-**Change checkin interval** (authentication refresh):
-
-In `BotMain.cs`:
-```csharp
-private static int CheckinInterval = 20; // Default: 20 minutes
-```
+`BotMain.cs` holds the timing knobs: `MinimumTimeBetweenMessages` (1500ms — don't lower it, F-List may ban), `TickTimeMiliseconds` (200ms run loop), `ReconnectTimeMs` (2 minutes). Channel-level knobs (slots cooldown, starting chips, random-event opt-in, …) are per-channel settings managed with `!updatesetting` / `!viewsettings`.
 
 ### VelvetCuff Integration (Optional)
 
-For real currency chip purchases:
+For real currency chip purchases, add the VelvetCuff account credentials to `account_settings.txt`:
 
-1. Get VelvetCuff API credentials
-2. Add to account settings:
-   ```json
-   {
-     "AccountName": "...",
-     "VelvetCuffClientId": "your_client_id",
-     "VelvetCuffClientSecret": "your_client_secret"
-   }
-   ```
+```json
+{
+  "AccountName": "...",
+  "VcAccountName": "your_vc_account",
+  "VcAccountPassword": "your_vc_password"
+}
+```
 
-3. Configure in `VelvetcuffConnection.cs`
+The connection logic lives in `VelvetcuffConnection.cs`.
 
 ## Maintenance
 
@@ -348,9 +297,9 @@ mongodump --db ChateauDb --out C:\Backups\MongoDB\
    git pull origin main
    ```
 
-2. Rebuild in Visual Studio
+2. Rebuild: `dotnet build FChatDicebot.sln`
 
-3. Test in development mode before deploying
+3. Test (`dotnet test FChatDicebot.Tests\FChatDicebot.Tests.csproj`, needs local MongoDB) before deploying
 
 4. Backup data before updating production
 
@@ -366,9 +315,9 @@ Check logs for errors:
 
 **Clear chip balances:**
 ```
-!clearchips
+!removeallpiles
 ```
-(Requires bot admin)
+(Requires bot admin; see also `!removepile`, `!removeallchipsoveramount`)
 
 **Clear pending interactions:**
 - Automatically expire after 10 minutes

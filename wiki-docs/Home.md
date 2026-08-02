@@ -12,17 +12,20 @@ Welcome to the FCDiceBot documentation! This is a comprehensive chatbot for F-Li
 - **[F-List Integration](F-List-Integration)** - How the bot connects to F-List
 - **[Database and Persistence](Database-and-Persistence)** - Data storage system
 - **[Development Guide](Development-Guide)** - Adding features and commands
+- **[Style Guide](Style-Guide)** - Rules for user-facing text
+- **[Documentation Guide](README)** - How to keep these docs accurate
+- **specs/** - Per-feature design + as-shipped documentation
 
 ## What is FCDiceBot?
 
 FCDiceBot is a feature-rich chatbot designed for F-List chat that provides:
 
-### Core Features
+### Core Features (legacy dicebot)
 
 - **Dice Rolling System** - Advanced dice rolling with complex expressions, up to 200 dice
 - **Card Deck Management** - Playing cards, Tarot, Uno, and custom decks
 - **Casino Chip Economy** - Betting, pots, chip transfers, and real currency integration
-- **Game Sessions** - 10+ games including poker, blackjack, roulette, and more
+- **Game Sessions** - 15 games including poker, blackjack, roulette, chess, mafia, and more
 - **Roll Tables** - User-created weighted random tables
 - **Slot Machines** - Customizable slot games with payout multipliers
 
@@ -30,35 +33,28 @@ FCDiceBot is a feature-rich chatbot designed for F-List chat that provides:
 
 An extensive roleplay interaction system featuring:
 
-- **Consent-based Interactions** - All interactions require recipient consent
-- **Investment Levels** - Casual, Involved, Commitment, and Consequence interactions
-- **Rate Limiting** - Prevents spam with cooldown timers
-- **Job System** - Employment, daily duties, and experience tracking
-- **Title System** - Achievements and player-granted titles
-- **Transformation System** - Species changes, object transformations, consumption
-- **Relationship System** - Marks, bonds, and ownership relationships
-- **Statistics Tracking** - Complete history of all interactions
+- **Consent-based Interactions** - every interaction needs the recipient's `!consent` (decline with `!no`, withdraw with `!oops`), including multi-person group casuals
+- **Investment Levels** - Casual, Involved, Commitment, and Consequence interactions, plus themed Recovery commands
+- **Status Effects** - scents, corruption, addictions, parasites, and curses that echo into other interactions
+- **Economy** - currencies, `!work` duties, employment with employer kickbacks, milk bottles, pledges
+- **Titles and Statistics** - system achievements, player-granted titles, dossiers, and Chateau-wide reports
+- **Transformations** - species changes, petrification, objectification, breeding, and their reversals
 
 ## Technology
 
-- **Language:** C# (.NET Framework)
-- **Database:** MongoDB (primary) + JSON file storage (legacy)
+- **Language:** C# (.NET Framework 4.8)
+- **Database:** MongoDB (Chateau) + JSON file storage (legacy dicebot)
 - **Communication:** WebSocket (F-List chat protocol)
 - **Libraries:** Newtonsoft.Json, websocket-sharp, MongoDB.Driver
+- **Tests:** xUnit (`FChatDicebot.Tests`, needs local MongoDB)
 
 ## Architecture Highlights
 
-- **Command Pattern** - 143+ commands automatically discovered via reflection
+- **Command Pattern** - ~210 commands automatically discovered via reflection
 - **Strategy Pattern** - Modular interaction processors for extensibility
-- **Rate Limiting** - Per-user cooldowns on interactions
+- **Rate Limiting** - per-interaction cooldowns, declared once per processor
 - **Message Queue** - Respects F-List's rate limits (1.5s between messages)
 - **Multi-channel Support** - Per-channel configuration and state management
-
-## Getting Help
-
-- Check the relevant wiki page for your topic
-- Review the [Command Reference](Command-Reference) for command syntax
-- See the [Development Guide](Development-Guide) for contributing
 
 ## Quick Start
 
@@ -73,8 +69,9 @@ An extensive roleplay interaction system featuring:
 All commands use the `!` prefix by default (configurable per-channel):
 
 - `!roll 3d6` - Roll dice
-- `!register` - Register for Chateau features
-- `!help` - Get help (if implemented)
+- `!register` - Register for a chip pile (legacy dicebot, per channel)
+- `!joinchateau` - Register with the Chateau Contract system
+- `!help` - Command list; `!help {command}` for details
 - `!kiss [user]Name[/user]` - Chateau interaction example
 
 See the [Command Reference](Command-Reference) for the complete list.

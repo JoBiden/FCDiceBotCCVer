@@ -74,45 +74,28 @@ On successful authentication, the server sends:
 
 ### Incoming Messages
 
-The bot handles the following F-List server message types:
+The bot handles the following F-List server message types (the `switch` in `BotMain.OnMessage` is authoritative):
 
-| Type | Description | Handler |
-|------|-------------|---------|
-| `PIN` | Server ping (keepalive) | Respond with `PIN` |
-| `MSG` | Channel message | Parse for commands |
-| `PRI` | Private message | Parse for commands |
-| `JCH` | User joined channel | Greet if enabled |
-| `LCH` | User left channel | Update tracking |
-| `NLN` | User connected | Track online status |
-| `FLN` | User disconnected | Track offline status |
-| `COL` | Channel ops list | Process pending admin commands |
-| `CDS` | Channel description | Update channel info |
-| `ICH` | Initial channel data | Update channel info |
-| `CHA` | Channel announcement | Display to console |
-| `STA` | Status change | Track user status |
-| `KID` | Kicked from channel | Log and rejoin logic |
-| `ERR` | Error from server | Log and handle |
-| `VAR` | Server variables | Update chat variables |
-| `HLO` | Hello (connection info) | Log connection success |
+| Type | Description |
+|------|-------------|
+| `PIN` | Server ping (keepalive) — bot responds with `PIN` |
+| `MSG` | Channel message — parsed for commands |
+| `PRI` | Private message — parsed for commands |
+| `JCH` | User joined channel — greet if enabled |
+| `LCH` | User left channel — update tracking |
+| `NLN` / `FLN` | User connected / disconnected — track online status |
+| `LIS` | Initial character list |
+| `COL` | Channel ops list — feeds channel-admin checks |
+| `CDS` | Channel description |
+| `ICH` | Initial channel data |
+| `STA` | Status change |
+| `LRP` | Channel ad/roleplay message |
+| `RLL` | Server-side dice roll / bottle spin result |
+| `ERR` | Error from server — logged |
 
-**Implementation:** `BotMain.cs` → `OnMessage(string data)`
+Unlisted types are ignored.
 
-```csharp
-switch(messageType) {
-    case "PIN":
-        SendPing();
-        break;
-    case "MSG":
-        var msgData = JsonConvert.DeserializeObject<MSGserver>(data);
-        InterpretChatCommand(msgData.message, msgData.character, msgData.channel);
-        break;
-    case "PRI":
-        var priData = JsonConvert.DeserializeObject<PRIserver>(data);
-        InterpretChatCommand(priData.message, priData.character, null);
-        break;
-    // ... more cases
-}
-```
+**Implementation:** `BotMain.cs` → `OnMessage(string data)` — each case deserializes the matching `SavedData` message class and dispatches; `MSG`/`PRI` flow into `InterpretChatCommand`.
 
 ### Outgoing Messages
 
@@ -243,79 +226,33 @@ case "PIN":
     break;
 ```
 
-### Checkin System
+### Ticket Refresh
 
-**Location:** `BotMain.cs` → `RunLoop()`
-
-Every 20 minutes, the bot refreshes its authentication ticket:
-
-```csharp
-if (DateTime.Now.Subtract(LastCheckin).TotalMinutes > CheckinInterval) {
-    GetNewApiTicket();
-    LastCheckin = DateTime.Now;
-}
-```
-
-This prevents session expiration on long-running bots.
+Tickets are fetched at login and again on every reconnect. `GetNewApiTicket()` clears the previous (stale/expired) ticket before requesting a new one, so no code path can accidentally reuse an expired ticket while the async login response is pending.
 
 ### Reconnection Logic
 
-**Location:** `BotMain.cs` → `Run()`
+**Location:** `BotMain.cs` → `Run()` / the run loop's reconnect timer
 
-If the WebSocket closes:
+If the WebSocket closes or goes quiet:
 
-1. **Wait 5 seconds**
-2. **Check if disconnection was intentional**
-   - If `StayConnected == false`, don't reconnect
-3. **Try reconnecting with HTTPS first**
-4. **If HTTPS fails, try SSL fallback**
-5. **Get new API ticket**
-6. **Reconnect WebSocket**
-7. **Send new IDN message**
-8. **Rejoin channels**
-
-**Error Handling:**
-
-```csharp
-ws.OnClose += (sender, e) => {
-    if (StayConnected) {
-        System.Threading.Thread.Sleep(5000);
-        Run(); // Reconnect
-    }
-};
-
-ws.OnError += (sender, e) => {
-    Utils.AddToLog(e.Message, "ERROR");
-};
-```
+1. Wait out `ReconnectTimeMs` (2 minutes)
+2. Get a fresh API ticket
+3. Reconnect the WebSocket (with SSL fallback if the first attempt fails)
+4. Send a new IDN message
+5. Rejoin channels
 
 ### Connection Timeout
 
-**5-Minute Timeout:**
-
-If no messages received for 5 minutes, assume connection is dead and reconnect:
-
-```csharp
-if (DateTime.Now.Subtract(LastReceivedMessage).TotalMinutes > 5) {
-    ws.Close();
-    Run(); // Reconnect
-}
-```
+If the connection goes quiet, the bot assumes it's dead and reconnects after `BotMain.ReconnectTimeMs` — currently **2 minutes** (it was 5 in older versions; check the constant, not this page).
 
 ## Channel Management
 
 ### Joining Channels
 
-**Automatic on Startup:** `JoinStartingChannels()`
+**Automatic on Startup:** `JoinStartingChannels()` joins every saved channel whose settings have `StartupChannel` set (managed with `!setstartingchannel` / `!viewstartupchannels`).
 
-```csharp
-private void JoinStartingChannels() {
-    JoinChannel("adh-channel1");
-    JoinChannel("adh-channel2");
-}
-```
-
-**Manual Join:** `!joinchannel adh-channelid` (bot admin only)
+**Manual Join:** `!joinchannel adh-channelid` (bot admin only); leave with `!leavethischannel`.
 
 ### Tracking Joined Channels
 
@@ -481,7 +418,7 @@ Check and clean pending commands regularly:
 
 - Never log passwords
 - Store tickets securely (memory only)
-- Refresh tickets regularly (20 min interval)
+- Tickets are re-fetched at login and on every reconnect
 
 ### Input Validation
 
@@ -596,8 +533,8 @@ Simple commands to verify connection:
 
 ```
 !roll 1d6
-!echo test
-!ping
+!uptime
+!botinfo
 ```
 
 ## See Also
