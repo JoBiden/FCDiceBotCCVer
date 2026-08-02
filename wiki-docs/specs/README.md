@@ -50,6 +50,7 @@ Design + as-implemented documentation for the Chateau Contract interaction syste
 | Spec | Adds |
 |------|------|
 | [Feedback](Feedback.md) | `!feedback` (+ `!suggestion` alias) to submit an idea or bug report into a new `Feedback` collection, plus admin-only `!feedbacklist` to read recent submissions. |
+| [Pledges](Pledges.md) | `!pledge` / `!pledges` / `!fulfill` / `!abandonpledge`, the `Pledges` collection, and the honor accounting (`pledgesactive` / `pledgesfulfilled` / `pledgesabandoned`) behind the public reputation messaging and the pledge title ladders. Documented retroactively; includes a Known gaps section. |
 
 ### Customization
 
