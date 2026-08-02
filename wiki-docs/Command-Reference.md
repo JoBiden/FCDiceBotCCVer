@@ -957,17 +957,29 @@ Set the decorative eicon the Chateau shows for an identifier, beside its name in
 
 ## Command Aliases
 
-Many commands have shorter aliases:
+Many commands answer to a second name. Either name does exactly the same thing; the documentation is written under the full command.
 
-| Full Command | Alias |
-|-------------|-------|
-| `!showchips` | `!chips` |
-| `!showpot` | `!pot` |
-| `!coinflip` | `!flip` |
-| `!consent` | `!accept` |
-| `!reject` | `!deny` |
+| Full Command | Aliases |
+|-------------|---------|
+| `!bank` | `!balance`, `!money` |
 | `!bottles` | `!collection` |
-| `!drink` | `!imbibe`, `!swig` |
+| `!category` | `!list`, `!identifiers` |
+| `!consent` | `!c`, `!accept` |
+| `!cuddle` | `!hug` |
+| `!dossier` | `!profile`, `!bio` |
+| `!dressup` | `!dress` |
+| `!employ` | `!hire` |
+| `!feedback` | `!suggestion` |
+| `!gamecommand` | `!gc`, `!g` |
+| `!help` | `!commands` |
+| `!identifier` | `!whatis` |
+| `!no` | `!refuse`, `!decline` |
+| `!oops` | `!o`, `!withdraw`, `!cancel` |
+| `!statistics` | `!stats` |
+| `!volunteer` | `!v` |
+| `!work` | `!w` |
+
+`!help` prints this same list from the commands themselves, so it's always current there.
 
 ## Tips
 

@@ -27,8 +27,9 @@ unattended.
 3. **Fix the root cause**, not the symptom the resident happened to see. Follow the conventions
    the codebase already uses — read the neighbours before writing:
    - `wiki-docs\Development-Guide.md` and `wiki-docs\Architecture.md` for structure.
-   - Interactions are a processor + a command class + a registry entry + tests. Aliases are
-     their own delegating command class; the `Aliases` array is display-only and does not route.
+   - Interactions are a processor + a command class + a registry entry + tests. An alias is one
+     string in the canonical command's `Aliases` array — that array routes and feeds `!help`.
+     An alias of an *interaction* also needs an `InteractionEiconSupport.TokenToVerbKeys` entry.
    - Shared text lives in one place: cooldown/consent warnings come from the `CooldownSpec` /
      `ConsentWarningText` single source of truth (override `BuildConsentWarning`, never
      `GetConsentWarning`); vices render through `ViceText.ViceName`; `Utils.*ToText` helpers read

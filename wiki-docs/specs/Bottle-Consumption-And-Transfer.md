@@ -134,7 +134,7 @@ Substance names render through `Utils.SubstanceToText`. **Donor names render thr
 
 The `#` prefix is required on serials so the argument can't be confused with a count. Term parsing strips it before the int parse.
 
-**Naming:** `!consume` is already taken by the devour-a-resident Commitment interaction ([`ChateauConsume.cs:19`](../../FChatDicebot/BotCommands/ChateauConsume.cs)), so `!drink` is the primary. Suggested aliases: `!imbibe`, `!swig`. Note `drink` is itself a vice/substance identifier, so `!drink drink` is legal and slightly silly. Harmless, but worth knowing before someone reports it.
+**Naming:** `!consume` is already taken by the devour-a-resident Commitment interaction ([`ChateauConsume.cs:19`](../../FChatDicebot/BotCommands/ChateauConsume.cs)), so `!drink` is the primary. `!imbibe` and `!swig` were suggested as aliases but **rejected by the owner (2026-08-02) — don't re-add them**. Note `drink` is itself a vice/substance identifier, so `!drink drink` is legal and slightly silly. Harmless, but worth knowing before someone reports it.
 
 ### Why it must be a channel command
 
