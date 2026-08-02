@@ -2,68 +2,69 @@
 
 This guide explains how to extend and customize FCDiceBot by adding new features, commands, and interactions.
 
+When your change invalidates any wiki page, update it in the same PR — see [README](README.md) for the documentation rules.
+
 ## Development Environment Setup
 
 ### Prerequisites
 
-1. **Visual Studio 2013 or later**
-2. **MongoDB** (for testing)
-3. **Git** (for version control)
-4. **F-List account** (for testing)
+1. **.NET Framework 4.8 developer pack** (the main project is a legacy non-SDK csproj) and the **dotnet CLI** (the test project is SDK-style)
+2. **MongoDB** running locally at `mongodb://localhost:27017` (required by the bot *and* the tests)
+3. **Git**
+4. **F-List account** (only for running the bot live)
 
 ### Getting Started
 
-1. Clone the repository
-2. Open `FChatDicebot/FCDicebot.sln` in Visual Studio
-3. Restore NuGet packages
-4. Build the solution
-5. Set up test bot account and MongoDB
+```
+git clone <repo>
+dotnet build FChatDicebot.sln
+dotnet test FChatDicebot.Tests\FChatDicebot.Tests.csproj
+```
+
+NuGet packages are committed under `packages\`. Visual Studio works too, but **don't add files through the VS Solution Explorer** — `FChatDicebot.csproj` globs `**\*.cs`, and the IDE can expand that wildcard back into explicit entries. A new `.cs` file builds with no csproj edit. (`Model\MonsterGenerator\**` is deliberately excluded: unported code that cannot compile.)
+
+Running the bot for real needs `C:\BotData\DiceBot\account_settings.txt` (JSON of `SavedData/AccountSettings.cs`) plus MongoDB. Run modes: `-flist` (default), `-discord`, `-both`, `-none`.
 
 ### Project Structure
 
 ```
 FCDiceBotCCVer/
-└── FChatDicebot/
-    └── FChatDicebot/
-        ├── BotMain.cs                      # Core bot logic
-        ├── BotCommandController.cs         # Command dispatcher
-        ├── BotCommands/                    # 143 command classes
-        │   ├── Base/
-        │   │   └── ChatBotCommand.cs       # Base class
-        │   ├── ChateauKiss.cs
-        │   ├── ChateauCuddle.cs
-        │   └── ... (140+ more)
-        ├── InteractionProcessors/          # Modular interactions
-        │   ├── IInteractionProcessor.cs
-        │   ├── InteractionProcessorBase.cs
-        │   ├── InteractionProcessorRegistry.cs
-        │   ├── Casual/
-        │   ├── Involved/
-        │   ├── Commitment/
-        │   └── Consequence/
-        ├── Database/
-        │   ├── Ichateaudatabase.cs         # Database interface
-        │   └── Chateaudatabase.cs          # MongoDB implementation
-        ├── DiceFunctions/
-        │   ├── DiceBot.cs                  # Dice and games
-        │   └── Games/                      # 10+ game implementations
-        ├── Model/
-        │   └── ChateauDB.cs                # Data models
-        ├── SavedData/                      # Configuration classes
-        └── Utils.cs                        # Helper functions
+├── FChatDicebot.sln
+├── FChatDicebot/
+│   ├── BotMain.cs                      # Core bot logic, run loop, MonDB.Initialize
+│   ├── BotCommandController.cs         # Command discovery + dispatch
+│   ├── MonDB.cs                        # Static DB adapter
+│   ├── BotCommands/                    # ~210 command classes (one per command)
+│   │   └── Base/ChatBotCommand.cs      # Base class + help metadata fields
+│   ├── InteractionProcessors/          # Consent-based interactions
+│   │   ├── IInteractionProcessor.cs
+│   │   ├── InteractionProcessorBase.cs
+│   │   ├── InteractionProcessorRegistry.cs
+│   │   ├── CooldownSpec.cs / ConsentWarningText.cs
+│   │   ├── GroupInteractionResolver.cs / GroupSpec.cs
+│   │   ├── StatusEffectRegistry.cs / PostInteractionEffectRegistry.cs
+│   │   └── Casual/ Involved/ Commitment/ Consequence/
+│   ├── Database/                       # IChateauDatabase + Mongo implementation
+│   ├── DiceFunctions/                  # Legacy dicebot (dice, decks, chips, games)
+│   ├── Model/ChateauDB.cs              # Profile, Interaction, PendingCommand, ...
+│   └── SavedData/                      # JSON-file config classes
+├── FChatDicebot.Tests/                 # xUnit tests (SDK-style project)
+│   ├── Fixtures/Testdatabasefixture.cs
+│   ├── Unit/  Integration/  Builders/
+│   └── TestConfiguration.cs            # ChateauDb_Test @ localhost:27017
+├── scripts/                            # Operational tooling (see CLAUDE.md)
+└── wiki-docs/                          # This documentation
 ```
 
 ## Adding a New Command
 
-### Step 1: Create Command Class
+Create one file in `BotCommands/`. Reflection discovers it at startup; the csproj glob picks it up at build. There is no registration step.
 
-Create a new file in `BotCommands/` directory:
-
-**Example:** `BotCommands/ChateauWave.cs`
+The `Run` signature takes a `MessageAddress` (character + channel), not separate name/channel strings:
 
 ```csharp
-using System;
-using FChatDicebot.SavedData;
+using FChatDicebot.BotCommands.Base;
+using FChatDicebot.Model;
 
 namespace FChatDicebot.BotCommands
 {
@@ -72,883 +73,201 @@ namespace FChatDicebot.BotCommands
         public ChateauWave()
         {
             Name = "wave";
-            RequireBotAdmin = false;
-            RequireChannelAdmin = false;
+            Aliases = new string[] { };          // extra names that also dispatch here
+            Category = "Casual Interaction";     // groups the command in !help
+            ShortDescription = "Wave at another resident";
+            LongDescription = "Longer explanation shown by !help wave.";
+            Usage = "!wave [noparse][user]NameInUserTag[/user][/noparse]";
+            RelatedCommands = new string[] { "kiss", "consent" };
             RequireChannel = true;
-            LockCategory = CommandLockCategory.None;
+            LockCategory = CommandLockCategory.NONE;
         }
 
-        public override void Run(
-            BotMain bot,
-            BotCommandController commandController,
-            string[] rawTerms,
-            string[] terms,
-            string characterName,
-            string channel,
-            UserGeneratedCommand command)
+        public override void Run(BotMain bot, BotCommandController commandController,
+            string[] rawTerms, string[] terms, MessageAddress address, UserGeneratedCommand command)
         {
-            // Get target user from terms
-            string targetUser = commandController.GetUserNameFromCommandTerms(terms);
-
-            if (string.IsNullOrEmpty(targetUser))
-            {
-                bot.SendMessageInChannel(
-                    $"Usage: !wave [user]Name[/user]",
-                    channel);
-                return;
-            }
-
-            // Check if initiator is registered
-            var initiatorProfile = MonDB.getProfile(characterName);
-            if (initiatorProfile == null)
-            {
-                bot.SendMessageInChannel(
-                    $"{characterName} is not registered. Use !register first.",
-                    channel);
-                return;
-            }
-
-            // Check if target exists
-            var targetProfile = MonDB.getProfile(targetUser);
-            if (targetProfile == null)
-            {
-                bot.SendMessageInChannel(
-                    $"{targetUser} not found.",
-                    channel);
-                return;
-            }
-
-            // Create the interaction
-            string message = $"{initiatorProfile.displayName} waves at " +
-                           $"{targetProfile.displayName}. Hello!";
-
-            bot.SendMessageInChannel(message, channel);
-
-            // Optionally: Increment statistics
-            MonDB.IncrementCount(characterName, "wave", 1);
-            MonDB.IncrementCount(targetUser, "wavetake", 1);
+            string characterName = address.character;
+            string channel = address.channel;
+            string target = commandController.GetUserNameFromCommandTerms(rawTerms);
+            // ... validate, act, respond via bot.SendMessageInChannel / bot.SendPrivateMessage
         }
     }
 }
 ```
 
-### Step 2: Build and Test
+### Command metadata
 
-1. Build the solution (F6)
-2. The command is **automatically discovered** via reflection
-3. Run the bot
-4. Test in F-List: `!wave [user]TestUser[/user]`
+The base-class fields on `ChatBotCommand` drive `!help` and dispatch — see `BotCommands/Base/ChatBotCommand.cs` for the authoritative list and doc comments. The ones that trip people up:
 
-### Command Properties
+| Field | Notes |
+|-------|-------|
+| `Aliases` | Single source of truth for aliases — they **route**, not just display. One array entry per alias; never a delegating class. A name already used by another command's `Name` is ignored. |
+| `Usage` | Also drives bare-name targeting: a `[user]` slot in `Usage` makes the command accept a bare name. Set `AcceptsRecipient` explicitly only where `Usage` can't express it. |
+| `CooldownDuration` / `CooldownAppliesTo` | For interactions, derive these from the processor's `CooldownSpec` (`FormatDuration()` / `FormatAppliesTo()`) — never hand-write strings that can drift. |
+| `LockCategory` | One of `NONE`, `SavedTables`, `SavedChannels`, `ChannelDecks`, `ChannelScores`, `CharacterInventories`, `RPGData`, `ChannelOpsRequest`. |
 
-| Property | Description | Values |
-|----------|-------------|--------|
-| `Name` | Command trigger | String (e.g., "wave") |
-| `RequireBotAdmin` | Bot admin only | true/false |
-| `RequireChannelAdmin` | Channel op only | true/false |
-| `RequireChannel` | Must be in channel | true/false |
-| `LockCategory` | Thread safety lock | CommandLockCategory enum |
-
-### Lock Categories
-
-Prevent race conditions on shared data:
-
-```csharp
-public enum CommandLockCategory
-{
-    None,              // No lock needed
-    SavedTables,       // Lock for roll tables
-    SavedChannels,     // Lock for channel settings
-    ChannelDecks,      // Lock for card decks
-    ChannelScores,     // Lock for game scores
-    ChipPiles          // Lock for chip operations
-}
-```
+User-facing strings (help text included) follow the [Style Guide](Style-Guide.md), and every changed string goes to the owner for wording approval before the work is called done.
 
 ## Adding a New Interaction
 
-Interactions use the processor pattern for modularity.
+Interactions are the two-phase consent flow: an initiating command writes a `PendingCommand`, the target's `!consent` resolves the processor and runs it. Adding one means **four things**: processor class, command class, a registry line, and tests.
 
-### Step 1: Create Processor Class
+### Step 1: Processor class
 
-**Example:** `InteractionProcessors/Casual/WaveProcessor.cs`
+Put it under `Casual/`, `Involved/`, `Commitment/`, or `Consequence/`. Model it on a real neighbor of the same tier — `KissProcessor` for a symmetric casual, `SpankProcessor` for a directional one, `MarkProcessor` for an identifier-taking commitment. The skeleton:
 
 ```csharp
-using System;
-using FChatDicebot.Model;
-
-namespace FChatDicebot.InteractionProcessors.Casual
+public class WaveProcessor : InteractionProcessorBase
 {
-    public class WaveProcessor : InteractionProcessorBase
+    public override string InteractionType => "wave";
+    public override string InvestmentLevel => "casual";
+    private static readonly TimeSpan RateLimit = TimeSpan.FromMinutes(30);
+
+    // Both constructors: DI for tests, parameterless for the registry.
+    public WaveProcessor(IChateauDatabase database) : base(database) { }
+    public WaveProcessor() : base() { }
+
+    public override string ProcessInteraction(PendingCommand command)
     {
-        public override string InteractionType => "wave";
-        public override string InvestmentLevel => "casual";
+        string initiator = command.pendingInteraction.initiator;
+        string recipient = command.pendingInteraction.recipient;
+        _lastRateLimitMessage = IncrementBothCountsWithRateLimit(initiator, recipient, "wave", RateLimit);
+        Database.DeletePendingCommand(command.Id);
+        return "wave";
+    }
 
-        public override string ProcessInteraction(PendingCommand command)
-        {
-            // Set rate limit (1 hour for casual)
-            var rateLimit = TimeSpan.FromHours(1);
+    // Override the builder, NEVER GetConsentWarning — the non-virtual entry point
+    // appends the "(or !no)" decline reminder to whatever you return here.
+    protected override string BuildConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
+    {
+        return initiatorProfile.displayName + " wants to wave at you, "
+            + recipientProfile.displayName + ". Do you !consent to a greeting?";
+    }
 
-            // Increment counts with rate limit check
-            string result = IncrementBothCountsWithRateLimit(
-                command.Interaction.initiator,
-                command.Interaction.recipient,
-                "wave",
-                rateLimit
-            );
-
-            // If rate limited, return error message
-            if (!string.IsNullOrEmpty(result))
-            {
-                return result;
-            }
-
-            // Save interaction to database
-            SaveInteraction(command.Interaction);
-
-            // Remove pending command
-            MonDB.removePendingInteraction(command.Id);
-
-            // Return interaction type (signals success)
-            return "wave";
-        }
-
-        public override ValidationResult ValidateInteraction(
-            string initiator,
-            string recipient,
-            string identifier)
-        {
-            // No special validation needed for wave
-            return new ValidationResult { IsValid = true };
-        }
-
-        // Override the builder, not GetConsentWarning — the base entry point appends the
-        // "(or !no)" decline reminder to whatever you return here.
-        protected override string BuildConsentWarning(
-            Profile initiatorProfile,
-            Profile recipientProfile,
-            string identifier)
-        {
-            // No special warning needed
-            return null;
-        }
-
-        public override string GetCompletionMessage(
-            Profile initiatorProfile,
-            Profile recipientProfile,
-            string identifier)
-        {
-            // Random descriptors
-            string[] descriptors = new[]
-            {
-                "friendly!",
-                "enthusiastic!",
-                "shy...",
-                "energetic!"
-            };
-
-            string descriptor = descriptors[
-                Utils.Random.Next(descriptors.Length)
-            ];
-
-            return $"{initiatorProfile.displayName} waves at " +
-                   $"{recipientProfile.displayName}, {descriptor}";
-        }
+    public override string GetCompletionMessage(Profile initiatorProfile, Profile recipientProfile, string identifier)
+    {
+        return $"{initiatorProfile.displayName} waves at {recipientProfile.displayName}. How friendly!";
     }
 }
 ```
 
-### Step 2: Register Processor
+Things a real processor may also need (all defined on `InteractionProcessorBase` / `IInteractionProcessor` — read those files, they are heavily commented):
 
-Edit `InteractionProcessors/InteractionProcessorRegistry.cs`:
+- **`CooldownRule`** (a `CooldownSpec`) for commitment/consequence tiers — the single source of truth for the cooldown's period, who it binds, and the derived help/consent-warning text.
+- **`GroupSpec`** to opt a casual into multi-target groups (`GroupSpec.Symmetric(...)` etc.).
+- **`ValidateInteraction`** when an identifier or precondition must be checked before the consent prompt goes out.
+- **`GetInteractionVerb(VerbTense)`** when the verb isn't a regular `-ed`/`-s` form (pattern: `BullyProcessor`).
+- **Status effects**: compose with `ComposeConsentWarning(baseWarning, effects.ConsentWarnings)` so the decline reminder stays attached to the question.
+- **Eicons**: `EiconAppliesToBothParties`, `BodypartEiconRule`.
 
-```csharp
-public static void Initialize()
-{
-    // Existing processors...
-    RegisterProcessor(new KissProcessor());
-    RegisterProcessor(new CuddleProcessor());
+### Step 2: Register it
 
-    // Add new processor
-    RegisterProcessor(new WaveProcessor());
-
-    // More processors...
-}
-```
-
-### Step 3: Create Command to Trigger
-
-**Example:** `BotCommands/ChateauWave.cs`
+Add one line in `InteractionProcessorRegistry.Initialize()`:
 
 ```csharp
-public class ChateauWave : ChatBotCommand
-{
-    public ChateauWave()
-    {
-        Name = "wave";
-        RequireChannel = true;
-    }
-
-    public override void Run(
-        BotMain bot,
-        BotCommandController commandController,
-        string[] rawTerms,
-        string[] terms,
-        string characterName,
-        string channel,
-        UserGeneratedCommand command)
-    {
-        // Get target
-        string targetUser = commandController.GetUserNameFromCommandTerms(terms);
-        if (string.IsNullOrEmpty(targetUser))
-        {
-            bot.SendMessageInChannel(
-                "Usage: !wave [user]Name[/user]",
-                channel);
-            return;
-        }
-
-        // Validate both users registered
-        var initiatorProfile = MonDB.getProfile(characterName);
-        var recipientProfile = MonDB.getProfile(targetUser);
-
-        if (initiatorProfile == null || recipientProfile == null)
-        {
-            bot.SendMessageInChannel(
-                "Both users must be registered.",
-                channel);
-            return;
-        }
-
-        // Create interaction
-        var interaction = new Interaction
-        {
-            initiator = characterName,
-            recipient = targetUser,
-            type = "wave",
-            identifier = "",
-            investmentLevel = "casual",
-            interactionTime = DateTime.Now
-        };
-
-        // Create pending command
-        var pendingCommand = new PendingCommand
-        {
-            recipient = targetUser,
-            Interaction = interaction,
-            TimeIssued = DateTime.Now
-        };
-
-        // Save to database
-        MonDB.addPendingCommand(pendingCommand);
-
-        // Send consent request
-        bot.SendMessageInChannel(
-            $"{initiatorProfile.displayName} wants to wave at " +
-            $"{recipientProfile.displayName}! Do you !consent?",
-            channel);
-    }
-}
+RegisterProcessor(new WaveProcessor());
 ```
 
-### Step 4: Test
+### Step 3: Command class
 
-1. Build and run
-2. Use `!wave [user]TestUser[/user]`
-3. Test consent workflow
-4. Verify statistics tracking
-
-## Adding a New Game
-
-### Step 1: Implement IGame Interface
-
-**Example:** `DiceFunctions/Games/CoinToss.cs`
+Model it on the initiating command of a neighbor (e.g. `BotCommands/ChateauKiss.cs`): build an `Interaction`, wrap it in a `PendingCommand` (`pendingInteraction`, `awaitingConsentFrom`), save via `MonDB.addPendingCommand`, then let **the processor** produce the consent prompt:
 
 ```csharp
-using System;
-using System.Collections.Generic;
-
-namespace FChatDicebot.DiceFunctions.Games
-{
-    public class CoinTossGame : IGame
-    {
-        public string GameName => "cointoss";
-
-        public string StartGame(List<string> players, string channel)
-        {
-            if (players.Count < 2)
-            {
-                return "Need at least 2 players!";
-            }
-
-            // Initialize game state
-            var session = DiceBot.GetGameSession(channel, GameName);
-            session.Players = players;
-            session.CurrentTurn = 0;
-            session.GameState = "betting";
-
-            return $"Coin Toss started! Players: {string.Join(", ", players)}. " +
-                   $"Use !gamecommand cointoss bet {heads|tails} {amount}";
-        }
-
-        public string ProcessAction(
-            string action,
-            string player,
-            string[] parameters,
-            string channel)
-        {
-            var session = DiceBot.GetGameSession(channel, GameName);
-
-            if (session == null)
-            {
-                return "No game in progress!";
-            }
-
-            switch (action.ToLower())
-            {
-                case "bet":
-                    return ProcessBet(session, player, parameters, channel);
-
-                case "flip":
-                    return ProcessFlip(session, channel);
-
-                default:
-                    return "Unknown action. Use: bet, flip";
-            }
-        }
-
-        private string ProcessBet(
-            GameSession session,
-            string player,
-            string[] parameters,
-            string channel)
-        {
-            // Validate parameters
-            if (parameters.Length < 2)
-            {
-                return "Usage: !gamecommand cointoss bet {heads|tails} {amount}";
-            }
-
-            string choice = parameters[0].ToLower();
-            if (choice != "heads" && choice != "tails")
-            {
-                return "Choose heads or tails!";
-            }
-
-            if (!int.TryParse(parameters[1], out int amount))
-            {
-                return "Invalid bet amount!";
-            }
-
-            // Check player has chips
-            int playerChips = DiceBot.GetChips(player, channel);
-            if (playerChips < amount)
-            {
-                return $"You don't have enough chips! Balance: {playerChips}";
-            }
-
-            // Store bet
-            if (session.GameData == null)
-            {
-                session.GameData = new Dictionary<string, object>();
-            }
-
-            session.GameData[$"{player}_choice"] = choice;
-            session.GameData[$"{player}_bet"] = amount;
-
-            // Deduct chips
-            DiceBot.AddChips(player, -amount, channel);
-
-            return $"{player} bet {amount} chips on {choice}!";
-        }
-
-        private string ProcessFlip(GameSession session, string channel)
-        {
-            // Flip coin
-            bool isHeads = Utils.Random.Next(2) == 0;
-            string result = isHeads ? "heads" : "tails";
-
-            string message = $"The coin lands on: {result.ToUpper()}!\n\n";
-
-            // Calculate payouts
-            int totalPayout = 0;
-
-            foreach (var player in session.Players)
-            {
-                if (session.GameData.ContainsKey($"{player}_choice"))
-                {
-                    string choice = (string)session.GameData[$"{player}_choice"];
-                    int bet = (int)session.GameData[$"{player}_bet"];
-
-                    if (choice == result)
-                    {
-                        // Winner gets 2x bet
-                        int payout = bet * 2;
-                        DiceBot.AddChips(player, payout, channel);
-                        message += $"{player} won {payout} chips!\n";
-                        totalPayout += payout;
-                    }
-                    else
-                    {
-                        message += $"{player} lost {bet} chips.\n";
-                    }
-                }
-            }
-
-            // End game
-            DiceBot.EndGameSession(channel, GameName);
-
-            return message;
-        }
-
-        public string GetStatus(string channel)
-        {
-            var session = DiceBot.GetGameSession(channel, GameName);
-
-            if (session == null)
-            {
-                return "No game in progress.";
-            }
-
-            string status = $"Coin Toss Game\nPlayers: " +
-                          $"{string.Join(", ", session.Players)}\n";
-
-            if (session.GameData != null)
-            {
-                status += "Bets:\n";
-                foreach (var player in session.Players)
-                {
-                    if (session.GameData.ContainsKey($"{player}_choice"))
-                    {
-                        string choice = (string)session.GameData[$"{player}_choice"];
-                        int bet = (int)session.GameData[$"{player}_bet"];
-                        status += $"  {player}: {bet} on {choice}\n";
-                    }
-                }
-            }
-
-            return status;
-        }
-
-        public string EndGame(string channel)
-        {
-            DiceBot.EndGameSession(channel, GameName);
-            return "Coin Toss game ended.";
-        }
-    }
-}
+var processor = InteractionProcessorRegistry.GetProcessor("wave");
+string message = processor.GetConsentWarning(initiatorProfile, recipientProfile, "");
+bot.SendMessageInChannel(message, channel);
 ```
 
-### Step 2: Register Game
+### Step 4: Tests
 
-In `DiceBot.cs`, register the game:
-
-```csharp
-private static Dictionary<string, IGame> Games = new Dictionary<string, IGame>
-{
-    {"highroll", new HighRollGame()},
-    {"poker", new PokerGame()},
-    {"cointoss", new CoinTossGame()},  // Add new game
-    // ... more games
-};
-```
-
-### Step 3: Test
-
-1. Build and run
-2. `!joingame cointoss`
-3. `!startgame cointoss`
-4. `!gamecommand cointoss bet heads 100`
-5. `!gamecommand cointoss flip`
+Add tests in `FChatDicebot.Tests` (see Testing below). Processor tests join the `Database` collection and construct the processor with the fixture's database.
 
 ## Working with the Database
 
-### Fetching Profiles
+Everything goes through `IChateauDatabase`; most legacy call sites use the static adapter `MonDB` (lowercase method names). The real API surface lives in `FChatDicebot/MonDB.cs` and `FChatDicebot/Database/Ichateaudatabase.cs` — check there rather than guessing. Frequently used:
 
 ```csharp
-// Get a profile
-Profile profile = MonDB.getProfile(userName);
-
-if (profile == null)
-{
-    // User not registered
-    return "User not found.";
-}
-
-// Access profile data
-string displayName = profile.displayName;
-int kissCount = profile.counts.GetValueOrDefault("kiss", 0);
-```
-
-### Updating Profiles
-
-```csharp
-// Get profile
-Profile profile = MonDB.getProfile(userName);
-
-// Modify
-profile.counts["newcount"] = 1;
-profile.characteristics["species"] = "dragon";
-profile.currencies["tokens"] = 500;
-
-// Save
-MonDB.setProfile(profile);
-```
-
-### Incrementing Counts
-
-```csharp
-// Simple increment
-MonDB.IncrementCount(userName, "kiss", 1);
-
-// With rate limit (returns false if rate limited)
-bool success = MonDB.IncrementCountWithRateLimit(
-    userName,
-    "kiss",
-    TimeSpan.FromHours(1)
-);
-
-if (!success)
-{
-    return "Rate limited!";
-}
-```
-
-### Saving Interactions
-
-```csharp
-var interaction = new Interaction
-{
-    initiator = "Alice",
-    recipient = "Bob",
-    type = "wave",
-    identifier = "",
-    investmentLevel = "casual",
-    interactionTime = DateTime.Now
-};
-
-MonDB.addInteraction(interaction);
-```
-
-### Pending Commands
-
-```csharp
-// Create pending command
-var pending = new PendingCommand
-{
-    recipient = "Bob",
-    Interaction = interaction,
-    TimeIssued = DateTime.Now
-};
-
+Profile profile = MonDB.getProfile(userName);        // null if not registered
+MonDB.setProfile(userName, profile);                 // note: two arguments
+MonDB.incrementCount(userName, "kiss");              // +1
+MonDB.changeCount(userName, "kiss", 5);              // arbitrary delta
+MonDB.changeCurrency(userName, "copper", -10);       // atomic currency change
 MonDB.addPendingCommand(pending);
-
-// Get pending commands for user
-List<PendingCommand> userPending = MonDB.getPending("Bob");
-
-// Remove pending command
+List<PendingCommand> waiting = MonDB.getPending(userName);
 MonDB.removePendingInteraction(pending.Id);
+MonDB.addInteraction(interaction);                   // history record
+Identifier id = MonDB.getIdentifier("collar");       // throws-if-uninitialized path
+Identifier idOrNull = MonDB.tryGetIdentifier("collar"); // non-throwing, for display fallbacks
 ```
 
-## Best Practices
+Inside a processor, prefer the injected `Database` (an `IChateauDatabase`) over `MonDB` — that's what makes the processor testable.
 
-### 1. Input Validation
-
-Always validate user input:
-
-```csharp
-// Check for null or empty
-if (string.IsNullOrEmpty(targetUser))
-{
-    return "Target user required!";
-}
-
-// Validate numbers
-if (!int.TryParse(amountStr, out int amount))
-{
-    return "Invalid amount!";
-}
-
-// Validate ranges
-if (amount < 1 || amount > 10000)
-{
-    return "Amount must be between 1 and 10,000!";
-}
-```
-
-### 2. Registration Checks
-
-Always check if users are registered:
-
-```csharp
-var profile = MonDB.getProfile(userName);
-if (profile == null)
-{
-    bot.SendMessageInChannel(
-        $"{userName} is not registered. Use !register first.",
-        channel);
-    return;
-}
-```
-
-### 3. Error Handling
-
-Use try-catch for database operations:
-
-```csharp
-try
-{
-    var profile = MonDB.getProfile(userName);
-    // ... operations
-    MonDB.setProfile(profile);
-}
-catch (Exception ex)
-{
-    Utils.AddToLog($"Error: {ex.Message}", "ERROR");
-    bot.SendMessageInChannel(
-        "An error occurred. Please try again.",
-        channel);
-}
-```
-
-### 4. Thread Safety
-
-Use appropriate locks for shared data:
-
-```csharp
-public ChateauExample()
-{
-    Name = "example";
-    LockCategory = CommandLockCategory.ChipPiles; // Lock chips
-}
-```
-
-### 5. Message Formatting
-
-Keep messages concise and readable:
-
-```csharp
-// Good: Concise and clear
-string message = $"{user} earned 50 tokens!";
-
-// Bad: Too verbose
-string message = $"Congratulations! The user named {user} has " +
-                $"successfully earned a total of 50 tokens which have " +
-                $"been added to their account balance!";
-```
-
-Use spoilers for long messages:
-
-```csharp
-if (message.Length > 500)
-{
-    message = $"[spoiler]{message}[/spoiler]";
-}
-```
-
-### 6. Rate Limits
-
-Always implement rate limits for interactions:
-
-```csharp
-// Check rate limit
-var lastUse = profile.timers.GetValueOrDefault("ratelimit_action");
-if (lastUse != null &&
-    DateTime.Now.Subtract(lastUse.TimeSet) < TimeSpan.FromMinutes(30))
-{
-    return "Try again later!";
-}
-
-// Set new timer
-profile.timers["ratelimit_action"] = new CoolDown
-{
-    TimeSet = DateTime.Now
-};
-MonDB.setProfile(profile);
-```
+Rate limits are stored in `profile.timers` as `CoolDown { timerStart, timerEnd }` (UTC), keyed `ratelimit_{countLabel}`. `IncrementCountWithRateLimit` refuses the increment and returns `false` while `timerEnd` is in the future.
 
 ## Testing
 
-### Unit Testing Setup
+The test project **already exists**: `FChatDicebot.Tests` (xUnit, SDK-style). It requires a local MongoDB and uses the `ChateauDb_Test` database (`TestConfiguration.cs`).
 
-Create test project:
+```
+dotnet test FChatDicebot.Tests\FChatDicebot.Tests.csproj
+dotnet test FChatDicebot.Tests\FChatDicebot.Tests.csproj --filter "FullyQualifiedName~Bondprocessortests"
+```
 
-1. Add new project: "FChatDicebot.Tests"
-2. Add reference to main project
-3. Install NUnit or xUnit via NuGet
+Rules of the road:
 
-### Example Test
+- **Parallelization is disabled assembly-wide on purpose.** The processor registry and `MonDB` are process-wide statics that bind to a database exactly once — see the comment block in `Fixtures/Testdatabasefixture.cs` before touching this.
+- **DB-touching tests** join the `Database` collection, take `TestDatabaseFixture` in the constructor, and call `fixture.Reset()` for isolation:
 
 ```csharp
-using NUnit.Framework;
-using FChatDicebot.InteractionProcessors.Casual;
-
-namespace FChatDicebot.Tests
+[Collection("Database")]
+public class WaveProcessorTests
 {
-    [TestFixture]
-    public class WaveProcessorTests
+    private readonly TestDatabaseFixture _fixture;
+
+    public WaveProcessorTests(TestDatabaseFixture fixture)
     {
-        [Test]
-        public void ProcessInteraction_ValidInput_ReturnsSuccess()
-        {
-            // Arrange
-            var processor = new WaveProcessor();
-            var command = new PendingCommand
-            {
-                Interaction = new Interaction
-                {
-                    initiator = "Alice",
-                    recipient = "Bob",
-                    type = "wave",
-                    investmentLevel = "casual"
-                }
-            };
+        _fixture = fixture;
+        _fixture.Reset();
+    }
 
-            // Act
-            string result = processor.ProcessInteraction(command);
-
-            // Assert
-            Assert.AreEqual("wave", result);
-        }
-
-        [Test]
-        public void GetCompletionMessage_ValidProfiles_ReturnsMessage()
-        {
-            // Arrange
-            var processor = new WaveProcessor();
-            var alice = new Profile { displayName = "Alice" };
-            var bob = new Profile { displayName = "Bob" };
-
-            // Act
-            string message = processor.GetCompletionMessage(alice, bob, "");
-
-            // Assert
-            Assert.IsTrue(message.Contains("Alice"));
-            Assert.IsTrue(message.Contains("Bob"));
-        }
+    [Fact]
+    public void ProcessInteraction_IncrementsBothCounts()
+    {
+        var processor = new WaveProcessor(_fixture.Database);
+        // seed profiles via _fixture.Database, build a PendingCommand, assert counts
     }
 }
 ```
 
-### Integration Testing
+- **Pure helpers** (text formatting, spec parsing) get plain unit tests with no fixture.
+- `ConsentDeclineHintTests` fails the build if a processor shadows `GetConsentWarning` — that's intended.
 
-Test with real F-List connection:
+## Best Practices
 
-1. Create test bot account
-2. Create test channel
-3. Use test characters
-4. Automate commands via script
-
-### Manual Testing Checklist
-
-- [ ] Command executes without errors
-- [ ] Proper error messages for invalid input
-- [ ] Database updates correctly
-- [ ] Rate limits work
-- [ ] Consent workflow functions
-- [ ] Achievement tracking works
-- [ ] No memory leaks
-- [ ] Thread safety verified
+1. **Validate input** before acting; unrecognized targets should abort with a clear message, never silently self-target.
+2. **Check registration** — `MonDB.getProfile` returns null for unregistered characters; route the error text through `ChateauInteractionHandler`'s helpers where one exists.
+3. **Single sources of truth** — cooldown/consent text via `CooldownSpec`/`ConsentWarningText`; readout formatting via `ReadoutText`/`ReadoutDomain`; themed display via `ViceText`/`ScentText`/`ParasiteText`; identifier display via `Utils.*ToText`. Never inline these.
+4. **Match the style guide** for every user-facing string, and list changed strings (before → after) for owner approval.
+5. **Never say "UTC day"** to players — it's "Chateau day" or just "day".
+6. **Use the right `LockCategory`** when touching shared legacy state (tables, decks, chips).
 
 ## Debugging
 
-### Enable Verbose Logging
+- `Utils.AddToLog(...)` writes to the bot log.
+- Inspect Mongo directly with `mongosh`:
 
-Add logging to your commands:
-
-```csharp
-Utils.AddToLog($"Processing command: {Name} for {characterName}", "DEBUG");
 ```
-
-### Database Debugging
-
-Check MongoDB directly:
-
-```bash
-mongo
 use ChateauDb
 db.RegisteredProfiles.find({userName: "Alice"})
-db.Interactions.find({type: "kiss"}).count()
+db.PendingCommands.find({awaitingConsentFrom: "Bob"})
 ```
 
-### Breakpoints
-
-Set breakpoints in Visual Studio:
-
-1. Click left margin next to line number
-2. Run in Debug mode (F5)
-3. Trigger command in F-List
-4. Inspect variables
+- Breakpoints work normally under Visual Studio (run mode `-none` starts the bot without connecting to F-List, useful for startup debugging).
 
 ## Contributing
 
-### Code Style
-
-Follow existing code style:
-
-- **Indentation:** Tabs (not spaces)
-- **Braces:** Opening brace on same line
-- **Naming:**
-  - Classes: PascalCase
-  - Methods: PascalCase
-  - Fields: camelCase
-  - Properties: PascalCase
-
-### Git Workflow
-
-1. Create feature branch: `git checkout -b feature/wave-interaction`
-2. Make changes
-3. Commit: `git commit -m "Add wave interaction"`
-4. Push: `git push origin feature/wave-interaction`
-5. Create pull request
-
-### Documentation
-
-Update wiki when adding features:
-
-- Add command to Command Reference
-- Update architecture docs if needed
-- Add examples to relevant pages
-
-## Common Issues
-
-### "Profile not found"
-
-**Cause:** User not registered
-
-**Solution:** Ensure `!register` called first
-
-### "Rate limited"
-
-**Cause:** Cooldown not expired
-
-**Solution:** Check timer in profile:
-
-```csharp
-var timer = profile.timers.GetValueOrDefault("ratelimit_kiss");
-if (timer != null)
-{
-    var remaining = TimeSpan.FromHours(1) - DateTime.Now.Subtract(timer.TimeSet);
-    // Show remaining time
-}
-```
-
-### "MongoDB connection failed"
-
-**Cause:** MongoDB not running
-
-**Solution:**
-```bash
-net start MongoDB
-```
-
-### Reflection not finding command
-
-**Cause:** Namespace or base class incorrect
-
-**Solution:** Ensure:
-- Namespace is `FChatDicebot.BotCommands`
-- Inherits from `ChatBotCommand`
+- Branch from `main`; PRs target `main`. Never merge PRs or push to `main` directly — merging is the owner's call.
+- Update the docs a change invalidates: the relevant `wiki-docs/specs/*.md` as-shipped notes, and [Command-Reference](Command-Reference.md) when help text or usage changes. See [wiki-docs/README](README.md).
 
 ## See Also
 
@@ -956,3 +275,4 @@ net start MongoDB
 - [Database and Persistence](Database-and-Persistence) - Database operations
 - [Interaction System](Interaction-System) - Interaction mechanics
 - [Command Reference](Command-Reference) - Existing commands
+- [Style Guide](Style-Guide.md) - User-facing text rules

@@ -1,10 +1,10 @@
 # Database and Persistence
 
-FCDiceBot uses a dual-storage system combining MongoDB for dynamic data and JSON files for configuration.
+FCDiceBot uses a dual-storage system combining MongoDB for Chateau data and JSON files for the legacy dicebot state.
+
+Schemas below are illustrative; the model classes in `FChatDicebot/Model/ChateauDB.cs` are authoritative. When you add or change a field, update the matching section here.
 
 ## Storage Architecture
-
-### Dual Storage System
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -13,214 +13,114 @@ FCDiceBot uses a dual-storage system combining MongoDB for dynamic data and JSON
                 │                     │
                 ▼                     ▼
     ┌─────────────────────┐  ┌──────────────────────┐
-    │   MongoDB (Primary)  │  │  JSON Files (Legacy) │
-    │   ChateauDb          │  │  C:\BotData\DiceBot\ │
+    │  MongoDB (Chateau)   │  │  JSON Files (Legacy) │
+    │  ChateauDb           │  │  C:\BotData\DiceBot\ │
     └─────────────────────┘  └──────────────────────┘
                 │                     │
                 ▼                     ▼
-    ┌─────────────────────┐  ┌──────────────────────┐
-    │ - Profiles          │  │ - Account Settings   │
-    │ - Interactions      │  │ - Channel Settings   │
-    │ - Pending Commands  │  │ - Chip Piles         │
-    │ - Duties            │  │ - Roll Tables        │
-    │ - Identifiers       │  │ - Card Decks         │
-    └─────────────────────┘  └──────────────────────┘
+      Profiles, interactions,   Account + channel settings,
+      pendings, duties,         chip piles, roll tables,
+      identifiers, pledges,     decks, slots, potions,
+      feedback, events, ...     coupons, VC orders
 ```
 
 ## MongoDB Storage
 
 ### Connection
 
-**Default Connection String:**
-```
-mongodb://localhost:27017
-```
+`BotMain.Run()` calls `MonDB.Initialize("mongodb://localhost:27017", "ChateauDb")` at startup, before anything touches the database. Tests point the same adapter at `ChateauDb_Test` instead (see `FChatDicebot.Tests/TestConfiguration.cs`).
 
-**Database Name:** `ChateauDb`
-
-**Location:** `FChatDicebot/Database/Chateaudatabase.cs`
-
-```csharp
-const string connectionString = "mongodb://localhost:27017";
-var client = new MongoClient(connectionString);
-var database = client.GetDatabase("ChateauDb");
-```
+**Implementation:** `FChatDicebot/Database/Chateaudatabase.cs` behind the `IChateauDatabase` interface (`Ichateaudatabase.cs`).
 
 ### Collections
 
-#### 1. RegisteredProfiles
+The full set, as of mid-2026 (grep `GetCollection<` in `Chateaudatabase.cs` for the current list):
 
-**Purpose:** User profiles with stats, timers, and currencies
+| Collection | Purpose |
+|------------|---------|
+| `RegisteredProfiles` | One document per resident: counts, characteristics, lists, timers, currencies, titles, pregnancies, milk inventory, trainings, job experience, employee earnings |
+| `Interactions` | Historical record of every completed interaction |
+| `PendingCommands` | Consent workflow — interactions awaiting consent (including group seats) |
+| `Duties` | Authored `!work` / `!volunteer` scenarios |
+| `PendingDuties` | A started work/volunteer session awaiting the player's `!w N` / `!v N` choice |
+| `Identifiers` | The vocabulary interactions draw on (bodyparts, substances, monsters, scents, vices, …) |
+| `Pledges` | `!pledge` / `!fulfill` promised-interaction records |
+| `Feedback` | `!feedback` submissions (read via admin `!feedbacklist`; the triage pipeline in `scripts/feedback-triage` writes its ledger through `ft.ps1`, never directly) |
+| `RandomEvents` | Authored ambient channel events for `!random` / the scheduler (authored via `scripts/random-event-builder`) |
+| `ModMessages` | Moderator announcements shown by `!modmessage` |
+| `MonsterStats` | Per-monster breeding statistics (pregnancy/offspring counts) |
+| `Counters` | Atomic counters — currently the bottle-serial counter (`ClaimBottleSerials`) |
+| `Commands` | Command metadata documents (aliases/params); legacy, not the source of `!help` (that's the command classes) |
+| `SlotsJackpots` | Persistent slots jackpot state |
 
-**Document Structure:**
+#### RegisteredProfiles
+
+The `Profile` class is large and grows with features — read `Model/ChateauDB.cs` for the current shape. Core structure:
 
 ```json
 {
-  "_id": ObjectId("..."),
-  "userName": "Alice",
-  "displayName": "Alice the Great",
-  "counts": {
-    "kiss": 42,
-    "kissgive": 25,
-    "kisstake": 17,
-    "cuddle": 15
-  },
-  "characteristics": {
-    "mark": "collar (by Bob)",
-    "species": "human",
-    "job": "maid",
-    "employer": "Carol",
-    "objectified": null,
-    "petrified": null
-  },
-  "lists": {
-    "bonds": ["Bob (owner)", "Carol (master)"],
-    "employees": ["Dave", "Eve"]
-  },
-  "timers": {
-    "ratelimit_kiss": {
-      "TimeSet": ISODate("2025-11-22T10:30:00Z")
-    },
-    "work": {
-      "TimeSet": ISODate("2025-11-22T08:00:00Z")
-    },
-    "cashout": {
-      "TimeSet": ISODate("2025-11-20T12:00:00Z")
-    }
-  },
-  "currencies": {
-    "tokens": 500,
-    "gold": 100,
-    "silver": 50
-  },
-  "jobExperience": {
-    "maid": 150,
-    "chef": 50
-  },
-  "titles": [
-    {
-      "titleText": "·First Kiss·",
-      "grantedBy": "system",
-      "dateGranted": ISODate("2025-11-01T12:00:00Z")
-    },
-    {
-      "titleText": "Best Friend",
-      "grantedBy": "Bob",
-      "dateGranted": ISODate("2025-11-15T14:30:00Z")
-    }
-  ],
-  "displayedTitleSlots": [0, 1, -1, -1, -1, -1, -1, -1, -1]
+  "userName": "Alice",              // F-Chat handle (may be "[s]old[/s] new" after rename)
+  "displayName": "Alice the Great", // what every user-facing string shows
+  "counts": { "kiss": 42, "milkgive": 3, "milktake": 1 },
+  "characteristics": { "species": "human", "job": "maid", "employer": "Carol" },
+  "lists": { "bonds": ["..."], "scents": ["..."] },
+  "timers": { "ratelimit_kiss": { "timerStart": "...", "timerEnd": "..." } },
+  "currencies": { "copper": 500 },
+  "escrow": { },
+  "jobExperience": { "maid": 150 },
+  "titles": [ { "titleText": "·First Kiss·", "givenBy": "system", "grantedTime": "..." } ],
+  "displayedTitleSlots": [0, 1, -1, -1, -1, -1, -1, -1, -1],
+  "pregnancies": [ ],
+  "dailyMagnitudes": { },
+  "milkInventory": [ ],
+  "trainings": { },
+  "dailyClimaxCounts": { },
+  "employeeEarnings": { }
 }
 ```
 
-**Indexes:**
-- `userName` (unique)
+Conventions:
+- Simple values go in `characteristics["key"]`, lists in `lists["key"]`, cooldowns in `timers["key"]` (a `CoolDown` with UTC `timerStart`/`timerEnd`).
+- Rate-limit timers are keyed `ratelimit_{countLabel}`; per-direction cooldowns use keys like `milk_give_<recipient>`.
+- New optional fields use `[BsonIgnoreIfNull]` / defaults so legacy documents need no migration.
 
-**Key Methods:**
+#### Interactions
 
-```csharp
-Profile GetProfile(string userName)
-void SetProfile(Profile profile)
-void RegisterUserChateau(string userName, int startingChips)
-void IncrementCount(string userName, string countName, int amount)
-bool IncrementCountWithRateLimit(string userName, string countName, TimeSpan rateLimit)
-```
-
-#### 2. Interactions
-
-**Purpose:** Historical record of all completed interactions
-
-**Document Structure:**
+One document per completed interaction:
 
 ```json
 {
-  "_id": ObjectId("..."),
   "initiator": "Alice",
   "recipient": "Bob",
   "type": "kiss",
   "identifier": "",
   "investmentLevel": "casual",
   "extraParameters": [],
-  "interactionTime": ISODate("2025-11-22T12:34:56Z")
+  "interactionTime": "2026-06-22T12:34:56Z"
 }
 ```
 
-**Indexes:**
-- `initiator`
-- `recipient`
-- `type`
-- `interactionTime`
+Queried by initiator / recipient / type for dossiers, statistics, and title checks.
 
-**Key Methods:**
+#### PendingCommands
 
-```csharp
-void AddInteraction(Interaction interaction)
-List<Interaction> GetInteractionsByInitiator(string initiator)
-List<Interaction> GetInteractionsByRecipient(string recipient)
-List<Interaction> GetInteractionsByType(string type)
-List<Interaction> GetInteractionsBetween(string user1, string user2)
-```
-
-**Queries:**
-
-```csharp
-// Get all kisses
-var kisses = GetInteractionsByType("kiss");
-
-// Get all interactions Alice initiated
-var aliceInteractions = GetInteractionsByInitiator("Alice");
-
-// Get all interactions between Alice and Bob
-var pairInteractions = GetInteractionsBetween("Alice", "Bob");
-```
-
-#### 3. PendingCommands
-
-**Purpose:** Consent workflow - interactions awaiting consent
-
-**Document Structure:**
+The consent workflow. Key fields (see `PendingCommand` in `Model/ChateauDB.cs` — the group-seat comments there are worth reading):
 
 ```json
 {
-  "_id": ObjectId("..."),
-  "recipient": "Bob",
-  "Interaction": {
-    "initiator": "Alice",
-    "recipient": "Bob",
-    "type": "kiss",
-    "identifier": "",
-    "investmentLevel": "casual",
-    "interactionTime": ISODate("2025-11-22T12:30:00Z")
-  },
-  "TimeIssued": ISODate("2025-11-22T12:30:00Z")
+  "pendingInteraction": { "initiator": "Alice", "recipient": "Bob", "type": "kiss", ... },
+  "awaitingConsentFrom": "Bob",
+  "startTime": "2026-06-22T12:30:00Z",
+  "groupId": null,          // shared id across every seat of one group invocation
+  "sourceChannel": null,    // group seats only: where to post the resolved moment
+  "consentState": "Pending",
+  "consentedOrder": 0       // 1,2,3... once consented; drives lapsit stack order
 }
 ```
 
-**Expiration:** 10 minutes
+**Expiration:** 10 minutes (`GroupInteractionResolver.PendingMinutesKeep`). Expired pendings are swept when the recipient next interacts with the consent flow, and a periodic sweep in `BotMain` resolves timed-out *group* moments so they post without anyone typing another command.
 
-**Indexes:**
-- `recipient`
-- `TimeIssued`
-
-**Key Methods:**
-
-```csharp
-void AddPendingCommand(PendingCommand command)
-List<PendingCommand> GetPendingCommands(string recipient)
-void DeletePendingCommand(ObjectId id)
-void CleanExpiredPendingCommands() // Removes commands older than 10 minutes
-```
-
-**Cleanup:**
-
-Expired commands are removed when querying:
-
-```csharp
-var pending = GetPendingCommands("Bob");
-// Automatically removes any older than 10 minutes
-```
-
-#### 4. Duties
+#### Duties
 
 **Purpose:** Job system - the authored duty scenarios `!work` and `!volunteer` roll from
 
@@ -280,20 +180,11 @@ conditional would otherwise get a duty with zero choices and lose the work day.
 **Queried by:** `label` (exact), `job` (exact, lowercase), `categories` (contains).
 No indexes are created; the collection is small.
 
-**Key Methods:**
-
-```csharp
-Duty GetDuty(string dutyLabel)
-void SetDuty(string label, Duty newDuty)
-List<Duty> GetDutiesByJob(string job)
-List<Duty> GetDutiesByCategory(string category)
-```
-
 **Authoring:** duties are seeded externally, not by the bot. Use the Work Duty
 Builder (`scripts/work-duty-builder`, `run.ps1`, http://localhost:8788) - it edits
 this collection live with validation and a preview of the resulting PMs.
 
-#### 5. PendingDuties
+#### PendingDuties
 
 **Purpose:** A started work/volunteer session awaiting the player's choice
 
@@ -323,34 +214,7 @@ straight into it.
 
 **Queried by:** `awaitingInputFrom` (exact). No indexes are created.
 
-**Key Methods:**
-
-```csharp
-void AddPendingDuty(PendingDuty toAdd)
-PendingDuty GetPendingDuty(string awaitingInputFrom)
-void SetPendingDuty(PendingDuty updatedDuty)
-void DeletePendingDuty(ObjectId dutyId)
-```
-
-#### 6. Commands
-
-**Purpose:** Command metadata and usage tracking (optional)
-
-**Document Structure:**
-
-```json
-{
-  "_id": ObjectId("..."),
-  "commandName": "kiss",
-  "usageCount": 1523,
-  "lastUsed": ISODate("2025-11-22T12:34:56Z"),
-  "averageExecutionTime": 45.3
-}
-```
-
-**Note:** This collection is optional and may not be actively used in all deployments.
-
-#### 7. Identifiers
+#### Identifiers
 
 **Purpose:** The vocabulary interactions draw on — one document per identifier, each tagged with the categories it belongs to.
 
@@ -378,35 +242,13 @@ void DeletePendingDuty(ObjectId dutyId)
 
 `displayText`, `eicon`, and the brood fields are omitted from documents that don't set them, so adding either needs no migration.
 
-**Categories:**
-- `bodypart` - For marks, and for personal bodypart eicons (`!seteicon`)
-- `break` - Valid `!break` targets (bodyparts plus a few non-physical ones like `mind`)
-- `substance` - For feeding
-- `attire` - For dressing
-- `species` / `monster` - For monsterization and breeding
-- `object` - For objectification
-- `plant` - For plant transformation
+**Categories** include `bodypart`, `break`, `substance`, `attire`, `species`/`monster`, `object`, `plant`, `scent`, `vice`, `parasite`, `curse`, `training`, `location`, `job`, `bond` — `!category {name}` lists a category live, which is more reliable than any list written here.
 
-**Key Methods:**
+Identifiers are curated directly in Mongo — `SetIdentifierEicon` is the one in-chat write path, for the cosmetic `eicon` field only.
 
-```csharp
-Identifier GetIdentifier(string type);
-List<Identifier> GetIdentifiersByCategory(string category);
-List<Identifier> GetAllIdentifiers();
-bool SetIdentifierEicon(string type, string eicon);
-```
+#### Other collections
 
-Identifiers are otherwise curated directly in Mongo — `SetIdentifierEicon` is the one in-chat write path, for the cosmetic `eicon` field only.
-
-**Usage Example:**
-
-```csharp
-// When marking, validate the body part:
-var bodyParts = MonDB.getIdentifiers("bodypart");
-if (!bodyParts.Any(i => i.type == requestedPart)) {
-    return "Invalid body part!";
-}
-```
+`Pledges` (`Pledge`), `Feedback` (`FeedbackEntry`), `RandomEvents` (`RandomEvent`), `ModMessages`, `MonsterStats`, and `SlotsJackpots` are small and single-purpose; their model classes in `Model/ChateauDB.cs` are the schema documentation. `Counters` holds atomic counters claimed with `FindOneAndUpdate` + `$inc` (currently just bottle serials).
 
 ## File-Based Storage
 
@@ -416,669 +258,40 @@ if (!bodyParts.Any(i => i.type == requestedPart)) {
 C:\BotData\DiceBot\
 ```
 
-### Files
+JSON files loaded by `BotMain` at startup for the legacy dicebot: `account_settings.txt` (see [Installation-and-Setup](Installation-and-Setup.md) for the fields), `channel_settings.txt` (per-channel prefix + feature toggles), plus saved chip piles, roll tables, decks, slots settings, potions, coupons, and VelvetCuff chip-order state. The classes in `FChatDicebot/SavedData/` are the authoritative shapes.
 
-#### account_settings.txt
+### Backup
 
-**Purpose:** Bot credentials and configuration
-
-**Format:** JSON
-
-**Structure:**
-
-```json
-{
-  "AccountName": "your_flist_account",
-  "CharacterName": "BotCharacterName",
-  "Password": "your_password",
-  "CName": "FCDiceBot",
-  "AdminCharacters": ["AdminChar1", "AdminChar2"],
-  "VelvetCuffClientId": "optional_vc_client_id",
-  "VelvetCuffClientSecret": "optional_vc_secret"
-}
-```
-
-**Security:** Contains sensitive credentials - keep secure
-
-#### channel_settings.txt
-
-**Purpose:** Per-channel configuration
-
-**Format:** JSON
-
-**Structure:**
-
-```json
-{
-  "adh-channelid1": {
-    "commandChar": "!",
-    "enableChips": true,
-    "enableGames": true,
-    "enableTables": true,
-    "enableSlots": true,
-    "startingChips": 1000,
-    "chipsClearanceLevel": 0,
-    "greetNewUsers": false,
-    "slotsMaxMultiplier": 100
-  },
-  "adh-channelid2": {
-    "commandChar": "?",
-    "enableChips": false,
-    "enableGames": true,
-    "enableTables": true,
-    "enableSlots": false,
-    "startingChips": 500,
-    "chipsClearanceLevel": 1,
-    "greetNewUsers": true,
-    "slotsMaxMultiplier": 50
-  }
-}
-```
-
-#### saved_tables.txt
-
-**Purpose:** User-created roll tables
-
-**Format:** JSON
-
-**Structure:**
-
-```json
-{
-  "Alice": [
-    {
-      "tableName": "loot",
-      "entries": [
-        {"weight": 50, "result": "Common Item"},
-        {"weight": 30, "result": "Uncommon Item"},
-        {"weight": 15, "result": "Rare Item"},
-        {"weight": 5, "result": "Legendary Item"}
-      ]
-    }
-  ],
-  "Bob": [
-    {
-      "tableName": "encounters",
-      "entries": [
-        {"weight": 40, "result": "Goblin"},
-        {"weight": 30, "result": "Orc"},
-        {"weight": 20, "result": "table:loot"},
-        {"weight": 10, "result": "Dragon"}
-      ]
-    }
-  ]
-}
-```
-
-#### saved_chipPiles.txt
-
-**Purpose:** Casino chip balances
-
-**Format:** JSON
-
-**Structure:**
-
-```json
-{
-  "adh-channelid1": {
-    "Alice": 1500,
-    "Bob": 2300,
-    "Carol": 800
-  },
-  "adh-channelid2": {
-    "Dave": 5000,
-    "Eve": 1200
-  }
-}
-```
-
-**Note:** Organized by channel, each user has a balance per channel
-
-#### saved_decks.txt
-
-**Purpose:** Custom card decks
-
-**Format:** JSON
-
-**Structure:**
-
-```json
-{
-  "adh-channelid1": {
-    "myddeck": [
-      "Magic Sword",
-      "Healing Potion",
-      "Curse",
-      "Gold Coin",
-      "Ancient Scroll"
-    ]
-  }
-}
-```
-
-#### saved_slots.txt
-
-**Purpose:** Slot machine configurations
-
-**Format:** JSON
-
-**Structure:**
-
-```json
-{
-  "fruits": {
-    "symbols": ["Cherry", "Lemon", "Orange", "Plum", "Bell", "Seven"],
-    "weights": [30, 25, 20, 15, 8, 2],
-    "multipliers": {
-      "Cherry": 3,
-      "Lemon": 5,
-      "Orange": 10,
-      "Plum": 15,
-      "Bell": 20,
-      "Seven": 50
-    }
-  },
-  "bondage": {
-    "symbols": ["Rope", "Chain", "Collar", "Gag", "Cuffs", "Whip"],
-    "weights": [30, 25, 20, 15, 8, 2],
-    "multipliers": {
-      "Rope": 3,
-      "Chain": 5,
-      "Collar": 10,
-      "Gag": 15,
-      "Cuffs": 20,
-      "Whip": 50
-    }
-  }
-}
-```
-
-#### saved_potions.txt
-
-**Purpose:** User-saved potions
-
-**Format:** JSON
-
-**Structure:**
-
-```json
-{
-  "Alice": [
-    {
-      "name": "swiftness",
-      "fullName": "Shimmering Elixir of Swiftness",
-      "effect": "Grants incredible speed for 1 hour",
-      "components": {
-        "base": "liquid",
-        "appearance": "shimmering",
-        "effect": "speed",
-        "duration": "1 hour",
-        "intensity": "incredible"
-      }
-    }
-  ]
-}
-```
-
-#### vc_chiporder_data.txt
-
-**Purpose:** VelvetCuff payment transactions
-
-**Format:** JSON
-
-**Structure:**
-
-```json
-[
-  {
-    "transactionId": "abc123",
-    "userName": "Alice",
-    "chipAmount": 5000,
-    "vcAmount": 50.00,
-    "status": "pending",
-    "createdTime": "2025-11-22T12:00:00Z",
-    "channel": "adh-channelid1"
-  }
-]
-```
-
-**Lifecycle:**
-1. Created when `!buychips` used
-2. Polled every 30 seconds
-3. Deleted when payment confirmed or expired
-
-#### coupons_active.txt
-
-**Purpose:** Active chip coupons
-
-**Format:** JSON
-
-**Structure:**
-
-```json
-[
-  {
-    "code": "WELCOME2024",
-    "amount": 1000,
-    "createdBy": "AdminChar",
-    "createdTime": "2025-11-01T12:00:00Z",
-    "used": false,
-    "usedBy": null,
-    "usedTime": null
-  }
-]
-```
-
-**Lifecycle:**
-1. Created by admin: `!createcoupon`
-2. Redeemed by user: `!redeem`
-3. Marked as used (not deleted, for audit trail)
-
-### Backup System
-
-**Location:** `C:\BotData\DiceBot\ImmediateBackup\`
-
-**When:** On bot startup, before any file modifications
-
-**What:** All JSON files copied to backup directory
-
-**Implementation:**
-
-```csharp
-// In BotMain.cs startup:
-BackupDataFiles();
-
-private void BackupDataFiles() {
-    string backupDir = @"C:\BotData\DiceBot\ImmediateBackup\";
-    Directory.CreateDirectory(backupDir);
-
-    foreach (var file in Directory.GetFiles(@"C:\BotData\DiceBot\", "*.txt")) {
-        string fileName = Path.GetFileName(file);
-        File.Copy(file, Path.Combine(backupDir, fileName), overwrite: true);
-    }
-}
-```
-
-**Note:** Only keeps one backup (overwrites previous). For more robust backups, implement versioning or external backup system.
+On startup the bot copies the data files to `C:\BotData\DiceBot\ImmediateBackup` (`BotMain.BackupFolder`) before modifying anything. Only one generation is kept — anything more robust (versioned backups, `mongodump` scheduling) is an operator concern outside the bot.
 
 ## Data Access Layer
 
-### Adapter Pattern
-
-**MonDB Static Adapter:**
+### MonDB Static Adapter
 
 **Location:** `FChatDicebot/MonDB.cs`
 
-Provides static methods that delegate to an `IChateauDatabase` instance:
+`MonDB.Initialize(connectionString, databaseName)` constructs the singleton `ChateauDatabase`; `MonDB.GetDatabase()` returns it — and **throws** if `Initialize` hasn't run yet. That guard is deliberate: it used to silently default to the production database, which is exactly the accident it now prevents. Never work around it; initialize explicitly (tests do this through `TestDatabaseFixture`).
 
-```csharp
-public static class MonDB
-{
-    private static IChateauDatabase _database;
+The rest of `MonDB` is thin lowercase delegation (`getProfile`, `setProfile(userName, profile)`, `incrementCount`, `changeCurrency`, `addPendingCommand`, `getPending`, `removePendingInteraction`, `getIdentifier`, …) kept for the many legacy call sites. `tryGetIdentifier` is the one special case: a non-throwing lookup so the `Utils.*ToText` display helpers can consult `Identifier.displayText` without requiring a live database.
 
-    public static void Initialize(IChateauDatabase database) {
-        _database = database;
-    }
+New code — processors especially — should take an `IChateauDatabase` (constructor injection) and use it directly; that's what makes it testable against `ChateauDb_Test`.
 
-    public static Profile getProfile(string userName) {
-        return _database.GetProfile(userName);
-    }
-
-    public static void setProfile(Profile profile) {
-        _database.SetProfile(profile);
-    }
-
-    // ... more delegation methods
-}
-```
-
-**Why:** Allows existing code to use static calls while enabling dependency injection and testability.
-
-### IChateauDatabase Interface
+### IChateauDatabase
 
 **Location:** `FChatDicebot/Database/Ichateaudatabase.cs`
 
-Defines all database operations:
+The full interface: profile CRUD, counts/currencies with rate-limited variants, interactions, pending commands (including group queries), duties, identifiers, pledges, feedback, random events, mod messages, monster stats, bottle serials. Read the interface for the current surface — it grows with every feature and any list here would rot.
 
-```csharp
-public interface IChateauDatabase
-{
-    // Profile operations
-    Profile GetProfile(string userName);
-    void SetProfile(Profile profile);
-    void RegisterUserChateau(string userName, int startingChips);
+## Practical Notes
 
-    // Interaction operations
-    void AddInteraction(Interaction interaction);
-    List<Interaction> GetInteractionsByInitiator(string initiator);
-    List<Interaction> GetInteractionsByRecipient(string recipient);
-
-    // Pending command operations
-    void AddPendingCommand(PendingCommand command);
-    List<PendingCommand> GetPendingCommands(string recipient);
-    void DeletePendingCommand(ObjectId id);
-
-    // Count and timer operations
-    void IncrementCount(string userName, string countName, int amount);
-    bool IncrementCountWithRateLimit(string userName, string countName, TimeSpan rateLimit);
-
-    // Duty operations
-    Duty GetDuty(string dutyLabel);
-    void SetDuty(string label, Duty newDuty);
-    List<Duty> GetDutiesByJob(string job);
-    List<Duty> GetDutiesByCategory(string category);
-    void AddPendingDuty(PendingDuty toAdd);
-    PendingDuty GetPendingDuty(string awaitingInputFrom);
-    void SetPendingDuty(PendingDuty updatedDuty);
-    void DeletePendingDuty(ObjectId dutyId);
-
-    // Identifier operations
-    List<string> GetIdentifiers(string category);
-    void AddIdentifier(string category, string identifier);
-}
-```
-
-### ChateauDatabase Implementation
-
-**Location:** `FChatDicebot/Database/Chateaudatabase.cs`
-
-MongoDB implementation of `IChateauDatabase`:
-
-```csharp
-public class Chateaudatabase : IChateauDatabase
-{
-    private IMongoDatabase _database;
-    private IMongoCollection<Profile> _profiles;
-    private IMongoCollection<Interaction> _interactions;
-    private IMongoCollection<PendingCommand> _pendingCommands;
-    // ... more collections
-
-    public Chateaudatabase() {
-        var client = new MongoClient("mongodb://localhost:27017");
-        _database = client.GetDatabase("ChateauDb");
-        _profiles = _database.GetCollection<Profile>("RegisteredProfiles");
-        _interactions = _database.GetCollection<Interaction>("Interactions");
-        _pendingCommands = _database.GetCollection<PendingCommand>("PendingCommands");
-        // ... initialize more collections
-    }
-
-    public Profile GetProfile(string userName) {
-        return _profiles.Find(p => p.userName == userName).FirstOrDefault();
-    }
-
-    public void SetProfile(Profile profile) {
-        _profiles.ReplaceOne(
-            p => p.userName == profile.userName,
-            profile,
-            new ReplaceOptions { IsUpsert = true }
-        );
-    }
-
-    // ... implement other methods
-}
-```
-
-## Performance Considerations
-
-### MongoDB Indexing
-
-**Profiles:**
-- Index on `userName` (unique)
-- Enables O(log n) profile lookups
-
-**Interactions:**
-- Index on `initiator`
-- Index on `recipient`
-- Index on `type`
-- Index on `interactionTime`
-- Enables efficient history queries
-
-### Query Optimization
-
-**Fetch profiles once:**
-
-```csharp
-// Bad: Multiple profile fetches
-var profile1 = MonDB.getProfile("Alice");
-profile1.counts["kiss"]++;
-MonDB.setProfile(profile1);
-
-var profile2 = MonDB.getProfile("Alice");
-profile2.counts["cuddle"]++;
-MonDB.setProfile(profile2);
-
-// Good: Single fetch and update
-var profile = MonDB.getProfile("Alice");
-profile.counts["kiss"]++;
-profile.counts["cuddle"]++;
-MonDB.setProfile(profile);
-```
-
-**Batch operations where possible:**
-
-```csharp
-// Update multiple users in one transaction
-var batch = _profiles.BulkWrite(new[] {
-    new ReplaceOneModel<Profile>(
-        Builders<Profile>.Filter.Eq(p => p.userName, "Alice"),
-        aliceProfile
-    ),
-    new ReplaceOneModel<Profile>(
-        Builders<Profile>.Filter.Eq(p => p.userName, "Bob"),
-        bobProfile
-    )
-});
-```
-
-### File I/O Optimization
-
-**Load once, save when changed:**
-
-```csharp
-// Load chip piles at startup
-private Dictionary<string, Dictionary<string, int>> ChipPiles = LoadChipPiles();
-
-// Update in memory during operations
-ChipPiles[channel][user] += amount;
-
-// Save only when explicitly needed
-SaveChipPiles();
-```
-
-**Avoid excessive saves:**
-
-```csharp
-// Bad: Save after every chip change
-GiveChips("Alice", 100);
-SaveChipPiles();
-GiveChips("Bob", 200);
-SaveChipPiles();
-
-// Good: Save after batch of changes
-GiveChips("Alice", 100);
-GiveChips("Bob", 200);
-SaveChipPiles();
-```
-
-## Data Integrity
-
-### Transaction Safety
-
-**MongoDB Transactions:**
-
-For operations requiring atomicity:
-
-```csharp
-using (var session = _client.StartSession()) {
-    session.StartTransaction();
-    try {
-        // Multiple operations
-        _profiles.UpdateOne(session, ...);
-        _interactions.InsertOne(session, ...);
-
-        session.CommitTransaction();
-    } catch {
-        session.AbortTransaction();
-        throw;
-    }
-}
-```
-
-**Note:** Current implementation doesn't use transactions extensively. Consider adding for critical operations.
-
-### Validation
-
-**Profile Validation:**
-
-```csharp
-public bool ValidateProfile(Profile profile) {
-    if (string.IsNullOrWhiteSpace(profile.userName))
-        return false;
-
-    if (profile.counts == null)
-        profile.counts = new Dictionary<string, int>();
-
-    if (profile.timers == null)
-        profile.timers = new Dictionary<string, CoolDown>();
-
-    return true;
-}
-```
-
-**Interaction Validation:**
-
-```csharp
-public bool ValidateInteraction(Interaction interaction) {
-    if (string.IsNullOrWhiteSpace(interaction.initiator))
-        return false;
-
-    if (string.IsNullOrWhiteSpace(interaction.recipient))
-        return false;
-
-    if (string.IsNullOrWhiteSpace(interaction.type))
-        return false;
-
-    return true;
-}
-```
-
-## Migrations and Schema Changes
-
-### Adding Fields to Profiles
-
-**Backward Compatible Approach:**
-
-```csharp
-// Old profile may not have "currencies" field
-var profile = GetProfile("Alice");
-
-if (profile.currencies == null) {
-    profile.currencies = new Dictionary<string, int> {
-        {"tokens", 0},
-        {"gold", 0},
-        {"silver", 0}
-    };
-}
-
-profile.currencies["tokens"] += 50;
-SetProfile(profile);
-```
-
-**Migration Script:**
-
-```csharp
-public void MigrateProfilesAddCurrencies() {
-    var allProfiles = _profiles.Find(_ => true).ToList();
-
-    foreach (var profile in allProfiles) {
-        if (profile.currencies == null) {
-            profile.currencies = new Dictionary<string, int> {
-                {"tokens", 0},
-                {"gold", 0},
-                {"silver", 0}
-            };
-            SetProfile(profile);
-        }
-    }
-}
-```
-
-### Renaming Fields
-
-**Use MongoDB Update:**
-
-```csharp
-var update = Builders<Profile>.Update.Rename("oldFieldName", "newFieldName");
-_profiles.UpdateMany(_ => true, update);
-```
-
-## Disaster Recovery
-
-### MongoDB Backup
-
-**Manual Backup:**
-
-```bash
-mongodump --db ChateauDb --out C:\Backups\MongoDB\2025-11-22\
-```
-
-**Restore:**
-
-```bash
-mongorestore --db ChateauDb C:\Backups\MongoDB\2025-11-22\ChateauDb\
-```
-
-**Automated Backup (Windows Task Scheduler):**
-
-Create batch script `backup_mongodb.bat`:
-
-```batch
-@echo off
-set BACKUP_DIR=C:\Backups\MongoDB\%DATE%
-mongodump --db ChateauDb --out %BACKUP_DIR%
-```
-
-Schedule to run daily.
-
-### File Backup
-
-**Already implemented:** `ImmediateBackup` folder
-
-**Enhanced Backup:**
-
-```csharp
-private void AdvancedBackup() {
-    string timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
-    string backupDir = $@"C:\BotData\DiceBot\Backups\{timestamp}\";
-    Directory.CreateDirectory(backupDir);
-
-    foreach (var file in Directory.GetFiles(@"C:\BotData\DiceBot\", "*.txt")) {
-        string fileName = Path.GetFileName(file);
-        File.Copy(file, Path.Combine(backupDir, fileName));
-    }
-}
-```
-
-**Retention Policy:**
-
-Keep last 7 days of backups:
-
-```csharp
-private void CleanOldBackups() {
-    var backupDirs = Directory.GetDirectories(@"C:\BotData\DiceBot\Backups\");
-    var oldBackups = backupDirs
-        .Where(d => Directory.GetCreationTime(d) < DateTime.Now.AddDays(-7))
-        .ToList();
-
-    foreach (var dir in oldBackups) {
-        Directory.Delete(dir, recursive: true);
-    }
-}
-```
+- `RegisteredProfiles` is looked up by `userName` constantly; interaction-history queries scan by initiator/recipient/type. Collections are small enough that explicit indexes haven't been needed.
+- Fetch a profile once, mutate, then `setProfile` once — don't round-trip per field.
+- `changeCurrency` is the atomic currency path (added for wager settlement); prefer it over read-modify-write for money.
+- Schema changes should be additive with `[BsonIgnoreIfNull]`/defaults so old documents keep deserializing. For historic backfills, one-off `mongosh` scripts live in `scripts/` (e.g. the employer-earnings backfill).
 
 ## See Also
 
 - [Installation and Setup](Installation-and-Setup) - MongoDB setup
 - [Architecture](Architecture) - Data access layer details
-- [Interaction System](Interaction-System) - How interactions use database
+- [Interaction System](Interaction-System) - How interactions use the database
 - [Development Guide](Development-Guide) - Working with the database

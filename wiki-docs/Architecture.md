@@ -2,22 +2,24 @@
 
 This page explains the overall architecture of FCDiceBot and how the major components interact.
 
+For rules on keeping this page (and the rest of the wiki) accurate, see [README](README.md).
+
 ## High-Level Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                        Program.cs                            │
-│                    (Application Entry)                       │
+│      (Entry point; run modes -flist/-discord/-both/-none)    │
 └────────────────────────┬────────────────────────────────────┘
                          │
                          ▼
 ┌─────────────────────────────────────────────────────────────┐
 │                        BotMain.cs                            │
 │            (Core Bot Logic & Orchestration)                  │
-│  - WebSocket Management                                      │
-│  - Message Queue Processing                                  │
-│  - Connection Lifecycle                                      │
-│  - File I/O & Persistence                                    │
+│  - WebSocket connection to F-Chat                            │
+│  - Outgoing message queue (rate-limited)                     │
+│  - 200ms run loop                                            │
+│  - MonDB.Initialize (must precede all DB access)             │
 └──────┬──────────────┬──────────────┬────────────────────────┘
        │              │              │
        ▼              ▼              ▼
@@ -28,7 +30,7 @@ This page explains the overall architecture of FCDiceBot and how the major compo
        │              │              │
        ▼              ▼              ▼
 ┌─────────────┐ ┌────────────┐ ┌──────────────────┐
-│BotWeb       │ │143 Command │ │Interaction       │
+│BotWeb       │ │~210 Command│ │Interaction       │
 │Requests     │ │Classes     │ │Processors        │
 └─────────────┘ └────────────┘ └──────────────────┘
                      │              │
@@ -41,7 +43,7 @@ This page explains the overall architecture of FCDiceBot and how the major compo
 
 ## Core Components
 
-### 1. BotMain (938 lines)
+### 1. BotMain
 
 **Location:** `FChatDicebot/BotMain.cs`
 
@@ -50,364 +52,158 @@ The heart of the bot, responsible for:
 - **WebSocket Connection Management**
   - Connects to `wss://chat.f-list.net/chat2`
   - Handles authentication via F-List API tickets
-  - Manages reconnection with SSL fallback
-  - 5-minute timeout with automatic reconnection
+  - Reconnects after `ReconnectTimeMs` (2 minutes) with SSL fallback
 
 - **Message Queue System**
-  - Rate-limited outgoing messages (1.5s minimum between sends)
-  - Priority queue for important messages
+  - Rate-limited outgoing messages (`MinimumTimeBetweenMessages` = 1.5s, per F-List bot rules)
   - Scheduled future messages
 
 - **Main Run Loop**
-  - 200ms tick rate
-  - Processes incoming messages
-  - Sends queued messages
-  - Updates game states
+  - `TickTimeMiliseconds` = 200ms tick rate
+  - Processes incoming messages, sends queued messages, updates game states
   - Polls VelvetCuff transactions
+  - Periodic sweeps: group-interaction consent timeouts, ambient random events (`RandomEventEngine`)
 
-- **Channel Management**
-  - Tracks joined channels
-  - Handles channel joins/leaves
-  - Per-channel state management
+- **Startup order:** `Run()` calls `MonDB.Initialize("mongodb://localhost:27017", "ChateauDb")` **before** constructing `BotCommandController` — processors bind to whatever database is set when they are first constructed, and `MonDB.GetDatabase()` throws if `Initialize` hasn't run.
 
 - **File I/O Operations**
-  - Loads and saves JSON configuration files
-  - Automatic backup on startup
+  - Loads and saves the legacy JSON data files under `C:\BotData\DiceBot\`
+  - Copies them to `C:\BotData\DiceBot\ImmediateBackup` on startup
 
-**Key Methods:**
-- `Run()` - Initialize and start the bot
-- `RunLoop()` - Main 200ms tick loop
-- `OnMessage(string data)` - Handle incoming WebSocket messages
-- `InterpretChatCommand()` - Parse user commands
-- `SendMessageInChannel()` / `SendPrivateMessage()` - Send messages
-- `GetNewApiTicket()` - Authenticate with F-List
-
-### 2. BotCommandController (442 lines)
+### 2. BotCommandController
 
 **Location:** `FChatDicebot/BotCommandController.cs`
 
 Command discovery, dispatch, and execution:
 
 - **Reflection-based Command Discovery**
-  - Scans `BotCommands` namespace at startup
-  - Automatically loads all command classes
-  - No manual registration needed
-  - Currently: 143 commands
+  - Scans the `BotCommands` namespace at startup; every `ChatBotCommand` subclass is loaded automatically, no registration needed (~210 commands as of mid-2026 — count them with the grep in [README](README.md) rather than trusting this number)
+  - The `Aliases` array on each command routes as well as decorates: `FindCommandByName` dispatches on it, so an alias is one array entry, never a separate class
 
 - **Permission System**
-  - Bot admin checks (defined in AccountSettings)
+  - Bot admin checks (`AdminCharacters` in AccountSettings)
   - Channel admin checks (F-List ops)
-  - Registered user checks (Chateau database)
-  - Per-command requirements
+  - Per-command requirements (`RequireBotAdmin`, `RequireChannelAdmin`, `RequireBotIsChannelAdmin`, `RequireChannel`)
+
+- **Bare-name targeting**
+  - Commands whose `Usage` documents a `[user]` slot accept a bare name too; a normalization pass over `rawTerms` resolves it (unrecognized names abort rather than silently self-targeting)
 
 - **Thread Safety**
-  - Lock categories: SavedTables, SavedChannels, ChannelDecks, ChannelScores
-  - Prevents race conditions on shared data
-
-- **Helper Methods**
-  - Parse `[user]Name[/user]` tags
-  - Parse table references
-  - Sanitize and lowercase input
-
-**Key Methods:**
-- `LoadChatBotCommands()` - Discover commands via reflection
-- `RunChatBotCommand()` - Validate permissions and execute
-- `GetUserNameFromCommandTerms()` - Parse user tags
-- `SaveCharacterDataToDisk()` - Persist data
+  - `CommandLockCategory`: `NONE`, `SavedTables`, `SavedChannels`, `ChannelDecks`, `ChannelScores`, `CharacterInventories`, `RPGData`, `ChannelOpsRequest`
 
 ### 3. ChateauInteractionHandler
 
 **Location:** `FChatDicebot/ChateauInteractionHandler.cs`
 
-Routes interactions to processors or legacy handler:
-
-- **Processor-based System** (New)
-  - Modular interaction handling
-  - Registry pattern for processor lookup
-  - Strategy pattern for different interaction types
-
-- **Legacy Switch Statement** (Deprecated)
-  - Old monolithic interaction handling
-  - Being gradually migrated to processors
-
-- **Common Error Messages**
-  - User not found
-  - Not registered
-  - Mark not set
-  - Invalid input
+Routes consented interactions to their processors and centralizes common error messages (user not found, not registered, invalid input).
 
 ### 4. InteractionProcessorRegistry
 
 **Location:** `FChatDicebot/InteractionProcessors/InteractionProcessorRegistry.cs`
 
-Manages all interaction processors:
+Static registry of all interaction processors, keyed by interaction type. Every processor is registered explicitly in `Initialize()`. A few processors register under a second key because one processor serves two verbs:
 
-- **Registry Pattern**
-  - Central registration of all processors
-  - Type-based lookup
-  - Investment level filtering
+- `LapsitProcessor` — `!sit` and `!lap`
+- `CorruptionProcessor` — `!corrupt` and `!purify`
+- `ClimaxforProcessor` — `!climaxfor` and `!climax`
 
-- **Processor Categories**
-  - Casual: kiss, cuddle, handhold, spank, bully
-  - Involved: feed, golden, dressup
-  - Commitment: mark, entitle
-  - Consequence: rename, monsterize, petrify, plant, objectify, consume, employ, bond
+**Processor folders** (under `FChatDicebot/InteractionProcessors/`):
 
-- **Transaction Processors**
-  - Payment (give/receive)
+| Folder | Processors |
+|--------|------------|
+| `Casual/` | kiss, cuddle, handhold, spank, bully, boobhat, lick, pet, lapsit |
+| `Involved/` | feed, golden, dressup, milk, climaxfor, payment (give/receive) |
+| `Commitment/` | mark, entitle, petrify, plant, objectify, consume, employ, bond, breed, train, corruption |
+| `Consequence/` | monsterize, rename, odorize, break, dose, infest, curse |
 
-**Key Methods:**
-- `Initialize()` - Register all processors
-- `GetProcessor(string type)` - Get processor by interaction type
-- `GetProcessorsByInvestmentLevel(string level)` - Filter by investment level
+### 5. Group interactions and cross-interaction hooks
 
-### 5. DiceBot
+- **`GroupInteractionResolver` + per-processor `GroupSpec`** — casual interactions can target several residents at once; each target gets their own pending seat, and the group resolves when everyone has consented/declined or the consent window (`PendingMinutesKeep`, 10 minutes) runs out.
+- **`IStatusEffectContributor` + `StatusEffectRegistry`** — lets one interaction's lingering state (scents, corruption, parasites, curses…) contribute lines to other interactions' consent prompts, completions, and readouts.
+- **`IPostInteractionEffect` + `PostInteractionEffectRegistry`** — lets a completed interaction affect other parties (e.g. parasite spread).
+
+### 6. DiceBot
 
 **Location:** `FChatDicebot/DiceFunctions/DiceBot.cs`
 
-Dice rolling and game management:
+Legacy dice rolling and game management:
 
-- **Dice Rolling**
-  - Supports complex expressions
-  - Up to 200 dice, 400 rolls, 10M sides
-  - Operators: +, -, *, /, >, <
+- **Dice Rolling** — complex expressions; limits are constants on `DiceBot` (`MaximumDice` 200, `MaximumRolls` 400, `MaximumSides` 10,000,000)
+- **Card Deck Management** — playing/tarot/uno/custom decks, per-channel state, hands
+- **Casino Chip System** — chip piles, betting, pots, VelvetCuff integration
+- **Game Sessions** — one `IGame` implementation per game (`DiceFunctions/Games/`): AlphaRoyale, Blackjack, BottleSpin, Chess, DungeonDelve, HighRoll, KingsGame, LiarsDice, Mafia, Poker, PokerGame, PrizeRoll, RockPaperScissors, Roulette, SlamRoll
 
-- **Card Deck Management**
-  - Multiple deck types (Playing, Tarot, Uno, Custom)
-  - Per-channel deck state
-  - Player hands and collections
+### 7. Database Layer
 
-- **Casino Chip System**
-  - Chip balances
-  - Betting and pots
-  - VelvetCuff integration
+**Dual storage:**
 
-- **Game Sessions**
-  - 10+ game types
-  - Per-channel, per-game sessions
-  - Turn-based state management
+- **MongoDB** (`ChateauDb`) behind `IChateauDatabase` (`FChatDicebot/Database/`), accessed almost everywhere through the static adapter `MonDB`. See [Database and Persistence](Database-and-Persistence.md) for the collection list and schemas.
+- **JSON files** under `C:\BotData\DiceBot\` for legacy dicebot state (account settings, channel settings, chips, tables, decks, slots).
 
-### 6. Database Layer
-
-**Dual Storage System:**
-
-#### MongoDB (Primary)
-**Location:** `FChatDicebot/Database/Chateaudatabase.cs`
-
-- Database: "ChateauDb"
-- Collections:
-  - RegisteredProfiles - User data
-  - Interactions - Historical records
-  - PendingCommands - Consent workflow
-  - Duties - Job definitions
-  - PendingDuties - Active work
-  - Identifiers - Category taxonomy
-
-#### File Storage (Legacy)
-**Location:** `C:\BotData\DiceBot\`
-
-- JSON format
-- Used for: account settings, channel settings, chips, tables, decks, slots, coupons
-
-#### MonDB Adapter
-**Location:** `FChatDicebot/MonDB.cs`
-
-- Static facade over IChateauDatabase
-- Backward compatibility layer
-- Enables gradual migration to dependency injection
+`MonDB.Initialize(connectionString, databaseName)` must run before anything touches the DB; `GetDatabase()` throws otherwise (deliberately fail-loud so a test or script can never silently write production data).
 
 ## Data Flow: User Input to Response
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│ USER: Types "!kiss [user]Target[/user]" in F-List channel   │
-└────────────────────────┬────────────────────────────────────┘
-                         │
-                         ▼
-┌─────────────────────────────────────────────────────────────┐
-│ F-List Server: Sends MSG message via WebSocket              │
-└────────────────────────┬────────────────────────────────────┘
-                         │
-                         ▼
-┌─────────────────────────────────────────────────────────────┐
-│ BotMain.OnMessage()                                          │
-│  - Parse message type and content                            │
-│  - Deserialize JSON                                          │
-└────────────────────────┬────────────────────────────────────┘
-                         │
-                         ▼
-┌─────────────────────────────────────────────────────────────┐
-│ BotMain.InterpretChatCommand()                               │
-│  - Extract command: "kiss"                                   │
-│  - Extract terms: ["[user]Target[/user]"]                    │
-│  - Create UserGeneratedCommand                               │
-└────────────────────────┬────────────────────────────────────┘
-                         │
-                         ▼
-┌─────────────────────────────────────────────────────────────┐
-│ BotCommandController.RunChatBotCommand()                     │
-│  - Find ChateauKiss command                                  │
-│  - Check permissions                                         │
-│  - Sanitize input                                            │
-└────────────────────────┬────────────────────────────────────┘
-                         │
-                         ▼
-┌─────────────────────────────────────────────────────────────┐
-│ ChateauKiss.Run()                                            │
-│  - Parse target from [user] tags                             │
-│  - Validate target exists                                    │
-│  - Create PendingCommand                                     │
-│  - Save to database                                          │
-│  - Send consent request                                      │
-└────────────────────────┬────────────────────────────────────┘
-                         │
-                         ▼
-┌─────────────────────────────────────────────────────────────┐
-│ Channel: "User wants to kiss Target! Do you !consent?"      │
-└─────────────────────────────────────────────────────────────┘
+USER: types "!kiss [user]Target[/user]" (or "!kiss target") in a channel
+  → F-List server sends MSG via WebSocket
+  → BotMain.OnMessage(): parse message type, deserialize
+  → BotMain.InterpretChatCommand(): extract command + terms
+  → BotCommandController.RunChatBotCommand(): find ChateauKiss,
+    check permissions, resolve bare-name target
+  → ChateauKiss.Run(bot, commandController, rawTerms, terms, address, command):
+    validate profiles, create PendingCommand in Mongo, post consent prompt
+  → Channel: "Alice wants to give you a kiss, Bob. Do you !consent to a smooch? (or !no)"
 
-                    [Target consents...]
-
-┌─────────────────────────────────────────────────────────────┐
-│ ChateauConsent.Run()                                         │
-│  - Get pending interaction                                   │
-│  - Get KissProcessor from registry                           │
-│  - Execute ProcessInteraction()                              │
-│  - Get completion message                                    │
-│  - Check achievements                                        │
-│  - Queue message                                             │
-└────────────────────────┬────────────────────────────────────┘
-                         │
-                         ▼
-┌─────────────────────────────────────────────────────────────┐
-│ BotMain.RunLoop()                                            │
-│  - Wait 1.5s since last message                              │
-│  - Dequeue message                                           │
-│  - Send via WebSocket                                        │
-└────────────────────────┬────────────────────────────────────┘
-                         │
-                         ▼
-┌─────────────────────────────────────────────────────────────┐
-│ Channel: "Mwah! User and Target share a kiss, cute."        │
-└─────────────────────────────────────────────────────────────┘
+TARGET: types "!consent" (or !no to decline; initiator can !oops to withdraw)
+  → ChateauConsent.Run(): load pending command, sweep expired ones (10 min),
+    resolve processor from InteractionProcessorRegistry
+  → processor.ProcessInteraction(): increment counts (rate-limited),
+    delete pending command
+  → completion message assembled (status-effect fragments, eicons, titles)
+  → BotMain queues the message; run loop sends it after the 1.5s gap
+  → Channel: "Mwah! Alice and Bob share a kiss, cute."
 ```
 
 ## Design Patterns
 
-### 1. Command Pattern
-Each command is a separate class inheriting from `ChatBotCommand`. Commands encapsulate their execution logic and metadata.
+- **Command** — each command is a `ChatBotCommand` subclass encapsulating metadata + execution.
+- **Strategy / Registry** — `IInteractionProcessor` implementations looked up by type in `InteractionProcessorRegistry`.
+- **Template Method** — `InteractionProcessorBase` owns the workflow (consent-warning assembly, status-effect composition, group handling); subclasses override the specific steps (`BuildConsentWarning`, `GetCompletionMessage`, …).
+- **Adapter** — `MonDB` is a static facade over `IChateauDatabase`, enabling gradual migration to dependency injection.
 
-### 2. Strategy Pattern
-`IInteractionProcessor` interface allows different interaction types to be handled by different strategies (processors).
+## Rate Limiting
 
-### 3. Registry Pattern
-`InteractionProcessorRegistry` maintains a registry of all processors and provides type-based lookup.
-
-### 4. Adapter Pattern
-`MonDB` serves as a static adapter over `IChateauDatabase`, enabling backward compatibility.
-
-### 5. Template Method Pattern
-`InteractionProcessorBase` provides template methods with common workflow, allowing subclasses to customize specific steps.
-
-### 6. Facade Pattern
-`BotMain` acts as a facade, simplifying access to complex subsystems.
-
-### 7. Observer Pattern
-WebSocket event handlers (`OnMessage`, `OnError`, `OnClose`) implement observer pattern for event-driven architecture.
-
-### 8. Queue Pattern
-`BotMessageQueue` implements a priority queue with rate limiting.
-
-## Threading Model
-
-### Main Thread
-- WebSocket message handling
-- Command execution
-- Message queue processing
-- Game state updates
-
-### Thread Safety
-- Locks on shared data (tables, channels, decks, scores)
-- Lock categories defined per command
-- Prevents concurrent modification
-
-### Rate Limiting
-- 1.5 second minimum between outgoing messages (F-List requirement)
-- Per-user interaction cooldowns (1 hour casual, 30 min involved, daily for commitment/consequence)
-- Database-backed timer system
+- **Messages:** 1.5s minimum between outgoing sends (F-List requirement).
+- **Interactions:** per-interaction cooldowns, not one global scheme:
+  - Casual and involved processors use a `RateLimit` constant (30 minutes as of mid-2026).
+  - Commitment/consequence processors declare a structured `CooldownSpec` (`CooldownRule`) — period in days (typically 1 or 7), who it binds (initiator / recipient / pair / both), optional per-axis scope (e.g. per-vice per-recipient), or a daily magnitude quota (corrupt/purify). The spec is the single source of truth for both the consent-warning frequency clause and the `!help` cooldown fields.
+  - Cooldowns are stored in the profile's `timers` dictionary as `CoolDown` records (`timerEnd`, UTC), keyed `ratelimit_{countLabel}` or per-direction keys such as `milk_give_<recipient>`.
 
 ## Extension Points
 
 ### Adding a New Command
-1. Create class in `BotCommands` namespace
-2. Inherit from `ChatBotCommand`
-3. Implement `Run()` method
-4. Automatic discovery via reflection
+1. Create a class in the `BotCommands` namespace inheriting `ChatBotCommand`
+2. Set metadata in the constructor (`Name`, `Category`, `Usage`, `ShortDescription`, … — these drive `!help`)
+3. Implement `Run(BotMain, BotCommandController, string[] rawTerms, string[] terms, MessageAddress address, UserGeneratedCommand command)`
+4. Discovery is automatic; the csproj globs `**\*.cs`, so no project-file edit either
 
 ### Adding a New Interaction
-1. Create processor class implementing `IInteractionProcessor`
-2. Implement required methods
-3. Register in `InteractionProcessorRegistry.Initialize()`
-4. Create command class to initiate interaction
+See the walkthrough in the [Development Guide](Development-Guide.md): processor class + command class + a `RegisterProcessor` line in `InteractionProcessorRegistry.Initialize()` + tests.
 
 ### Adding a New Game
-1. Implement `IGame` interface
-2. Add to `DiceBot` game management
-3. Create game commands (join, start, action, etc.)
+1. Implement `IGame` (`FChatDicebot/DiceFunctions/Base/IGame.cs`)
+2. Register it where `DiceBot` builds its game list
+3. Players use the generic `!joingame` / `!startgame` / `!gamecommand` commands
 
 ## Configuration
 
-### Account Settings
-`C:\BotData\DiceBot\account_settings.txt`
-- F-List credentials
-- Character name
-- Admin list
-
-### Channel Settings
-`C:\BotData\DiceBot\channel_settings.txt`
-- Per-channel command prefix
-- Feature toggles (chips, games, slots)
-- Starting chip amounts
-- Slot multiplier limits
-
-## Performance Considerations
-
-### Message Rate Limiting
-- F-List enforces rate limits
-- Bot respects 1.5s between messages
-- Queue prevents message loss
-
-### Database Queries
-- MongoDB indexed by userName
-- Profile lookups are O(log n)
-- Interaction history queries can be expensive for large datasets
-
-### Memory Usage
-- Deck state per channel
-- Game sessions per channel per game type
-- Chip balances loaded at startup
-- Pending commands expire after 10 minutes
-
-## Error Handling
-
-### WebSocket Disconnection
-- Automatic reconnection attempts
-- 5-minute timeout
-- SSL fallback if HTTPS connection fails
-
-### Database Errors
-- Graceful fallback to file-based storage where possible
-- Error logging
-- User-friendly error messages
-
-### Command Errors
-- Validation before execution
-- Permission checks
-- Clear error messages to users
-- No crash on invalid input
+- **`C:\BotData\DiceBot\account_settings.txt`** — JSON of `SavedData/AccountSettings.cs`: F-List account credentials, `CharacterName`, `AdminCharacters`, optional Discord/VelvetCuff credentials.
+- **`C:\BotData\DiceBot\channel_settings.txt`** — per-channel command prefix, feature toggles (chips/games/tables/slots), starting chips, `AllowRandomEvents` opt-in.
 
 ## See Also
 
 - [Installation and Setup](Installation-and-Setup) - How to deploy
 - [Development Guide](Development-Guide) - How to extend
 - [Database and Persistence](Database-and-Persistence) - Data storage details
+- [Interaction System](Interaction-System) - Consent flow in depth

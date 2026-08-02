@@ -1,6 +1,8 @@
 # Command Reference
 
-Complete reference of all FCDiceBot commands organized by category.
+Reference of all FCDiceBot commands, organized by category.
+
+**The bot itself is the authoritative reference:** `!help` lists every command with help metadata, `!help {command}` shows its usage, cooldown, and related commands — all generated from the command classes, so it can't drift. This page is the browsable index; when a command here disagrees with `!help`, trust `!help` and fix this page.
 
 **Note:** Default command prefix is `!` but can be configured per-channel.
 
@@ -24,788 +26,165 @@ has to be named in full.
 A `[user]` tag is still the unambiguous way to say who you mean, and it always wins over
 name-guessing. Type the start of a name and press Tab to have F-Chat complete it into one.
 
-## General Commands
+---
+
+# Chateau Contract Commands
+
+## Getting Started
+
+| Command | Usage | What it does |
+|---------|-------|--------------|
+| `!joinchateau` | `!joinchateau` | Register your character with the Chateau system |
+| `!help` (`!commands`) | `!help` or `!help {command}` | Command list / detailed help |
+| `!identifier` (`!whatis`) | `!identifier {identifier}` | Information about an identifier (a bodypart, substance, monster, …) |
+| `!category` (`!list`, `!identifiers`) | `!category {category}` or `!category` | List all identifiers in a category |
+| `!botinfo` / `!uptime` | | Bot version / time online |
+| `!modmessage` | `!modmessage [category]` | View moderator announcements |
+| `!feedback` (`!suggestion`) | `!feedback <your idea or bug>` | Send the staff an idea or a bug report |
+
+## Consent Lifecycle
+
+Every interaction is a request until the target answers. All three verbs accept `all`, a number from your pending list, or a name.
+
+| Command | Usage | What it does |
+|---------|-------|--------------|
+| `!consent` (`!c`, `!accept`) | `!consent` / `!consent all` / `!consent {number}` / `!consent {name}` | Accept a pending interaction. With several pending, you're PM'd a numbered list |
+| `!no` (`!refuse`, `!decline`) | `!no` / `!no all` / `!no {number}` / `!no {name}` | Decline a pending interaction. In a group, the shared moment still resolves with whoever else consented |
+| `!oops` (`!o`, `!withdraw`, `!cancel`) | `!oops` / `!oops all` / `!oops {number}` / `!oops {name}` | Withdraw an interaction **you** started (calls off a whole group) |
+
+Pending requests expire after 10 minutes.
+
+## Casual Interactions
+
+All casual interactions are group-capable (name several residents) and share a 30-minute recording cooldown — hitting it doesn't block the fun, it just doesn't make the dossier.
+
+| Command | Usage | What it does |
+|---------|-------|--------------|
+| `!kiss` | `!kiss [user]Name[/user]` | Give another resident (or residents) a kiss |
+| `!cuddle` (`!hug`) | `!cuddle [user]Name[/user]` | Cuddle with another resident (or residents) |
+| `!handhold` | `!handhold [user]Name[/user]` | Hold hands |
+| `!spank` | `!spank [user]Name[/user]` | Spank another resident (or residents) |
+| `!bully` | `!bully [user]Name[/user]` | Bully another resident (or residents) |
+| `!pet` | `!pet [user]Name[/user]` | Pet another resident (or residents) |
+| `!lick` | `!lick [user]Name[/user]` | Give another resident (or residents) a lick |
+| `!boobhat` | `!boobhat [user]Name[/user]` | Put your chest on another resident's head |
+| `!sit` | `!sit [user]Name[/user]` | Take a seat on another resident's lap (starts a lap *stack* — others can race to consent) |
+| `!lap` | `!lap [user]Name[/user]` | Pull another resident onto your lap |
+
+## Involved Interactions
+
+| Command | Usage | What it does |
+|---------|-------|--------------|
+| `!feed` | `!feed [user]Name[/user] {substance}` | Feed another resident |
+| `!dressup` (`!dress`) | `!dressup [user]Name[/user] {attire}` | Dress another resident, or yourself, in specific attire |
+| `!golden` | `!golden [user]Name[/user] {bodypart}` | Give another resident a golden shower |
+| `!milk` | `!milk [user]Name[/user] {substance}` | Milk a substance from another resident (produces numbered bottles; per-recipient daily cooldown) |
+| `!climax` | `!climax [user]Name[/user]` | Bring another resident, or yourself, to orgasm |
+| `!climaxfor` | `!climaxfor [user]Name[/user]` | Bring yourself to orgasm, solo or for another resident |
+| `!pay` | see below | Transfer currency or bottles |
+
+### !pay
 
-### Registration
-
-#### !register
-Register for Chateau features and receive starting chips.
-
-**Usage:** `!register`
-
-**Example:**
-```
-!register
-→ Welcome to Chateau Contract! You received 1,000 starting chips.
-```
-
-**Effects:**
-- Creates profile in database
-- Grants starting chips (configurable per channel)
-- Enables all Chateau interactions
-
-## Dice Rolling
-
-### Basic Rolling
-
-#### !roll
-Roll dice with complex expressions.
-
-**Usage:** `!roll {expression}`
-
-**Examples:**
-```
-!roll 1d20
-!roll 3d6+5
-!roll 2d10+1d6
-!roll 4d6>4
-```
-
-**Operators:**
-- `+` - Add
-- `-` - Subtract
-- `*` - Multiply
-- `/` - Divide
-- `>` - Count successes (>= value)
-- `<` - Count failures (< value)
-
-**Limits:**
-- Max 200 dice
-- Max 10M sides
-- Max 400 total rolls
-
-#### !fitd
-Forged in the Dark dice pool system.
-
-**Usage:** `!fitd {number}`
-
-**Example:**
-```
-!fitd 3
-→ Rolled [2, 5, 6]. Highest: 6 - Success!
-```
-
-#### !coinflip
-Flip a coin.
-
-**Usage:** `!coinflip` or `!flip`
-
-**Example:**
-```
-!coinflip
-→ Heads!
-```
-
-### Roll Tables
-
-#### !addtable
-Create a new roll table.
-
-**Usage:** `!addtable {name}`
-
-**Example:**
-```
-!addtable loot
-→ Created table 'loot'
-```
-
-**Limit:** 4 tables per user
-
-#### !addentry
-Add entry to a roll table.
-
-**Usage:** `!addentry {table} {weight} {result}`
-
-**Example:**
-```
-!addentry loot 50 Common Item
-→ Added 'Common Item' with weight 50 to 'loot'
-```
-
-**Limit:** 50 entries per table
-
-#### !rolltable
-Roll on a table.
-
-**Usage:** `!rolltable {name}`
-
-**Example:**
-```
-!rolltable loot
-→ Result: Rare Item
-```
-
-#### !showtable
-View table contents.
-
-**Usage:** `!showtable {name}`
-
-#### !removetable
-Delete a table.
-
-**Usage:** `!removetable {name}`
-
-#### !removeentry
-Remove entry from table.
-
-**Usage:** `!removeentry {table} {entry}`
-
-#### !listtables
-List all your tables.
-
-**Usage:** `!listtables`
-
-## Card System
-
-### Drawing Cards
-
-#### !drawcard
-Draw cards from a deck.
-
-**Usage:** `!drawcard {amount} {decktype}`
-
-**Deck Types:**
-- `playing` - Standard 52-card deck
-- `tarot` - 78-card tarot deck
-- `uno` - Uno deck
-- `manythings` - Deck of Many Things
-- `custom` - User-defined deck
-
-**Example:**
-```
-!drawcard 5 playing
-→ You drew: Ace of Spades, 7 of Hearts, King of Diamonds, 2 of Clubs, Queen of Spades
-```
-
-#### !showhand
-Show your current hand.
-
-**Usage:** `!showhand`
-
-#### !playcard
-Play a card from your hand.
-
-**Usage:** `!playcard {card}`
-
-**Example:**
-```
-!playcard Ace of Spades
-→ You played: Ace of Spades
-```
-
-#### !discardcard
-Discard a card.
-
-**Usage:** `!discardcard {card}`
-
-#### !hidecard
-Move card to hidden play area.
-
-**Usage:** `!hidecard {card}`
-
-#### !burncard
-Remove card from game permanently.
-
-**Usage:** `!burncard {card}`
-
-### Deck Management
-
-#### !shuffledeck
-Shuffle a deck.
-
-**Usage:** `!shuffledeck {decktype}`
-
-#### !resetdeck
-Return all cards to deck and shuffle.
-
-**Usage:** `!resetdeck {decktype}`
-
-**Example:**
-```
-!resetdeck playing
-→ All cards returned to deck and shuffled!
-```
-
-#### !deckstatus
-View deck status.
-
-**Usage:** `!deckstatus {decktype}`
-
-#### !viewdiscard
-View discard pile.
-
-**Usage:** `!viewdiscard {decktype}`
-
-### Custom Decks
-
-#### !createcustom
-Create a custom deck.
-
-**Usage:** `!createcustom {name}`
-
-#### !addcustomcard
-Add card to custom deck.
-
-**Usage:** `!addcustomcard {deckname} {cardname}`
-
-**Limit:** 200 cards per deck
-
-### Dealer Commands
-
-#### !dealercard
-Draw cards to dealer's hand.
-
-**Usage:** `!dealercard {amount} {decktype}`
-
-#### !dealerplay
-Dealer plays a card.
-
-**Usage:** `!dealerplay {card}`
-
-## Casino & Chips
-
-### Chip Management
-
-#### !showchips
-View chip balances.
-
-**Usage:** `!showchips` or `!chips`
-
-**Example:**
-```
-!showchips
-→ Chip Balances:
-  Alice: 1,500
-  Bob: 2,300
-```
-
-#### !givechips
-Transfer chips to another user.
-
-**Usage:** `!givechips [user]Name[/user] {amount}`
-
-**Example:**
-```
-!givechips [user]Bob[/user] 500
-→ You gave Bob 500 chips. New balance: 1,000
-```
-
-### Betting
-
-#### !bet
-Add chips to the pot.
-
-**Usage:** `!bet {amount}`
-
-**Example:**
-```
-!bet 100
-→ Alice bets 100 chips. Pot: 100
-```
-
-#### !claimpot
-Claim the pot.
-
-**Usage:** `!claimpot`
-
-**Requires:** Channel op or mutual agreement
-
-#### !showpot
-View current pot.
-
-**Usage:** `!showpot` or `!pot`
-
-### VelvetCuff Integration
-
-#### !buychips
-Purchase chips with real currency (VelvetCuff).
-
-**Usage:** `!buychips {amount}`
-
-**Example:**
-```
-!buychips 5000
-→ Payment request created. Complete payment at: [URL]
-```
-
-**Limit:** Max 50,000 chips per transaction
-
-#### !cashout
-Convert chips to VelvetCuff currency.
-
-**Usage:** `!cashout {amount}`
-
-**Limits:**
-- Min: 1,000 chips
-- Max: 100,000 chips
-- Cooldown: 72 hours
-
-**Example:**
-```
-!cashout 10000
-→ You cashed out 10,000 chips for 100 VelvetCuff tokens!
-```
-
-### Coupons
-
-#### !createcoupon (Admin)
-Create chip coupon.
-
-**Usage:** `!createcoupon {code} {amount}`
-
-**Example:**
-```
-!createcoupon WELCOME2024 1000
-→ Coupon created: WELCOME2024 for 1,000 chips
-```
-
-#### !redeem
-Redeem a chip coupon.
-
-**Usage:** `!redeem {code}`
-
-**Example:**
-```
-!redeem WELCOME2024
-→ You redeemed WELCOME2024 for 1,000 chips!
-```
-
-### Slots
-
-#### !slots
-Play slot machine.
-
-**Usage:** `!slots {bet}`
-
-**Example:**
-```
-!slots 100
-→ [Cherry] [Cherry] [Cherry]
-→ You won 300 chips! (3x multiplier)
-```
-
-**Cooldown:** 5 minutes
-
-#### !slotsinfo
-View slot configuration.
-
-**Usage:** `!slotsinfo`
-
-### Admin Commands
-
-#### !clearchips (Admin)
-Reset all chip balances to starting amount.
-
-**Usage:** `!clearchips`
-
-## Games
-
-### Game Management
-
-#### !joingame
-Join or create a game session.
-
-**Usage:** `!joingame {gametype}`
-
-**Game Types:**
-- `highroll` - Highest roll wins
-- `poker` - Texas Hold'em
-- `blackjack` - Classic 21
-- `roulette` - Casino roulette
-- `bottlespin` - Spin the bottle
-- `kingsgame` - King's game
-- `liarsdice` - Liar's dice
-- `rps` - Rock Paper Scissors
-- `slamroll` - Competitive rolling
-- `pokergame` - Alternative poker
-
-**Example:**
-```
-!joingame poker
-→ Alice created a poker game! Others can !joingame poker
-```
-
-#### !startgame
-Start a game session.
-
-**Usage:** `!startgame {gametype}`
-
-**Example:**
-```
-!startgame poker
-→ Poker game started! Players: Alice, Bob, Carol
-```
-
-#### !gamecommand
-Execute game-specific action.
-
-**Usage:** `!gamecommand {gametype} {action} [parameters]`
-
-**Examples:**
-```
-!gamecommand poker bet 100
-!gamecommand blackjack hit
-!gamecommand roulette bet red 100
-!gamecommand rps rock
-```
-
-#### !gamestatus
-View game status.
-
-**Usage:** `!gamestatus {gametype}`
-
-#### !leavegame
-Leave a game session.
-
-**Usage:** `!leavegame {gametype}`
-
-#### !cancelgame (Op)
-Cancel a game session.
-
-**Usage:** `!cancelgame {gametype}`
-
-## Chateau Interactions
-
-### Consent Commands
-
-#### !consent
-Accept a pending interaction.
-
-**Usage:** `!consent` or `!accept`
-
-**Example:**
-```
-!consent
-→ Mwah! Alice and Bob share a kiss, cute.
-```
-
-#### !reject
-Reject a pending interaction.
-
-**Usage:** `!reject` or `!deny`
-
-**Example:**
-```
-!reject
-→ Bob rejected the interaction.
-```
-
-### Casual Interactions (1 hour cooldown)
-
-#### !kiss
-Share a kiss.
-
-**Usage:** `!kiss [user]Name[/user]`
-
-**Example:**
-```
-!kiss [user]Bob[/user]
-→ Alice wants to give Bob a smooch! Do you !consent?
-```
-
-#### !cuddle
-Cuddle together.
-
-**Usage:** `!cuddle [user]Name[/user]`
-
-#### !handhold
-Hold hands.
-
-**Usage:** `!handhold [user]Name[/user]`
-
-#### !spank
-Playful spanking.
-
-**Usage:** `!spank [user]Name[/user]`
-
-#### !bully
-Playful teasing.
-
-**Usage:** `!bully [user]Name[/user]`
-
-### Involved Interactions (30 min cooldown)
-
-#### !feed
-Feed something to someone.
-
-**Usage:** `!feed [user]Name[/user] {item}`
-
-**Example:**
-```
-!feed [user]Bob[/user] chocolate
-→ Alice wants to feed Bob chocolate! Do you !consent?
-```
-
-#### !dressup
-Dress someone in attire.
-
-**Usage:** `!dressup [user]Name[/user] {attire}`
-
-**Example:**
-```
-!dressup [user]Bob[/user] maid outfit
-```
-
-#### !golden
-Golden shower interaction.
-
-**Usage:** `!golden [user]Name[/user]`
-
-#### !payment
-Give/receive payment.
-
-**Usage:** `!payment [user]Name[/user] {amount}`
-
-**Example:**
-```
-!payment [user]Bob[/user] 50
-→ Alice wants to pay Bob 50 tokens! Do you !consent?
-```
-
-#### !pay
 Transfer currency, or pass along bottles from your collection. A negative amount bills the other resident instead.
 
 **Usage:** `!pay [user]Name[/user] {amount} {currency}` or `!pay [user]Name[/user] {amount} bottles {substance}` or `!pay [user]Name[/user] bottles #12 #13`
 
 Bottles keep their number, their donor and their corrupt/pure tag when they change hands. Naming bottles by number is the only way to pass along an empty; an amount always means full bottles.
 
-**Example:**
 ```
 !pay [user]Bob[/user] bottles #142 #143
 → Alice is going to pass Bob 2 bottles: two of the milk from Carol (corrupt)! Do you !consent to receiving them? (or !no)
 ```
 
-### Commitment Interactions (24 hour cooldown)
+## Commitment Interactions
 
-#### !mark
-Place ownership mark.
+Lasting relationships, transformations, and state. Cooldowns are typically daily; the consent prompt and `!help` state each one exactly.
 
-**Usage:** `!mark [user]Name[/user] {bodypart}`
+| Command | Usage | What it does |
+|---------|-------|--------------|
+| `!mark` | `!mark [user]Name[/user] {bodypart}` | Place your mark upon another resident's body |
+| `!entitle` | `!entitle [user]Name[/user] "{title}"` | Grant a custom title |
+| `!bond` | `!bond [user]Name[/user] {bondtype}` | Declare your bond with another resident |
+| `!employ` (`!hire`) | `!employ [user]Name[/user] {job}` | Employ someone (or yourself) to do jobs for the Chateau; enables `!work` |
+| `!train` | `!train [user]Name[/user] {training}` | Train with another resident in a skill |
+| `!breed` | `!breed [user]Name[/user] {monster}` (or `random`) | Breed another resident with new monster life |
+| `!birth` | `!birth` or `!birth {index}` | Birth a pregnancy that has finished gestating |
+| `!corrupt` | `!corrupt [user]Name[/user] {amount}` | Push another resident toward corruption (daily magnitude quota) |
+| `!purify` | `!purify [user]Name[/user] {amount}` | Push another resident toward purity (same quota) |
+| `!petrify` | `!petrify [user]Name[/user] {location}` | Turn another resident into a statue (browse with `!statues`) |
+| `!plant` | `!plant [user]Name[/user] {plant}` | Transform another resident into a plant |
+| `!objectify` | `!objectify [user]Name[/user] {object}` | Transform someone into an object |
+| `!consume` | `!consume [user]Name[/user] {bodypart}` | Consume/devour another resident |
 
-**Example:**
-```
-!mark [user]Bob[/user] collar
-→ Alice wants to mark Bob's collar! Do you !consent?
-```
+## Consequence Interactions
 
-**Effect:** Adds mark to recipient's profile
+Heavier, longer cooldowns (typically weekly, often per-axis: one `!dose` per vice per recipient per week). Several leave status effects that echo into other interactions.
 
-#### !unmark
-Remove a mark.
+| Command | Usage | What it does |
+|---------|-------|--------------|
+| `!rename` | `!rename [user]Name[/user] "{newname}"` | Change another resident's official name on the records |
+| `!monsterize` | `!monsterize [user]Name[/user] {monster}` | Transform someone into a monster |
+| `!odorize` | `!odorize [user]Name[/user] {scent}` | Saturate another resident with a lingering scent |
+| `!break` | `!break [user]Name[/user] {bodypart} {days?}` | Break a bodypart for several days |
+| `!dose` | `!dose [user]Name[/user] {vice}` | Hook another resident on an addictive vice |
+| `!infest` | `!infest [user]Name[/user] {parasite}` | Infest someone with new parasitic life |
+| `!curse` | `!curse [user]Name[/user] {curse}` | Place a curse — a disabler or a modifier |
 
-**Usage:** `!unmark [user]Name[/user]`
+## Recovery Commands
 
-#### !entitle
-Grant a title.
+Self-targeted reversals, each with its own cost or time gate.
 
-**Usage:** `!entitle [user]Name[/user] "{title}"`
+| Command | Usage | What it does |
+|---------|-------|--------------|
+| `!purge` | `!purge {parasite}` | Purge a parasite, at a cost (free if caught within the spread grace) |
+| `!cleanse` | `!cleanse {curse}` | Cleanse a curse, at a cost |
+| `!rest` | `!rest {bodypart}` | Skip today's `!work` to heal broken bodyparts one day faster |
+| `!detox` | `!detox {vice}` | Break an addiction, at a cost |
+| `!wash` | `!wash {scent}` | Wash off one scent layer (one per day) |
 
-**Example:**
-```
-!entitle [user]Bob[/user] "Best Friend"
-→ Alice wants to grant Bob the title 'Best Friend'! Do you !consent?
-```
+(`!purify` and `!birth` above complete the reversal set for corruption and pregnancies.)
 
-#### !bond
-Create relationship bond.
+## Pledges
 
-**Usage:** `!bond [user]Name[/user] {bondtype}`
+| Command | Usage | What it does |
+|---------|-------|--------------|
+| `!pledge` | `!pledge [user]Name[/user] {interactiontype}` | Promise to perform an interaction in the future |
+| `!fulfill` | `!fulfill [user]Name[/user] {interactiontype}` | Perform a promised interaction |
+| `!pledges` | `!pledges` or `!pledges [user]Name[/user]` | View active pledges |
+| `!abandonpledge` | `!abandonpledge [user]Name[/user] {interactiontype}` | Abandon an active pledge |
 
-**Bond Types:** pet, slave, master, owner, servant, etc.
+## Economy & Jobs
 
-**Example:**
-```
-!bond [user]Bob[/user] pet
-```
-
-#### !employ
-Hire someone for a job.
-
-**Usage:** `!employ [user]Name[/user] {job}`
-
-**Example:**
-```
-!employ [user]Bob[/user] maid
-→ Alice wants to employ Bob as a maid! Do you !consent?
-```
-
-**Effect:** Sets job, enables !work command
-
-### Consequence Interactions (24 hour cooldown)
-
-#### !rename
-Change someone's display name.
-
-**Usage:** `!rename [user]Name[/user] "{newname}"`
-
-**Example:**
-```
-!rename [user]Bob[/user] "Bobert the Great"
-→ Warning: This will change their display name. Do you !consent?
-```
-
-**Effect:** Permanent until renamed again
-
-#### !monsterize
-Transform into a monster/species.
-
-**Usage:** `!monsterize [user]Name[/user] {species}`
-
-**Example:**
-```
-!monsterize [user]Bob[/user] dragon
-```
-
-#### !petrify
-Turn to stone.
-
-**Usage:** `!petrify [user]Name[/user]`
-
-**Effect:** Status: petrified
-
-#### !plant
-Transform into a plant.
-
-**Usage:** `!plant [user]Name[/user] {planttype}`
-
-**Effect:** Status: plant
-
-#### !objectify
-Transform into an object.
-
-**Usage:** `!objectify [user]Name[/user] {object}`
-
-**Effect:** Status: object
-
-#### !consume
-Consume/absorb someone.
-
-**Usage:** `!consume [user]Name[/user]`
-
-**Effect:** Status: consumed (temporary removal)
-
-#### !restore
-Reverse transformations.
-
-**Usage:** `!restore [user]Name[/user]`
-
-**Example:**
-```
-!restore [user]Bob[/user]
-→ Alice wants to restore Bob! Do you !consent?
-```
-
-### Job System
-
-#### !work
-Perform daily duty (if employed).
-
-**Usage:** `!work`
-
-**Example:**
-```
-!work
-→ You perform your duty as a maid: Clean the manor
-→ You earned 50 tokens!
-```
-
-**Cooldown:** 24 hours
-
-#### !volunteer
-Try other jobs without being employed.
-
-**Usage:** `!volunteer`
-
-**Example:**
-```
-!volunteer
-→ You try your hand at being a chef: Prepare a meal
-→ You earned 10 tokens!
-```
-
-**Note:** Volunteers earn less than employees
+| Command | Usage | What it does |
+|---------|-------|--------------|
+| `!work` (`!w`) | `!work`, then `!w {choice number}` | Perform your job duties for currency (daily; PM'd a choice of chores) |
+| `!volunteer` (`!v`) | `!volunteer {job}`, then `!v {choice number}` | Try a job you're not employed in (separate daily timer) |
+| `!bank` (`!balance`, `!money`) | `!bank` or `!bank [user]Name[/user]` | See accumulated currencies |
+| `!business` | `!business` | See what your employees have earned you (25% MANOR kickback from their `!work`) |
+| `!sell` | `!sell {amount} {substance}` | Sell full bottles to the Chateau (the bottle number leaves your collection) |
 
 ### Bottle Collection
 
 Bottles come from `!milk`. Every bottle carries a permanent number, the resident it came from, and a corrupt/pure tag if the donor was far enough one way or the other.
 
-#### !bottles
-Look over the bottles you're holding. Private reply.
+| Command | Usage | What it does |
+|---------|-------|--------------|
+| `!bottles` (`!collection`) | `!bottles` / `!bottles {substance}` / `!bottles {substance} [user]Name[/user]` | Look over the bottles you're holding (private reply) |
+| `!drink` | `!drink` / `!drink {substance}` / `!drink #{number}` | Drink one bottle (channel-only). Drinking empties the bottle but keeps its number as a record. Corrupt/pure bottles shift you (up to 3/day); an addicting substance quiets the craving |
 
-**Usage:** `!bottles` or `!bottles {substance}` or `!bottles {substance} [user]Name[/user]`
+## Profile, Titles & Personalization
 
-**Example:**
-```
-!bottles
-→ Our records show you're holding 2 bottles:
-  milk from Carol, corrupt | #142, #143 | 7 copper each
-  Empties: #12, #40
-  That's 14 copper if you choose to !sell the lot to the Chateau on the cheap...
-```
+| Command | Usage | What it does |
+|---------|-------|--------------|
+| `!dossier` (`!profile`, `!bio`) | `!dossier` or `!dossier [user]Name[/user]` | A resident's public record: interactions, holdings, titles, lasting effects |
+| `!titles` | `!titles` or `!titles [user]Name[/user]` | View all earned and granted titles |
+| `!settitle` | `!settitle {slot} "{title}"` | Display a title in one of 9 dossier slots (or clear a slot) |
+| `!seteicon` | see below | Pin your own eicon to an interaction or bodypart |
+| `!setmark` | `!setmark [eicon]YourMark[/eicon]` | Legacy alias for `!seteicon mark` |
+| `!random` | `!random <keyword/answer>` | Join the ambient random event happening in this channel |
 
-#### !drink
-Drink one bottle from your collection. Channel-only, since everyone gets to see what it does to you.
+### !seteicon
 
-**Usage:** `!drink` or `!drink {substance}` or `!drink #{number}`
-
-Drinking empties the bottle but you keep it: the number stays in your collection as a record of what you drank. A corrupt or pure bottle shifts you the same way (up to 3 per day), a substance you're addicted to quiets the craving, and there's a small chance you find yourself wanting more.
-
-**Example:**
-```
-!drink #142
-→ Alice uncorks bottle #142 and drinks down the tasty milk from Carol. Not a drop wasted! How delightfully dark and rich~ Alice gains 1 corruption.
-```
-
-#### !sell
-Sell full bottles to the Chateau. The Chateau keeps the bottle, so its number leaves your collection for good. Empties can't be sold.
-
-**Usage:** `!sell` or `!sell {amount}` or `!sell {amount} {substance}` or `!sell {amount} {substance} [user]Name[/user]`
-
-### Statistics & Profiles
-
-#### !stats
-View statistics.
-
-**Usage:** `!stats` or `!stats [user]Name[/user]`
-
-**Example:**
-```
-!stats
-→ Statistics for Alice:
-  Kisses: 42 (25 given, 17 received)
-  Cuddles: 15 (8 given, 7 received)
-  Total interactions: 60
-```
-
-#### !dossier
-View interaction history.
-
-**Usage:** `!dossier [user]Name[/user]`
-
-**Example:**
-```
-!dossier [user]Alice[/user]
-→ Dossier for Alice:
-  - Kissed Bob (5 times)
-  - Employed by Carol (maid)
-  - Transformed into dragon by Dave
-```
-
-#### !profile
-View detailed profile.
-
-**Usage:** `!profile` or `!profile [user]Name[/user]`
-
-**Shows:**
-- Display name
-- Titles
-- Marks
-- Job and employer
-- Species/transformations
-- Bonds
-- Currencies
-
-#### !seteicon
 Pin one of your own eicons to an interaction, or to one of your bodyparts.
 
 **Usage:** `!seteicon {interaction} [eicon]YourEicon[/eicon]` or `!seteicon {bodypart} [eicon]YourEicon[/eicon]`
@@ -828,132 +207,99 @@ Leave the eicon off to clear it (`!seteicon ass`), or send `!seteicon` alone to 
 
 Bodypart eicons come after the interaction eicons on the message. A part you haven't set an eicon for simply shows nothing.
 
-**Example:**
-```
-!seteicon ass [eicon]MyBooty[/eicon]
-→ Done! From now on, whenever an interaction involves your ass, onlookers will see [eicon]MyBooty[/eicon].
-```
+## Information Readouts
 
-### Title System
+Chateau-wide reports, all read-only:
 
-#### !showtitles
-View all your titles.
+| Command | What it shows |
+|---------|---------------|
+| `!statistics` (`!stats`) | Chateau-wide statistics across every interaction |
+| `!populations` | Current monsterized population by species |
+| `!birthrates` | Every monster ever born, by species |
+| `!flora` | Every plant ever cultivated |
+| `!parasites` | Every parasite ever spread, current and lifetime |
+| `!statues` | All currently petrified characters (`!statues {location}`) |
+| `!payroll` | Current workforce and lifetime duties completed |
+| `!economics` | Full per-currency wealth across all residents |
+| `!bondtree` | Everyone connected to a resident by bonds, N degrees out |
+| `!familytree` | A resident's family bonds, N degrees out |
 
-**Usage:** `!showtitles`
+## Chateau Admin Commands
 
-#### !settitle
-Display a title in a slot.
+| Command | Usage | What it does |
+|---------|-------|--------------|
+| `!namechange` (Admin) | `!namechange [user]OldUsername[/user] ...` | Update the database when a user changes their F-List username |
+| `!setidentifiereicon` (Admin) | `!setidentifiereicon {identifier} [eicon]TheEicon[/eicon]` | Set the Chateau's bot-wide eicon for an identifier (shown in `!whatis`); leave the eicon off to clear |
+| `!feedbacklist` (Admin) | `!feedbacklist [count]` | View recent `!feedback` submissions |
 
-**Usage:** `!settitle {slot} {title}`
+---
 
-**Slots:** 1-9
+# Legacy Dicebot Commands
 
-**Example:**
-```
-!settitle 1 ·First Kiss·
-→ Title slot 1 set to: ·First Kiss·
-```
+The dicebot half predates the Chateau help system; the commands below with usage strings carry full `!help` metadata, the rest respond to `!dicehelp`, `!gamehelp`, and their own error messages. All are stable and rarely change.
 
-#### !cleartitle
-Clear a title slot.
+## Dice
 
-**Usage:** `!cleartitle {slot}`
+| Command | Usage | What it does |
+|---------|-------|--------------|
+| `!roll` | `!roll {dice notation}` | Roll dice using standard notation (`3d6+5`, `2d20>15`, …). Limits: 200 dice, 400 total rolls, 10,000,000 sides |
+| `!fitd` | `!fitd {number of dice}` | Forged in the Dark style dice pool |
+| `!coinflip` | `!coinflip` | Flip a coin |
+| `!tipdie` | `!tipdie {from}>{to}` | Adjust one die from the last roll |
+| `!showlastroll` | `!showlastroll` | Show the last dice roll made |
+| `!rolltable` | `!rolltable {table name}` | Roll on a saved random table |
+| `!fen` | `!fen {FEN string}` | Display a chess board from FEN notation |
 
-## Potion System
+Related (no help metadata): `!unlockdice`, `!unlockdiceall`, `!luckforecast`, `!dicehelp`.
 
-#### !generatepotion
-Generate a random potion.
+## Roll Tables
 
-**Usage:** `!generatepotion`
+`!savetable`, `!savetablesimple`, `!showtables`, `!mytables`, `!tableinfo`, `!tablejson`, `!deletetable` — create, inspect, and remove weighted random tables, rolled with `!rolltable`.
 
-**Example:**
-```
-!generatepotion
-→ You brewed: Shimmering Elixir of Swiftness
-→ Effect: Grants incredible speed for 1 hour
-```
+## Games
 
-#### !savepotion
-Save the last generated potion.
+| Command | Usage | What it does |
+|---------|-------|--------------|
+| `!joingame` | `!joingame {game name}` or `!joingame {game name} {amount} {currency}` | Join or start a dice game (optionally wagering a Chateau currency) |
+| `!startgame` | `!startgame {game name}` | Start the session once enough players joined |
+| `!gamecommand` (`!gc`, `!g`) | `!gc {game name} {command}` | Send a game-specific command to the active session |
+| `!gamestatus` | `!gamestatus {game name}` | Status of an active session |
+| `!leavegame` | `!leavegame {game name}` | Leave a session you've joined |
+| `!cancelgame` | `!cancelgame {game name}` | Cancel the active session |
+| `!showgames` | `!showgames` | List every game type available |
+| `!rock` / `!paper` / `!scissors` / `!lizard` / `!spock` | | Plays in an active Rock-Paper-Scissors game |
 
-**Usage:** `!savepotion {name}`
+**Games available:** AlphaRoyale, Blackjack, BottleSpin, Chess, DungeonDelve, HighRoll, KingsGame, LiarsDice, Mafia, Poker, PokerGame, PrizeRoll, RockPaperScissors, Roulette, SlamRoll (see `!showgames` / `!gamehelp`).
 
-**Limit:** 6 saved potions per user
+Related: `!addtogame`, `!removefromgame`, `!gamesessions`, `!gamehelp` / `!helpgame`, `!endhand`.
 
-#### !showpotion
-View a saved potion.
+## Cards & Decks
 
-**Usage:** `!showpotion {name}`
+Draw/play flow: `!drawcard`, `!showhand`, `!playcard`, `!discardcard`, `!hidecard`, `!movecard`, `!revealcard`, `!playfromdiscard`, `!takefromdiscard`, `!takefromplay`, `!discardfromplay`.
+Deck management: `!shuffledeck`, `!shufflediscardintodeck`, `!resetdeck`, `!deckinfo`, `!decklist`, `!deckjson`, `!showdecks`, `!showcardpiles`, `!cardinfo`.
+Custom decks: `!savecustomdeck`, `!savecustomdecksimple`, `!mydecks`, `!deletecustomdeck`.
 
-#### !listpotions
-List all your saved potions.
+Deck types include playing cards, tarot, uno, and saved custom decks.
 
-**Usage:** `!listpotions`
+## Chips & Casino
 
-## Bot Administration
+Balances and transfers: `!register` (per-channel chip pile), `!showchips`, `!givechips`, `!bet`, `!claimpot`.
+VelvetCuff integration: `!buychips`, `!cancelbuychips`, `!cashout` (min/max enforced), `!itembuy`.
+Chip codes (coupons): `!generatechipscode` (admin), `!addchipscode`, `!redeemchips`.
+Slots: `!slots`, `!slotsinfo` (cooldown and max multiplier are per-channel settings).
+Admin pile management: `!addchips`, `!removechips`, `!takechips`, `!forcegivechips`, `!removepile`, `!removeallpiles`, `!removeallchipsoveramount`, `!restrictchips`.
 
-### Channel Management
+## Potions & Powers
 
-#### !joinchannel (Admin)
-Join a channel.
+`!generatepotion`, `!generatepotioninfo`, `!savepotion`, `!showpotion`, `!showpotions`, `!showpotionmenu`, `!showpotionprices`, `!revealpotion`, `!deletepotion`, `!droppotion`, `!potionjson`, `!usepower`, `!usepower2`, `!usepowersecondary`.
 
-**Usage:** `!joinchannel {channelid}`
+## Bot Administration (legacy)
 
-**Example:**
-```
-!joinchannel adh-example
-→ Joining channel adh-example...
-```
+Channel management: `!joinchannel`, `!leavethischannel`, `!showchannelsjoined`, `!auditchannels`, `!setstartingchannel`, `!viewstartupchannels`, `!setchanneldescription`, `!sendtochannel`, `!sendallchannels`.
+Settings: `!setstatus`, `!updatesetting`, `!updatesettingall`, `!viewsettings`, `!timeout`, `!removeolddata`.
+Misc/diagnostic: `!showprofile`, `!showmonster`, `!generatemonster`, `!savejobslist`, `!deletejobslist`, `!jobslistjson`, `!directory`, and the `!test*` commands.
 
-#### !leavechannel (Admin)
-Leave a channel.
-
-**Usage:** `!leavechannel {channelid}`
-
-### Bot Control
-
-#### !shutdown (Admin)
-Shut down the bot.
-
-**Usage:** `!shutdown`
-
-#### !setstatus (Admin)
-Set bot status.
-
-**Usage:** `!setstatus {status} {message}`
-
-**Status Values:**
-- `online`
-- `busy`
-- `dnd`
-- `away`
-- `looking`
-
-**Example:**
-```
-!setstatus online "FCDiceBot ready!"
-```
-
-### Data Management
-
-#### !clearchips (Admin)
-Reset all chip balances.
-
-**Usage:** `!clearchips`
-
-#### !backup (Admin)
-Trigger manual backup.
-
-**Usage:** `!backup`
-
-**Note:** May not be implemented in all versions
-
-#### !setidentifiereicon (Admin)
-Set the decorative eicon the Chateau shows for an identifier, beside its name in `!whatis`.
-
-**Usage:** `!setidentifiereicon {identifier} [eicon]TheEicon[/eicon]` (leave the eicon off to clear it)
-
-**Note:** This is the bot-wide icon for the thing itself, not any resident's personal one — that's `!seteicon`.
+---
 
 ## Command Aliases
 
@@ -983,59 +329,21 @@ Many commands answer to a second name. Either name does exactly the same thing; 
 
 ## Tips
 
-### User References
-
-Always use F-List BBCode format for user references:
-
-```
-[user]CharacterName[/user]
-```
-
-The bot automatically parses these tags.
-
-### Quoting
-
-Use quotes for multi-word parameters:
-
-```
-!rename [user]Bob[/user] "Bobert the Great"
-!entitle [user]Bob[/user] "Best Friend Forever"
-```
-
 ### Case Sensitivity
 
-Commands are **case-insensitive**:
-
-```
-!KISS [user]Bob[/user]    ← Works
-!Kiss [user]Bob[/user]    ← Works
-!kiss [user]Bob[/user]    ← Works
-```
-
-User names are **case-sensitive** (as per F-List):
-
-```
-!kiss [user]Bob[/user]    ← Correct
-!kiss [user]bob[/user]    ← May not work if character is "Bob"
-```
+Commands are **case-insensitive** (`!KISS`, `!Kiss`, `!kiss` all work). Bare-name targeting is case-insensitive too.
 
 ### Cooldowns
 
-If you see "try again in X minutes", you've hit a rate limit:
-
-- Casual interactions: 1 hour
-- Involved interactions: 30 minutes
-- Commitment/Consequence: 24 hours
-- Slots: 5 minutes
-- Cashout: 72 hours
+If an interaction tells you the clerks were "still busy processing", you've hit a recording cooldown. Each interaction states its own cooldown in its consent prompt and in `!help {command}` — casuals recover in minutes, commitment acts in a day, consequences in a week. Slots and `!work` have their own timers.
 
 ### Permissions
 
 Some commands require special permissions:
 
-- **Bot Admin:** Defined in account_settings.txt
+- **Bot Admin:** Defined in account_settings.txt (`AdminCharacters`)
 - **Channel Op:** F-List channel operators
-- **Registered:** Must use `!register` first
+- **Registered:** Chateau commands need `!joinchateau`; chip commands need `!register` in that channel
 
 ## See Also
 
