@@ -2,7 +2,7 @@
 
 Reference of all FCDiceBot commands, organized by category.
 
-**The bot itself is the authoritative reference:** `!help` lists every command with help metadata, `!help {command}` shows its usage, cooldown, and related commands — all generated from the command classes, so it can't drift. This page is the browsable index; when a command here disagrees with `!help`, trust `!help` and fix this page.
+**The bot itself is the authoritative reference:** `!help {command}` shows a command's usage, cooldown, and related commands, generated from the command class itself, so it can't drift. (The no-arg `!help` *listing* is a curated set of section arrays in `ChateauHelp.cs` — a test guarantees every listed name resolves, but a new command must be added to a section by hand; admin/test commands are deliberately unlisted.) This page is the browsable index; when a command here disagrees with `!help`, trust `!help` and fix this page.
 
 **Note:** Default command prefix is `!` but can be configured per-channel.
 
