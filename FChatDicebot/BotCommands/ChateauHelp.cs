@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -184,14 +184,14 @@ namespace FChatDicebot.BotCommands
             string messageText = "These are all of the commands native to the [user]Chateau Contract[/user] bot, as of [b]June 29th 2026.[/b] For detailed description of their use, please see the [user]Chateau Contract[/user] profile or use !help [command] Commands in subtext are alternate names of the same command - all documentation will be for the first listed names.\n\n" +
                     "[u]Does not require channel[/u]\n" +
                     Utils.sortedListDisplayText(generalCommands) + "\n" +
-                    "[i]Recovery Commands:[/i] " + Utils.sortedListDisplayText(recoveryCommands) + "\n\n" +
+                    "[color=blue]Recovery Commands:[/color] " + Utils.sortedListDisplayText(recoveryCommands) + "\n\n" +
                     "[u]Requires channel[/u]\n" +
                     Utils.sortedListDisplayText(roomCommands) + "\n" +
-                    "[i]Casual Interactions:[/i] " + Utils.sortedListDisplayText(casualCommands) + "\n" +
-                    "[i]Involved Interactions:[/i] " + Utils.sortedListDisplayText(involvedCommands) + "\n" +
-                    "[i]Commitment Interactions:[/i] " + Utils.sortedListDisplayText(commitmentCommands) + "\n" +
-                    "[i]Consequence Interactions:[/i] " + Utils.sortedListDisplayText(consequenceCommands) + "\n" +
-                    "[i]Dice Bot Commands:[/i] " + Utils.sortedListDisplayText(dicebotCommands) + "\n" +
+                    "[color=green]Casual Interactions:[/color] " + Utils.sortedListDisplayText(casualCommands) + "\n" +
+                    "[color=yellow]Involved Interactions:[/color] " + Utils.sortedListDisplayText(involvedCommands) + "\n" +
+                    "[color=orange]Commitment Interactions:[/color] " + Utils.sortedListDisplayText(commitmentCommands) + "\n" +
+                    "[color=red]Consequence Interactions:[/color] " + Utils.sortedListDisplayText(consequenceCommands) + "\n" +
+                    "[color=cyan]Dice Bot Commands:[/color] " + Utils.sortedListDisplayText(dicebotCommands) + "\n" +
 
                     "\n[b]Channel Op only Commands:[/b]\n" +
                     "None yet :)\n" +
