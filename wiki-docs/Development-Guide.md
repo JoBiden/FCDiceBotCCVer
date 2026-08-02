@@ -58,7 +58,7 @@ FCDiceBotCCVer/
 
 ## Adding a New Command
 
-Create one file in `BotCommands/`. Reflection discovers it at startup; the csproj glob picks it up at build. There is no registration step.
+Create one file in `BotCommands/`. Reflection discovers it at startup; the csproj glob picks it up at build. There is no dispatch registration step — but **do add the command's name to the right section array in `ChateauHelp.cs`** (`GeneralCommands`, `CasualCommands`, …) or it won't appear in the no-arg `!help` listing. Dispatch and `!help {command}` work without that; a test verifies listed names still resolve, but nothing checks that a new command got listed.
 
 The `Run` signature takes a `MessageAddress` (character + channel), not separate name/channel strings:
 
