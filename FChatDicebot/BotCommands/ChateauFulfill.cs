@@ -66,6 +66,15 @@ namespace FChatDicebot.BotCommands
             }
 
             Pledge pledgeToFulfill = null;
+            IInteractionProcessor processor = null;
+
+            if (valid)
+            {
+                // Resolved up front because the no-match error below wants to name the verb.
+                // A misspelled type has no processor to ask, and this used to be looked up
+                // and dereferenced in one breath right there.
+                processor = InteractionProcessorRegistry.GetProcessor(interactionType);
+            }
 
             // Find the matching active pledge
             if (valid)
@@ -74,8 +83,7 @@ namespace FChatDicebot.BotCommands
 
                 if (matchingPledges.Count == 0)
                 {
-                    IInteractionProcessor processor = InteractionProcessorRegistry.GetProcessor(interactionType);
-                    errorMessage = $"You don't have an active pledge to {processor.GetInteractionVerb(InteractionProcessorBase.VerbTense.Infinitive)} {pledgeeProfile.displayName}. Use !viewpledges to see your active pledges.";
+                    errorMessage = ChateauInteractionHandler.noMatchingPledgeText(processor, interactionType, pledgeeProfile.displayName);
                     valid = false;
                 }
                 else
@@ -85,21 +93,16 @@ namespace FChatDicebot.BotCommands
                 }
             }
 
-            // Validate the interaction processor exists
-            if (valid)
+            // A pledge on record whose interaction type has no processor: not a resident's
+            // typo (their typo can't match a stored pledge), so this one is a bug report.
+            if (valid && processor == null)
             {
-                var processor = InteractionProcessorRegistry.GetProcessor(interactionType);
-                if (processor == null)
-                {
-                    errorMessage = $"The interaction type '{interactionType}' no longer exists. This shouldn't happen! Tell [user]Queen Contract[/user] immediately! Tell her to look at the processors!";
-                    valid = false;
-                }
+                errorMessage = $"The interaction type '{interactionType}' no longer exists. This shouldn't happen! Tell [user]Queen Contract[/user] immediately! Tell her to look at the processors!";
+                valid = false;
             }
 
             if (valid && pledgeToFulfill != null)
             {
-                var processor = InteractionProcessorRegistry.GetProcessor(interactionType);
-
                 // Create the interaction
                 Interaction interaction = new Interaction
                 {

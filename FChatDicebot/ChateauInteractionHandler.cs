@@ -133,5 +133,33 @@ namespace FChatDicebot
         {
             return "That command requires an identifier of type [b]" + category + "[/b], which we couldn't find in your input. You can use \"!category " + category + "\" to get a full list of identifiers that will work for that command. Mind your spelling!";
         }
+
+        /// <summary>
+        /// Fired when a resident named an interaction nobody implements. Both halves of the
+        /// pledge flow (!pledge and !fulfill) can hit this, so the wording lives here rather
+        /// than in either command.
+        /// </summary>
+        internal static string interactionTypeNotFoundText(string interactionType)
+        {
+            return "The interaction type '" + interactionType + "' doesn't exist. Make sure you spelled it correctly!";
+        }
+
+        /// <summary>
+        /// "That didn't match one of your pledges" — fired by both !fulfill and
+        /// !abandonpledge, which look the pledge up the same way. A null
+        /// <paramref name="processor"/> means the resident named an interaction that doesn't
+        /// exist, which has no verb to render into the sentence, so that case answers the
+        /// typo instead.
+        /// </summary>
+        internal static string noMatchingPledgeText(InteractionProcessors.IInteractionProcessor processor, string interactionType, string pledgeeDisplayName)
+        {
+            if (processor == null)
+            {
+                return interactionTypeNotFoundText(interactionType);
+            }
+
+            string verb = processor.GetInteractionVerb(InteractionProcessors.InteractionProcessorBase.VerbTense.Infinitive);
+            return "You don't have an active pledge to " + verb + " " + pledgeeDisplayName + ". Use !pledges to see your active pledges.";
+        }
     }
 }

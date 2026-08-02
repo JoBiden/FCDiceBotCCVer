@@ -2,6 +2,7 @@
 using System.Linq;
 using FChatDicebot.BotCommands.Base;
 using FChatDicebot.Model;
+using FChatDicebot.InteractionProcessors;
 
 namespace FChatDicebot.BotCommands
 {
@@ -66,6 +67,14 @@ namespace FChatDicebot.BotCommands
             }
 
             Pledge pledgeToCancel = null;
+            IInteractionProcessor processor = null;
+
+            if (valid)
+            {
+                // Resolved before the no-match error, which names the verb — a misspelled
+                // type has no processor to ask. Same shape as !fulfill.
+                processor = InteractionProcessorRegistry.GetProcessor(interactionType);
+            }
 
             // Find the matching active pledge
             if (valid)
@@ -74,7 +83,7 @@ namespace FChatDicebot.BotCommands
 
                 if (matchingPledges.Count == 0)
                 {
-                    errorMessage = $"You don't have an active pledge to {Utils.interactionToVerb(pledgeToCancel.interactionType, false)} {pledgeeProfile.displayName}. Use !viewpledges to see your active pledges.";
+                    errorMessage = ChateauInteractionHandler.noMatchingPledgeText(processor, interactionType, pledgeeProfile.displayName);
                     valid = false;
                 }
                 else
@@ -86,16 +95,17 @@ namespace FChatDicebot.BotCommands
 
             if (valid && pledgeToCancel != null)
             {
-                MonDB.setProfile(characterName, pledgerProfile);
-
-                if (pledgeToCancel.status == "active")
+                if (!pledgeToCancel.abandonWarned)
                 {
-                    pledgeToCancel.status = "warned";
+                    // Warn only. The pledge deliberately stays active: the confirmation is a
+                    // speed bump, so a pledger who reconsiders still sees it in !pledges and
+                    // can still !fulfill it. (It used to move to a "warned" status, which
+                    // every lookup filtered out — stranding the pledge for good.)
+                    pledgeToCancel.abandonWarned = true;
                     MonDB.updatePledge(pledgeToCancel);
                     bot.SendPrivateMessage($"Abandoning an active pledge is not to be taken lightly. [b]Your dossier will carry a permanent record of how many pledges you have abandoned, and those you make pledges to will be informed of your likelihood to carry through a pledge.[/b] If you would still like to proceed with abandoning your pledge, try to do so once more. You will only be warned once per pledge.", characterName);
                 }
-
-                else if (pledgeToCancel.status == "warned")
+                else
                 {
                     // Mark pledge as abandoned
                     pledgeToCancel.status = "abandoned";
@@ -109,8 +119,8 @@ namespace FChatDicebot.BotCommands
                     string message = $"{pledgerProfile.displayName} has abandoned their pledge to {Utils.interactionToVerb(pledgeToCancel.interactionType, false)} {pledgeeProfile.displayName}. The act of turning one's back on this promise has been permanently recorded on their dossier. Future pledges will carry with them an indication of this trend of oathbreaking...";
                     bot.SendPrivateMessage(message, characterName);
                 }
-                }
-                else if (!valid)
+            }
+            else if (!valid)
             {
                 bot.SendPrivateMessage(errorMessage, characterName);
             }

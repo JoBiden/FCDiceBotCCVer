@@ -72,7 +72,7 @@ namespace FChatDicebot.BotCommands
 
                 if (processor == null)
                 {
-                    errorMessage = $"The interaction type '{interactionType}' doesn't exist. Make sure you spelled it correctly!";
+                    errorMessage = ChateauInteractionHandler.interactionTypeNotFoundText(interactionType);
                     valid = false;
                 }
                 else
