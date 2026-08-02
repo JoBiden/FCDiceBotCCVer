@@ -380,6 +380,139 @@ namespace FChatDicebot.Tests.Integration
 
         #endregion
 
+        #region Abandon Confirmation Flow
+
+        // !abandonpledge warns on the first invocation and completes on the second. The
+        // warning is recorded on Pledge.abandonWarned rather than as a status, because every
+        // pledge lookup filters on status == "active": a "warned" status made the pledge
+        // invisible to !pledges, to !fulfill, and to the second !abandonpledge, stranding it.
+        // These tests drive the same database calls the command makes, in order.
+
+        [Fact]
+        public void NewPledge_IsNotYetAbandonWarned()
+        {
+            _database.AddPledge(new Pledge
+            {
+                pledger = "Alice",
+                pledgee = "Bob",
+                interactionType = "feed",
+                investmentLevel = "involved",
+                status = "active"
+            });
+
+            var saved = _database.GetPledgesByPledger("Alice").First();
+            Assert.False(saved.abandonWarned);
+        }
+
+        [Fact]
+        public void AbandonWarning_LeavesThePledgeActiveAndFindable()
+        {
+            _database.AddPledge(new Pledge
+            {
+                pledger = "Alice",
+                pledgee = "Bob",
+                interactionType = "feed",
+                investmentLevel = "involved",
+                status = "active"
+            });
+            var pledge = _database.GetPledgesByPledger("Alice").First();
+
+            // What the first !abandonpledge does.
+            pledge.abandonWarned = true;
+            _database.UpdatePledge(pledge);
+
+            // GetActivePledges is the lookup !pledges, !fulfill and !abandonpledge all use.
+            // Under the old "warned" status this returned nothing and the pledge was lost.
+            var stillActive = _database.GetActivePledges("Alice", "Bob", "feed");
+            Assert.Single(stillActive);
+            Assert.True(stillActive[0].IsActive);
+            Assert.True(stillActive[0].abandonWarned);
+        }
+
+        [Fact]
+        public void AbandonConfirmation_SecondAttemptFindsThePledgeAndCompletes()
+        {
+            _database.AddPledge(new Pledge
+            {
+                pledger = "Alice",
+                pledgee = "Bob",
+                interactionType = "feed",
+                investmentLevel = "involved",
+                status = "active"
+            });
+            var pledge = _database.GetPledgesByPledger("Alice").First();
+
+            // First invocation: warn only.
+            pledge.abandonWarned = true;
+            _database.UpdatePledge(pledge);
+
+            // Second invocation: same lookup, and this time the command takes the else branch
+            // because the pledge is already warned.
+            var found = _database.GetActivePledges("Alice", "Bob", "feed");
+            Assert.Single(found);
+            Assert.True(found[0].abandonWarned);
+
+            found[0].status = "abandoned";
+            _database.UpdatePledge(found[0]);
+
+            var after = _database.GetPledgesByPledger("Alice").First();
+            Assert.Equal("abandoned", after.status);
+            Assert.False(after.IsActive);
+            Assert.Empty(_database.GetActivePledges("Alice", "Bob", "feed"));
+        }
+
+        [Fact]
+        public void AbandonWarning_DoesNotBlockFulfillment()
+        {
+            // A pledger who reconsiders after the warning can still go through with it: the
+            // fulfillment path finds the pledge and marks it fulfilled as normal.
+            _database.AddPledge(new Pledge
+            {
+                pledger = "Alice",
+                pledgee = "Bob",
+                interactionType = "feed",
+                identifier = "food",
+                investmentLevel = "involved",
+                pledgeTime = DateTime.UtcNow.AddDays(-2),
+                status = "active"
+            });
+            var pledge = _database.GetPledgesByPledger("Alice").First();
+            pledge.abandonWarned = true;
+            _database.UpdatePledge(pledge);
+
+            new ProfileBuilder().WithUserName("Alice").WithDisplayName("Alice").BuildAndSave(_database);
+            new ProfileBuilder().WithUserName("Bob").WithDisplayName("Bob").BuildAndSave(_database);
+
+            var pendingCommand = new PendingCommand
+            {
+                Id = ObjectId.GenerateNewId(),
+                pendingInteraction = new Interaction
+                {
+                    initiator = "Alice",
+                    recipient = "Bob",
+                    type = "feed",
+                    identifier = "food",
+                    investmentLevel = "involved",
+                    interactionTime = DateTime.UtcNow,
+                    extraParameters = new BsonArray
+                    {
+                        new BsonDocument { { "pledgeId", pledge.Id.ToString() } }
+                    }
+                },
+                awaitingConsentFrom = "Bob"
+            };
+            _database.AddPendingCommand(pendingCommand);
+
+            _feedProcessor.ProcessInteraction(pendingCommand);
+            ChateauInteractionHandler.TryMarkPledgeFulfilled(pendingCommand);
+
+            var updated = _database.GetPledge(pledge.Id);
+            Assert.Equal("fulfilled", updated.status);
+            Assert.True(updated.pledgeHonored);
+        }
+
+        #endregion
+
         #region Error Handling
 
         [Fact]

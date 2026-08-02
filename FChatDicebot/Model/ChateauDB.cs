@@ -399,6 +399,10 @@ namespace FChatDicebot.Model
         public string status { get; set; } = "active"; // active, fulfilled, abandoned
         public DateTime? fulfilledTime { get; set; }
         public bool pledgeHonored { get; set; } = false; // true if fulfilled 1+ days after creation
+        // Set by the first !abandonpledge, which only warns. The pledge stays active while
+        // this is set — the warning is a confirmation step, not a lifecycle state, so a
+        // pledger who reconsiders can still list and fulfill it.
+        public bool abandonWarned { get; set; } = false;
 
         // Helper to check if this pledge is active
         public bool IsActive => status == "active";
