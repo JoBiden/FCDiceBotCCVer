@@ -61,3 +61,15 @@ for a single known case today.
 None.
 
 ## Owner decision
+
+**2026-08-02 — Declined.** Nothing left to implement; the fix shipped in `6f23fdd` on 2026-07-24,
+a week after the report. Closed out.
+
+Design answers:
+
+1. *Generalize the recipient-side eicon clause?* — **No, leave it.** One known case today, and
+   `SetConfirmationClause`'s doc-comment already flags the trap for whoever adds the next
+   recipient-side eicon. Not worth speculative work now.
+
+Follow-up owed outside the pipeline: the submitter has not been told it was fixed. The bot does
+not PM residents on its own, so that word is the owner's to send.

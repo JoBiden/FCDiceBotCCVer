@@ -48,6 +48,8 @@ Three `Profile.counts` keys drive both the reputation messaging and the title la
 
 All three counts also feed system-title ladders (`ChateauSystemTitles.cs`), which is why they are profile counts rather than derived queries over the `Pledges` collection.
 
+`!pledge` and `!abandonpledge` call `ChateauSystemTitles.CheckAndGrantTitles` themselves and append the "Title Time!" banner to their own message. They have to: the count sweep otherwise only runs on the consent path, and a title earned by a pledge would sit unclaimed until the pledger's next consented interaction, then be announced on top of it — which reads as though that unrelated interaction fulfilled the pledge. `pledgesfulfilled` needs no such call, since it is incremented on the consent path immediately before the sweep.
+
 ## Data and files
 
 The `Pledges` collection and the `Pledge` model are summarized in [Database-and-Persistence](../Database-and-Persistence.md); `Model/ChateauDB.cs` is the schema.

@@ -14,6 +14,18 @@ namespace FChatDicebot
         /// <summary>
         /// Check if a user has earned any new system titles and grant them.
         /// Returns a string with notification messages for any newly earned titles, or empty string if none.
+        /// <para>
+        /// Invariant: <b>every command that changes a count with a milestone below must call this
+        /// before it returns</b>, and append the result to its own message. A path that changes a
+        /// count without checking does not lose the title — it strands it, and the next command
+        /// that does check announces it on top of an unrelated action. That is exactly how
+        /// "Made A Promise" came to be announced during a `!milk` (feedback 6a69a8a2). Most
+        /// interaction counts are covered because <c>ChateauConsent</c> checks after every
+        /// consented interaction; anything off that path (<c>!work</c>, <c>!volunteer</c>,
+        /// <c>!pledge</c>, <c>!abandonpledge</c>, the climax support) checks for itself.
+        /// <c>ChateauBirth</c> increments <c>birth</c>, which has no milestone — give it a check
+        /// if one is ever added.
+        /// </para>
         /// </summary>
         /// <param name="userName">The user to check for new titles</param>
         /// <returns>Notification text for earned titles, or empty string</returns>
