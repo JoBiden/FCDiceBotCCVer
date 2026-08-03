@@ -149,3 +149,30 @@ If option 1b is taken, two more strings change:
 | `ui.html:594` allInWindow help | `Collects every correct responder until the window closes, then everyone wins together (use {winners} in result text).` | `Collects every correct responder until the window closes, then everyone wins together (use {winners} in result text). Only one person may answer, so avoid wording that assumes a crowd.` |
 
 ## Owner decision
+
+**2026-08-02 — Approved, with the durable fix.**
+
+Design answers:
+
+1. *How far does the fix go?* — **Data + engine placeholder, spec first.** Not the recommended
+   option: the dossier recommended the data-only edit now and treating the engine affordance as a
+   separate item. The owner took the durable route, so `SubstituteWinners` gains count-aware
+   authored syntax — new authored syntax, so it needs a spec, tests, a builder update, and a
+   redeploy before any of it reaches residents.
+2. *Who writes the replacement flavor?* — **The owner rewords them.** Drafts below are a starting
+   point only; the final text is theirs and gets applied verbatim.
+3. *Should `allInWindow` events be authored plural or neutral?* — **Plural, with the engine fixing
+   agreement.** Consistent with (1), and it sets what the builder should tell authors: write for a
+   crowd, mark the parts that have to agree.
+
+4. *Sequencing* — the four live strings cannot be rewritten in the new paired syntax until the
+   engine understands it, since doing so early renders the markup literally in-channel. Offered a
+   count-neutral stopgap now versus waiting; the owner chose to **wait for the engine**. No Mongo
+   edit happens in this pass, the wrong grammar stays live until the engine deploys, and the four
+   strings are then written once, by the owner, in the new syntax.
+5. *Start now?* — **Yes**, the engine and builder work started immediately rather than waiting on
+   spec sign-off.
+
+**Still owed by the owner after the engine ships:** the four `resultText` strings in the
+`RandomEvents` collection. They are Mongo data, not repo files, so no PR closes this item — the
+data edit is the last step and it is theirs to write.

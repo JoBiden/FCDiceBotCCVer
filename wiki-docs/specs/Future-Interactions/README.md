@@ -17,6 +17,13 @@ Specs are removed from this folder once they ship — the as-implemented docs li
 | Spec | Adds |
 |------|------|
 | [Group-Interactions-And-Pending-Lifecycle](Group-Interactions-And-Pending-Lifecycle.md) | Multi-person casual interactions (hybrid group model), `!withdraw`/`!refuse` pending-lifecycle commands, and three new casuals (lapsit lap-stack, boobhat, lick). |
+| [Drink-From-Source](Drink-From-Source.md) | `!drinkfrom` / `!forcedrink` — consume another resident's fluid directly, skipping the `!milk` bottle step. Stronger than a bottled drink, shares milk's per-direction daily lock and `!drink`'s daily corruption budget, and leaves no keepsake. Adds no infrastructure. |
+
+### Planned infrastructure
+
+| Spec | Adds |
+|------|------|
+| [Collectibles](Infrastructure/Collectibles.md) | Promotes the bottle collection into a general model for individually-identified, user-keyed items: a `Collectible` base class with one subclass per type, polymorphic storage on `Profile.collectibles`, a shared serial space, and generalized list/sell/transfer verbs. Phase 1 ships the framework and migrates bottles onto it with no new item type and no visible change. |
 
 ### Shelved
 

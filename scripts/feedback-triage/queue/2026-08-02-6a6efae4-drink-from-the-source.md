@@ -144,3 +144,19 @@ visible, not for approval yet.
 | `wiki-docs/Command-Reference.md` | — | two new entries |
 
 ## Owner decision
+
+**2026-08-02 — Approved, spec first.** Both directions specced together in
+`wiki-docs/specs/Future-Interactions/Drink-From-Source.md`, for sign-off before any code.
+
+Design answers:
+
+1. *`!forcedrink` — new command or `!feed` grown into it?* — **New command, `!feed` untouched.**
+   `!feed` stays generic-substance flavor; `!forcedrink` is from-the-body and carries effects.
+2. *Does `!drinkfrom` consume the `!milk` cooldown?* — **Yes, shares milk's per-direction lock.**
+   A resident can be drawn from at one rate whether or not it ends up in a bottle.
+3. *What does a source drink leave behind, and where does its corruption come from?* —
+   **Nothing left behind, and fresher is stronger.** Not the recommended option on the second
+   half: the dossier proposed reusing `ChateauCurrency.cs:166`'s ±10 thresholds unchanged, and
+   flagged that a potency bump needs its own numbers and its own interaction with the daily
+   corruption budget. The owner took the bump, so the spec owes a worked answer for both — they
+   are now the spec's central balance section, not a footnote.

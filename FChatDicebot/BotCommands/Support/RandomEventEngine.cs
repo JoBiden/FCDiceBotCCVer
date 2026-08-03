@@ -326,7 +326,12 @@ namespace FChatDicebot.BotCommands.Support
             }
 
             StringBuilder sb = new StringBuilder();
-            string header = outcome != null ? SubstituteWinners(outcome.resultText, winners) : null;
+            // Count agreement resolves BEFORE the names go in: winner tags are spliced in as
+            // [user]Name[/user], and doing the alternation first means the resolver never has to
+            // reason about what a name might contain.
+            string header = outcome != null
+                ? SubstituteWinners(ResolveCountAgreement(outcome.resultText, winners.Count), winners)
+                : null;
             if (!string.IsNullOrEmpty(header))
                 sb.Append(header);
 
@@ -657,9 +662,72 @@ namespace FChatDicebot.BotCommands.Support
             return string.Join(", ", parts.Take(parts.Count - 1)) + " and " + parts[parts.Count - 1];
         }
 
+        /// <summary>
+        /// Resolve <c>{singular|plural}</c> alternations in an outcome's result text against the
+        /// number of winners: one winner takes the left branch, any other count takes the right.
+        /// This is what lets an <c>allInWindow</c> outcome — the only rule whose winner count
+        /// varies — be authored for a crowd and still read correctly when one person wins, instead
+        /// of "Fia are all officially cuties".
+        ///
+        /// A <c>{…}</c> containing no <c>|</c> is passed through completely untouched. That is
+        /// load-bearing: it is what makes every string authored before this existed safe, and it
+        /// is why <c>{winners}</c>, <c>{keyword}</c>, <c>{challenge}</c> and <c>{window}</c> are
+        /// unaffected. There is no nesting and no escape mechanism — the first <c>|</c> separates,
+        /// and a later one belongs to the plural branch verbatim. An unclosed <c>{</c> ends the
+        /// scan and the remainder is copied as-is rather than swallowed.
+        ///
+        /// Zero winners takes the plural branch ("0 residents are"), which is defensive only:
+        /// resultText is not used on the no-winner path.
+        ///
+        /// Pure. Applied to <c>resultText</c> only — announceText fires before anyone has
+        /// responded, so there is no count for it to agree with.
+        /// </summary>
+        public static string ResolveCountAgreement(string template, int winnerCount)
+        {
+            if (string.IsNullOrEmpty(template)) return template ?? "";
+            if (template.IndexOf('{') < 0) return template;
+
+            bool singular = winnerCount == 1;
+            var sb = new StringBuilder(template.Length);
+            int i = 0;
+            while (i < template.Length)
+            {
+                if (template[i] != '{')
+                {
+                    sb.Append(template[i]);
+                    i++;
+                    continue;
+                }
+
+                int close = template.IndexOf('}', i + 1);
+                if (close < 0)
+                {
+                    // Unclosed brace — copy the rest verbatim. An author's typo should cost them
+                    // a stray character, not the tail of their sentence.
+                    sb.Append(template, i, template.Length - i);
+                    break;
+                }
+
+                string inner = template.Substring(i + 1, close - i - 1);
+                int pipe = inner.IndexOf('|');
+                if (pipe < 0)
+                {
+                    // A plain placeholder, or something the author meant literally. Untouched.
+                    sb.Append(template, i, close - i + 1);
+                }
+                else
+                {
+                    sb.Append(singular ? inner.Substring(0, pipe) : inner.Substring(pipe + 1));
+                }
+                i = close + 1;
+            }
+            return sb.ToString();
+        }
+
         // Lets an outcome's resultText address every winner by name via a {winners} placeholder
-        // (e.g. "{winners} are now glowing purple.") so multi-person flavor is authored per-event
-        // rather than invented generically by the engine. A no-op when the placeholder is absent.
+        // (e.g. "{winners} {is|are} now glowing purple.") so multi-person flavor is authored
+        // per-event rather than invented generically by the engine. A no-op when the placeholder
+        // is absent. Count agreement is resolved by ResolveCountAgreement before this runs.
         private static string SubstituteWinners(string template, List<string> winners)
         {
             if (string.IsNullOrEmpty(template)) return template ?? "";

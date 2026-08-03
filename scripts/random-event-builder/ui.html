@@ -456,10 +456,11 @@ function renderOutcomes() {
 
     var rt = document.createElement('div');
     rt.className = 'field';
-    rt.innerHTML = '<label>Result text — may use {winners} for the winner name(s)</label>';
+    rt.innerHTML = '<label>Result text — {winners} inserts the winner name(s); '
+      + '{singular|plural} agrees with how many there are, e.g. {is|are}, {a cutie|cuties}</label>';
     var ta = document.createElement('textarea');
     ta.value = o.resultText || '';
-    ta.placeholder = '{winners} are showered in rose petals!';
+    ta.placeholder = '{winners} {is|are} showered in rose petals!';
     ta.oninput = function () { o.resultText = ta.value; refresh(); };
     rt.appendChild(ta);
     card.appendChild(rt);
@@ -591,7 +592,7 @@ function refresh() {
 
   var ruleHints = {
     firstValid: 'Resolves the instant the first correct response arrives. If nobody responds in time, a no-winner message posts.',
-    allInWindow: 'Collects every correct responder until the window closes, then everyone wins together (use {winners} in result text).',
+    allInWindow: 'Collects every correct responder until the window closes, then everyone wins together (use {winners} in result text). This is the only rule where the count varies — often only one person answers, so write any grammar that has to agree as {singular|plural}. The preview below shows both.',
     nth: 'Resolves as soon as the Nth correct responder arrives; if fewer than N respond, nobody wins.',
     random: 'Collects responders until the window closes, then draws one winner at random.'
   };
@@ -663,6 +664,15 @@ function renderPreview(doc) {
   var winners = sampleWinners(doc);
   var winnerTags = winners.map(function (w) { return '[user]' + w + '[/user]'; });
 
+  // allInWindow is the only rule whose winner count varies, so it's the only one that can be
+  // authored plural and read wrong at one winner. Preview both counts side by side — a
+  // {singular|plural} written backwards renders fine half the time and is otherwise invisible
+  // until a real event fires with a single winner.
+  var previewCounts = doc.winnerRule === 'allInWindow'
+    ? [{ winners: [SAMPLE_WINNERS[0]], label: 'with 1 winner' },
+       { winners: SAMPLE_WINNERS, label: 'with ' + SAMPLE_WINNERS.length + ' winners' }]
+    : [{ winners: winners, label: '' }];
+
   doc.outcomes.forEach(function (o, i) {
     var cap = document.createElement('div');
     cap.className = 'previewCaption';
@@ -670,23 +680,58 @@ function renderPreview(doc) {
     cap.textContent = 'On resolve — outcome ' + (i + 1) + ' (' + pct + '% chance)';
     host.appendChild(cap);
 
-    var lines = [];
-    var header = (o.resultText || '').replace(/\{winners\}/g, joinWithAnd(winnerTags));
-    if (header) lines.push(header);
+    previewCounts.forEach(function (variant) {
+      var tags = variant.winners.map(function (w) { return '[user]' + w + '[/user]'; });
+      var lines = [];
+      var header = resolveCountAgreement(o.resultText || '', variant.winners.length)
+        .replace(/\{winners\}/g, joinWithAnd(tags));
+      if (header) lines.push(header);
 
-    var fragments = (o.rewards || []).map(rewardFragment).filter(Boolean);
-    if (fragments.length) {
-      var verb = winners.length > 1 ? ' receive ' : ' receives ';
-      lines.push(joinWithAnd(winnerTags) + verb + joinWithAnd(fragments) + '!');
-    }
+      var fragments = (o.rewards || []).map(rewardFragment).filter(Boolean);
+      if (fragments.length) {
+        var verb = variant.winners.length > 1 ? ' receive ' : ' receives ';
+        lines.push(joinWithAnd(tags) + verb + joinWithAnd(fragments) + '!');
+      }
 
-    var msg = document.createElement('div');
-    msg.className = 'previewMsg';
-    msg.innerHTML = lines.length
-      ? '<span class="from">' + BOT_NAME + ':</span>' + bbToHtml(lines.join('\n'))
-      : '<span class="muted">(blank — add result text or rewards)</span>';
-    host.appendChild(msg);
+      if (variant.label) {
+        var sub = document.createElement('div');
+        sub.className = 'previewCaption';
+        sub.style.marginTop = '6px';
+        sub.textContent = variant.label;
+        host.appendChild(sub);
+      }
+
+      var msg = document.createElement('div');
+      msg.className = 'previewMsg';
+      msg.innerHTML = lines.length
+        ? '<span class="from">' + BOT_NAME + ':</span>' + bbToHtml(lines.join('\n'))
+        : '<span class="muted">(blank — add result text or rewards)</span>';
+      host.appendChild(msg);
+    });
   });
+}
+
+// Mirrors RandomEventEngine.ResolveCountAgreement. One winner takes the left branch of a
+// {singular|plural}, any other count takes the right. A {…} with no pipe is passed through
+// untouched, so {winners} / {keyword} / {challenge} / {window} are unaffected. Kept in step with
+// the C# by hand — if the engine's rules change, change both.
+function resolveCountAgreement(template, winnerCount) {
+  if (!template || template.indexOf('{') < 0) return template || '';
+  var singular = winnerCount === 1;
+  var out = '';
+  var i = 0;
+  while (i < template.length) {
+    if (template[i] !== '{') { out += template[i]; i++; continue; }
+    var close = template.indexOf('}', i + 1);
+    if (close < 0) { out += template.slice(i); break; }
+    var inner = template.slice(i + 1, close);
+    var pipe = inner.indexOf('|');
+    out += pipe < 0
+      ? template.slice(i, close + 1)
+      : (singular ? inner.slice(0, pipe) : inner.slice(pipe + 1));
+    i = close + 1;
+  }
+  return out;
 }
 
 function renderWarnings(doc) {
