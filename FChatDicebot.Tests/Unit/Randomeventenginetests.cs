@@ -464,6 +464,128 @@ namespace FChatDicebot.Tests.Unit
             Assert.Equal(new List<string> { "[user]Alice[/user] and [user]Bob[/user] are now glowing purple." }, output);
         }
 
+        // ------------------------------------------------------------------
+        // {singular|plural} count agreement in resultText. allInWindow is the only rule whose
+        // winner count varies, so an outcome authored for a crowd used to read "Fia are all
+        // officially cuties" when one person won (feedback 6a6fb15d).
+        // ------------------------------------------------------------------
+
+        [Theory]
+        [InlineData(1, "The winner is crowned.")]
+        [InlineData(2, "The winner are crowned.")]
+        [InlineData(3, "The winner are crowned.")]
+        [InlineData(0, "The winner are crowned.")]
+        public void CountAgreement_PicksBranchByWinnerCount(int winners, string expected)
+        {
+            Assert.Equal(expected, RandomEventEngine.ResolveCountAgreement("The winner {is|are} crowned.", winners));
+        }
+
+        [Fact]
+        public void CountAgreement_ResolvesEveryAlternationIndependently()
+        {
+            const string template = "{winners} {is|are} now {a cutie|cuties}, and {its|their} day is made.";
+
+            Assert.Equal("{winners} is now a cutie, and its day is made.",
+                RandomEventEngine.ResolveCountAgreement(template, 1));
+            Assert.Equal("{winners} are now cuties, and their day is made.",
+                RandomEventEngine.ResolveCountAgreement(template, 4));
+        }
+
+        [Theory]
+        [InlineData("{winners}")]
+        [InlineData("{keyword}")]
+        [InlineData("{challenge}")]
+        [InlineData("{window}")]
+        [InlineData("{seconds}")]
+        public void CountAgreement_LeavesPipelessPlaceholdersAlone(string placeholder)
+        {
+            // Load-bearing: this is what makes every string authored before the syntax existed
+            // safe, and eating one of these would be the worst failure this change could cause.
+            Assert.Equal(placeholder, RandomEventEngine.ResolveCountAgreement(placeholder, 1));
+            Assert.Equal(placeholder, RandomEventEngine.ResolveCountAgreement(placeholder, 5));
+        }
+
+        [Fact]
+        public void CountAgreement_LeavesTextWithoutBracesUntouched()
+        {
+            const string plain = "Everyone follows her lead onto the dance floor. [b]Nice[/b] moves!";
+            Assert.Equal(plain, RandomEventEngine.ResolveCountAgreement(plain, 1));
+        }
+
+        [Fact]
+        public void CountAgreement_UnclosedBraceKeepsTheRestOfTheLine()
+        {
+            // An author's typo should cost a stray character, not the tail of their sentence.
+            Assert.Equal("All done {is|are the winner.",
+                RandomEventEngine.ResolveCountAgreement("All done {is|are the winner.", 1));
+        }
+
+        [Fact]
+        public void CountAgreement_SecondPipeBelongsToThePluralBranch()
+        {
+            Assert.Equal("a", RandomEventEngine.ResolveCountAgreement("{a|b|c}", 1));
+            Assert.Equal("b|c", RandomEventEngine.ResolveCountAgreement("{a|b|c}", 2));
+        }
+
+        [Fact]
+        public void CountAgreement_HandlesNullAndEmpty()
+        {
+            Assert.Equal("", RandomEventEngine.ResolveCountAgreement(null, 1));
+            Assert.Equal("", RandomEventEngine.ResolveCountAgreement("", 3));
+        }
+
+        [Fact]
+        public void Resolution_PluralAuthoredText_ReadsCorrectlyForASingleWinner()
+        {
+            var engine = NewEngine();
+            AddProfile("Fia");
+            DateTime t0 = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            engine.ForceOpen(Channel, PluralOutcomeEvent(), t0);
+            engine.HandleRandom(Channel, "Fia", "", t0);
+
+            var output = engine.Tick(Channel, t0.AddSeconds(61), () => new List<RandomEvent>());
+
+            // The reported bug, inverted: one winner, singular grammar.
+            Assert.Equal(new List<string> { "[user]Fia[/user] happens to get a taste of corruption." }, output);
+        }
+
+        [Fact]
+        public void Resolution_PluralAuthoredText_StillReadsCorrectlyForSeveralWinners()
+        {
+            var engine = NewEngine();
+            AddProfile("Fia");
+            AddProfile("Celeste");
+            DateTime t0 = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            engine.ForceOpen(Channel, PluralOutcomeEvent(), t0);
+            engine.HandleRandom(Channel, "Fia", "", t0);
+            engine.HandleRandom(Channel, "Celeste", "", t0);
+
+            var output = engine.Tick(Channel, t0.AddSeconds(61), () => new List<RandomEvent>());
+
+            Assert.Equal(
+                new List<string> { "[user]Fia[/user] and [user]Celeste[/user] happen to get a taste of corruption." },
+                output);
+        }
+
+        private static RandomEvent PluralOutcomeEvent()
+        {
+            return new RandomEvent
+            {
+                label = "test", weight = 1, announceText = "An event happens.",
+                responseType = RandomEventEngine.ResponseTypeNone, responseWindowSeconds = 60,
+                winnerRule = RandomEventEngine.WinnerRuleAllInWindow,
+                outcomes = new List<EventOutcome>
+                {
+                    new EventOutcome
+                    {
+                        weight = 1,
+                        resultText = "{winners} {happens|happen} to get a taste of corruption.",
+                        rewards = new List<EventReward> { Reward("none", null, 0, 0) }
+                    }
+                }
+            };
+        }
+
         [Fact]
         public void Resolution_GroupsIdenticalRewardsOntoOneLine_WithPluralVerb()
         {

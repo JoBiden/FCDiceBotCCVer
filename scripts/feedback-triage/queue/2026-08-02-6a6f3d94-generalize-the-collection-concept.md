@@ -148,3 +148,24 @@ whose text is already settled.
 | — | — | none this pass; deferred to the spec |
 
 ## Owner decision
+
+**2026-08-02 — Approved, spec first.** Infrastructure spec for sign-off before any code.
+
+Design answers:
+
+1. *Absorb bottles or sit beside?* — **Absorb, with bottles as the first collectible type.**
+   (Recommended option.) Costs a migration of live `Profile.milkInventory`.
+2. *How is "tied to users" modelled?* — **Just `sourceName`, renamed.** Not the recommended
+   option: the dossier proposed `subjectName` + optional `createdBy` because a portrait or
+   statuette is *of* one resident and made *by* another, and two of the four examples in the
+   submission are that shape. A single name cannot express it. Flagged to the owner at decision
+   time and confirmed; the spec follows the call and marks the exact place a second name would
+   slot in, since retrofitting it after live data exists is the expensive version.
+3. *Data or code types?* — **Code, one class per type.** Not the recommended option: every new
+   collectible becomes a PR and a redeploy, and types no longer get `Identifier.displayText` /
+   `eicon` rendering for free. In exchange the model is strongly typed, per-type fields need no
+   extension slot, and `MilkBottle`'s `corruptionTag` / `emptiedAt` survive as ordinary fields on
+   a subclass rather than as a generic bag.
+4. *Does Phase 1 ship a new item type?* — **not answered by the choice above.** The spec assumes
+   **no** — framework plus bottles migrated — as the lower-risk read and the one consistent with
+   "absorb bottles as the first type". Overridable at sign-off.
