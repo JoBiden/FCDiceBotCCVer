@@ -113,6 +113,13 @@ namespace FChatDicebot.BotCommands
 
                 // increment active pledge count
                 MonDB.incrementCount(characterName, "pledgesactive");
+
+                // Re-read before the ratio messaging below: pledgerProfile was fetched at the
+                // top of Run, before the increment, so its pledgesactive was one behind and the
+                // honor cascade described the pledger's record as of just *before* this pledge.
+                // The "else 1" fallback masked it for a first-ever pledge and only there.
+                pledgerProfile = MonDB.getProfile(characterName);
+
                 int activePledges = (pledgerProfile.counts.ContainsKey("pledgesactive")) ? pledgerProfile.counts["pledgesactive"] : 1;
                 int abandonedPledges = (pledgerProfile.counts.ContainsKey("pledgesabandoned")) ? pledgerProfile.counts["pledgesabandoned"] : 0;
                 int fulfilledPledges = (pledgerProfile.counts.ContainsKey("pledgesfulfilled")) ? pledgerProfile.counts["pledgesfulfilled"] : 0;
@@ -167,6 +174,17 @@ namespace FChatDicebot.BotCommands
                 //    message += $" This is {pledgerProfile.displayName}'s first pledge! How exciting!";
                 //}
 
+
+                // Grant the titles this pledge just earned, here, on the action that earned
+                // them. Without this the count sweep only runs on the consent path, so
+                // "Made A Promise" sat unclaimed until the pledger's next consented
+                // interaction and was then announced on top of it — reading as if that
+                // unrelated interaction had fulfilled the pledge. Same shape as !work.
+                string titleNotification = ChateauSystemTitles.CheckAndGrantTitles(characterName);
+                if (!string.IsNullOrEmpty(titleNotification))
+                {
+                    message += titleNotification;
+                }
 
                 bot.SendMessageInChannel(message, channel);
             }

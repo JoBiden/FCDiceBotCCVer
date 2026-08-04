@@ -99,3 +99,40 @@ difference is *when* residents see it.
 | `ChateauPledge.cs:171` channel message | pledge confirmation only; any earned title appears later, attached to an unrelated interaction | pledge confirmation + the title notification it earned, in the same message |
 
 ## Owner decision
+
+**2026-08-02 — Approved, and widened.** Fix the title-timing bug, starting immediately.
+
+Design answers:
+
+1. *How wide should the fix go?* — **Audit every count-changing command.** Not the recommended
+   option: the dossier proposed `!pledge` + `!abandonpledge` and argued the full sweep was better
+   as its own item. The owner chose the sweep, so it lands in this PR — every `incrementCount`
+   caller gets checked for a missing `ChateauSystemTitles.CheckAndGrantTitles` call, and the
+   misses are fixed together.
+2. *The dropped pledge identifier?* — **Separate item.** Keep this PR to title timing; the
+   identifier bug gets its own dossier with its own design questions (how `!fulfill` matches a
+   pledge whose identifier differs, what `!viewpledges` shows).
+3. *Start now?* — **Yes**, branch and PR before moving to the next queue item.
+4. *The stale profile read found during implementation* (`ChateauPledge.cs:116` read
+   `pledgerProfile.counts` from a profile fetched before the increment, so the honor-ratio
+   cascade described the pledger's record as of just before this pledge) — **fold into this PR.**
+
+### Audit result (the widened scope)
+
+Every path that writes `Profile.counts` or `dailyClimaxCounts`:
+
+| Call site | Count(s) | Title check before the fix |
+|---|---|---|
+| `InteractionProcessorBase.cs:639,701`, `TrainProcessor.cs:168` | all interaction counts | yes — `ChateauConsent.cs:270` |
+| `ClimaxforProcessor` | `dailyClimaxCounts` | yes — `ClimaxCommandSupport.cs:78` + consent |
+| `ChateauInteractionHandler.cs:49` | `pledgesfulfilled` | yes — consent path, sweep runs right after |
+| `ChateauWork.cs`, `ChateauVolunteer.cs` | job counts | yes — check for themselves |
+| `ChateauPledge.cs:115` | `pledgesactive` | **no — fixed** |
+| `ChateauAbandonPledge.cs:115` | `pledgesabandoned` | **no — fixed** |
+| `ChateauBirth.cs:192` | `birth` | no, but `birth` has no milestone, so nothing is stranded |
+| `InteractionCountMigration.cs:107` | bulk backfill | n/a — migration, deliberately silent |
+
+Two real gaps, both pledges. `ChateauBirth.ExecuteBirth` is a cleanly DB-injected static and
+`CheckAndGrantTitles` resolves through the static `MonDB`, so wiring it in would cost the
+injection discipline for no present benefit; the invariant is documented on
+`CheckAndGrantTitles` instead, naming `birth` as the one to revisit if a milestone is added.
