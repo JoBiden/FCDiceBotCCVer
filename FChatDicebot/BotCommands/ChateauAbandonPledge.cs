@@ -117,6 +117,16 @@ namespace FChatDicebot.BotCommands
 
                     // Send confirmation message
                     string message = $"{pledgerProfile.displayName} has abandoned their pledge to {Utils.interactionToVerb(pledgeToCancel.interactionType, false)} {pledgeeProfile.displayName}. The act of turning one's back on this promise has been permanently recorded on their dossier. Future pledges will carry with them an indication of this trend of oathbreaking...";
+
+                    // Grant "Broke Their Promise" and its tiers here rather than leaving them
+                    // for the next consented interaction to announce — the same timing bug
+                    // !pledge had. Stays private, like the rest of this confirmation.
+                    string titleNotification = ChateauSystemTitles.CheckAndGrantTitles(characterName);
+                    if (!string.IsNullOrEmpty(titleNotification))
+                    {
+                        message += titleNotification;
+                    }
+
                     bot.SendPrivateMessage(message, characterName);
                 }
             }

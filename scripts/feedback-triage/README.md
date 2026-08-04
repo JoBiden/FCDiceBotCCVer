@@ -79,7 +79,8 @@ obsolete    the submission was deleted from the collection before a decision
 
 ```
 ft.ps1                  ledger CLI (the only writer)
-bin/ft.js               mongosh backend
+bin/ft.js               mongosh backend (source, not build output - the root
+                        .gitignore has an explicit exception so it stays tracked)
 dossier-template.md     the per-submission write-up format
 queue/                  dossiers awaiting a decision, or deferred
 done/                   dossiers for shipped, declined, and obsolete items
