@@ -53,3 +53,14 @@ x86/
 
 # Claude Code worktrees and session data
 .claude/
+
+# Exception to the bin/ rules above: scripts/feedback-triage/bin/ holds source, not
+# build output. ft.js is the mongosh backend that ft.ps1 shells out to, and ft.ps1
+# throws without it, so it has to be tracked. The directory negation has to come
+# first - a file inside an excluded directory cannot be re-included on its own.
+# Everything else dropped in that folder stays ignored.
+# (scripts/random-event-builder/bin/ and scripts/work-duty-builder/bin/ are genuine
+#  build output - copied DLLs and a compiled .exe - and stay ignored.)
+!scripts/feedback-triage/bin/
+scripts/feedback-triage/bin/*
+!scripts/feedback-triage/bin/ft.js
