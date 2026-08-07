@@ -340,7 +340,6 @@ namespace FChatDicebot.InteractionProcessors.Involved
             "Fresher than anything bottled!",
             "Is {source} tasty?",
             "How does it taste, {drinker}?",
-            "Now that you've had your fill, maybe you could bottle some for later with !milk....",
             "Careful you don't drain them dry!",
         };
 

@@ -219,9 +219,12 @@ numbered empty; the source path gives you a stronger hit and no proof it happene
 
 The spec argued this had to be spelled out in the help text or residents would read the missing
 bottle as a bug. At the wording review the owner cut it: the shipped `LongDescription`s describe
-the strength and the shared daily draw, and leave the absence of a bottle to be inferred. One
-flourish in the completion pool ("maybe you could bottle some for later with `!milk`...") points at
-the bottle path from the other side.
+the strength and the shared daily draw, and leave the absence of a bottle to be inferred.
+
+A completion flourish pointing at `!milk` as the way to keep some was drafted and then cut, because
+it contradicted the draw lock — having just drunk from someone, you cannot milk them until the next
+Chateau day. Worth remembering if the pool is extended: **the two verbs are alternatives for the
+day, not a sequence**, and flavor that suggests otherwise is wrong rather than merely loose.
 
 ---
 
