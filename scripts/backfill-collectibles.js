@@ -50,7 +50,10 @@
 // ── Configuration ─────────────────────────────────────────────────────────────
 // Matches MonDB.Initialize in BotMain.cs. Change only if the bot is pointed elsewhere.
 const DB_NAME = "ChateauDb";
-const DRY_RUN = true;        // <-- set to false to actually write
+// Applied to the live ChateauDb on 2026-08-07 (39 profiles, 41 bottles, serials #1-#41).
+// Restored to true so a stray re-run reports rather than writes; the "collectibles already
+// exists" skip below would make it a no-op regardless.
+const DRY_RUN = false;        // <-- set to false to actually write
 // ──────────────────────────────────────────────────────────────────────────────
 
 const targetDb = db.getSiblingDB(DB_NAME);
