@@ -29,6 +29,8 @@ If args are present but no `[user]…[/user]` recipient is found, both commands 
 
 `ClimaxforProcessor.ResolveClimaxer(type, initiator, recipient)` is the single source of truth; everything downstream (count routing, daily-counter bump, completion-message wording, status-effect attribution) reads from it.
 
+Since [Invertible-Role-Interactions](Infrastructure/Invertible-Role-Interactions.md) shipped, the verb-to-role mapping itself is declared once as `ClimaxforProcessor.ClimaxRoles` (a `RoleSpec`) and `ResolveClimaxer` / `ResolvePartner` are thin wrappers over it — the base class reads the same declaration to point the status-effect and custom-eicon subjects at the climaxer, so this processor no longer overrides either hook. The **self-target collapse stays in `ResolveClimaxer`**, not in the shared spec: a solo climax has no direction to resolve, and source-drink (the other `RoleSpec` user) has no self-target path.
+
 ## Validation
 
 - Both parties must be registered (base validation).

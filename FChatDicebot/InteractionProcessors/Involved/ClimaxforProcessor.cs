@@ -36,6 +36,18 @@ namespace FChatDicebot.InteractionProcessors.Involved
         public const string ClimaxforType = "climaxfor";
         public const string ClimaxType = "climax";
 
+        /// <summary>
+        /// <c>!climaxfor</c> reads "I climax for you" (initiator is the climaxer);
+        /// <c>!climax</c> reads "I make you climax" (recipient is). Declared once here so the
+        /// base class can route the eicon and status-effect subjects to the climaxer without
+        /// this processor overriding either. Static so the public <see cref="ResolveClimaxer"/>
+        /// helpers — which callers and tests use without an instance — can read it too.
+        /// </summary>
+        public static readonly RoleSpec ClimaxRoles = RoleSpec.Invertible(
+            primaryVerb: ClimaxforType, invertedVerb: ClimaxType);
+
+        public override RoleSpec Roles => ClimaxRoles;
+
         public override string InteractionType => ClimaxforType;
         public override string InvestmentLevel => "involved";
 
@@ -85,9 +97,12 @@ namespace FChatDicebot.InteractionProcessors.Involved
         /// </summary>
         public static string ResolveClimaxer(string interactionType, string initiator, string recipient)
         {
+            // Self-target collapse stays here rather than in RoleSpec: climax has a real solo
+            // path (bare !climax with no target), where "which side is the climaxer" is not a
+            // direction question at all. Source-drink has no such path, so the shared spec
+            // deliberately doesn't take a position on it.
             if (string.Equals(initiator, recipient, StringComparison.Ordinal)) return initiator;
-            if (string.Equals(interactionType, ClimaxType, StringComparison.OrdinalIgnoreCase)) return recipient;
-            return initiator;
+            return ClimaxRoles.ResolveActor(interactionType, initiator, recipient);
         }
 
         /// <summary>Mirror of <see cref="ResolveClimaxer"/> for the non-climaxing party;
@@ -95,8 +110,7 @@ namespace FChatDicebot.InteractionProcessors.Involved
         public static string ResolvePartner(string interactionType, string initiator, string recipient)
         {
             if (string.Equals(initiator, recipient, StringComparison.Ordinal)) return null;
-            string climaxer = ResolveClimaxer(interactionType, initiator, recipient);
-            return string.Equals(climaxer, initiator, StringComparison.Ordinal) ? recipient : initiator;
+            return ClimaxRoles.ResolveCounterpart(interactionType, initiator, recipient);
         }
 
         /// <summary>
@@ -401,42 +415,18 @@ namespace FChatDicebot.InteractionProcessors.Involved
         }
 
         /// <summary>
-        /// Status-effect fragments for a climax attach to the climaxer (the person
-        /// actually having the orgasm), not whoever typed the command. For <c>!climaxfor</c>
-        /// that's the initiator; for <c>!climax</c> (the inverted reskin) that's the
-        /// recipient. Self-targets resolve to the initiator either way.
-        /// </summary>
-        protected override Profile GetStatusEffectSubject(
-            Profile initiatorProfile, Profile recipientProfile, string identifier)
-        {
-            if (initiatorProfile == null || recipientProfile == null) return recipientProfile;
-            string typeKey = ParseTypeFromIdentifier(identifier);
-            return string.Equals(
-                ResolveClimaxer(typeKey, initiatorProfile.userName, recipientProfile.userName),
-                initiatorProfile.userName,
-                StringComparison.Ordinal)
-                ? initiatorProfile
-                : recipientProfile;
-        }
-
-        /// <summary>
-        /// The custom <c>!seteicon</c> eicon on a climax belongs to the person who actually
-        /// climaxed — the initiator on <c>!climaxfor</c>, the recipient on <c>!climax</c> (the
-        /// inverted reskin). Self-targets resolve to the initiator either way. This is the same
-        /// redirection <see cref="GetStatusEffectSubject"/> makes for status fragments; the two
-        /// climax verbs also share a single stored eicon slot (see
+        /// Climax carries the typed verb in the interaction identifier (<c>"{typeKey}|{count}"</c>),
+        /// so the base class can recover it and route both the status-effect subject and the
+        /// custom-eicon subject to the climaxer — the initiator on <c>!climaxfor</c>, the
+        /// recipient on <c>!climax</c>. Self-targets land on the same person either way.
+        ///
+        /// The two climax verbs share a single stored eicon slot (see
         /// <see cref="InteractionEiconSupport"/>), so the icon renders whichever direction the
         /// climaxer set it from.
         /// </summary>
-        protected override Profile GetEiconSubject(string interactionVerb, Profile initiatorProfile, Profile recipientProfile)
+        protected override string ResolveTypedVerb(string identifier)
         {
-            if (initiatorProfile == null || recipientProfile == null) return initiatorProfile;
-            return string.Equals(
-                ResolveClimaxer(interactionVerb, initiatorProfile.userName, recipientProfile.userName),
-                initiatorProfile.userName,
-                StringComparison.Ordinal)
-                ? initiatorProfile
-                : recipientProfile;
+            return ParseTypeFromIdentifier(identifier);
         }
 
         protected override string BuildConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
