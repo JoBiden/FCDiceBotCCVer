@@ -59,6 +59,8 @@ public interface IStatusEffectContributor
 
 Contributors register in `StatusEffectRegistry.Initialize()` (parallel to `InteractionProcessorRegistry`). Tests can use `StatusEffectRegistry.Clear()` + `RegisterContributor(...)` for isolation.
 
+**Which `interactionType` a contributor sees.** By default it is the processor's registered `InteractionType`. A processor registered under *two* type keys can override `InteractionProcessorBase.ContributorInteractionType` to report the verb actually typed instead, for contributors whose rule turns on the direction rather than the act. `SourceDrinkProcessor` is the case that introduced it: `DoseStatusContributor` decides whose craving a drink quiets, and the drinker is the initiator on `!drinkfrom` but the recipient on `!forcedrink` — with only `isInitiator` to go on, one shared type cannot tell them apart. The default keeps every single-verb processor's behavior unchanged; `ClimaxforProcessor` deliberately does **not** override it, so contributors still see `climaxfor` for both climax verbs.
+
 `GetActiveStatusEffects` is a pure aggregator: it walks the registry, calls each contributor, and merges what each one returns. Contributors that throw are skipped silently so one misbehaving contributor cannot break the parent interaction.
 
 **Contributors own their own state mutations.** Fade-by-mention semantics (e.g. odorize decrementing a use counter every time it contributes a non-empty fragment) live inside the contributor's `Contribute()` method — see [Odorize-and-Wash.md](../Odorize-and-Wash.md). The helper does not introspect contributor state.

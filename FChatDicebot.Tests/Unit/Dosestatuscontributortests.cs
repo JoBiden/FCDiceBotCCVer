@@ -20,19 +20,32 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
         // ----- IsSatisfiedBy (static helper) -----
 
         [Theory]
-        [InlineData("feed", "musk", "musk", true)]
-        [InlineData("FEED", "MUSK", "musk", true)] // case-insensitive
-        [InlineData("odorize", "musk", "musk", true)]
-        [InlineData("dose", "musk", "musk", true)]
-        [InlineData("kiss", "musk", "musk", false)]    // unrelated interaction
-        [InlineData("climaxfor", "musk", "musk", false)] // climax doses, doesn't satisfy
-        [InlineData("climax", "musk", "musk", false)]
-        [InlineData("feed", "drug", "musk", false)]    // identifier mismatch
-        [InlineData("feed", "", "musk", false)]        // empty identifier
-        [InlineData("feed", "musk", "", false)]        // empty vice
-        public void IsSatisfiedBy_MatchesSpec(string interactionType, string identifier, string vice, bool expected)
+        // Only the party who actually consumes is satisfied. The other one is present for it,
+        // and falls through to the ordinary craving roll instead.
+        [InlineData("feed", "musk", "musk", false, true)]    // the fed party
+        [InlineData("feed", "musk", "musk", true, false)]    // the feeder swallowed nothing
+        [InlineData("FEED", "MUSK", "musk", false, true)]    // case-insensitive
+        [InlineData("drinkfrom", "musk", "musk", true, true)]    // initiator asked to drink
+        [InlineData("drinkfrom", "musk", "musk", false, false)]  // the source was drunk from
+        [InlineData("forcedrink", "musk", "musk", false, true)]  // recipient was offered the drink
+        [InlineData("forcedrink", "musk", "musk", true, false)]  // the source offered it
+        [InlineData("drink", "musk", "musk", true, true)]     // self-command, one party
+        // Applied rather than fed: no single consumer, so either side is satisfied.
+        [InlineData("odorize", "musk", "musk", true, true)]
+        [InlineData("odorize", "musk", "musk", false, true)]
+        [InlineData("dose", "musk", "musk", true, true)]
+        [InlineData("dose", "musk", "musk", false, true)]
+        [InlineData("kiss", "musk", "musk", false, false)]    // unrelated interaction
+        [InlineData("climaxfor", "musk", "musk", false, false)] // climax doses, doesn't satisfy
+        [InlineData("climax", "musk", "musk", false, false)]
+        [InlineData("feed", "drug", "musk", false, false)]    // identifier mismatch
+        [InlineData("feed", "", "musk", false, false)]        // empty identifier
+        [InlineData("feed", "musk", "", false, false)]        // empty vice
+        public void IsSatisfiedBy_MatchesSpec(
+            string interactionType, string identifier, string vice, bool isInitiator, bool expected)
         {
-            Assert.Equal(expected, DoseStatusContributor.IsSatisfiedBy(interactionType, identifier, vice));
+            Assert.Equal(expected,
+                DoseStatusContributor.IsSatisfiedBy(interactionType, identifier, vice, isInitiator));
         }
 
         // ----- SymmetricInvocation -----

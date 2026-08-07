@@ -412,6 +412,19 @@ namespace FChatDicebot.InteractionProcessors
         /// <see cref="GetActiveStatusEffects"/> — a misbehaving contributor must not break
         /// the parent interaction.
         /// </summary>
+        /// <summary>
+        /// The type key contributors see for this call. Defaults to <see cref="InteractionType"/>,
+        /// which is right for every processor backing a single verb.
+        ///
+        /// A processor registered under two type keys overrides this when a contributor's rule
+        /// depends on <b>which</b> verb was typed rather than which act it was. The case that
+        /// forced it: <see cref="Involved.SourceDrinkProcessor"/> reports one type everywhere
+        /// else, but who actually swallowed flips between <c>!drinkfrom</c> and
+        /// <c>!forcedrink</c>, and <see cref="StatusEffectContributors.DoseStatusContributor"/>
+        /// has only <c>isInitiator</c> to tell the two parties apart.
+        /// </summary>
+        protected virtual string ContributorInteractionType => InteractionType;
+
         private void InvokeContributor(
             IStatusEffectContributor contributor,
             Profile profile,
@@ -424,7 +437,7 @@ namespace FChatDicebot.InteractionProcessors
             StatusEffectFragments contributed;
             try
             {
-                contributed = contributor.Contribute(profile, callSite, InteractionType, parentIdentifier ?? string.Empty, isInitiator);
+                contributed = contributor.Contribute(profile, callSite, ContributorInteractionType, parentIdentifier ?? string.Empty, isInitiator);
             }
             catch (Exception)
             {

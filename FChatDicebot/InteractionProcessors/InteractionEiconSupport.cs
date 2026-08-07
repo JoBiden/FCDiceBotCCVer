@@ -54,6 +54,14 @@ namespace FChatDicebot.InteractionProcessors
         public const string ClimaxVerbKey = "climax";
         public const string ClimaxforVerbKey = "climaxfor";
 
+        /// <summary>
+        /// The two directional source-drink verbs. Same arrangement as climax: they fold onto
+        /// <see cref="DrinkFromVerbKey"/> for storage so <c>!seteicon drinkfrom</c> and
+        /// <c>!seteicon forcedrink</c> share one icon.
+        /// </summary>
+        public const string DrinkFromVerbKey = "drinkfrom";
+        public const string ForceDrinkVerbKey = "forcedrink";
+
         // User-typed command token -> the interaction verb key(s) it reads/writes. Aliases fold
         // onto their canonical verb (hug->cuddle, dress->dressup, hire->employ, climaxfor->climax);
         // !pay covers both payment directions. Every value here is a verb that appears on
@@ -77,6 +85,11 @@ namespace FChatDicebot.InteractionProcessors
             // Involved
             { "climax", new[] { "climax" } },
             { "climaxfor", new[] { "climax" } },
+            // The two source-drink verbs are the same act typed from opposite directions, so
+            // like climax/climaxfor they fold onto one stored slot: set it once, and it renders
+            // whichever direction you use.
+            { "drinkfrom", new[] { "drinkfrom" } },
+            { "forcedrink", new[] { "drinkfrom" } },
             { "dressup", new[] { "dressup" } },
             { "dress", new[] { "dressup" } },
             { "feed", new[] { "feed" } },
@@ -115,7 +128,7 @@ namespace FChatDicebot.InteractionProcessors
         public static readonly string[] CanonicalTokensInOrder = new[]
         {
             "boobhat", "bully", "cuddle", "handhold", "kiss", "lap", "sit", "lick", "pet", "spank",
-            "climax", "dressup", "feed", "golden", "milk", "pay",
+            "climax", "dressup", "drinkfrom", "feed", "golden", "milk", "pay",
             "birth", "bond", "breed", "consume", "corrupt", "purify", "employ", "entitle",
             "mark", "objectify", "petrify", "plant", "train",
             "break", "curse", "dose", "infest", "monsterize", "odorize", "rename",
@@ -238,9 +251,19 @@ namespace FChatDicebot.InteractionProcessors
 
         private static string NormalizeVerbKey(string verbKey)
         {
-            return string.Equals(verbKey, ClimaxforVerbKey, StringComparison.OrdinalIgnoreCase)
-                ? ClimaxVerbKey
-                : verbKey;
+            // Both directional pairs fold onto one stored slot. This has to happen here as well
+            // as in TokenToVerbKeys: the completion suffix looks the eicon up by the verb on
+            // Interaction.type — the raw typed verb — so without the fold a !forcedrink would
+            // read eicon_forcedrink, a slot !seteicon never writes to.
+            if (string.Equals(verbKey, ClimaxforVerbKey, StringComparison.OrdinalIgnoreCase))
+            {
+                return ClimaxVerbKey;
+            }
+            if (string.Equals(verbKey, ForceDrinkVerbKey, StringComparison.OrdinalIgnoreCase))
+            {
+                return DrinkFromVerbKey;
+            }
+            return verbKey;
         }
     }
 }

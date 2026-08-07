@@ -65,40 +65,33 @@ namespace FChatDicebot.InteractionProcessors.Involved
         /// after milking Bob. Because it lives only on the milker's side, Bob milking
         /// Alice back the same day is unaffected. For self-milking the key is
         /// <c>milk_give_&lt;self&gt;</c> on the single profile.
+        ///
+        /// Milk's key is one of several the draw lock spans — see <see cref="SourceDrawLock"/>.
         /// </summary>
-        public static string DirectionTimerKey(string recipientUser) => "milk_give_" + recipientUser;
+        public static string DirectionTimerKey(string recipientUser)
+            => SourceDrawLock.TimerKey(DrawVerb.Milk, recipientUser);
 
         /// <summary>
-        /// True when <paramref name="profile"/> (the prospective milker) has already milked
-        /// <paramref name="recipientUser"/> today. Used by both the command's pre-check and
-        /// the processor's TOCTOU recheck.
+        /// True when <paramref name="profile"/> (the prospective milker) has already drawn from
+        /// <paramref name="recipientUser"/> today <b>by any verb</b> — a source drink consumes
+        /// the day just as a milking does. Used by both the command's pre-check and the
+        /// processor's TOCTOU recheck. Callers that need to name what actually happened should
+        /// use <see cref="SourceDrawLock.ActiveLock"/> instead.
         /// </summary>
         public static bool HasActiveDirectionLock(Profile profile, string recipientUser)
         {
-            if (profile?.timers == null) return false;
-            string key = DirectionTimerKey(recipientUser);
-            if (!profile.timers.TryGetValue(key, out var timer)) return false;
-            return DateTime.UtcNow < timer.timerEnd;
+            return SourceDrawLock.IsLocked(profile, recipientUser);
         }
 
         /// <summary>
-        /// Channel-facing wording for the once-per-day per-direction lock. Centralized so
-        /// the command's pre-check and the (unlikely) TOCTOU path don't drift. Pass
-        /// <paramref name="isSelf"/>=true for the self-milk shortcut path so the message
-        /// reads "You've already milked yourself" instead of the awkward
-        /// "You've already milked &lt;your display name&gt;".
+        /// Channel-facing wording for the once-per-day per-direction lock, in its milk flavor.
+        /// Prefer <see cref="SourceDrawLock.LockMessage"/> with the verb from
+        /// <see cref="SourceDrawLock.ActiveLock"/> where the lock might have been consumed by a
+        /// drink instead — this overload always claims a milking.
         /// </summary>
         public static string DirectionLockMessage(string recipientDisplayOrName, bool isSelf = false)
         {
-            DateTime now = DateTime.UtcNow;
-            string untilReset = Utils.GetTimeSpanPrint(now.Date.AddDays(1) - now);
-            if (isSelf)
-            {
-                return "You've already milked yourself today. You can milk yourself again in "
-                    + untilReset + ".";
-            }
-            return "You've already milked " + recipientDisplayOrName
-                + " today. You can milk them again in " + untilReset + ".";
+            return SourceDrawLock.LockMessage(DrawVerb.Milk, recipientDisplayOrName, isSelf);
         }
 
         public override ValidationResult ValidateInteraction(string initiator, string recipient, string identifier)
@@ -140,69 +133,28 @@ namespace FChatDicebot.InteractionProcessors.Involved
             }
 
             Profile initiatorProfile = Database.GetProfile(initiator);
-            if (HasActiveDirectionLock(initiatorProfile, recipient))
+            DrawVerb? heldBy = SourceDrawLock.ActiveLock(initiatorProfile, recipient);
+            if (heldBy != null)
             {
                 Profile recipientProfile = Database.GetProfile(recipient);
                 string recipientDisplay = recipientProfile?.displayName ?? recipient;
-                return ValidationResult.Failure(DirectionLockMessage(recipientDisplay));
+                // Name the verb that actually spent the day: an earlier !drinkfrom locks this
+                // direction too, and claiming a milking that never happened reads as a bug.
+                return ValidationResult.Failure(
+                    SourceDrawLock.LockMessage(heldBy.Value, recipientDisplay));
             }
 
-            // Break gating by substance → bodypart map. BreakStatusContributor doesn't see
-            // the substance, so the check lives here. (See Break-and-Rest spec, section B.)
-            var milkBreakBlock = CheckBreakBlockForSubstance(recipient, substance);
+            // Break gating by substance → bodypart map, shared with the source-drink path so a
+            // newly mapped substance gates both. (See Break-and-Rest spec, section B.)
+            var milkBreakBlock = SubstanceBodyparts.CheckBreakBlock(
+                Database, recipient, substance, MilkBreakBlockTail);
             if (milkBreakBlock != null) return ValidationResult.Failure(milkBreakBlock);
 
             return ValidationResult.Success();
         }
 
-        /// <summary>
-        /// Maps a substance to the recipient's bodyparts that produce it, then checks the
-        /// recipient's active breaks against that set. Returns the block message when a
-        /// relevant part is broken; null otherwise (no break, or substance unmapped).
-        /// </summary>
-        private string CheckBreakBlockForSubstance(string recipient, string substance)
-        {
-            HashSet<string> relevantParts = BodypartsForSubstance(substance);
-            if (relevantParts == null) return null;
-
-            Profile recipientProfile = Database.GetProfile(recipient);
-            if (recipientProfile == null) return null;
-
-            var breaks = BreakInstance.LoadAllWithTick(recipientProfile);
-            var brokenAndRelevant = breaks.Where(b => relevantParts.Contains(b.Part))
-                                          .Select(b => b.Part)
-                                          .ToList();
-            if (brokenAndRelevant.Count == 0) return null;
-
-            string recipientDisplay = string.IsNullOrEmpty(recipientProfile.displayName)
-                ? recipient
-                : recipientProfile.displayName;
-            string parts = brokenAndRelevant.Count == 1
-                ? brokenAndRelevant[0]
-                : (brokenAndRelevant.Count == 2
-                    ? brokenAndRelevant[0] + " and " + brokenAndRelevant[1]
-                    : string.Join(", ", brokenAndRelevant.GetRange(0, brokenAndRelevant.Count - 1)) + ", and " + brokenAndRelevant[brokenAndRelevant.Count - 1]);
-            string verbToBe = brokenAndRelevant.Count == 1 ? "is" : "are";
-            return recipientDisplay + "'s " + parts + " " + verbToBe + " too broken for milking.";
-        }
-
-        private static HashSet<string> BodypartsForSubstance(string substance)
-        {
-            if (string.IsNullOrEmpty(substance)) return null;
-            switch (substance.ToLowerInvariant())
-            {
-                case "milk":
-                    return new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "breast" };
-                case "saliva":
-                    return new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "mouth", "tongue" };
-                case "golden":
-                case "pre":
-                case "cum":
-                    return new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "dick", "ball", "pussy" };
-                default:
-                    return null;
-            }
-        }
+        /// <summary>End of the break refusal, in milk's flavor: "…'s breast is too broken for milking."</summary>
+        public const string MilkBreakBlockTail = "too broken for milking.";
 
         public override string ProcessInteraction(PendingCommand command)
         {
@@ -252,13 +204,10 @@ namespace FChatDicebot.InteractionProcessors.Involved
                     });
                 }
 
-                // Per-direction 24h lock — until the *next* day-boundary regardless of
+                // Per-direction daily lock — until the *next* day-boundary regardless of
                 // time-of-day. Stamped on the milker only and scoped to the milked
                 // resident, so the recipient can still milk the initiator back today.
-                var directionTimer = new CoolDown { timerEnd = DateTime.UtcNow.Date.AddDays(1) };
-                if (initiatorProfile.timers == null)
-                    initiatorProfile.timers = new Dictionary<string, CoolDown>();
-                initiatorProfile.timers[DirectionTimerKey(recipient)] = directionTimer;
+                SourceDrawLock.Stamp(initiatorProfile, DrawVerb.Milk, recipient);
             }
 
             // Stamp the truthful produced quantity onto the in-memory PendingCommand so

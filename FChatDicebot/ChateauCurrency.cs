@@ -67,6 +67,26 @@ namespace FChatDicebot
         /// </summary>
         public const double DrinkAddictionChance = 0.10;
 
+        /// <summary>
+        /// Corruption moved onto the drinker by one drink straight from the source
+        /// (<c>!drinkfrom</c> / <c>!forcedrink</c>) — double a bottle's, because nothing sat in
+        /// glass first. Doubling rather than some other multiplier keeps the arithmetic legible
+        /// to residents: a source drink is exactly two bottles' worth of
+        /// <see cref="DrinkCorruptionDailyLimit"/>.
+        ///
+        /// The tag itself still comes from the source's live corruption at the usual
+        /// <see cref="CorruptionTagThreshold"/>, so a neutral resident is no more potent at the
+        /// tap than in a bottle — fresher is a bigger push, not a wider net.
+        /// </summary>
+        public const int SourceDrinkCorruptionShift = 2;
+
+        /// <summary>
+        /// Chance that a source drink deepens an addiction the drinker already carries — double
+        /// <see cref="DrinkAddictionChance"/>. Intensify-only on both paths: no drink of any
+        /// strength can hook a clean resident.
+        /// </summary>
+        public const double SourceDrinkAddictionChance = 0.20;
+
         /// <summary>Serial numbers listed per group in <c>!bottles</c> before the "and N more" tail.</summary>
         public const int BottleSerialDisplayCap = 8;
 

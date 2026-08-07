@@ -26,6 +26,7 @@ Design + as-implemented documentation for the Chateau Contract interaction syste
 | Spec | Reversal | Depends on |
 |------|----------|------------|
 | [Milk](Milk.md) | none (sold via `!sell`, drunk via `!drink`) | Currency-and-Milk-Inventory, Status-Effect-Hook |
+| [Drink-From-Source](Drink-From-Source.md) | none (consumption, not a state change) | Bottle-Consumption-And-Transfer (`!drink` effect helpers), Milk (the draw lock), Dose-and-Detox, Status-Effect-Hook |
 
 ### Commitment
 
