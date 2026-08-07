@@ -10,73 +10,91 @@ namespace FChatDicebot.BotCommands
 {
     public class ChateauHelp : ChatBotCommand
     {
-        // The general !help listing, by section. These name commands only — the alias subtext
-        // beside a name is read off that command's Aliases array by ListEntry, so the listing
-        // can't fall out of step with what the bot actually answers to. Which commands are
-        // worth listing stays a curated choice (admin and test commands are deliberately out),
-        // which is why these aren't generated from the command table; a test checks every name
-        // here still resolves.
-
-        public static readonly string[] GeneralCommands =
+        /// <summary>The blocks of the no-arg !help listing, in the order they print.</summary>
+        public enum HelpSection
         {
-            "dossier", "bondtree", "familytree", "work", "volunteer", "bank", "titles",
-            "settitle", "category", "identifier", "pledges", "abandonpledge", "bottles", "sell",
-            "statues", "statistics", "populations", "flora", "birthrates", "parasites", "payroll",
-            "economics", "business", "joinchateau", "modmessage", "random", "feedback",
-            "seteicon", "help", "botinfo", "uptime"
-        };
+            /// <summary>The untitled block under "Does not require channel".</summary>
+            General,
+            Recovery,
+            /// <summary>The untitled block under "Requires channel".</summary>
+            Room,
+            Casual,
+            Involved,
+            Commitment,
+            Consequence,
+            Dicebot
+        }
 
-        public static readonly string[] RecoveryCommands =
+        /// <summary>
+        /// Which block of the general listing a command prints in, or null if it isn't listed.
+        /// This is the only place membership is decided: the listing is read off the loaded
+        /// command table, so a new command appears the moment it declares a <c>Category</c>,
+        /// with no second list to remember. There used to be one — eight hand-maintained name
+        /// arrays — and <c>!drinkfrom</c> / <c>!forcedrink</c> shipped missing from the listing
+        /// because adding a command and listing it were two separate steps.
+        ///
+        /// A command goes unlisted when it has no <c>Category</c> (the legacy dicebot commands
+        /// that were never migrated, which the closing line of the listing already accounts
+        /// for), when it's admin-only (the admin block is written by hand and only shown to
+        /// admins), or when it sets <see cref="ChatBotCommand.HideFromHelpListing"/>. An
+        /// unrecognized <c>Category</c> also lands nowhere, which a test catches.
+        /// </summary>
+        public static HelpSection? SectionFor(ChatBotCommand cmd)
         {
-            "cleanse", "detox", "purge", "rest", "wash"
-        };
+            if (cmd == null || string.IsNullOrEmpty(cmd.Name) || string.IsNullOrEmpty(cmd.Category))
+                return null;
 
-        // "Requires channel" but not an interaction with another resident, so it belongs here
-        // rather than under one of the four coloured interaction tiers: !drink announces itself
-        // in the room, which is why it can't sit with !bottles / !sell in the general list.
-        public static readonly string[] RoomCommands =
-        {
-            "consent", "no", "oops", "pledge", "fulfill", "drink"
-        };
+            if (cmd.HideFromHelpListing || cmd.RequireBotAdmin || cmd.RequireChannelAdmin)
+                return null;
 
-        public static readonly string[] CasualCommands =
-        {
-            "kiss", "handhold", "cuddle", "spank", "bully", "boobhat", "lick", "pet", "lap", "sit"
-        };
-
-        public static readonly string[] InvolvedCommands =
-        {
-            "dressup", "feed", "golden", "pay", "milk", "climax", "climaxfor"
-        };
-
-        public static readonly string[] CommitmentCommands =
-        {
-            "petrify", "plant", "objectify", "consume", "mark", "employ", "bond", "entitle",
-            "corrupt", "purify", "breed", "birth", "train"
-        };
-
-        public static readonly string[] ConsequenceCommands =
-        {
-            "rename", "monsterize", "curse", "infest", "dose", "odorize", "break"
-        };
-
-        public static readonly string[] DicebotCommands =
-        {
-            "joingame", "startgame", "leavegame", "cancelgame", "gamestatus", "gamecommand",
-            "showgames", "roll", "rolltable", "showlastroll", "coinflip", "fitd", "tipdie",
-            "rock", "paper", "scissors", "lizard", "spock", "fen"
-        };
-
-        /// <summary>Every section of the general listing, for tests that check all of them.</summary>
-        public static IEnumerable<string> AllListedCommands
-        {
-            get
+            // Compared lowercased so a casing slip in a command's Category can't quietly drop it
+            // out of the listing.
+            switch (cmd.Category.ToLowerInvariant())
             {
-                return GeneralCommands
-                    .Concat(RecoveryCommands).Concat(RoomCommands).Concat(CasualCommands)
-                    .Concat(InvolvedCommands).Concat(CommitmentCommands)
-                    .Concat(ConsequenceCommands).Concat(DicebotCommands);
+                case "casual interaction": return HelpSection.Casual;
+                case "involved interaction": return HelpSection.Involved;
+                case "commitment interaction": return HelpSection.Commitment;
+                case "consequence interaction": return HelpSection.Consequence;
+                case "recovery": return HelpSection.Recovery;
+                case "dicebot": return HelpSection.Dicebot;
+                case "admin": return null;
+
+                // Everything else is an ordinary command, split between the two untitled blocks
+                // by the only thing that separates them: whether it can be used outside a
+                // channel. That's why !drink sits with !consent rather than with !bottles.
+                case "general":
+                case "information":
+                case "personalization":
+                case "interaction":
+                case "interaction support":
+                    return cmd.RequireChannel ? HelpSection.Room : HelpSection.General;
+
+                default:
+                    return null;
             }
+        }
+
+        /// <summary>
+        /// The command names one block prints. Unordered — <see cref="Utils.sortedListDisplayText"/>
+        /// alphabetizes at display time, as it did when these were hand-written arrays.
+        /// </summary>
+        public static List<string> ListedNames(BotCommandController commandController, HelpSection section)
+        {
+            return commandController.BotCommands
+                .Where(c => SectionFor(c) == section)
+                .Select(c => c.Name)
+                // A legacy dicebot class and a Chateau class can share a Name (see
+                // FindCommandByName); the listing wants that name once.
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+        }
+
+        /// <summary>Every command the general listing prints, across all blocks.</summary>
+        public static IEnumerable<string> AllListedCommands(BotCommandController commandController)
+        {
+            return Enum.GetValues(typeof(HelpSection))
+                .Cast<HelpSection>()
+                .SelectMany(s => ListedNames(commandController, s));
         }
 
         public ChateauHelp()
@@ -122,14 +140,14 @@ namespace FChatDicebot.BotCommands
                 }
             }
 
-            List<string> generalCommands = ListEntries(commandController, GeneralCommands);
-            List<string> recoveryCommands = ListEntries(commandController, RecoveryCommands);
-            List<string> roomCommands = ListEntries(commandController, RoomCommands);
-            List<string> casualCommands = ListEntries(commandController, CasualCommands);
-            List<string> involvedCommands = ListEntries(commandController, InvolvedCommands);
-            List<string> commitmentCommands = ListEntries(commandController, CommitmentCommands);
-            List<string> consequenceCommands = ListEntries(commandController, ConsequenceCommands);
-            List<string> dicebotCommands = ListEntries(commandController, DicebotCommands);
+            List<string> generalCommands = ListEntries(commandController, HelpSection.General);
+            List<string> recoveryCommands = ListEntries(commandController, HelpSection.Recovery);
+            List<string> roomCommands = ListEntries(commandController, HelpSection.Room);
+            List<string> casualCommands = ListEntries(commandController, HelpSection.Casual);
+            List<string> involvedCommands = ListEntries(commandController, HelpSection.Involved);
+            List<string> commitmentCommands = ListEntries(commandController, HelpSection.Commitment);
+            List<string> consequenceCommands = ListEntries(commandController, HelpSection.Consequence);
+            List<string> dicebotCommands = ListEntries(commandController, HelpSection.Dicebot);
             string messageText = "These are all of the commands native to the [user]Chateau Contract[/user] bot, as of [b]August 2nd 2026.[/b] For detailed description of their use, please see the [user]Chateau Contract[/user] profile or use !help [command] Commands in subtext are alternate names of the same command - all documentation will be for the first listed names.\n\n" +
                     "[u]Does not require channel[/u]\n" +
                     Utils.sortedListDisplayText(generalCommands) + "\n" +
@@ -162,10 +180,12 @@ namespace FChatDicebot.BotCommands
             bot.SendPrivateMessage(messageText + "\nMost of [user]Chateau Contract[/user]'s functions are designed for use in the [session=Château Contract]adh-ac1885cd73f31adfaefb[/session] channel. Be sure to !joinchateau if you plan to stick around ♥", characterName);
         }
 
-        /// <summary>Renders one listing line per named command, in the order given.</summary>
-        private static List<string> ListEntries(BotCommandController commandController, string[] commandNames)
+        /// <summary>Renders one listing line per command in the given block.</summary>
+        private static List<string> ListEntries(BotCommandController commandController, HelpSection section)
         {
-            return commandNames.Select(n => ListEntry(commandController, n)).ToList();
+            return ListedNames(commandController, section)
+                .Select(n => ListEntry(commandController, n))
+                .ToList();
         }
 
         /// <summary>

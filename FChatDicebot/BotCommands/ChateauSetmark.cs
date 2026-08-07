@@ -30,6 +30,9 @@ namespace FChatDicebot.BotCommands
             RequireBotAdmin = false;
             RequireChannelAdmin = false;
             RequireChannel = false;
+            // Superseded by !seteicon mark. Still dispatches and still has its own !help setmark
+            // page for residents who learned it, but it's no longer advertised in the listing.
+            HideFromHelpListing = true;
             LockCategory = CommandLockCategory.NONE;
         }
 

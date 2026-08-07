@@ -3,7 +3,7 @@
 **Status:** ✅ SHIPPED 2026-06-29, wording pass + design tweak 2026-07-01 (owner review). Per-event `announceText` / `resultText` and reward magnitudes are authored data in the seeded `RandomEvents` collection; a single starter event ("Cutie says {word}") has been authored — see *Seed data* below.
 **Feature-Requests source:** "Random events, to encourage spontaneous chat activity. Responding to a random event would always start !random but might also require an additional argument, to slow down campers/snipers" (B12).
 
-> **Note on paths:** this spec was written before the latest Dice Bot integration flattened `FChatDicebot/FChatDicebot/…` to `FChatDicebot/…`. The links below predate that move; the as-built files are: model in [Model/ChateauDB.cs](../../../FChatDicebot/Model/ChateauDB.cs), engine in [BotCommands/Support/RandomEventEngine.cs](../../../FChatDicebot/BotCommands/Support/RandomEventEngine.cs), command in [BotCommands/ChateauRandom.cs](../../../FChatDicebot/BotCommands/ChateauRandom.cs), scheduler in [BotMain.cs](../../../FChatDicebot/BotMain.cs) (`HandleRandomEventsTick`), DB in [Database/Chateaudatabase.cs](../../../FChatDicebot/Database/Chateaudatabase.cs), tests in `FChatDicebot.Tests/Unit/Randomeventenginetests.cs`. Discord is intentionally excluded — the tick is wired into `RunLoopFList` only (the deployment is F-Chat / Chateau-only).
+> **Note on paths:** this spec was written before the latest Dice Bot integration flattened `FChatDicebot/FChatDicebot/…` to `FChatDicebot/…`. The links below predate that move; the as-built files are: model in [Model/ChateauDB.cs](../../FChatDicebot/Model/ChateauDB.cs), engine in [BotCommands/Support/RandomEventEngine.cs](../../FChatDicebot/BotCommands/Support/RandomEventEngine.cs), command in [BotCommands/ChateauRandom.cs](../../FChatDicebot/BotCommands/ChateauRandom.cs), scheduler in [BotMain.cs](../../FChatDicebot/BotMain.cs) (`HandleRandomEventsTick`), DB in [Database/Chateaudatabase.cs](../../FChatDicebot/Database/Chateaudatabase.cs), tests in `FChatDicebot.Tests/Unit/Randomeventenginetests.cs`. Discord is intentionally excluded — the tick is wired into `RunLoopFList` only (the deployment is F-Chat / Chateau-only).
 
 > This is the largest of the Social/events specs. It has three buildable chunks that can land incrementally: **(1)** the event data model + seeded collection, **(2)** the `!random` participation command + active-event lifecycle, **(3)** the tick-driven scheduler. The bulk of the work is wiring the **six reward types** to existing grant mechanisms (below).
 
@@ -14,15 +14,15 @@
 Once every several hours, the bot fires a **random event** into an opted-in channel — a short in-character prompt posted to chat. Residents join with the new **`!random`** command (optionally with an extra argument the event demands, to thwart snipers). After the event's response window resolves, the bot announces the outcome and grants the reward(s): currency, a title, training, corruption/purity, a curse, or just flavor.
 
 Key properties:
-- Events are **data, not code** — authored in a seeded `RandomEvents` Mongo collection (the [Duties](../../../FChatDicebot/Database/Chateaudatabase.cs)/`ModMessages` pattern: read-only in-bot, authored externally), so new events ship without a deploy.
+- Events are **data, not code** — authored in a seeded `RandomEvents` Mongo collection (the [Duties](../../FChatDicebot/Database/Chateaudatabase.cs)/`ModMessages` pattern: read-only in-bot, authored externally), so new events ship without a deploy.
 - Firing is **channel broadcast** (TOS-safe — the bot already posts freely to channels it's in; the TOS constraint is only about PMing users who didn't invoke). `!random` is user-invoked, so all replies to participants are TOS-safe.
-- Existing infrastructure does most of the heavy lifting: the bot already has a heartbeat (`RunLoop` ticking every `TickTimeMiliseconds`) and a delayed-message mechanism (`SendFutureMessage` / [`HandleFutureMessagesTick`](../../../FChatDicebot/BotMain.cs)). The scheduler is a sibling tick handler.
+- Existing infrastructure does most of the heavy lifting: the bot already has a heartbeat (`RunLoop` ticking every `TickTimeMiliseconds`) and a delayed-message mechanism (`SendFutureMessage` / [`HandleFutureMessagesTick`](../../FChatDicebot/BotMain.cs)). The scheduler is a sibling tick handler.
 
 ---
 
 ## Event data model
 
-Mirrors the existing `Duty` / `DutyResult` / `Reward` shapes ([ChateauDB.cs:187-221](../../../FChatDicebot/Model/ChateauDB.cs)) so authoring feels familiar.
+Mirrors the existing `Duty` / `DutyResult` / `Reward` shapes ([ChateauDB.cs:187-221](../../FChatDicebot/Model/ChateauDB.cs)) so authoring feels familiar.
 
 ```csharp
 public class RandomEvent
@@ -81,12 +81,12 @@ Each `EventReward.type` maps to an **existing** grant mechanism — reuse, don't
 
 | type | applied via |
 |------|-------------|
-| `currency` | `profile.currencies[key] += roll(min,max)` — the [ChateauWork](../../../FChatDicebot/BotCommands/ChateauWork.cs) credit pattern (denominations independent, per `ChateauCurrency`). |
+| `currency` | `profile.currencies[key] += roll(min,max)` — the [ChateauWork](../../FChatDicebot/BotCommands/ChateauWork.cs) credit pattern (denominations independent, per `ChateauCurrency`). |
 | `title` | award `Title` `key` into `profile.titles` — reuse the title-grant path used by the interaction processors / `!entitle`. |
-| `training` | `profile.trainings[key]` += `roll(min,max)`, clamped 0–100 ([TrainProcessor](../../../FChatDicebot/InteractionProcessors)). |
-| `corruption` | apply magnitude `roll(min,max)` via the existing [CorruptionProcessor / CorruptionCommandSupport](../../../FChatDicebot/InteractionProcessors/Commitment/CorruptionCommandSupport.cs) path. |
+| `training` | `profile.trainings[key]` += `roll(min,max)`, clamped 0–100 ([TrainProcessor](../../FChatDicebot/InteractionProcessors)). |
+| `corruption` | apply magnitude `roll(min,max)` via the existing [CorruptionProcessor / CorruptionCommandSupport](../../FChatDicebot/InteractionProcessors/Commitment/CorruptionCommandSupport.cs) path. |
 | `purity` | the purify/cleanse side of the corruption axis (reduce corruption) — reuse the same support. |
-| `curse` | add curse `key` via [CurseInstance / CurseProcessor](../../../FChatDicebot/Model/CurseInstance.cs). |
+| `curse` | add curse `key` via [CurseInstance / CurseProcessor](../../FChatDicebot/Model/CurseInstance.cs). |
 | `none` | flavor-only; no profile write. |
 
 > Wiring these six paths cleanly (and writing the winner's profile once via `SetProfile` after all rewards apply) is the main implementation effort. A small `ApplyEventReward(Profile, EventReward)` dispatcher keeps it testable. Self-consistency note: corruption/curse here are **system-granted**, so they bypass the consent flow real interactions require — that's intended for an event the player opted into by responding, but call it out to the owner.
@@ -95,7 +95,7 @@ Each `EventReward.type` maps to an **existing** grant mechanism — reuse, don't
 
 ## The `!random` command
 
-New `ChatBotCommand` [ChateauRandom.cs](../../../FChatDicebot/BotCommands/ChateauRandom.cs). `Name="random"` — collides with nothing in the dispatch table.
+New `ChatBotCommand` [ChateauRandom.cs](../../FChatDicebot/BotCommands/ChateauRandom.cs). `Name="random"` — collides with nothing in the dispatch table.
 
 | Field | Value |
 |-------|-------|
@@ -119,7 +119,7 @@ New `ChatBotCommand` [ChateauRandom.cs](../../../FChatDicebot/BotCommands/Chatea
 
 Per-channel opt-in + a tick handler parallel to `HandleFutureMessagesTick`:
 
-- **Opt-in:** new `ChannelSettings.AllowRandomEvents` flag (default `false`), matching the existing per-channel toggles (`AllowWork`, `AllowGames`, …) in [ChannelSettings.cs](../../../FChatDicebot/SavedData/ChannelSettings.cs). Only opted-in joined channels are eligible.
+- **Opt-in:** new `ChannelSettings.AllowRandomEvents` flag (default `false`), matching the existing per-channel toggles (`AllowWork`, `AllowGames`, …) in [ChannelSettings.cs](../../FChatDicebot/SavedData/ChannelSettings.cs). Only opted-in joined channels are eligible.
 - **Cadence:** about **one event per 6–8 hours per channel**, with jitter. Track a per-channel `nextFireUtc`; when reached, attempt a fire, then schedule the next at `now + random(6h, 8h)`.
 - **Activity gate (arm-and-wait):** to "encourage spontaneous chat activity" rather than spam dead rooms, only fire into a channel that saw a human message within the last ~15 minutes. Record a per-channel `lastActivityUtc` in `HandleMessage` (where channel messages are already processed). If a fire comes due while the channel is quiet, **arm the channel and hold the due slot** — do *not* discard it. The event fires a small random delay (0–`WakeDelayMaxMinutes`, kept below the 15-minute activity window) after the next human message, so it lands in a freshly-awake room without landing on the exact first message. Only once a fire actually lands does the 6–8h cadence restart. *(The original design discarded the slot and rescheduled +6–8h; that starved low-traffic channels — a room silent for many hours at a time could go a very long time without ever firing, because each ~thrice-daily attempt had to coincide with live chatter to the minute.)*
 - **Fire:** pick a `RandomEvent` by `weight` (optionally filtered by category), materialize per-fire state (token/challenge), post `announceText` to the channel, and open the active event with `windowEnd = now + responseWindowSeconds`.
@@ -138,20 +138,20 @@ Per-channel opt-in + a tick handler parallel to `HandleFutureMessagesTick`:
 
 ---
 
-## Files to create / modify
+## Files
 
-**Create:**
+**Created:**
 - `FChatDicebot/Model/ChateauDB.cs` additions — `RandomEvent`, `EventOutcome`, `EventReward` (in that file alongside `Duty`).
 - `FChatDicebot/BotCommands/ChateauRandom.cs` — `!random`.
 - A small event-engine support class (e.g. `BotCommands/Support/RandomEventEngine.cs`) holding: in-memory channel state, fire/select/resolve logic, `ApplyEventReward`, and the per-fire token/challenge generation — so it's unit-testable away from `BotMain`.
 - `FChatDicebot.Tests/Unit/Randomeventenginetests.cs`.
 
-**Modify:**
+**Modified:**
 - `FChatDicebot/SavedData/ChannelSettings.cs` — `AllowRandomEvents` (+ the settings update/display command that lists channel flags).
 - `FChatDicebot/BotMain.cs` — record `lastActivityUtc` in `HandleMessage`; add a `HandleRandomEventsTick(tickMs)` call beside `HandleFutureMessagesTick` in `RunLoop`.
 - `FChatDicebot/Database/Ichateaudatabase.cs` + `Chateaudatabase.cs` + `MonDB.cs` — `GetRandomEvents`.
 - `FChatDicebot.Tests/Fixtures/Testdatabasefixture.cs` — in-memory RandomEvents.
-- `FChatDicebot/BotCommands/ChateauHelp.cs` — register `!random`.
+- `FChatDicebot/BotCommands/ChateauHelp.cs` — added `!random` to the listing. *No longer a step: the listing is derived from each command's `Category`, so `!random` would list itself today. See [Development-Guide](../Development-Guide.md#adding-a-new-command).*
 - `wiki-docs/Feature-Requests.md` — B12 bullet retires on ship.
 
 ---

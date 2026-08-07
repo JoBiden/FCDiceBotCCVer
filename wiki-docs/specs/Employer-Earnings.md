@@ -1,6 +1,6 @@
 # Employer Earnings — `!work` kickback + `!business`
 
-**Status:** ✅ Shipped 2026-06-22. `!work` kickback hook + `!business` command + `Profile.employeeEarnings` landed; final user-facing strings owner-approved (see below). A one-time historic backfill is provided at [`scripts/backfill-employee-earnings.js`](../../../scripts/backfill-employee-earnings.js).
+**Status:** ✅ Shipped 2026-06-22. `!work` kickback hook + `!business` command + `Profile.employeeEarnings` landed; final user-facing strings owner-approved (see below). A one-time historic backfill is provided at [`scripts/backfill-employee-earnings.js`](../../scripts/backfill-employee-earnings.js).
 **Status (original):** Proposed (design-complete, owner-reviewed 2026-06-21).
 **Feature-Requests source:** "if someone is !employed by another (not themselves), give their employer some currency when the employee works… should also include some sort of command for employers to see how much employees have earned them" (B6).
 
@@ -10,7 +10,7 @@
 
 ## Overview
 
-Today `!work` ([ChateauWork.cs](../../../FChatDicebot/BotCommands/ChateauWork.cs)) credits the **worker's** wallet only. The `!employ` interaction already records the employer on the recipient as `characteristics["employer"]` ([EmployProcessor.cs:53](../../../FChatDicebot/InteractionProcessors/Commitment/EmployProcessor.cs)). This feature adds:
+Today `!work` ([ChateauWork.cs](../../FChatDicebot/BotCommands/ChateauWork.cs)) credits the **worker's** wallet only. The `!employ` interaction already records the employer on the recipient as `characteristics["employer"]` ([EmployProcessor.cs:53](../../FChatDicebot/InteractionProcessors/Commitment/EmployProcessor.cs)). This feature adds:
 
 1. **A MANOR kickback** — when a resident employed by *someone else* completes a `!work` duty, their employer is credited a bonus **on top of** the worker's reward (the worker is unaffected). Lore-consistent: `!bank` already tells players that employers are never billed and "additional resident payroll is covered by the Chateau's *MANOR*".
 2. **A per-employer ledger** of how much each employee has earned them, broken down by employee and by currency.
@@ -22,7 +22,7 @@ This is **not** an interaction: no consent flow, no investment level, no status-
 
 ## Behavior — the `!work` kickback hook
 
-Lives inside the reward-granting block of `ChateauWork.cs` (currently [lines 79–104](../../../FChatDicebot/BotCommands/ChateauWork.cs), the `foreach … rewardList` that rolls `rewardAmount` / `rewardEntry.Value.currency`). After the worker's own reward is resolved:
+Lives inside the reward-granting block of `ChateauWork.cs` (currently [lines 79–104](../../FChatDicebot/BotCommands/ChateauWork.cs), the `foreach … rewardList` that rolls `rewardAmount` / `rewardEntry.Value.currency`). After the worker's own reward is resolved:
 
 **Eligibility.** Pay the employer only when **all** hold:
 - `userProfile.characteristics` contains `"employer"`, and
@@ -40,14 +40,14 @@ employerCut = rewardAmount > 0
 - The cut is computed from the **rolled** `rewardAmount`, **independently of the worker's poverty curse.** If the worker is poverty-cursed (their own reward vanishes), the employer is *still* paid — "only the person with the poverty curse is impacted" (B6.3). The worker's curse impacts the worker; it does not reach the employer.
 - A rolled reward of 0 produces no cut.
 
-**Employer's own poverty curse.** Load the employer's curses (`CurseInstance.LoadAll(employerProfile)`, same check already used for the worker at [ChateauWork.cs:77](../../../FChatDicebot/BotCommands/ChateauWork.cs)). If the **employer** carries `"poverty"`, the kickback vanishes for them: **no wallet credit, no ledger increment,** and the worker's PM omits the kickback line (we neither pay it nor leak the employer's curse to the worker).
+**Employer's own poverty curse.** Load the employer's curses (`CurseInstance.LoadAll(employerProfile)`, same check already used for the worker at [ChateauWork.cs:77](../../FChatDicebot/BotCommands/ChateauWork.cs)). If the **employer** carries `"poverty"`, the kickback vanishes for them: **no wallet credit, no ledger increment,** and the worker's PM omits the kickback line (we neither pay it nor leak the employer's curse to the worker).
 
 **Effects when paid (employer not cursed):**
 1. Credit the employer's wallet: `employerProfile.currencies[currency] += employerCut` (add the key if absent — same pattern as the worker credit).
 2. Increment the ledger (see Persistence): `employeeEarnings[workerUserName][currency] += employerCut`.
-3. `Database.SetProfile(employer, employerProfile)` — a **second** profile save in addition to the worker save already at [ChateauWork.cs:125](../../../FChatDicebot/BotCommands/ChateauWork.cs). (Command handling is serial in this bot, consistent with every other multi-profile write here; no new concurrency guard needed.)
+3. `Database.SetProfile(employer, employerProfile)` — a **second** profile save in addition to the worker save already at [ChateauWork.cs:125](../../FChatDicebot/BotCommands/ChateauWork.cs). (Command handling is serial in this bot, consistent with every other multi-profile write here; no new concurrency guard needed.)
 
-**Scope: `!work` only, not `!volunteer`.** Volunteering is the worker exploring *other* careers as a personal side-gig ("On top of working their primary job, residents can also !volunteer once a day to explore other careers"), not doing their job for their boss — so [ChateauVolunteer.cs](../../../FChatDicebot/BotCommands/ChateauVolunteer.cs) gets **no** kickback hook. *(Decision made by default — flag if you want volunteer income to kick back too.)*
+**Scope: `!work` only, not `!volunteer`.** Volunteering is the worker exploring *other* careers as a personal side-gig ("On top of working their primary job, residents can also !volunteer once a day to explore other careers"), not doing their job for their boss — so [ChateauVolunteer.cs](../../FChatDicebot/BotCommands/ChateauVolunteer.cs) gets **no** kickback hook. *(Decision made by default — flag if you want volunteer income to kick back too.)*
 
 **Worker-facing line.** When the employer is paid, append one short line to the worker's existing `!work` PM (the worker invoked the bot, so this is TOS-safe; the *employer* is never push-notified and learns via `!business`). Suppressed entirely when the employer's curse voids the cut.
 
@@ -60,7 +60,7 @@ TOS note: we may **not** PM the employer about this in real time (they didn't in
 
 ## Persistence shape
 
-One new field on `Profile` ([ChateauDB.cs:12](../../../FChatDicebot/Model/ChateauDB.cs)), nested so the view's "by employee, then by currency" grouping is direct and no key-delimiter parsing is needed:
+One new field on `Profile` ([ChateauDB.cs:12](../../FChatDicebot/Model/ChateauDB.cs)), nested so the view's "by employee, then by currency" grouping is direct and no key-delimiter parsing is needed:
 
 ```csharp
 // Lifetime MANOR kickbacks this profile has earned as an EMPLOYER, keyed by
@@ -116,16 +116,16 @@ New `ChatBotCommand`: [ChateauBusiness.cs] under `BotCommands/`, modeled on `!pa
 
 ---
 
-## Files to create / modify
+## Files
 
-**Create:**
+**Created:**
 - `FChatDicebot/BotCommands/ChateauBusiness.cs` — the `!business` command (+ static `BuildBusiness(Profile)` helper).
 - `FChatDicebot.Tests/Unit/Chateaubusinesstests.cs` — `BuildBusiness` rendering tests.
 
-**Modify:**
+**Modified:**
 - `FChatDicebot/Model/ChateauDB.cs` — add `employeeEarnings` to `Profile`.
 - `FChatDicebot/BotCommands/ChateauWork.cs` — the kickback hook in the reward block; worker-facing kickback line.
-- `FChatDicebot/BotCommands/ChateauHelp.cs` (and any help/category registration the other Information commands use) — register `!business`.
+- `FChatDicebot/BotCommands/ChateauHelp.cs` — added `!business` to the General listing. *No longer a step: the listing is derived from each command's `Category`, so `!business` would list itself today. See [Development-Guide](../Development-Guide.md#adding-a-new-command).*
 - `FChatDicebot.Tests/Builders/Profilebuilder.cs` — optional `WithEmployeeEarnings(...)` helper for tests.
 - `wiki-docs/Feature-Requests.md` — B6 bullet retires on ship (B8 already removed).
 

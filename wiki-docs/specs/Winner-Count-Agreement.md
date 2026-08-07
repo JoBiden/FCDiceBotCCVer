@@ -1,6 +1,7 @@
 # Winner-count agreement in random event text
 
-**Status:** Design. Not implemented. Awaiting owner sign-off.
+**Status:** Implemented. The engine, the builder and the tests shipped 2026-08-02 (`70ca046`) exactly as designed below — `ResolveCountAgreement` is a straight read of the [Implementation](#implementation) section. **One step is still outstanding and no PR can close it:** the four live `resultText` strings are authored data in the `RandomEvents` Mongo collection, not in this repo, and are the owner's to rewrite in the new syntax. Until that happens the engine understands `{is|are}` but no live event uses it, so the reported bug is still visible in play. See [The four live strings](#the-four-live-strings).
+**Status (original):** Design. Not implemented. Awaiting owner sign-off.
 
 Origin: resident feedback `6a6fb15d` (2026-08-02), approved for spec on 2026-08-02. Dossier:
 `scripts/feedback-triage/queue/2026-08-02-6a6fb15d-random-event-text-assumes-plural-winners.md`.
@@ -159,7 +160,7 @@ this item and no PR closes it** — the strings live in Mongo, not in this repo.
 |---|---|
 | `BotCommands/Support/RandomEventEngine.cs` | `ResolveCountAgreement`, called ahead of `SubstituteWinners` |
 | `scripts/random-event-builder/ui.html` | placeholder, rule hint, dual-count preview |
-| `wiki-docs/specs/Future-Social/Random-Events.md` | §Multi-winner resolution documents the syntax; its plural example gains the markup |
+| [`wiki-docs/specs/Random-Events.md`](Random-Events.md) | §Multi-winner resolution documents the syntax; its plural example gains the markup |
 | `FChatDicebot.Tests/Unit/Randomeventenginetests.cs` | see Tests |
 
 No new files, no model change, no migration. A redeploy is required — this is engine code.

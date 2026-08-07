@@ -193,7 +193,7 @@ public class PurgeCostResult
 
 `DoseProcessor.DefaultDetoxCost` is `PurgeCostType.RandomBreak` (the body rebels at withdrawal). Future tuning could put a per-vice cost on the `ViceInstance` itself, but v1 is one cost for all vices.
 
-The `RandomCurse` branch logs a "couldn't apply RandomCurse — Curse-and-Cleanse not yet shipped, falling back to RandomBreak" warning and degrades to `RandomBreak` so detox is never free. Tracked in [Curse-and-Cleanse.md](Future-Interactions/Curse-and-Cleanse.md) as a follow-up: when it ships, replace the fallback with the real curse application.
+The `RandomCurse` branch logs a "couldn't apply RandomCurse — Curse-and-Cleanse not yet shipped, falling back to RandomBreak" warning and degrades to `RandomBreak` so detox is never free. Tracked in [Curse-and-Cleanse.md](Curse-and-Cleanse.md) as a follow-up: when it ships, replace the fallback with the real curse application.
 
 ## Persistence
 

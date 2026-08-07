@@ -21,7 +21,15 @@ namespace FChatDicebot.BotCommands.Base
         /// </summary>
         public string[] Aliases = new string[0];
 
-        public string Category; // "casual", "involved", "commitment", "consequence", "recovery", "general", "admin"
+        /// <summary>
+        /// What kind of command this is. Beyond labelling the <c>!help {command}</c> readout,
+        /// this is what puts the command in the no-arg <c>!help</c> listing: the section is
+        /// derived from this value by <see cref="ChateauHelp.SectionFor"/>, so setting it is the
+        /// only step. A command with no Category is not listed at all — that's how the legacy
+        /// dicebot commands that were never migrated stay out. The recognized values are the
+        /// cases of that switch; a test fails on anything else.
+        /// </summary>
+        public string Category;
         public string ShortDescription; // One-liner for list views
         public string LongDescription; // Detailed explanation with examples/notes
         public string Usage; // Syntax format
@@ -34,6 +42,15 @@ namespace FChatDicebot.BotCommands.Base
         public bool RequireChannelAdmin;
         public bool RequireBotIsChannelAdmin;
         public bool RequireChannel;
+
+        /// <summary>
+        /// Keep this command out of the no-arg <c>!help</c> listing while leaving it dispatchable
+        /// and documented under <c>!help {command}</c>. For commands kept working for the
+        /// residents who already learned them but no longer worth advertising — <c>!setmark</c>,
+        /// superseded by <c>!seteicon mark</c>, is the case this exists for. Admin-only commands
+        /// don't need it: <see cref="ChateauHelp.SectionFor"/> already excludes those.
+        /// </summary>
+        public bool HideFromHelpListing;
 
         /// <summary>
         /// Whether this command targets another resident, and so should accept a bare name in

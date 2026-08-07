@@ -167,7 +167,7 @@ Examples:
 - "Bob's body and torso are too broken for cuddling."
 - "Alice's dick is too broken to climax."
 
-Per-interaction verb mapping is hardcoded in the contributor (`!kiss` → "kissing", `!feed` → "feeding", `!climax` → "to climax", etc.). All final wording is subject to a style-guide review pass before merge — see [Style-Guide.md](../../Style-Guide.md).
+Per-interaction verb mapping is hardcoded in the contributor (`!kiss` → "kissing", `!feed` → "feeding", `!climax` → "to climax", etc.). All final wording is subject to a style-guide review pass before merge — see [Style-Guide.md](../Style-Guide.md).
 
 ## Persistence
 

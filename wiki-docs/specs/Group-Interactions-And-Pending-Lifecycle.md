@@ -2,7 +2,7 @@
 
 **Status:** Shipped 2026-06-22 (B4 group system, B5 lifecycle + `!consent <name>`, the lapsit lap-stack). The new casuals (B7) had already shipped 1:1 on 2026-06-21. Build green, 15 new tests. The lifecycle verbs were renamed at owner request to dodge the `!w`/`!work` clash: recipient-side is **`!no`** (aliases `!refuse`, `!decline`), initiator-side is **`!oops`** (aliases `!o`, `!withdraw`, `!cancel`). **Group-achievement titles shipped 2026-06-22** (a follow-up): size-based titles for the group-capable casuals and the lapsit per-position "height" titles, owner-provided — see [Group-achievement titles](#group-achievement-titles-by-resolved-size--lap-stack-position) below.
 
-This spec covers the "Interactions" cluster from [Feature-Requests.md](../../Feature-Requests.md):
+This spec covers the "Interactions" cluster from [Feature-Requests.md](../Feature-Requests.md):
 
 - **B4** — a system to include multiple people in an interaction.
 - **B5** — `!withdraw` (initiator-side) and `!refuse` (recipient-side) commands to clear a pending interaction early, on top of the existing 10-minute timeout.
@@ -14,12 +14,12 @@ The three are bundled because they interlock: the new casuals are the first cons
 
 ## Background: the current 1:1 model
 
-- An `Interaction` is strictly one `initiator` + one `recipient` ([ChateauDB.cs:160](../../../FChatDicebot/Model/ChateauDB.cs)).
-- A command (e.g. `!cuddle Bob`) builds one `Interaction`, wraps it in one `PendingCommand` with `awaitingConsentFrom = recipient`, sends a channel announcement, and stores the pending ([ChateauCuddle.cs](../../../FChatDicebot/BotCommands/ChateauCuddle.cs)).
-- The only pending lookup that exists filters on `awaitingConsentFrom` — there is **no initiator-side query** ([Chateaudatabase.cs:426](../../../FChatDicebot/Database/Chateaudatabase.cs)).
-- `!consent` (run by the recipient) sweeps pendings older than 10 minutes, then handles bare / `all` / `#` / numbered-list disambiguation, runs `processor.ProcessInteraction`, emits the completion message, and checks titles ([ChateauConsent.cs](../../../FChatDicebot/BotCommands/ChateauConsent.cs)).
+- An `Interaction` is strictly one `initiator` + one `recipient` ([ChateauDB.cs:160](../../FChatDicebot/Model/ChateauDB.cs)).
+- A command (e.g. `!cuddle Bob`) builds one `Interaction`, wraps it in one `PendingCommand` with `awaitingConsentFrom = recipient`, sends a channel announcement, and stores the pending ([ChateauCuddle.cs](../../FChatDicebot/BotCommands/ChateauCuddle.cs)).
+- The only pending lookup that exists filters on `awaitingConsentFrom` — there is **no initiator-side query** ([Chateaudatabase.cs:426](../../FChatDicebot/Database/Chateaudatabase.cs)).
+- `!consent` (run by the recipient) sweeps pendings older than 10 minutes, then handles bare / `all` / `#` / numbered-list disambiguation, runs `processor.ProcessInteraction`, emits the completion message, and checks titles ([ChateauConsent.cs](../../FChatDicebot/BotCommands/ChateauConsent.cs)).
 - Counts are **per-user lifetime totals**, gated by a 30-minute rate-limit per user per key. Casual counters are either **symmetric** (kiss/cuddle/handhold → both parties get the same key, via `IncrementBothCountsWithRateLimit`) or **directional** (spank → `spankgive`/`spanktake`, bully → `bullygive`/`bullytake`, via `IncrementDifferentCountsWithRateLimit`).
-- The dossier casual block is a single line that appends one `[u]Label:[/u] N` chip per casual key with count > 0 ([ChateauDossier.cs:593](../../../FChatDicebot/BotCommands/ChateauDossier.cs)).
+- The dossier casual block is a single line that appends one `[u]Label:[/u] N` chip per casual key with count > 0 ([ChateauDossier.cs:593](../../FChatDicebot/BotCommands/ChateauDossier.cs)).
 - `PendingCommand` does **not** record the channel it was raised in — any follow-up message lands in whatever channel the follow-up command is typed in.
 
 ---
@@ -178,8 +178,8 @@ Example — `!lap Bob Carol David Erwin`, all consent: *"Alice pulls Bob onto th
 
 New casual count keys: `boobhatgive`, `boobhattake`, `lickgive`, `licktake`, `lapsitgive`, `lapsittake`.
 
-- **CountDisplayNames** ([ChateauDossier.cs:26](../../../FChatDicebot/BotCommands/ChateauDossier.cs)) — add display labels for each (chips only show when count > 0; B7.11 leaves the single-line casual block uncapped for now).
-- **CasualCountSpecialistText** ([ChateauDossier.cs:54](../../../FChatDicebot/BotCommands/ChateauDossier.cs)) — add a "specialization" verb for each so they feed the most-performed-casual line.
+- **CountDisplayNames** ([ChateauDossier.cs:26](../../FChatDicebot/BotCommands/ChateauDossier.cs)) — add display labels for each (chips only show when count > 0; B7.11 leaves the single-line casual block uncapped for now).
+- **CasualCountSpecialistText** ([ChateauDossier.cs:54](../../FChatDicebot/BotCommands/ChateauDossier.cs)) — add a "specialization" verb for each so they feed the most-performed-casual line.
 - **ChateauConsent.GetCountKeys** — add mappings (note: the *group* resolution path computes counts directly via the processor and the `+N` helper; `GetCountKeys` still feeds the rate-limit clerk-note path for 1:1).
 
 ### Title ladders (B7.12, owner-provided). Thresholds `1 / 10 / 50 / 100 / 500`.
@@ -195,7 +195,7 @@ lickgive:    1 :P                10 Mlem                50 Talented Tongue   100
 licktake:    1 Licked            10 Tasty               50 Salt Lick         100 Spit Shined                500 Tootsie Pop
 ```
 
-Add all to the `interactionMilestones` table in [ChateauSystemTitles.cs:64](../../../FChatDicebot/BotCommands/ChateauSystemTitles.cs). (The lap-stack *height* titles above are a separate title type — see the next section.)
+Add all to the `interactionMilestones` table in [ChateauSystemTitles.cs:64](../../FChatDicebot/BotCommands/ChateauSystemTitles.cs). (The lap-stack *height* titles above are a separate title type — see the next section.)
 
 ### Group-achievement titles (by resolved size / lap-stack position)
 
@@ -228,7 +228,7 @@ others above:  2 Shortstacked   5 Buried   10 Foundational
 
 `boobhat`'s **Hat Trick** is the former `objectifygive` tier-3 title, **renamed to "Toy Maker"** there (the lone holder had earned it both ways, so no migration was needed).
 
-**Implementation.** Tables + cumulative lookups live in [ChateauSystemTitles.cs](../../../FChatDicebot/BotCommands/ChateauSystemTitles.cs) (`GetGroupSizeTitles`, `GetLapsitPositionTitles`). Granting mirrors the count math: `InteractionProcessorBase.GrantGroupTitles` (symmetric/directional) and a `LapsitProcessor` override (per-position) persist through the injected database and return per-participant newly-granted titles; `GroupInteractionResolver` calls them during resolution and exposes the grants on `GroupResolutionResult.GroupTitleGrants`.
+**Implementation.** Tables + cumulative lookups live in [ChateauSystemTitles.cs](../../FChatDicebot/BotCommands/ChateauSystemTitles.cs) (`GetGroupSizeTitles`, `GetLapsitPositionTitles`). Granting mirrors the count math: `InteractionProcessorBase.GrantGroupTitles` (symmetric/directional) and a `LapsitProcessor` override (per-position) persist through the injected database and return per-participant newly-granted titles; `GroupInteractionResolver` calls them during resolution and exposes the grants on `GroupResolutionResult.GroupTitleGrants`.
 
 **One consolidated banner.** A group moment surfaces a *single* "Title Time!" notification, **grouped by title**: each newly-earned title is listed once with everyone who earned it in a serial-comma name list ("Alice, Bob, and Carol earned the title ·Cuddle Puddle·!"). `ChateauConsent` folds in each participant's lifetime-count title wins (via `ChateauSystemTitles.CheckAndGrantCountTitles`, which now returns the same `GroupTitleGrant` shape) alongside the group-achievement grants, then renders them through `ChateauSystemTitles.FormatGroupTitleNotification`. The 1:1 consent path keeps its per-person banner.
 
@@ -242,13 +242,13 @@ Random completion descriptors per the casual pattern. Tokens: `{lapsitgiver}` = 
 
 ---
 
-## Files to create / modify
+## Files
 
 **New processors** (`FChatDicebot/InteractionProcessors/Casual/`): `BoobhatProcessor`, `LickProcessor`, `LapsitProcessor`.
 
 **New commands** (`FChatDicebot/BotCommands/`): `ChateauBoobhat`, `ChateauLick`, `ChateauLap`, `ChateauSit` (B7); `ChateauRefuse`, `ChateauWithdraw` (B5).
 
-**Modify:**
+**Modified:**
 - `InteractionProcessorRegistry` — register the 3 new processors.
 - `Model/ChateauDB.cs` — `PendingCommand` gains `groupId`, `consentState`, `consentedOrder`.
 - `Database/Chateaudatabase.cs` (+ `Ichateaudatabase.cs`) — add `GetPendingCommandsByGroupId`, `GetPendingCommandsByInitiator`.

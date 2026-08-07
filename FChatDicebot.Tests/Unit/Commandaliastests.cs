@@ -123,12 +123,67 @@ namespace FChatDicebot.Tests.Unit
         {
             // A name here that matches nothing prints as a plain "!whatever" with its alias
             // subtext silently missing — no error, just a quietly wrong listing.
-            var unresolved = ChateauHelp.AllListedCommands
+            var unresolved = ChateauHelp.AllListedCommands(_controller)
                 .Where(n => _controller.FindCommandByName(n) == null)
                 .ToList();
 
             Assert.True(unresolved.Count == 0,
                 "!help lists commands that don't exist: " + string.Join(", ", unresolved));
+        }
+
+        [Fact]
+        public void EveryCategorisedCommand_LandsInAHelpSection()
+        {
+            // The listing is derived from Category, so the one way a command can still go missing
+            // is a Category that ChateauHelp.SectionFor doesn't recognise — a typo, or a new
+            // grouping invented in a command file without teaching the listing about it. Either
+            // way the command silently vanishes from !help, which is exactly the failure the
+            // hand-maintained arrays used to produce.
+            var homeless = _controller.BotCommands
+                .Where(c => !string.IsNullOrEmpty(c.Name) && !string.IsNullOrEmpty(c.Category))
+                .Where(c => !c.HideFromHelpListing && !c.RequireBotAdmin && !c.RequireChannelAdmin)
+                .Where(c => !string.Equals(c.Category, "Admin", StringComparison.OrdinalIgnoreCase))
+                .Where(c => ChateauHelp.SectionFor(c) == null)
+                .Select(c => "!" + c.Name + " (Category \"" + c.Category + "\")")
+                .Distinct()
+                .ToList();
+
+            Assert.True(homeless.Count == 0,
+                "Commands whose Category no !help section accepts: " + string.Join("; ", homeless));
+        }
+
+        [Theory]
+        [InlineData("drinkfrom", ChateauHelp.HelpSection.Involved)]
+        [InlineData("forcedrink", ChateauHelp.HelpSection.Involved)]
+        [InlineData("kiss", ChateauHelp.HelpSection.Casual)]
+        [InlineData("breed", ChateauHelp.HelpSection.Commitment)]
+        [InlineData("curse", ChateauHelp.HelpSection.Consequence)]
+        [InlineData("detox", ChateauHelp.HelpSection.Recovery)]
+        [InlineData("roll", ChateauHelp.HelpSection.Dicebot)]
+        // The two untitled blocks split on RequireChannel, not on Category: !bank and !drink are
+        // both "General", and only one of them can be used outside a channel.
+        [InlineData("bank", ChateauHelp.HelpSection.General)]
+        [InlineData("statistics", ChateauHelp.HelpSection.General)]
+        [InlineData("drink", ChateauHelp.HelpSection.Room)]
+        [InlineData("consent", ChateauHelp.HelpSection.Room)]
+        public void Command_IsListedInItsSection(string commandName, ChateauHelp.HelpSection expected)
+        {
+            Assert.Contains(commandName, ChateauHelp.ListedNames(_controller, expected));
+        }
+
+        [Fact]
+        public void LegacyAndAdminCommands_StayOutOfTheListing()
+        {
+            var listed = new HashSet<string>(ChateauHelp.AllListedCommands(_controller),
+                StringComparer.OrdinalIgnoreCase);
+
+            // !setmark is superseded by !seteicon mark, the admin verbs are shown in their own
+            // hand-written block, and the unmigrated dicebot commands carry no Category at all.
+            Assert.DoesNotContain("setmark", listed);
+            Assert.DoesNotContain("namechange", listed);
+            Assert.DoesNotContain("feedbacklist", listed);
+            Assert.DoesNotContain("setidentifiereicon", listed);
+            Assert.DoesNotContain("addchips", listed);
         }
 
         [Theory]

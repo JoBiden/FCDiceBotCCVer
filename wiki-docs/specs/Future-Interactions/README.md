@@ -12,11 +12,7 @@ Specs are removed from this folder once they ship — the as-implemented docs li
 
 ## Status
 
-### Planned
-
-| Spec | Adds |
-|------|------|
-| [Group-Interactions-And-Pending-Lifecycle](Group-Interactions-And-Pending-Lifecycle.md) | Multi-person casual interactions (hybrid group model), `!withdraw`/`!refuse` pending-lifecycle commands, and three new casuals (lapsit lap-stack, boobhat, lick). |
+Nothing in this folder is a planned *interaction* any more — the last one shipped. What's left is infrastructure.
 
 ### Planned infrastructure
 
