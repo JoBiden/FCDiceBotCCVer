@@ -3,7 +3,7 @@
 Design + as-implemented documentation for the Chateau Contract interaction system.
 
 - **Shipped features** are documented in this folder. Each spec carries a `**Status:** Implemented.` line near the top and a "Files" section listing the implementation artifacts. Where the implementation diverged from the original design, the spec describes the as-shipped behavior with a "Differences from the original spec" section.
-- **Upcoming features** live one level down in [`Future-Interactions/`](Future-Interactions/) and follow the pre-implementation template (Assumptions, dependencies, file scaffolding lists). Specs are moved out of `Future-Interactions/` and updated to as-implemented form when they ship.
+- **Upcoming features** live one level down in [`Future-Interactions/`](Future-Interactions/) and [`Future-Social/`](Future-Social/), and follow the pre-implementation template (Assumptions, dependencies, file scaffolding lists). A spec moves up into this folder and is updated to as-implemented form when it ships — status line, a `Files` section, and a "Differences from the original spec" section where the build diverged. A shipped spec left sitting in a `Future-*` folder is a bug; the August 2026 sweep found five.
 
 ## Implemented features
 
@@ -53,6 +53,20 @@ Design + as-implemented documentation for the Chateau Contract interaction syste
 | [Bond-Tree](Bond-Tree.md) | `!bondtree` and `!familytree`, read-only BFS walks of the bond graph rendering everyone connected to a resident within N degrees, grouped by degree and labelled with each person's role relative to whoever connected them. Shared traversal in `BondTreeSupport`; no DB change. |
 | [Feedback](Feedback.md) | `!feedback` (+ `!suggestion` alias) to submit an idea or bug report into a new `Feedback` collection, plus admin-only `!feedbacklist` to read recent submissions. |
 | [Pledges](Pledges.md) | `!pledge` / `!pledges` / `!fulfill` / `!abandonpledge`, the `Pledges` collection, and the honor accounting (`pledgesactive` / `pledgesfulfilled` / `pledgesabandoned`) behind the public reputation messaging and the pledge title ladders. Documented retroactively; includes a Known gaps section. |
+| [Random-Events](Random-Events.md) | An ambient event system: `RandomEventEngine` fires an authored event into opted-in channels on a schedule, residents join with `!random` (optional anti-snipe argument), winners take currency, titles, training, corruption/purity or curses. Event text is authored data in the `RandomEvents` collection, not code. |
+| [Winner-Count-Agreement](Winner-Count-Agreement.md) | `{singular\|plural}` alternation in an event's `resultText`, so an `allInWindow` outcome authored for a crowd still reads correctly when one person wins, plus the builder's dual-count preview. Extends Random-Events. |
+
+### Economy
+
+| Spec | Adds |
+|------|------|
+| [Employer-Earnings](Employer-Earnings.md) | A MANOR kickback paid to an employer (25% of a worker's rolled reward, bonus on top) every time an employee `!work`s, a per-employee/per-currency ledger on the employer's profile, and the read-only `!business` command to view it. |
+
+### Interaction machinery
+
+| Spec | Adds |
+|------|------|
+| [Group-Interactions-And-Pending-Lifecycle](Group-Interactions-And-Pending-Lifecycle.md) | Multi-person casual interactions (hybrid group model, `GroupInteractionResolver` + per-processor `GroupSpec`), the `!no` / `!oops` pending-lifecycle verbs and `!consent {name}`, the three casuals that first used them (lapsit lap-stack, boobhat, lick), and the group-achievement title ladders. |
 
 ### Customization
 
@@ -62,7 +76,15 @@ Design + as-implemented documentation for the Chateau Contract interaction syste
 
 ## Upcoming features
 
-See [`Future-Interactions/README.md`](Future-Interactions/README.md) for the design specs of features that haven't shipped yet, organized by tier and dependency.
+Designed but unshipped:
+
+| Spec | Status |
+|------|--------|
+| [Collectibles](Future-Interactions/Infrastructure/Collectibles.md) | Design, awaiting owner sign-off. Generalizes the bottle collection into user-keyed items. |
+| [Achievement-Titles](Future-Social/Achievement-Titles.md) | Planned. Title shapes beyond "one number crosses one threshold". |
+| [NPC-System](Future-Interactions/Infrastructure/NPC-System.md) | **Shelved.** Breed-and-Birth shipped without it and degrades gracefully. |
+
+See [`Future-Interactions/README.md`](Future-Interactions/README.md) and [`Future-Social/README.md`](Future-Social/README.md) for the full designs, organized by tier and dependency.
 
 ## Conventions
 

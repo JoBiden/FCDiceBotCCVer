@@ -29,7 +29,7 @@ The roll happens at breed time, but every pre-birth surface (gestation status DM
 - Recipient must be registered.
 - `monster` must resolve via the existing monster catalog (`MonDB.getIdentifier(monster)` with category `"monster"`), **or** be one of the mystery keywords above (valid only while at least one monster is registered to roll from).
 - The recipient's pregnancy slot count is **uncapped** (insect broods, etc.). Multiple pregnancies of the same monster type are allowed.
-- Initiator-side broken-state check (`break:dick` or `break:ball`) blocks `!breed`. The block is on the initiator, not the recipient — see [Break-and-Rest](Future-Interactions/Break-and-Rest.md) and `IStatusEffectContributor` validation surface.
+- Initiator-side broken-state check (`break:dick` or `break:ball`) blocks `!breed`. The block is on the initiator, not the recipient — see [Break-and-Rest](Break-and-Rest.md) and `IStatusEffectContributor` validation surface.
 - Recipient-side `break:pussy` or `break:ass` may block depending on monster's gestation route — but for v1, treat `break:body` as the only recipient-side blocker. **Override** if a per-monster route map is desired.
 
 ## `!breed` processor logic (`BreedProcessor`)

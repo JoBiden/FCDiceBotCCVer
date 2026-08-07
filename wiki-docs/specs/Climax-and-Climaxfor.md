@@ -5,7 +5,7 @@ Two commands backed by a single processor. `!climaxfor` reads as "I climax (for/
 **Status:** Implemented.
 **Investment level:** Involved.
 **Reversal:** none.
-**Depends on:** [Status-Effect-Hook](Infrastructure/Status-Effect-Hook.md). Interacts with future [Dose-and-Detox](Future-Interactions/Dose-and-Detox.md) (vice cravings) once that lands.
+**Depends on:** [Status-Effect-Hook](Infrastructure/Status-Effect-Hook.md). Interacts with [Dose-and-Detox](Dose-and-Detox.md) (vice cravings) once that lands.
 
 ## Command syntax
 
