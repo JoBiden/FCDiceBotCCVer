@@ -1,6 +1,7 @@
 # Bond Tree — `!bondtree` / `!familytree`
 
-**Status:** Proposed (design-complete, owner-reviewed 2026-06-21).
+**Status:** Implemented. Shipped 2026-06-22; the readout was reformatted through `ReadoutText` in the BBCode sweep that followed. The design below is as-shipped except where [Differences from the original spec](#differences-from-the-original-spec) says otherwise.
+**Status (original):** Proposed (design-complete, owner-reviewed 2026-06-21).
 **Feature-Requests source:** "!bondtree and/or !familytree which would map out all users connected to someone by N degrees of separation via bonds" (B10).
 
 ---
@@ -18,17 +19,17 @@ Both are public, consent-free reads (bonds are mutually declared, public facts),
 
 ## The bond graph (how bonds are stored)
 
-The bond interaction writes **both directions** as profile `lists` ([BondProcessor.cs:54-75](../../../FChatDicebot/InteractionProcessors/Commitment/BondProcessor.cs)):
+The bond interaction writes **both directions** as profile `lists` ([BondProcessor.cs:54-75](../../FChatDicebot/InteractionProcessors/Commitment/BondProcessor.cs)):
 
 - on the initiator: `bond{type}initiated` → list of recipient **userNames**
 - on the recipient: `bond{type}received` → list of initiator **userNames**
 
 So a person's **neighbors** = the union, over every bond type, of the userNames in their `bond{type}initiated` and `bond{type}received` lists. Because both ends are written, the graph is symmetric and fully reconstructable by reading one profile at a time.
 
-**Bond types** (keys, with display role from [Utils.BondToText](../../../FChatDicebot/Utils.cs)): `marriage`(spouse), `offspring`, `disciple`, `sibling`, `piety`(deity), `protection`(ward), `fealty`(lord), `family`(kin), `roommate`, `coworker`, `submission`(submissive), `ally`, `thrall`, `partner`, `fuckbuddy`, `property`, `rival`, `inspiration`, `client`, `subordinate`(boss), `pet`.
+**Bond types** (keys, with display role from [Utils.BondToText](../../FChatDicebot/Utils.cs)): `marriage`(spouse), `offspring`, `disciple`, `sibling`, `piety`(deity), `protection`(ward), `fealty`(lord), `family`(kin), `roommate`, `coworker`, `submission`(submissive), `ally`, `thrall`, `partner`, `fuckbuddy`, `property`, `rival`, `inspiration`, `client`, `subordinate`(boss), `pet`.
 
 **Family subset (B10.1)** = `{ marriage, offspring, sibling, family }`.
-> Note: "family" and "kin" are the **same** bond — bond type `family` renders as the role "kin" ([Utils.cs:1354](../../../FChatDicebot/Utils.cs)). The owner's "marriage, offspring, sibling, family, kin" is four bond types, not five. Define the subset as a single `static readonly string[] FamilyBondTypes` so `!familytree` and any future family-only feature share it.
+> Note: "family" and "kin" are the **same** bond — bond type `family` renders as the role "kin" ([Utils.cs:1354](../../FChatDicebot/Utils.cs)). The owner's "marriage, offspring, sibling, family, kin" is four bond types, not five. Define the subset as a single `static readonly string[] FamilyBondTypes` so `!familytree` and any future family-only feature share it.
 
 ---
 
@@ -43,25 +44,15 @@ So a person's **neighbors** = the union, over every bond type, of the userNames 
 
 **Traversal.** Standard BFS from the root: for each frontier profile, enumerate neighbors by scanning its `lists` keys that match `bond{type}initiated` / `bond{type}received` (restricted to `FamilyBondTypes` for `!familytree`), load each unseen neighbor's profile (`MonDB.getProfile`) to continue and to resolve display names, and record the **edge role** for labeling. The 100-node cap bounds total profile loads.
 
-**Edge role labels (B10.4).** Label each connection with the neighbor's role **relative to the person they were reached from**, using `Utils.BondToText` with the same perspective convention as [BondProcessor.GetCompletionMessage](../../../FChatDicebot/InteractionProcessors/Commitment/BondProcessor.cs):
+**Edge role labels (B10.4).** Label each connection with the neighbor's role **relative to the person they were reached from**, using `Utils.BondToText` with the same perspective convention as [BondProcessor.GetCompletionMessage](../../FChatDicebot/InteractionProcessors/Commitment/BondProcessor.cs):
 - reached via the parent's `bond{type}initiated` (parent was the initiator) → neighbor is the parent's `BondToText(type, true)` (e.g. "pet").
 - reached via the parent's `bond{type}received` (parent was the recipient) → neighbor is the parent's `BondToText(type, false)` (e.g. "owner").
 
 So a line reads, e.g., `Bob (Alice's pet)` — the neighbor, then their role relative to whoever connected them.
 
-**Layout (B10.5):** grouped by degree, PM'd to the invoker, `[spoiler]` fallback past the usual length:
+**Layout (B10.5):** grouped by degree, PM'd to the invoker, `[spoiler]` fallback past the usual length. As shipped the readout is assembled from `ReadoutText` rather than hand-written BBCode — a title of "Bond Tree of {Root}" (or "Family Tree of {Root}") over a subtext degree count, then one `Relationship`-domain section per degree with an indented `{Name} ({Connector}'s {role})` row each, names sorted within a degree. `BondTreeSupport.Render` is authoritative for the shape; `ReadoutText` owns the tags.
 
-```
-Bond tree for {Root}, up to {N} degrees:
-1st degree:
-  {Name} ({role relative to Root})
-  ...
-2nd degree:
-  {Name} ({role relative to the 1st-degree person who connected them})
-  ...
-```
-
-**Empty state:** `"{Root} has no bonds yet."` for `!bondtree`; `"{Root} has no family bonds yet."` for `!familytree` *(both pending owner wording review).*
+**Empty state:** `"{Root} has no bonds yet."` for `!bondtree`; `"{Root} has no family bonds yet."` for `!familytree`. Both shipped as specified, and both still carry a "pending owner review" note in `Render` — they have not had a wording pass.
 
 ---
 
@@ -84,18 +75,16 @@ Display names resolved at render via the loaded profile's `displayName`, falling
 
 ---
 
-## Files to create / modify
+## Files
 
-**Create:**
-- `FChatDicebot/BotCommands/ChateauBondtree.cs` — `!bondtree` (+ the shared static `BuildBondTree`, or place the helper in a small support class).
-- `FChatDicebot/BotCommands/ChateauFamilytree.cs` — `!familytree`.
-- `FChatDicebot.Tests/Unit/Chateaubondtreetests.cs` — traversal/rendering tests over a synthetic `getProfile`.
+| File | Holds |
+|------|-------|
+| [`BotCommands/Support/BondTreeSupport.cs`](../../FChatDicebot/BotCommands/Support/BondTreeSupport.cs) | The whole feature: `FamilyBondTypes`, the `DefaultDegrees` / `MaxDegrees` / `MaxNodes` / `SpoilerThreshold` constants, `ParseDegrees`, the BFS in `BuildBondTree`, and `Render` |
+| [`BotCommands/ChateauBondtree.cs`](../../FChatDicebot/BotCommands/ChateauBondtree.cs) | `!bondtree` — resolves the root, then one `BuildBondTree(…, familyOnly: false, …)` call |
+| [`BotCommands/ChateauFamilytree.cs`](../../FChatDicebot/BotCommands/ChateauFamilytree.cs) | `!familytree` — the same, `familyOnly: true` |
+| [`Tests/Unit/Chateaubondtreetests.cs`](../../FChatDicebot.Tests/Unit/Chateaubondtreetests.cs) | Traversal and rendering over a synthetic `getProfile`; covers every case in [Tests](#tests-buildbondtree-over-a-synthetic-graph) below |
 
-**Modify:**
-- `FChatDicebot/BotCommands/ChateauHelp.cs` — register both under Information.
-- `wiki-docs/Feature-Requests.md` — B10 bullet retires on ship.
-
-No DB-layer change — reads ride existing `GetProfile`.
+No DB-layer change — reads ride existing `GetProfile`. Both commands declare `Category = "Information"`, which is what puts them in the `!help` listing; there is no help-side registration step (see [Development-Guide](../Development-Guide.md#adding-a-new-command)).
 
 ---
 
@@ -120,11 +109,22 @@ No DB-layer change — reads ride existing `GetProfile`.
 - **B10.4** **Show the role** on each connection.
 - **B10.5** **Grouped-by-degree** layout; PM with `[spoiler]` fallback.
 
-## Open items
+---
 
-- Empty-state and header strings pending owner wording approval.
-- Whether to also show the **bond type/role from the root's own perspective** vs the connecting person's (spec uses "relative to whoever connected them" — confirm that reads well, or switch all labels to be relative to the root).
-- Optional later: a depth-0 self line, counts per degree, or an ASCII/indented tree rendering instead of grouped lists.
+## Differences from the original spec
+
+The feature shipped close to the spec — the traversal, the caps, the family subset and the perspective convention are all as designed. Four things differ:
+
+1. **The traversal lives in a support class, not in the `!bondtree` command.** The spec left this open ("or place the helper in a small support class"); `BondTreeSupport` won, so `!familytree` doesn't have to reach into a sibling command for the builder.
+2. **The readout goes through `ReadoutText`.** The spec sketched a plain-text layout. The BBCode sweep that followed the ship routed every readout through `ReadoutText` / `ReadoutDomain`, so the degree headers are `Relationship`-domain sections and the role suffix is subtext. The `[spoiler]` fallback survived as a named `SpoilerThreshold` constant rather than a vague "past the usual length".
+3. **Depth clamps at both ends.** The spec named a max of 3; `BuildBondTree` also floors at 1, so `!bondtree 0` and `!bondtree -5` render one degree instead of an empty tree. `ParseDegrees` takes the first term that parses as an integer, so the name and the depth can be given in either order — at the cost of reading a digit inside a name as the depth.
+4. **`visited` is case-insensitive.** The spec keyed it on userName; the shipped set uses `OrdinalIgnoreCase`, because a name whose casing differs between the two ends of an edge would otherwise be walked twice and could keep a cycle alive.
+
+Both open questions the spec left are still open, and one has an answer worth recording:
+
+- **Role perspective** shipped as the spec proposed — relative to whoever connected the person, so a second-degree line reads `Carol (Bob's ward)`, not `Carol (your ward's ward)`. The alternative (everything relative to the root) was never tried; it stays a live option if the connector-relative reading proves confusing in play.
+- **Empty-state and header wording** never had an owner pass. `Render` still carries the note.
+- Never picked up: a depth-0 self line, per-degree counts, an indented tree rendering.
 
 ## Assumptions
 

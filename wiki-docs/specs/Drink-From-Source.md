@@ -509,6 +509,14 @@ claims about the codebase turned out to be wrong.
 9. **`InteractionEiconSupport.NormalizeVerbKey` needed the `forcedrink` → `drinkfrom` fold**, not
    just a `TokenToVerbKeys` entry.
 
+**Found after shipping**
+
+10. **Both commands were missing from the no-arg `!help` listing.** The spec never mentioned the
+    step, because listing a command was a second, hand-maintained thing: eight name arrays in
+    `ChateauHelp.cs`. It is no longer a step at all — `ChateauHelp.SectionFor` derives the listing
+    from each command's `Category`, so these two appeared under Involved Interactions the moment
+    the arrays went away. See [Development-Guide](../Development-Guide.md#adding-a-new-command).
+
 ## Assumptions carried into the implementation
 
 1. **One processor, two commands**, role-mapped and registered under both type keys like

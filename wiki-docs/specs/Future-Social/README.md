@@ -8,7 +8,6 @@ Self-contained design specs for **upcoming** Chateau Contract community, relatio
 
 | Spec | Adds |
 |------|------|
-| [Bond-Tree](Bond-Tree.md) | `!bondtree` and `!familytree`, read-only commands that walk the bond graph and render everyone connected to a resident within N degrees of separation. (B10) |
 | [Random-Events](Random-Events.md) | An ambient event system: the bot periodically fires a random event into opted-in channels; residents join with the new `!random` command (with an optional anti-snipe argument) for a chance at currency, titles, training, corruption/purity, curses, or flavor. (B12) |
 | [Achievement-Titles](Achievement-Titles.md) | System titles beyond "one number crosses one threshold": combo/set-completion, meta (title count), wild-state, variety/breadth, relationship depth, streaks, and narrative arcs — seven new check methods layered onto `ChateauSystemTitles`. (Owner request, not a B-number.) |
 | [Winner-Count-Agreement](Winner-Count-Agreement.md) | `{singular\|plural}` alternation in a random event's `resultText`, so an `allInWindow` outcome authored for a crowd still reads correctly when one person wins — plus the builder preview that stops authors getting it backwards. Extends the shipped Random-Events. (Resident feedback `6a6fb15d`.) |

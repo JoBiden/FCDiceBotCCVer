@@ -50,6 +50,7 @@ Design + as-implemented documentation for the Chateau Contract interaction syste
 
 | Spec | Adds |
 |------|------|
+| [Bond-Tree](Bond-Tree.md) | `!bondtree` and `!familytree`, read-only BFS walks of the bond graph rendering everyone connected to a resident within N degrees, grouped by degree and labelled with each person's role relative to whoever connected them. Shared traversal in `BondTreeSupport`; no DB change. |
 | [Feedback](Feedback.md) | `!feedback` (+ `!suggestion` alias) to submit an idea or bug report into a new `Feedback` collection, plus admin-only `!feedbacklist` to read recent submissions. |
 | [Pledges](Pledges.md) | `!pledge` / `!pledges` / `!fulfill` / `!abandonpledge`, the `Pledges` collection, and the honor accounting (`pledgesactive` / `pledgesfulfilled` / `pledgesabandoned`) behind the public reputation messaging and the pledge title ladders. Documented retroactively; includes a Known gaps section. |
 

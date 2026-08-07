@@ -58,7 +58,9 @@ FCDiceBotCCVer/
 
 ## Adding a New Command
 
-Create one file in `BotCommands/`. Reflection discovers it at startup; the csproj glob picks it up at build. There is no dispatch registration step — but **do add the command's name to the right section array in `ChateauHelp.cs`** (`GeneralCommands`, `CasualCommands`, …) or it won't appear in the no-arg `!help` listing. Dispatch and `!help {command}` work without that; a test verifies listed names still resolve, but nothing checks that a new command got listed.
+Create one file in `BotCommands/`. Reflection discovers it at startup; the csproj glob picks it up at build. There is no registration step of any kind — dispatch, `!help {command}`, and the no-arg `!help` listing all come off the class. **Setting `Category` is what lists the command:** `ChateauHelp.SectionFor` derives the section from it (the four interaction tiers, Recovery and Dicebot get their own; every other recognised `Category` splits between the two untitled blocks on `RequireChannel`). A command with no `Category` is not listed at all, which is how the unmigrated dicebot commands stay out, and a `Category` the switch doesn't recognise fails a test rather than dropping the command silently.
+
+To keep a working command out of the listing on purpose, set `HideFromHelpListing` (`!setmark` does — superseded by `!seteicon mark`, still reachable via `!help setmark`). Admin-only commands need nothing; they're excluded already.
 
 The `Run` signature takes a `MessageAddress` (character + channel), not separate name/channel strings:
 
@@ -102,6 +104,7 @@ The base-class fields on `ChatBotCommand` drive `!help` and dispatch — see `Bo
 | Field | Notes |
 |-------|-------|
 | `Aliases` | Single source of truth for aliases — they **route**, not just display. One array entry per alias; never a delegating class. A name already used by another command's `Name` is ignored. |
+| `Category` | Places the command in the no-arg `!help` listing as well as labelling its `!help {command}` readout. The recognised values are the cases of `ChateauHelp.SectionFor`; leave it unset only for a command that shouldn't be listed at all. |
 | `Usage` | Also drives bare-name targeting: a `[user]` slot in `Usage` makes the command accept a bare name. Set `AcceptsRecipient` explicitly only where `Usage` can't express it. |
 | `CooldownDuration` / `CooldownAppliesTo` | For interactions, derive these from the processor's `CooldownSpec` (`FormatDuration()` / `FormatAppliesTo()`) — never hand-write strings that can drift. |
 | `LockCategory` | One of `NONE`, `SavedTables`, `SavedChannels`, `ChannelDecks`, `ChannelScores`, `CharacterInventories`, `RPGData`, `ChannelOpsRequest`. |
