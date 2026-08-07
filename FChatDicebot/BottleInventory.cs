@@ -6,7 +6,7 @@ using System.Linq;
 namespace FChatDicebot
 {
     /// <summary>
-    /// Shared selection and grouping over a Profile's <see cref="Profile.milkInventory"/>.
+    /// Bottle-specific selection and grouping over a Profile's collection.
     ///
     /// <c>!sell</c>, <c>!drink</c>, <c>!bottles</c>, and bottle transfer through <c>!pay</c> all
     /// need identical answers to "which bottles does this filter mean, and in what order", so
@@ -16,20 +16,26 @@ namespace FChatDicebot
     /// Empties are excluded from every implicit selection. They are still in the collection and
     /// still carry their serial, but they cannot be sold, cannot be drunk again, and only move
     /// between residents when named by serial.
+    ///
+    /// <para>
+    /// Everything here reads <see cref="MilkBottle"/>'s own fields — <c>substance</c>,
+    /// <c>corruptionTag</c>, the full/empty split — which is exactly why it did not generalize
+    /// when bottles became <see cref="Collectible"/>s. The type-agnostic half lives in
+    /// <see cref="CollectionInventory"/>.
+    /// </para>
     /// </summary>
     public static class BottleInventory
     {
         /// <summary>
         /// Full bottles matching the optional filters, newest first. Null/empty filters mean
-        /// "any". Never returns empties. Returns an empty list for a null profile or inventory
+        /// "any". Never returns empties. Returns an empty list for a null profile or collection
         /// so callers can enumerate without null checks.
         /// </summary>
         public static List<MilkBottle> SelectFull(Profile profile, string substanceFilter, string sourceFilter)
         {
-            if (profile?.milkInventory == null) return new List<MilkBottle>();
-            return profile.milkInventory
+            return CollectionInventory.OfType<MilkBottle>(profile)
                 .Where(b => b != null && !b.IsEmpty && MatchesFilters(b, substanceFilter, sourceFilter))
-                .OrderByDescending(b => b.milkedAt)
+                .OrderByDescending(b => b.acquiredAt)
                 .ThenByDescending(b => b.serial)
                 .ToList();
         }
@@ -37,10 +43,9 @@ namespace FChatDicebot
         /// <summary>Emptied bottles matching the optional filters, newest-emptied first.</summary>
         public static List<MilkBottle> SelectEmpty(Profile profile, string substanceFilter, string sourceFilter)
         {
-            if (profile?.milkInventory == null) return new List<MilkBottle>();
-            return profile.milkInventory
+            return CollectionInventory.OfType<MilkBottle>(profile)
                 .Where(b => b != null && b.IsEmpty && MatchesFilters(b, substanceFilter, sourceFilter))
-                .OrderByDescending(b => b.emptiedAt ?? b.milkedAt)
+                .OrderByDescending(b => b.emptiedAt ?? b.acquiredAt)
                 .ThenByDescending(b => b.serial)
                 .ToList();
         }
@@ -49,17 +54,22 @@ namespace FChatDicebot
         /// The bottle carrying this serial, full or empty, or null if the resident doesn't hold
         /// it. Serial 0 never matches — it is the "predates the backfill" sentinel, not a
         /// referenceable number.
+        ///
+        /// Serials are shared across every collectible type, so a number that belongs to
+        /// something that isn't a bottle returns null here. That's the right answer for
+        /// <c>!drink #42</c> and <c>!pay ... bottle #42</c>: the resident does not have
+        /// <i>bottle</i> #42.
         /// </summary>
         public static MilkBottle FindBySerial(Profile profile, int serial)
         {
-            if (profile?.milkInventory == null || serial <= 0) return null;
-            return profile.milkInventory.FirstOrDefault(b => b != null && b.serial == serial);
+            return CollectionInventory.FindBySerial(profile, serial) as MilkBottle;
         }
 
-        /// <summary>True when the resident holds no bottles at all, full or empty.</summary>
+        /// <summary>True when the resident holds no bottles at all, full or empty. Other kinds
+        /// of collectible don't count — this is what <c>!bottles</c> and <c>!drink</c> ask.</summary>
         public static bool IsCollectionEmpty(Profile profile)
         {
-            return profile?.milkInventory == null || profile.milkInventory.Count == 0;
+            return CollectionInventory.HasNone<MilkBottle>(profile);
         }
 
         public static bool MatchesFilters(MilkBottle bottle, string substanceFilter, string sourceFilter)
@@ -71,7 +81,7 @@ namespace FChatDicebot
                 return false;
             }
             if (!string.IsNullOrEmpty(sourceFilter)
-                && !string.Equals(bottle.sourceName, sourceFilter, StringComparison.OrdinalIgnoreCase))
+                && !string.Equals(bottle.subjectName, sourceFilter, StringComparison.OrdinalIgnoreCase))
             {
                 return false;
             }
@@ -89,7 +99,7 @@ namespace FChatDicebot
             public string SourceName;
             public string CorruptionTag;
             public List<int> Serials = new List<int>();
-            /// <summary>Newest milkedAt in the group, carrying the group's sort position.</summary>
+            /// <summary>Newest acquiredAt in the group, carrying the group's sort position.</summary>
             public DateTime NewestAt;
             public int Count => Serials.Count;
         }
@@ -108,45 +118,23 @@ namespace FChatDicebot
             foreach (var bottle in bottles)
             {
                 if (bottle == null) continue;
-                string key = (bottle.substance ?? "") + "|" + (bottle.sourceName ?? "") + "|" + (bottle.corruptionTag ?? "");
+                string key = (bottle.substance ?? "") + "|" + (bottle.subjectName ?? "") + "|" + (bottle.corruptionTag ?? "");
                 if (!index.TryGetValue(key, out var group))
                 {
                     group = new BottleGroup
                     {
                         Substance = bottle.substance,
-                        SourceName = bottle.sourceName,
+                        SourceName = bottle.subjectName,
                         CorruptionTag = bottle.corruptionTag,
-                        NewestAt = bottle.milkedAt,
+                        NewestAt = bottle.acquiredAt,
                     };
                     index[key] = group;
                     groups.Add(group);
                 }
                 group.Serials.Add(bottle.serial);
-                if (bottle.milkedAt > group.NewestAt) group.NewestAt = bottle.milkedAt;
+                if (bottle.acquiredAt > group.NewestAt) group.NewestAt = bottle.acquiredAt;
             }
             return groups;
-        }
-
-        /// <summary>
-        /// Render a group's serials as "#12, #40, #41", capped at
-        /// <see cref="ChateauCurrency.BottleSerialDisplayCap"/> with an "and N more" tail so one
-        /// prolific donor can't push the rest of the collection out of the message.
-        /// Serial 0 (pre-backfill) renders as "#?" rather than a misleading "#0".
-        /// </summary>
-        public static string FormatSerials(IEnumerable<int> serials, int cap)
-        {
-            if (serials == null) return string.Empty;
-            var all = serials.ToList();
-            if (all.Count == 0) return string.Empty;
-
-            var shown = all.Take(cap).Select(s => s > 0 ? "#" + s : "#?");
-            string text = string.Join(", ", shown);
-            int remaining = all.Count - cap;
-            if (remaining > 0)
-            {
-                text += ", and " + remaining + " more";
-            }
-            return text;
         }
 
         /// <summary>

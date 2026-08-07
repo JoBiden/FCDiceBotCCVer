@@ -121,6 +121,7 @@ Static registry of all interaction processors, keyed by interaction type. Every 
 - **`GroupInteractionResolver` + per-processor `GroupSpec`** — casual interactions can target several residents at once; each target gets their own pending seat, and the group resolves when everyone has consented/declined or the consent window (`PendingMinutesKeep`, 10 minutes) runs out.
 - **`IStatusEffectContributor` + `StatusEffectRegistry`** — lets one interaction's lingering state (scents, corruption, parasites, curses…) contribute lines to other interactions' consent prompts, completions, and readouts.
 - **`IPostInteractionEffect` + `PostInteractionEffectRegistry`** — lets a completed interaction affect other parties (e.g. parasite spread).
+- **`RoleSpec` + per-processor `Roles`** — one processor registered under two verb keys that swap which party the interaction is about (`!climaxfor`/`!climax`, `!drinkfrom`/`!forcedrink`). The base class routes the eicon and status-effect subjects through it; `RoleSpec.Fixed()` — the default — means the initiator, as before.
 
 ### 6. DiceBot
 

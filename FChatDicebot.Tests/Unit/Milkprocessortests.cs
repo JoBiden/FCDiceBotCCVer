@@ -142,7 +142,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
         [Fact]
         public void ValidateInteraction_NoMilkInventoryPrecondition()
         {
-            // The Chateau provides empty bottles — fresh profile (no milkInventory yet)
+            // The Chateau provides empty bottles — fresh profile (no collectibles yet)
             // should still pass validation.
             new ProfileBuilder().WithUserName("Alice").BuildAndSave(_database);
             new ProfileBuilder().WithUserName("Bob").BuildAndSave(_database);
@@ -217,11 +217,11 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
             var alice = _database.GetProfile("Alice");
             // 0.5 sample over [1, 4) → 2 bottles, and a serial names one bottle, so a
             // 2-bottle milking writes two entries rather than one entry of quantity 2.
-            Assert.Equal(2, alice.milkInventory.Count);
-            foreach (var entry in alice.milkInventory)
+            Assert.Equal(2, alice.collectibles.Count);
+            foreach (var entry in alice.Bottles())
             {
                 Assert.Equal("cum", entry.substance);
-                Assert.Equal("Bob", entry.sourceName);
+                Assert.Equal("Bob", entry.subjectName);
                 Assert.Equal(1, entry.quantity);
                 Assert.Null(entry.corruptionTag); // Bob has neutral corruption
                 Assert.False(entry.IsEmpty);
@@ -237,7 +237,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
 
             _processor.ProcessInteraction(SaveAndReturn(BuildPendingCommand("Alice", "Bob", "cum")));
 
-            var serials = _database.GetProfile("Alice").milkInventory
+            var serials = _database.GetProfile("Alice").collectibles
                 .Select(b => b.serial).OrderBy(s => s).ToList();
             Assert.Equal(2, serials.Count);
             // Reserved as one contiguous block so a concurrent milking can't interleave.
@@ -331,7 +331,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
             _processor.ProcessInteraction(SaveAndReturn(BuildPendingCommand("Alice", "Bob", "cum")));
 
             var alice = _database.GetProfile("Alice");
-            Assert.Equal(ChateauCurrency.CorruptTag, alice.milkInventory[0].corruptionTag);
+            Assert.Equal(ChateauCurrency.CorruptTag, alice.Bottles()[0].corruptionTag);
         }
 
         [Fact]
@@ -346,7 +346,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
             _processor.ProcessInteraction(SaveAndReturn(BuildPendingCommand("Alice", "Bob", "cum")));
 
             var alice = _database.GetProfile("Alice");
-            Assert.Equal(ChateauCurrency.PurifiedTag, alice.milkInventory[0].corruptionTag);
+            Assert.Equal(ChateauCurrency.PurifiedTag, alice.Bottles()[0].corruptionTag);
         }
 
         [Fact]
@@ -361,7 +361,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
             _processor.ProcessInteraction(SaveAndReturn(BuildPendingCommand("Alice", "Bob", "cum")));
 
             var alice = _database.GetProfile("Alice");
-            Assert.Null(alice.milkInventory[0].corruptionTag);
+            Assert.Null(alice.Bottles()[0].corruptionTag);
         }
 
         // -------------------------------------------------------------------

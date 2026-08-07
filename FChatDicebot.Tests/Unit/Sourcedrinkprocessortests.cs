@@ -189,7 +189,7 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
         {
             SeedPair(sourceCorruption: -15);
             var alice = _database.GetProfile("Alice");
-            alice.milkInventory.Add(BottleInventoryTests.NewBottle(
+            alice.collectibles.Add(BottleInventoryTests.NewBottle(
                 1, "cum", "Bob", hour: 1, tag: ChateauCurrency.CorruptTag));
             _database.SetProfile("Alice", alice);
 
@@ -290,15 +290,15 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
         public void ProcessInteraction_CreatesNoBottleAndClaimsNoSerial()
         {
             // The trade-off, stated as an assertion: strength instead of a numbered empty.
-            // Checking the counter is what would actually catch a stray ClaimBottleSerials.
+            // Checking the counter is what would actually catch a stray ClaimCollectibleSerials.
             SeedPair(sourceCorruption: -15);
-            int serialBefore = _database.ClaimBottleSerials(1);
+            int serialBefore = _database.ClaimCollectibleSerials(1);
 
             _processor.ProcessInteraction(Pending("Alice", "Bob", "cum", SourceDrinkProcessor.DrinkFromType));
 
-            Assert.Empty(_database.GetProfile("Alice").milkInventory);
-            Assert.Empty(_database.GetProfile("Bob").milkInventory);
-            Assert.Equal(serialBefore + 1, _database.ClaimBottleSerials(1));
+            Assert.Empty(_database.GetProfile("Alice").collectibles);
+            Assert.Empty(_database.GetProfile("Bob").collectibles);
+            Assert.Equal(serialBefore + 1, _database.ClaimCollectibleSerials(1));
         }
 
         // -------------------------------------------------------------------

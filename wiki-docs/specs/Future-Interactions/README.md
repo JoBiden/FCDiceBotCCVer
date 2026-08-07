@@ -18,7 +18,6 @@ Nothing in this folder is a planned *interaction* any more — the last one ship
 
 | Spec | Adds |
 |------|------|
-| [Collectibles](Infrastructure/Collectibles.md) | Promotes the bottle collection into a general model for individually-identified, user-keyed items: a `Collectible` base class with one subclass per type, polymorphic storage on `Profile.collectibles`, a shared serial space, and generalized list/sell/transfer verbs. Phase 1 ships the framework and migrates bottles onto it with no new item type and no visible change. |
 
 ### Shelved
 

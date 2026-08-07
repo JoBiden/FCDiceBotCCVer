@@ -90,7 +90,7 @@ namespace FChatDicebot.BotCommands
                 string emptyWord = empties.Count == 1 ? "empty" : "empties";
                 lines.Add("Nothing left to drink, but our records show you're keeping "
                     + ReadoutText.Num(empties.Count) + " " + emptyWord + ":");
-                lines.Add(ReadoutText.RowIndent + BottleInventory.FormatSerials(
+                lines.Add(ReadoutText.RowIndent + CollectionInventory.FormatSerials(
                     empties.Select(b => b.serial), ChateauCurrency.BottleSerialDisplayCap));
                 lines.Add(ReadoutText.Footer("Go !milk a willing resident if you'd like something to drink."));
                 return string.Join("\n", lines);
@@ -110,7 +110,7 @@ namespace FChatDicebot.BotCommands
             if (empties.Count > 0)
             {
                 lines.Add(ReadoutText.Section("Empties", ReadoutDomain.Economy) + " "
-                    + BottleInventory.FormatSerials(
+                    + CollectionInventory.FormatSerials(
                         empties.Select(b => b.serial), ChateauCurrency.BottleSerialDisplayCap));
             }
 
@@ -138,7 +138,7 @@ namespace FChatDicebot.BotCommands
             }
 
             line += ReadoutText.InlineSeparator
-                + BottleInventory.FormatSerials(group.Serials, ChateauCurrency.BottleSerialDisplayCap)
+                + CollectionInventory.FormatSerials(group.Serials, ChateauCurrency.BottleSerialDisplayCap)
                 + ReadoutText.InlineSeparator
                 + ReadoutText.Num(pricePer) + " " + ChateauCurrency.SellPayoutCurrency + " each";
             return line;

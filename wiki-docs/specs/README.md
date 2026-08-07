@@ -12,7 +12,9 @@ Design + as-implemented documentation for the Chateau Contract interaction syste
 | Spec | Adds | Used by |
 |------|------|---------|
 | [Status-Effect-Hook](Infrastructure/Status-Effect-Hook.md) | `IStatusEffectContributor` + registry + base-class helpers | Corrupt/Purify, Odorize/Wash, future status interactions |
-| [Currency-and-Milk-Inventory](Infrastructure/Currency-and-Milk-Inventory.md) | `MilkBottle` model, `Profile.milkInventory`, `ChateauCurrency` constants, `!sell` command, bottle side-currency | Milk, Bottle-Consumption-And-Transfer |
+| [Invertible-Role-Interactions](Infrastructure/Invertible-Role-Interactions.md) | `RoleSpec` + `InteractionProcessorBase.Roles` / `ResolveTypedVerb`; one processor, two verbs that swap who the interaction is about | Climax/Climaxfor, Drink-From-Source, future verb pairs |
+| [Collectibles](Infrastructure/Collectibles.md) | `Collectible` base + `Profile.collectibles` polymorphic storage, shared serial space, `CollectionInventory`, the migration + startup guard; `Panties` as the first non-bottle type | Milk, Bottle-Consumption-And-Transfer, Panties, future item types |
+| [Currency-and-Milk-Inventory](Infrastructure/Currency-and-Milk-Inventory.md) | `MilkBottle` model, the per-resident bottle store (now `Profile.collectibles` — see Collectibles), `ChateauCurrency` constants, `!sell` command, bottle side-currency | Milk, Bottle-Consumption-And-Transfer |
 | [Bottle-Consumption-And-Transfer](Bottle-Consumption-And-Transfer.md) | Bottle serial numbers + `BottleInventory` selection, persistent empties, `!bottles`, `!drink`, bottle transfer through `!pay`, `SelfCommandStatusEffects` | Milk |
 
 ### Reporting
@@ -26,6 +28,7 @@ Design + as-implemented documentation for the Chateau Contract interaction syste
 | Spec | Reversal | Depends on |
 |------|----------|------------|
 | [Milk](Milk.md) | none (sold via `!sell`, drunk via `!drink`) | Currency-and-Milk-Inventory, Status-Effect-Hook |
+| [Panties](Infrastructure/Collectibles.md#panties--the-first-non-bottle-type) | none (given on via `!pay`; never sellable) | Collectibles, Invertible-Role-Interactions |
 | [Drink-From-Source](Drink-From-Source.md) | none (consumption, not a state change) | Bottle-Consumption-And-Transfer (`!drink` effect helpers), Milk (the draw lock), Dose-and-Detox, Status-Effect-Hook |
 
 ### Commitment
@@ -80,7 +83,6 @@ Designed but unshipped:
 
 | Spec | Status |
 |------|--------|
-| [Collectibles](Future-Interactions/Infrastructure/Collectibles.md) | Design, awaiting owner sign-off. Generalizes the bottle collection into user-keyed items. |
 | [Achievement-Titles](Future-Social/Achievement-Titles.md) | Planned. Title shapes beyond "one number crosses one threshold". |
 | [NPC-System](Future-Interactions/Infrastructure/NPC-System.md) | **Shelved.** Breed-and-Birth shipped without it and degrades gracefully. |
 

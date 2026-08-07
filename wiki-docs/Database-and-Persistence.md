@@ -49,7 +49,7 @@ The full set, as of mid-2026 (grep `GetCollection<` in `Chateaudatabase.cs` for 
 | `RandomEvents` | Authored ambient channel events for `!random` / the scheduler (authored via `scripts/random-event-builder`) |
 | `ModMessages` | Moderator announcements shown by `!modmessage` |
 | `MonsterStats` | Per-monster breeding statistics (pregnancy/offspring counts) |
-| `Counters` | Atomic counters — currently the bottle-serial counter (`ClaimBottleSerials`) |
+| `Counters` | Atomic counters — currently the shared collectible-serial counter (`ClaimCollectibleSerials`). Its stored `_id` is still `bottleSerial`, deliberately: see `ChateauDatabase.CollectibleSerialCounterId` |
 | `Commands` | Command metadata documents (aliases/params); legacy, not the source of `!help` (that's the command classes) |
 | `SlotsJackpots` | Persistent slots jackpot state |
 
@@ -72,7 +72,7 @@ The `Profile` class is large and grows with features — read `Model/ChateauDB.c
   "displayedTitleSlots": [0, 1, -1, -1, -1, -1, -1, -1, -1],
   "pregnancies": [ ],
   "dailyMagnitudes": { },
-  "milkInventory": [ ],
+  "collectibles": [ ],       // polymorphic; every element carries a `_t` discriminator
   "trainings": { },
   "dailyClimaxCounts": { },
   "employeeEarnings": { }
@@ -83,6 +83,16 @@ Conventions:
 - Simple values go in `characteristics["key"]`, lists in `lists["key"]`, cooldowns in `timers["key"]` (a `CoolDown` with UTC `timerStart`/`timerEnd`).
 - Rate-limit timers are keyed `ratelimit_{countLabel}`; per-direction cooldowns use keys like `milk_give_<recipient>`.
 - New optional fields use `[BsonIgnoreIfNull]` / defaults so legacy documents need no migration.
+- `collectibles` is the exception: it is a `List<Collectible>`, an abstract type, so every element needs a `_t` discriminator and a document without one **will not load**. It replaced the earlier `milkInventory` field. See [Collectibles](#collectibles) below.
+
+#### Collectibles
+
+`Profile.collectibles` holds individually-identified items — the user-keyed counterpart to the fungible `currencies` dict. `Model/Collectible.cs` is the base (serial, `subjectName`, `acquiredAt`, `IsSellable`, `IsTransferable`); `Model/MilkBottle.cs` is the first type. Serials are drawn from one counter shared by every type, so serial #1 is the oldest *item* in the Chateau rather than the oldest bottle.
+
+Two things about this field are unlike the rest of `Profile`, and both are load-bearing:
+
+- **The migration is mandatory, not optional.** `scripts/backfill-collectibles.js` renames `milkInventory` → `collectibles`, stamps `_t` on each element, and renames the per-element `sourceName` → `subjectName` and `milkedAt` → `acquiredAt`. `scripts/rollback-collectibles.js` is the tested inverse, and refuses to run once any non-bottle collectible exists (`milkInventory` cannot hold one, so rolling back would delete it).
+- **A skipped migration fails silently, which is why there is a startup guard.** An unmigrated profile does not throw — the driver ignores the field it no longer recognizes, so the resident loads with an empty collection and the next write makes that permanent. `CollectiblesMigrationCheck.AssertMigrated` runs immediately after `MonDB.Initialize` in `BotMain` and refuses to start if any profile still carries `milkInventory`.
 
 #### Interactions
 

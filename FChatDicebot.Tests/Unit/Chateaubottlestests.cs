@@ -56,7 +56,7 @@ namespace FChatDicebot.Tests.Unit
         [Fact]
         public void BuildCollectionText_RendersDonorDisplayNameNotUserName()
         {
-            // sourceName is a stored userName; a resident should never see the raw handle.
+            // subjectName is a stored userName; a resident should never see the raw handle.
             var profile = new ProfileBuilder()
                 .WithMilkBottle(Bottle(11, "cum", "Bob", hour: 1))
                 .Build();

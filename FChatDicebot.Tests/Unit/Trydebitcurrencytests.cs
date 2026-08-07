@@ -9,7 +9,7 @@ namespace FChatDicebot.Tests.Unit
 {
     /// <summary>
     /// Tests for the atomic guarded-debit primitive (FIX_SPEC.md Phase 1a) and the
-    /// targeted milkInventory write it accompanies (Phase 1e). These are the choke-point
+    /// targeted collectibles write it accompanies (Phase 1e). These are the choke-point
     /// tests: everything that routes currency through TryDebitCurrency inherits the
     /// zero-floor and no-mint guarantees asserted here.
     /// </summary>
@@ -97,11 +97,11 @@ namespace FChatDicebot.Tests.Unit
         }
 
         [Fact]
-        public void SetMilkInventory_DoesNotRevertConcurrentCurrencyChange()
+        public void SetCollectibles_DoesNotRevertConcurrentCurrencyChange()
         {
             // Regression test for M6: a whole-profile SetProfile call sitting between a
             // command's initial GetProfile and its final persistence used to revert any
-            // atomic $inc that landed on this profile in between. SetMilkInventory re-fetches
+            // atomic $inc that landed on this profile in between. SetCollectibles re-fetches
             // fresh at call time instead, so it must not revert the concurrent credit below.
             var profile = new ProfileBuilder().WithCurrency("gold", 10).BuildAndSave(_database);
 
@@ -109,14 +109,14 @@ namespace FChatDicebot.Tests.Unit
             // its own profile snapshot but before it persists its own (unrelated) change.
             _database.ChangeCurrency(profile.userName, "gold", 5);
 
-            _database.SetMilkInventory(profile.userName, new System.Collections.Generic.List<MilkBottle>
+            _database.SetCollectibles(profile.userName, new System.Collections.Generic.List<Collectible>
             {
-                new MilkBottle { substance = "milk", quantity = 1, sourceName = "Someone", milkedAt = DateTime.UtcNow }
+                new MilkBottle { substance = "milk", quantity = 1, subjectName = "Someone", acquiredAt = DateTime.UtcNow }
             });
 
             var reloaded = _database.GetProfile(profile.userName);
             Assert.Equal(15, reloaded.currencies["gold"]);
-            Assert.Single(reloaded.milkInventory);
+            Assert.Single(reloaded.collectibles);
         }
     }
 }

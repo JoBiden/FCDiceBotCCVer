@@ -8,7 +8,7 @@ namespace FChatDicebot.InteractionProcessors.Involved
 {
     /// <summary>
     /// Processor for <c>!milk</c>. Produces 1–3 tagged bottles (rolled at process time), each a
-    /// separate serial-numbered entry in the initiator's <see cref="Profile.milkInventory"/>,
+    /// separate serial-numbered entry in the initiator's <see cref="Profile.collectibles"/>,
     /// and applies a 24-hour daily
     /// per-direction lock so a given milker can only milk a given resident once per
     /// Chateau day, regardless of substance. The lock is directional: it does not stop
@@ -17,7 +17,7 @@ namespace FChatDicebot.InteractionProcessors.Involved
     ///
     /// Self-target is allowed but handled inline by <see cref="BotCommands.ChateauMilk"/>
     /// as a special-cased self-sale: the consent flow is skipped and the initiator
-    /// receives 1 copper + 1 bottle-currency in place of the milkInventory entry. The
+    /// receives 1 copper + 1 bottle-currency in place of the bottle. The
     /// processor itself therefore never sees a self-target PendingCommand under normal
     /// flow; the validation below still rejects it as a defensive guard.
     ///
@@ -107,7 +107,7 @@ namespace FChatDicebot.InteractionProcessors.Involved
             // Self-target is *allowed* at the command layer, but it's handled by a
             // shortcut path that never enters this processor (no PendingCommand created).
             // Reject here as a defensive guard so a stray self-targeted Interaction can't
-            // sneak through and produce a milkInventory entry sourced from yourself.
+            // sneak through and produce a bottle sourced from yourself.
             if (string.Equals(initiator, recipient, StringComparison.Ordinal))
             {
                 return ValidationResult.Failure(
@@ -180,25 +180,25 @@ namespace FChatDicebot.InteractionProcessors.Involved
                 string corruptionTag = ChateauCurrency.GetCorruptionTagForValue(
                     Commitment.CorruptionProcessor.ReadCorruption(recipientProfile));
 
-                if (initiatorProfile.milkInventory == null)
+                if (initiatorProfile.collectibles == null)
                 {
-                    initiatorProfile.milkInventory = new List<MilkBottle>();
+                    initiatorProfile.collectibles = new List<Collectible>();
                 }
 
                 // One entry per physical bottle, each with its own serial, rather than a single
                 // entry carrying a count. A serial names one bottle, so an aggregated entry has
                 // nothing to name. The whole block is reserved in one call so the numbers stay
-                // contiguous and a concurrent milking can't interleave into the middle of them.
+                // contiguous and a concurrent acquisition can't interleave into the middle of them.
                 DateTime milkedAt = DateTime.UtcNow;
-                int firstSerial = Database.ClaimBottleSerials(produced);
+                int firstSerial = Database.ClaimCollectibleSerials(produced);
                 for (int i = 0; i < produced; i++)
                 {
-                    initiatorProfile.milkInventory.Add(new MilkBottle
+                    initiatorProfile.collectibles.Add(new MilkBottle
                     {
                         serial = firstSerial + i,
                         substance = substance,
-                        sourceName = recipient,
-                        milkedAt = milkedAt,
+                        subjectName = recipient,
+                        acquiredAt = milkedAt,
                         quantity = 1,
                         corruptionTag = corruptionTag,
                     });

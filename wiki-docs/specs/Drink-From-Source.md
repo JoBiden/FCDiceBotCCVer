@@ -185,7 +185,10 @@ recipient on `!forcedrink`, and the contributor has only `isInitiator` to tell t
 apart — so one shared interaction type cannot express the rule.
 `InteractionProcessorBase.ContributorInteractionType` (default: `InteractionType`, so no existing
 processor changes) lets this processor report the verb that was actually typed. It is the one place
-the two verbs are not collapsed into one type.
+the two verbs are not collapsed into one type, and it remains this processor's own override after
+[Invertible-Role-Interactions](Infrastructure/Invertible-Role-Interactions.md) — contributors are
+handed no identifier, so the base class has nothing to resolve a direction from. It now reads the
+typed verb through the shared `ResolveTypedVerb` hook, keeping the per-call stash to one reader.
 
 One further consequence of routing through the interaction path rather than
 `SelfCommandStatusEffects` (a self-command seam, which would have double-emitted here since the
@@ -320,7 +323,10 @@ off that path forgets one).
   the custom `!seteicon drinkfrom` path still renders on the right person.
 - `GetEiconSubject(interactionVerb, …)` resolves the custom eicon to the drinker. This hook already
   existed for `!climax`/`!climaxfor` and the spec missed it, which is why it reported the eicon
-  problem as larger than it was.
+  problem as larger than it was. Since
+  [Invertible-Role-Interactions](Infrastructure/Invertible-Role-Interactions.md) shipped, the base
+  class resolves it from `SourceDrinkProcessor.DrinkRoles` and this processor no longer overrides
+  the hook at all.
 - `InteractionEiconSupport.TokenToVerbKeys` gets both command names, and — the part that is easy to
   miss — `NormalizeVerbKey` folds `forcedrink` onto `drinkfrom` as well. The completion suffix looks
   the eicon up by the raw verb on `Interaction.type`, so without the fold a `!forcedrink` would read

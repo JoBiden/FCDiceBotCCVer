@@ -4,8 +4,12 @@ using System;
 namespace FChatDicebot.Model
 {
     /// <summary>
-    /// One physical bottle sitting in a Profile's milkInventory, identified for life by its
-    /// <see cref="serial"/>.
+    /// One physical bottle sitting in a Profile's collection, identified for life by its
+    /// <see cref="Collectible.serial"/>.
+    ///
+    /// The first <see cref="Collectible"/> type, and the one the whole shape was derived from:
+    /// serial, frozen subject name, and acquisition time all live on the base now, while the
+    /// fields that are genuinely about milk stay here.
     ///
     /// Historically one entry represented a whole milking session and could carry
     /// <c>quantity &gt; 1</c>. Serial numbers identify a single bottle, so a milking that rolls
@@ -19,30 +23,27 @@ namespace FChatDicebot.Model
     /// (the Chateau keeps it), which is what makes !sell and !drink a real choice rather than
     /// two spellings of the same thing.
     /// </summary>
-    public class MilkBottle
+    public class MilkBottle : Collectible
     {
+        /// <inheritdoc/>
+        [BsonIgnore]
+        public override string TypeLabel => "bottle";
+
         /// <summary>
-        /// Globally unique bottle number, issued from the shared counter at milking time and
-        /// never reused. Zero only on documents predating the serial backfill.
+        /// An empty is never sellable — the Chateau buys what's in the bottle, not the glass.
+        /// This was enforced by each caller before bottles became collectibles; it is the
+        /// type's own business now, which is most of what the base class is for.
         /// </summary>
-        public int serial { get; set; }
+        [BsonIgnore]
+        public override bool IsSellable => !IsEmpty;
 
         /// <summary>Identifier name from the substance/vice catalog (e.g. "cum", "milk").</summary>
         public string substance { get; set; }
 
         /// <summary>
-        /// Donor's userName at the time of milking. Frozen — does not follow renames, so it
-        /// must be resolved through <c>GetDisplayName</c> before reaching any player-facing
-        /// string.
-        /// </summary>
-        public string sourceName { get; set; }
-
-        /// <summary>When the milking happened. Used for newest-first ordering and tiebreakers.</summary>
-        public DateTime milkedAt { get; set; }
-
-        /// <summary>
         /// Legacy per-session bottle count. Always 1 for anything created since serials landed;
-        /// kept so a pre-migration document with an aggregated count still deserializes.
+        /// kept so a pre-migration document with an aggregated count still deserializes. Stays
+        /// on this type rather than the base — no future collectible should have one.
         /// </summary>
         public int quantity { get; set; }
 

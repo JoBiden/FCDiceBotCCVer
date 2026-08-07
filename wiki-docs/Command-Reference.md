@@ -82,6 +82,8 @@ All casual interactions are group-capable (name several residents) and share a 3
 | `!drinkfrom` | `!drinkfrom [user]Name[/user] {substance}` | Drink a substance straight from another resident — stronger than a bottled drink, but produces no bottle. Shares `!milk`'s per-source daily cooldown |
 | `!forcedrink` | `!forcedrink [user]Name[/user] {substance}` | Offer a drink straight from yourself; the other resident consents and is the one who drinks |
 | `!climax` | `!climax [user]Name[/user]` | Bring another resident, or yourself, to orgasm |
+| `!panties` | `!panties [user]Name[/user]` | Ask another resident for a pair of their panties. Joins your collection with its own number and their name; per-direction daily lock |
+| `!givepanties` | `!givepanties [user]Name[/user]` | Offer a pair of your own panties; the other resident consents and is the one who keeps them |
 | `!climaxfor` | `!climaxfor [user]Name[/user]` | Bring yourself to orgasm, solo or for another resident |
 | `!pay` | see below | Transfer currency or bottles |
 
@@ -176,6 +178,8 @@ Bottles come from `!milk`. Every bottle carries a permanent number, the resident
 
 `!drinkfrom` / `!forcedrink` (Involved Interactions, above) skip the bottle entirely: stronger effects, drawn from the same daily corruption budget as `!drink`, but nothing lands in the collection and there is no number to keep.
 
+Bottles are not the only thing a collection holds. `!panties` / `!givepanties` mint a keepsake into the same numbered space — same serials, same `!pay` transfer, same dossier privacy rule — but the Chateau never buys them back, so `!sell` will not take them.
+
 ## Profile, Titles & Personalization
 
 | Command | Usage | What it does |
@@ -194,7 +198,7 @@ Pin one of your own eicons to an interaction, or to one of your bodyparts.
 **Usage:** `!seteicon {interaction} [eicon]YourEicon[/eicon]` or `!seteicon {bodypart} [eicon]YourEicon[/eicon]`
 Leave the eicon off to clear it (`!seteicon ass`), or send `!seteicon` alone to list everything you've set.
 
-**Interaction eicons** show on that interaction's completion message. Mutual interactions (`!kiss`, `!cuddle`, `!handhold`, `!bond`) and group interactions show every participant's; `!climax`/`!climaxfor` show the one climaxing; `!drinkfrom`/`!forcedrink` show the one drinking; `!pet` shows the one being petted; everything else shows the initiator's. Each directional pair shares one stored icon — set it once with either name.
+**Interaction eicons** show on that interaction's completion message. Mutual interactions (`!kiss`, `!cuddle`, `!handhold`, `!bond`) and group interactions show every participant's; `!climax`/`!climaxfor` show the one climaxing; `!drinkfrom`/`!forcedrink` show the one drinking; `!panties`/`!givepanties` show the one who ends up holding the pair; `!pet` shows the one being petted; everything else shows the initiator's. Each directional pair shares one stored icon — set it once with either name.
 
 **Bodypart eicons** show whenever an interaction involves that part of your body. Any identifier in the `bodypart` category works — `!category bodypart` lists them.
 

@@ -74,6 +74,11 @@ namespace FChatDicebot.InteractionProcessors
             var sourceDrink = new SourceDrinkProcessor();
             RegisterProcessor(sourceDrink);
             RegisterProcessor(SourceDrinkProcessor.ForceDrinkType, sourceDrink);
+            // PantiesProcessor backs both !panties and !givepanties — same instance under two
+            // type keys; the typed verb decides which side ends up holding the pair.
+            var panties = new PantiesProcessor();
+            RegisterProcessor(panties);
+            RegisterProcessor(PantiesProcessor.GivePantiesType, panties);
 
             //consequence interactions
             RegisterProcessor(new MonsterizeProcessor());

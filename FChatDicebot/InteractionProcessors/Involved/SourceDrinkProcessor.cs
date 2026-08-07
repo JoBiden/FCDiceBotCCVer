@@ -41,6 +41,18 @@ namespace FChatDicebot.InteractionProcessors.Involved
         public const string DrinkFromType = "drinkfrom";
         public const string ForceDrinkType = "forcedrink";
 
+        /// <summary>
+        /// <c>!drinkfrom</c> reads "let me drink from you" (initiator swallows);
+        /// <c>!forcedrink</c> reads "drink from me" (recipient does). Declared once here so the
+        /// base class can route the eicon and status-effect subjects to the drinker without
+        /// this processor overriding either. Static so the public <see cref="ResolveDrinker"/>
+        /// helpers — which callers and tests use without an instance — can read it too.
+        /// </summary>
+        public static readonly RoleSpec DrinkRoles = RoleSpec.Invertible(
+            primaryVerb: DrinkFromType, invertedVerb: ForceDrinkType);
+
+        public override RoleSpec Roles => DrinkRoles;
+
         public override string InteractionType => DrinkFromType;
         public override string InvestmentLevel => "involved";
 
@@ -78,7 +90,7 @@ namespace FChatDicebot.InteractionProcessors.Involved
         /// Falls back to <see cref="DrinkFromType"/> outside a processed interaction (consent-time
         /// blocker checks, where no outcome has been stashed yet and no contributor cares).
         /// </summary>
-        protected override string ContributorInteractionType => _lastOutcome?.TypedVerb ?? DrinkFromType;
+        protected override string ContributorInteractionType => ResolveTypedVerb(null) ?? DrinkFromType;
 
         private class Outcome
         {
@@ -119,18 +131,18 @@ namespace FChatDicebot.InteractionProcessors.Involved
         /// </summary>
         public static string ResolveDrinker(string interactionType, string initiator, string recipient)
         {
-            return IsForceDrink(interactionType) ? recipient : initiator;
+            return DrinkRoles.ResolveActor(interactionType, initiator, recipient);
         }
 
         /// <summary>Mirror of <see cref="ResolveDrinker"/> — whoever is drunk from.</summary>
         public static string ResolveSource(string interactionType, string initiator, string recipient)
         {
-            return IsForceDrink(interactionType) ? initiator : recipient;
+            return DrinkRoles.ResolveCounterpart(interactionType, initiator, recipient);
         }
 
         private static bool IsForceDrink(string interactionType)
         {
-            return string.Equals(interactionType, ForceDrinkType, StringComparison.OrdinalIgnoreCase);
+            return DrinkRoles.IsInverted(interactionType);
         }
 
         // -------------------------------------------------------------------
@@ -400,33 +412,22 @@ namespace FChatDicebot.InteractionProcessors.Involved
         }
 
         /// <summary>
-        /// Status fragments belong to the drinker — the person the substance is acting on —
-        /// which is the initiator on <c>!drinkfrom</c> and the recipient on <c>!forcedrink</c>.
-        /// Falls back to the recipient when there is no stashed outcome to read the roles from.
+        /// The verb this interaction was invoked with, for the base class's status-effect
+        /// redirect — status fragments belong to the drinker, who is the initiator on
+        /// <c>!drinkfrom</c> and the recipient on <c>!forcedrink</c>.
+        ///
+        /// Read from the per-call stash, not the <paramref name="identifier"/>: the identifier
+        /// stays a bare substance so <see cref="StatusEffectContributors.DoseStatusContributor"/>
+        /// can match it against a vice name. Null before <see cref="ProcessInteraction"/> has
+        /// run, which leaves the base class on its recipient default rather than assuming a
+        /// direction.
+        ///
+        /// The eicon subject needs no equivalent — that call site is handed the typed verb
+        /// directly, and the base class resolves it through <see cref="Roles"/>.
         /// </summary>
-        protected override Profile GetStatusEffectSubject(
-            Profile initiatorProfile, Profile recipientProfile, string identifier)
+        protected override string ResolveTypedVerb(string identifier)
         {
-            var outcome = _lastOutcome;
-            if (outcome == null || initiatorProfile == null || recipientProfile == null)
-            {
-                return recipientProfile;
-            }
-            return string.Equals(outcome.DrinkerUser, initiatorProfile.userName, StringComparison.Ordinal)
-                ? initiatorProfile
-                : recipientProfile;
-        }
-
-        /// <summary>
-        /// The custom <c>!seteicon drinkfrom</c> icon belongs to the drinker, the same
-        /// redirection <see cref="GetStatusEffectSubject"/> makes — and here the typed verb is
-        /// handed to us directly, so no stash is needed.
-        /// </summary>
-        protected override Profile GetEiconSubject(
-            string interactionVerb, Profile initiatorProfile, Profile recipientProfile)
-        {
-            if (initiatorProfile == null || recipientProfile == null) return initiatorProfile;
-            return IsForceDrink(interactionVerb) ? recipientProfile : initiatorProfile;
+            return _lastOutcome?.TypedVerb;
         }
 
         // -------------------------------------------------------------------

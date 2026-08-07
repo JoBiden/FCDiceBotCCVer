@@ -407,7 +407,7 @@ namespace FChatDicebot.BotCommands
 
             string serialText = bottle.serial > 0 ? " [b]#" + bottle.serial + "[/b]" : string.Empty;
             parts.Add(drinkerName + " uncorks bottle" + serialText + " and drinks down the tasty "
-                + substanceText + " from " + ChateauBottles.DonorText(database, bottle.sourceName) + ".");
+                + substanceText + " from " + ChateauBottles.DonorText(database, bottle.subjectName) + ".");
 
             parts.Add(ClosingFlourishes[rng.Next(ClosingFlourishes.Length)].Replace("{substance}", substanceText));
 

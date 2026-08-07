@@ -143,10 +143,10 @@ namespace FChatDicebot.Tests.Unit
             bool moved = BottlePayment.TryTransfer(_database, "Alice", "Bob", Promise(5, false), out string failure);
 
             Assert.True(moved, failure);
-            Assert.Empty(_database.GetProfile("Alice").milkInventory);
-            var received = Assert.Single(_database.GetProfile("Bob").milkInventory);
+            Assert.Empty(_database.GetProfile("Alice").collectibles);
+            var received = Assert.Single(_database.GetProfile("Bob").Bottles());
             Assert.Equal(5, received.serial);
-            Assert.Equal("Carol", received.sourceName);
+            Assert.Equal("Carol", received.subjectName);
             Assert.Equal(ChateauCurrency.CorruptTag, received.corruptionTag);
         }
 
@@ -155,13 +155,13 @@ namespace FChatDicebot.Tests.Unit
         {
             SeedPair(Bottle(5, "cum", "Carol", hour: 1));
             // Alice sells it out from under the promise.
-            _database.SetMilkInventory("Alice", new List<MilkBottle>());
+            _database.SetCollectibles("Alice", new List<Collectible>());
 
             bool moved = BottlePayment.TryTransfer(_database, "Alice", "Bob", Promise(5, false), out string failure);
 
             Assert.False(moved);
             Assert.Contains("nothing changed hands", failure);
-            Assert.Empty(_database.GetProfile("Bob").milkInventory);
+            Assert.Empty(_database.GetProfile("Bob").collectibles);
         }
 
         [Fact]
@@ -171,15 +171,15 @@ namespace FChatDicebot.Tests.Unit
             // full one. That's a mismatch, not a substitution.
             SeedPair(Bottle(5, "cum", "Carol", hour: 1));
             var alice = _database.GetProfile("Alice");
-            alice.milkInventory[0].emptiedAt = DateTime.UtcNow;
-            _database.SetMilkInventory("Alice", alice.milkInventory);
+            alice.Bottles()[0].emptiedAt = DateTime.UtcNow;
+            _database.SetCollectibles("Alice", alice.collectibles);
 
             bool moved = BottlePayment.TryTransfer(_database, "Alice", "Bob", Promise(5, false), out string failure);
 
             Assert.False(moved);
             Assert.Contains("nothing changed hands", failure);
-            Assert.Empty(_database.GetProfile("Bob").milkInventory);
-            Assert.Single(_database.GetProfile("Alice").milkInventory);
+            Assert.Empty(_database.GetProfile("Bob").collectibles);
+            Assert.Single(_database.GetProfile("Alice").collectibles);
         }
 
         [Fact]
@@ -187,8 +187,8 @@ namespace FChatDicebot.Tests.Unit
         {
             SeedPair(Bottle(5, "cum", "Carol", hour: 1), Bottle(6, "cum", "Carol", hour: 2));
             var alice = _database.GetProfile("Alice");
-            alice.milkInventory.RemoveAll(b => b.serial == 6);
-            _database.SetMilkInventory("Alice", alice.milkInventory);
+            alice.collectibles.RemoveAll(b => b.serial == 6);
+            _database.SetCollectibles("Alice", alice.collectibles);
 
             var promises = new List<KeyValuePair<int, bool>>
             {
@@ -199,8 +199,8 @@ namespace FChatDicebot.Tests.Unit
 
             Assert.False(moved);
             // #5 was still available, but a partial delivery isn't what anyone agreed to.
-            Assert.Empty(_database.GetProfile("Bob").milkInventory);
-            Assert.Single(_database.GetProfile("Alice").milkInventory);
+            Assert.Empty(_database.GetProfile("Bob").collectibles);
+            Assert.Single(_database.GetProfile("Alice").collectibles);
         }
 
         [Fact]

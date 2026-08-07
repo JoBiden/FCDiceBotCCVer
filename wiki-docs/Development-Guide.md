@@ -158,6 +158,7 @@ Things a real processor may also need (all defined on `InteractionProcessorBase`
 
 - **`CooldownRule`** (a `CooldownSpec`) for commitment/consequence tiers — the single source of truth for the cooldown's period, who it binds, and the derived help/consent-warning text.
 - **`GroupSpec`** to opt a casual into multi-target groups (`GroupSpec.Symmetric(...)` etc.).
+- **`Roles`** (a `RoleSpec`) when one processor backs *two* verbs that swap who the interaction is about — `!climaxfor`/`!climax`, `!drinkfrom`/`!forcedrink`. `RoleSpec.Invertible(primary, inverted)` plus a `ResolveTypedVerb` override is the whole wiring; the eicon and status-effect subjects then follow the typed verb with no further overrides. See `specs/Infrastructure/Invertible-Role-Interactions.md`.
 - **`ValidateInteraction`** when an identifier or precondition must be checked before the consent prompt goes out.
 - **`GetInteractionVerb(VerbTense)`** when the verb isn't a regular `-ed`/`-s` form (pattern: `BullyProcessor`).
 - **Status effects**: compose with `ComposeConsentWarning(baseWarning, effects.ConsentWarnings)` so the decline reminder stays attached to the question.

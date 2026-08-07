@@ -27,7 +27,7 @@ Interactions are organized into investment levels. The level names the *weight* 
 
 ### 2. Involved Interactions
 
-**Location:** `InteractionProcessors/Involved/` — feed, dressup, golden, milk, drinkfrom/forcedrink, climax/climaxfor, payment (`!pay` give/receive)
+**Location:** `InteractionProcessors/Involved/` — feed, dressup, golden, milk, drinkfrom/forcedrink, climax/climaxfor, panties/givepanties, payment (`!pay` give/receive)
 
 - More roleplay investment; several take an identifier (substance to feed, attire to wear)
 - Milk produces serial-numbered bottles (`!bottles`, `!drink`, `!sell`, transfer via `!pay`); the source-drink verbs deliberately produce nothing, trading the keepsake for double-strength effects
@@ -94,7 +94,7 @@ There is no single per-level cooldown table — each processor declares its own 
 
   `CooldownSpec.FormatDuration()` / `FormatAppliesTo()` generate the `!help` fields, and `ConsentWarningText` renders the same spec into the consent-prompt frequency clause — the two can never drift. **Never hand-write cooldown text.**
 
-Implementation: timers live in the profile's `timers` dictionary as `CoolDown { timerStart, timerEnd }` (UTC), keyed `ratelimit_{countLabel}` — or per-direction keys such as `milk_give_<recipient>` (milk and breed) and `drinkfrom_give_<source>`. Where several verbs gate each other, one helper owns every key and resolves which one is held; `SourceDrawLock` is the example. A `CoolDown` records only its window, so a shared key cannot say afterwards which verb consumed it.
+Implementation: timers live in the profile's `timers` dictionary as `CoolDown { timerStart, timerEnd }` (UTC), keyed `ratelimit_{countLabel}` — or per-direction keys such as `milk_give_<recipient>` (milk and breed), `drinkfrom_give_<source>`, and `panties_give_<subject>`. Where several verbs gate each other, one helper owns every key and resolves which one is held; `SourceDrawLock` is the example. A `CoolDown` records only its window, so a shared key cannot say afterwards which verb consumed it.
 
 ## Statistics Tracking
 
@@ -202,7 +202,7 @@ being tried.
 
 ## Transformations and Lasting State
 
-Commitment/consequence interactions write lasting state onto the recipient's profile — simple values in `characteristics["key"]`, lists in `lists["key"]` (bonds, scent layers, parasites…), structured state in dedicated fields (`pregnancies`, `milkInventory`, `trainings`). Examples: monsterize sets the species characteristic; petrify records the statue and its location (browse with `!statues`); corruption tracks a magnitude that other interactions can see.
+Commitment/consequence interactions write lasting state onto the recipient's profile — simple values in `characteristics["key"]`, lists in `lists["key"]` (bonds, scent layers, parasites…), structured state in dedicated fields (`pregnancies`, `collectibles`, `trainings`). Examples: monsterize sets the species characteristic; petrify records the statue and its location (browse with `!statues`); corruption tracks a magnitude that other interactions can see.
 
 Reversals go through the themed recovery commands listed above — there is no generic "restore" command. What each transformation's exit looks like (cost, time gate, or none) is part of its spec in `wiki-docs/specs/`.
 

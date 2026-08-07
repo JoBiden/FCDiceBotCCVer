@@ -21,7 +21,7 @@ namespace FChatDicebot.BotCommands
     ///
     /// A single <see cref="MilkBottle"/> entry can hold multiple bottles
     /// (<c>quantity &gt;= 1</c>); selling can partially consume an entry, leaving
-    /// the remaining quantity in the inventory under the same milkedAt timestamp.
+    /// the remaining quantity in the collection under the same acquiredAt timestamp.
     /// </summary>
     public class ChateauSell : ChatBotCommand
     {
@@ -92,12 +92,12 @@ namespace FChatDicebot.BotCommands
                 return;
             }
 
-            // Persist inventory changes via the targeted milkInventory write (re-fetches
+            // Persist inventory changes via the targeted collectibles write (re-fetches
             // fresh at call time rather than reusing the profile loaded at the top of Run,
             // so it can't revert a concurrent currency/count/timer change), then credit
             // copper (substance value) and the bottle-currency (the Chateau handing the
             // empty back) via atomic $inc.
-            MonDB.GetDatabase().SetMilkInventory(characterName, profile.milkInventory);
+            MonDB.GetDatabase().SetCollectibles(characterName, profile.collectibles);
             MonDB.GetDatabase().ChangeCurrency(characterName, ChateauCurrency.SellPayoutCurrency, sellResult.PayoutCopper);
             MonDB.GetDatabase().ChangeCurrency(characterName, ChateauCurrency.BottleCurrency, sellResult.BottlesReturned);
 
@@ -139,7 +139,7 @@ namespace FChatDicebot.BotCommands
 
         /// <summary>
         /// Mutates <paramref name="profile"/>: removes/decrements matching bottles
-        /// from <c>milkInventory</c> in reverse acquisition order (newest first).
+        /// from <c>collectibles</c> in reverse acquisition order (newest first).
         /// Currency is returned in the result for the caller to persist separately.
         ///
         /// Pulled out as a pure method so it can be unit-tested without spinning
@@ -148,7 +148,7 @@ namespace FChatDicebot.BotCommands
         public static SellResult SellBottles(Profile profile, string substanceFilter, string sourceFilter, int requestedAmount)
         {
             var result = new SellResult();
-            if (profile?.milkInventory == null || profile.milkInventory.Count == 0 || requestedAmount <= 0)
+            if (profile?.collectibles == null || profile.collectibles.Count == 0 || requestedAmount <= 0)
             {
                 return result;
             }
@@ -168,6 +168,12 @@ namespace FChatDicebot.BotCommands
             {
                 if (remainingToSell <= 0) break;
 
+                // The item decides whether the Chateau will buy it. SelectFull already keeps
+                // empties out, but reading IsSellable here is what makes that MilkBottle's own
+                // rule rather than this loop's — a keepsake type is refused without !sell
+                // needing to know the type exists.
+                if (!bottle.IsSellable) continue;
+
                 int take = Math.Min(bottle.quantity, remainingToSell);
                 if (take <= 0) continue;
 
@@ -181,13 +187,13 @@ namespace FChatDicebot.BotCommands
                 result.BottlesReturned += take;
                 if (bottle.serial > 0) result.SoldSerials.Add(bottle.serial);
 
-                string key = (bottle.substance ?? "") + "|" + (bottle.sourceName ?? "");
+                string key = (bottle.substance ?? "") + "|" + (bottle.subjectName ?? "");
                 if (!lineItems.TryGetValue(key, out var line))
                 {
                     line = new SellLineItem
                     {
                         Substance = bottle.substance,
-                        SourceName = bottle.sourceName,
+                        SourceName = bottle.subjectName,
                     };
                     lineItems[key] = line;
                 }
@@ -198,12 +204,12 @@ namespace FChatDicebot.BotCommands
             // Prune emptied entries. Done in a second pass so we don't mutate the
             // list while iterating ordered above (ordered points into the same
             // List<MilkBottle> objects).
-            profile.milkInventory.RemoveAll(b => b.quantity <= 0);
+            profile.collectibles.RemoveAll(c => c is MilkBottle b && b.quantity <= 0);
 
             // Preserve order-of-first-appearance (newest first) in the result list.
             foreach (var bottle in ordered)
             {
-                string key = (bottle.substance ?? "") + "|" + (bottle.sourceName ?? "");
+                string key = (bottle.substance ?? "") + "|" + (bottle.subjectName ?? "");
                 if (lineItems.TryGetValue(key, out var line) && !result.LineItems.Contains(line))
                 {
                     result.LineItems.Add(line);
@@ -235,7 +241,7 @@ namespace FChatDicebot.BotCommands
                     + string.Join(", ", pieces) + ")";
             }
 
-            string serials = BottleInventory.FormatSerials(result.SoldSerials, ChateauCurrency.BottleSerialDisplayCap);
+            string serials = CollectionInventory.FormatSerials(result.SoldSerials, ChateauCurrency.BottleSerialDisplayCap);
             string serialText = string.IsNullOrEmpty(serials) ? string.Empty : " (" + serials + ")";
 
             return sellerDisplayName + " sold " + lineSummary + serialText + " for [b]" + result.PayoutCopper

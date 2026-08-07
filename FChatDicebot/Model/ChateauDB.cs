@@ -44,12 +44,15 @@ namespace FChatDicebot.Model
         [BsonIgnoreIfNull]
         public Dictionary<string, int> dailyMagnitudes { get; set; } = new Dictionary<string, int>();
 
-        // Trophy/sellable bottles. One entry per milking session — not aggregated, so a
-        // (substance, sourceName) pair can carry multiple entries with different milkedAt
-        // and corruptionTag. See MilkBottle for the per-entry shape. The Chateau provides
-        // the empty bottles needed to milk; the player's "bottle" tally from selling lives
-        // in the standard `currencies` dict under ChateauCurrency.BottleCurrency.
-        public List<MilkBottle> milkInventory { get; set; } = new List<MilkBottle>();
+        // Individually-identified items this resident holds — the user-keyed counterpart to
+        // the fungible `currencies` dict above. One document per item, each with its own
+        // serial and its own subjectName; see Collectible for the shared shape and MilkBottle
+        // for the first type. Stored polymorphically, so every element carries a `_t`
+        // discriminator and a document without one will not load (scripts/backfill-collectibles.js).
+        //
+        // The Chateau provides the empty bottles needed to milk; the player's "bottle" tally
+        // from selling lives in `currencies` under ChateauCurrency.BottleCurrency.
+        public List<Collectible> collectibles { get; set; } = new List<Collectible>();
 
         // Per-training skill levels (0-100). Key is the training identifier (e.g. "magic"),
         // value is the current level. Populated by TrainProcessor; consumed by !work for

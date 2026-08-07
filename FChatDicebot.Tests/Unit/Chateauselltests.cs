@@ -14,7 +14,7 @@ namespace FChatDicebot.Tests.Unit
     /// is needed.
     ///
     /// Sell order is LIFO (newest first); a single MilkBottle entry can be partially
-    /// consumed, leaving its remainder under the same milkedAt timestamp.
+    /// consumed, leaving its remainder under the same acquiredAt timestamp.
     /// </summary>
     public class ChateauSellTests
     {
@@ -44,7 +44,7 @@ namespace FChatDicebot.Tests.Unit
             var result = ChateauSell.SellBottles(profile, substanceFilter: "milk", sourceFilter: null, requestedAmount: 5);
 
             Assert.Equal(0, result.BottlesSold);
-            Assert.Single(profile.milkInventory); // untouched
+            Assert.Single(profile.collectibles); // untouched
         }
 
         [Fact]
@@ -57,7 +57,7 @@ namespace FChatDicebot.Tests.Unit
             var result = ChateauSell.SellBottles(profile, null, null, requestedAmount: 0);
 
             Assert.Equal(0, result.BottlesSold);
-            Assert.Single(profile.milkInventory);
+            Assert.Single(profile.collectibles);
         }
 
         // -------------------------------------------------------------------
@@ -78,8 +78,8 @@ namespace FChatDicebot.Tests.Unit
 
             Assert.Equal(1, result.BottlesSold);
             // The hour:5 entry had qty 1, so it should be removed entirely.
-            Assert.Single(profile.milkInventory);
-            Assert.Equal(DateTime.UtcNow.Date.AddHours(1), profile.milkInventory[0].milkedAt);
+            Assert.Single(profile.collectibles);
+            Assert.Equal(DateTime.UtcNow.Date.AddHours(1), profile.collectibles[0].acquiredAt);
         }
 
         [Fact]
@@ -95,14 +95,14 @@ namespace FChatDicebot.Tests.Unit
             var result = ChateauSell.SellBottles(profile, null, null, requestedAmount: 3);
 
             Assert.Equal(3, result.BottlesSold);
-            Assert.Equal(2, profile.milkInventory.Count);
+            Assert.Equal(2, profile.collectibles.Count);
             // hour:3 fully consumed
-            Assert.DoesNotContain(profile.milkInventory, b => b.milkedAt == DateTime.UtcNow.Date.AddHours(3));
+            Assert.DoesNotContain(profile.Bottles(), b => b.acquiredAt == DateTime.UtcNow.Date.AddHours(3));
             // hour:2 has 1 remaining
-            var middle = profile.milkInventory.Find(b => b.milkedAt == DateTime.UtcNow.Date.AddHours(2));
+            var middle = profile.Bottles().Find(b => b.acquiredAt == DateTime.UtcNow.Date.AddHours(2));
             Assert.Equal(1, middle.quantity);
             // hour:1 untouched
-            var oldest = profile.milkInventory.Find(b => b.milkedAt == DateTime.UtcNow.Date.AddHours(1));
+            var oldest = profile.Bottles().Find(b => b.acquiredAt == DateTime.UtcNow.Date.AddHours(1));
             Assert.Equal(2, oldest.quantity);
         }
 
@@ -116,7 +116,7 @@ namespace FChatDicebot.Tests.Unit
             var result = ChateauSell.SellBottles(profile, null, null, requestedAmount: 100);
 
             Assert.Equal(2, result.BottlesSold);
-            Assert.Empty(profile.milkInventory);
+            Assert.Empty(profile.collectibles);
         }
 
         [Fact]
@@ -129,8 +129,8 @@ namespace FChatDicebot.Tests.Unit
             var result = ChateauSell.SellBottles(profile, null, null, requestedAmount: 1);
 
             Assert.Equal(1, result.BottlesSold);
-            Assert.Single(profile.milkInventory);
-            Assert.Equal(2, profile.milkInventory[0].quantity);
+            Assert.Single(profile.collectibles);
+            Assert.Equal(2, profile.Bottles()[0].quantity);
         }
 
         // -------------------------------------------------------------------
@@ -149,8 +149,8 @@ namespace FChatDicebot.Tests.Unit
             var result = ChateauSell.SellBottles(profile, substanceFilter: "cum", sourceFilter: null, requestedAmount: 5);
 
             Assert.Equal(1, result.BottlesSold);
-            Assert.Single(profile.milkInventory);
-            Assert.Equal("milk", profile.milkInventory[0].substance);
+            Assert.Single(profile.collectibles);
+            Assert.Equal("milk", profile.Bottles()[0].substance);
         }
 
         [Fact]
@@ -164,8 +164,8 @@ namespace FChatDicebot.Tests.Unit
             var result = ChateauSell.SellBottles(profile, substanceFilter: null, sourceFilter: "Bob", requestedAmount: 5);
 
             Assert.Equal(1, result.BottlesSold);
-            Assert.Single(profile.milkInventory);
-            Assert.Equal("Alice", profile.milkInventory[0].sourceName);
+            Assert.Single(profile.collectibles);
+            Assert.Equal("Alice", profile.collectibles[0].subjectName);
         }
 
         // -------------------------------------------------------------------
@@ -232,13 +232,13 @@ namespace FChatDicebot.Tests.Unit
             return new MilkBottle
             {
                 substance = substance,
-                sourceName = source,
+                subjectName = source,
                 quantity = qty,
                 corruptionTag = tag,
-                // milkedAt is encoded as DateTime.UtcNow.Date + hour offset so tests can
+                // acquiredAt is encoded as DateTime.UtcNow.Date + hour offset so tests can
                 // pin a deterministic LIFO order without relying on wall-clock micro
                 // ordering between consecutive `new MilkBottle` calls.
-                milkedAt = DateTime.UtcNow.Date.AddHours(hour),
+                acquiredAt = DateTime.UtcNow.Date.AddHours(hour),
             };
         }
     }

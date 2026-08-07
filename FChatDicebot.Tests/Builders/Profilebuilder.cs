@@ -27,7 +27,7 @@ namespace FChatDicebot.Tests.Builders
                 timers = new Dictionary<string, CoolDown>(),
                 currencies = new Dictionary<string, int>(),
                 jobExperience = new Dictionary<string, int>(),
-                milkInventory = new List<MilkBottle>(),
+                collectibles = new List<Collectible>(),
                 trainings = new Dictionary<string, int>(),
                 dailyClimaxCounts = new Dictionary<string, int>()
             };
@@ -91,7 +91,7 @@ namespace FChatDicebot.Tests.Builders
 
         public ProfileBuilder WithMilkBottle(MilkBottle bottle)
         {
-            _profile.milkInventory.Add(bottle);
+            _profile.collectibles.Add(bottle);
             return this;
         }
 
@@ -154,7 +154,7 @@ namespace FChatDicebot.Tests.Builders
             registeredProfile.timers = _profile.timers;
             registeredProfile.currencies = _profile.currencies;
             registeredProfile.jobExperience = _profile.jobExperience;
-            registeredProfile.milkInventory = _profile.milkInventory;
+            registeredProfile.collectibles = _profile.collectibles;
             registeredProfile.trainings = _profile.trainings;
             registeredProfile.dailyClimaxCounts = _profile.dailyClimaxCounts;
             registeredProfile.employeeEarnings = _profile.employeeEarnings;

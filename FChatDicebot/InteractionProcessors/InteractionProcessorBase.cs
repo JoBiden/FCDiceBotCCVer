@@ -99,6 +99,28 @@ namespace FChatDicebot.InteractionProcessors
         public abstract string InvestmentLevel { get; }
 
         /// <summary>
+        /// Which party this interaction is about. Default: the initiator, always — right for
+        /// every processor backing a single verb. A processor registered under two type keys
+        /// that swap the roles between them (climaxfor/climax, drinkfrom/forcedrink) returns
+        /// <see cref="RoleSpec.Invertible"/> instead, and the eicon and status-effect redirects
+        /// follow it without further overrides. See <see cref="RoleSpec"/>.
+        /// </summary>
+        public virtual RoleSpec Roles => RoleSpec.Fixed();
+
+        /// <summary>
+        /// Recovers which of an invertible processor's two verbs was typed, at call sites that
+        /// aren't handed it directly. Returning null means "can't tell from here" and leaves
+        /// the caller on its non-directional default — never a guess.
+        ///
+        /// The two shipped pairs recover it differently and deliberately: climax encodes the
+        /// verb in the interaction identifier, while source-drink can't (its identifier must
+        /// stay a bare substance for <c>DoseStatusContributor</c> to match against) and reads a
+        /// per-call stash instead. That difference is why this is a hook rather than something
+        /// the base class works out for itself.
+        /// </summary>
+        protected virtual string ResolveTypedVerb(string identifier) => null;
+
+        /// <summary>
         /// Structured rate-limit description, or null when the interaction carries no warned
         /// cooldown. Warned processors override this to return their static spec; the help
         /// layer reads it so the cooldown strings can't drift from the consent warning.
@@ -195,14 +217,15 @@ namespace FChatDicebot.InteractionProcessors
 
         /// <summary>
         /// The party whose custom interaction eicon leads the 1:1 completion suffix — the one
-        /// who "performs" the interaction. Default: the initiator. Override when the acting
-        /// party is someone else (e.g. climax, where the climaxer — the recipient on
-        /// <c>!climax</c> — is the one whose eicon should show). Mirrors
+        /// who "performs" the interaction. Resolved through <see cref="Roles"/>, so the ordinary
+        /// <see cref="RoleSpec.Fixed"/> case yields the initiator and a two-verb processor
+        /// yields whichever side the typed verb makes the actor (e.g. climax, where the
+        /// climaxer is the recipient on <c>!climax</c>) with no override needed. Mirrors
         /// <see cref="GetStatusEffectSubject"/>, which redirects status fragments the same way.
         /// </summary>
         protected virtual Profile GetEiconSubject(string interactionVerb, Profile initiatorProfile, Profile recipientProfile)
         {
-            return initiatorProfile;
+            return Roles.ResolveActorProfile(interactionVerb, initiatorProfile, recipientProfile);
         }
 
         /// <summary>
@@ -448,13 +471,25 @@ namespace FChatDicebot.InteractionProcessors
 
         /// <summary>
         /// Returns the profile whose status effects should be surfaced on the completion
-        /// message. Default: the recipient. Override when the interaction's natural
-        /// subject is the initiator (or some other party derived from the identifier).
+        /// message. Default: the recipient — most interactions act on them, so their auras /
+        /// scents / etc. are the natural ones to surface.
+        ///
+        /// A processor with an invertible <see cref="Roles"/> spec instead surfaces the
+        /// <b>actor's</b> effects (the climaxer, the drinker), resolved from whatever
+        /// <see cref="ResolveTypedVerb"/> can recover. When the verb can't be recovered — a
+        /// consent-time call, or a completion with no stashed outcome — this falls back to the
+        /// recipient rather than guessing a direction.
         /// </summary>
         protected virtual Profile GetStatusEffectSubject(
             Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
-            return recipientProfile;
+            if (!Roles.IsInvertible || initiatorProfile == null || recipientProfile == null)
+            {
+                return recipientProfile;
+            }
+            string typedVerb = ResolveTypedVerb(identifier);
+            if (string.IsNullOrEmpty(typedVerb)) return recipientProfile;
+            return Roles.ResolveActorProfile(typedVerb, initiatorProfile, recipientProfile);
         }
 
         /// <summary>

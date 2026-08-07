@@ -651,16 +651,17 @@ namespace FChatDicebot.BotCommands
 
         /// <summary>
         /// Single-line bottle collection tally. Substance counts only, deliberately: the dossier
-        /// is public and a bottle's sourceName amounts to "who has this resident milked", which
+        /// is public and a bottle's subjectName amounts to "who has this resident milked", which
         /// is the donor's business rather than the reader's. Serial numbers are likewise omitted
         /// so a public page can't be used to shop someone else's collection.
         /// </summary>
         private string BuildBottledSection(Profile profile)
         {
-            if (profile.milkInventory == null || profile.milkInventory.Count == 0) return string.Empty;
+            if (profile.collectibles == null || profile.collectibles.Count == 0) return string.Empty;
 
-            var full = profile.milkInventory.Where(b => b != null && !b.IsEmpty).ToList();
-            int emptyCount = profile.milkInventory.Count(b => b != null && b.IsEmpty);
+            var bottles = CollectionInventory.OfType<MilkBottle>(profile);
+            var full = bottles.Where(b => !b.IsEmpty).ToList();
+            int emptyCount = bottles.Count(b => b.IsEmpty);
             if (full.Count == 0 && emptyCount == 0) return string.Empty;
 
             List<string> parts = new List<string>();
