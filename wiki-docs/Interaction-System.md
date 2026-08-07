@@ -27,11 +27,11 @@ Interactions are organized into investment levels. The level names the *weight* 
 
 ### 2. Involved Interactions
 
-**Location:** `InteractionProcessors/Involved/` — feed, dressup, golden, milk, climax/climaxfor, payment (`!pay` give/receive)
+**Location:** `InteractionProcessors/Involved/` — feed, dressup, golden, milk, drinkfrom/forcedrink, climax/climaxfor, payment (`!pay` give/receive)
 
 - More roleplay investment; several take an identifier (substance to feed, attire to wear)
-- Milk produces serial-numbered bottles (`!bottles`, `!drink`, `!sell`, transfer via `!pay`)
-- Milk's cooldown is **per-direction**: the initiator is stamped with a `milk_give_<recipient>` key, so milking Alice doesn't block milking Bob
+- Milk produces serial-numbered bottles (`!bottles`, `!drink`, `!sell`, transfer via `!pay`); the source-drink verbs deliberately produce nothing, trading the keepsake for double-strength effects
+- The **draw lock** is per-direction and spans both verbs: the taker is stamped with a key scoped to the source, so drawing from Alice doesn't block drawing from Bob, and being drawn from doesn't block drawing back. `SourceDrawLock` owns the keys and the refusal wording — each verb has its own key and every caller checks all of them, so a refusal names the verb that actually spent the day
 
 ### 3. Commitment Interactions
 
@@ -94,7 +94,7 @@ There is no single per-level cooldown table — each processor declares its own 
 
   `CooldownSpec.FormatDuration()` / `FormatAppliesTo()` generate the `!help` fields, and `ConsentWarningText` renders the same spec into the consent-prompt frequency clause — the two can never drift. **Never hand-write cooldown text.**
 
-Implementation: timers live in the profile's `timers` dictionary as `CoolDown { timerStart, timerEnd }` (UTC), keyed `ratelimit_{countLabel}` — or per-direction keys such as `milk_give_<recipient>` for milk and breed.
+Implementation: timers live in the profile's `timers` dictionary as `CoolDown { timerStart, timerEnd }` (UTC), keyed `ratelimit_{countLabel}` — or per-direction keys such as `milk_give_<recipient>` (milk and breed) and `drinkfrom_give_<source>`. Where several verbs gate each other, one helper owns every key and resolves which one is held; `SourceDrawLock` is the example. A `CoolDown` records only its window, so a shared key cannot say afterwards which verb consumed it.
 
 ## Statistics Tracking
 

@@ -78,7 +78,7 @@ namespace FChatDicebot.InteractionProcessors.StatusEffectContributors
 
                 string vicePhrase = RenderVicePhrase(vice);
 
-                if (IsSatisfiedBy(interactionType, parentIdentifier, vice.Vice))
+                if (IsSatisfiedBy(interactionType, parentIdentifier, vice.Vice, isInitiator))
                 {
                     result.CompletionAppendix.Add(SatisfactionTemplate
                         .Replace("{subject}", subjectName)
@@ -107,27 +107,68 @@ namespace FChatDicebot.InteractionProcessors.StatusEffectContributors
         }
 
         /// <summary>
-        /// Returns true when the parent interaction inherently delivers the named vice and
-        /// should therefore quiet the craving instead of triggering one. The three matches:
+        /// Returns true when the parent interaction inherently delivers the named vice to
+        /// <b>this</b> party, and should therefore quiet their craving instead of triggering one.
+        ///
         /// <list type="bullet">
-        /// <item><description><c>!feed</c> where the substance identifier == vice name.</description></item>
-        /// <item><description><c>!odorize</c> where the scent identifier == vice name.</description></item>
-        /// <item><description><c>!dose</c> where the vice identifier == vice name (the escalating dose itself).</description></item>
-        /// <item><description><c>!drink</c> where the bottle's substance == vice name — the only
-        /// satisfaction route that doesn't need a second consenting resident.</description></item>
+        /// <item><description><c>!feed</c> — the fed party only. The one doing the feeding is
+        /// handling the substance, not swallowing it.</description></item>
+        /// <item><description><c>!drinkfrom</c> — the initiator, who asked to drink.</description></item>
+        /// <item><description><c>!forcedrink</c> — the recipient, who was offered the drink.</description></item>
+        /// <item><description><c>!drink</c> — the drinker. A self-command with one party, so it
+        /// arrives as the initiator; the only satisfaction route needing no second
+        /// resident.</description></item>
+        /// <item><description><c>!odorize</c> / <c>!dose</c> — either party. These apply the
+        /// substance to the air and the body rather than feeding it to one mouth, so there is no
+        /// single consumer to single out.</description></item>
         /// </list>
+        ///
         /// All comparisons are case-insensitive. Climax interactions intentionally don't
         /// match — they dose the partner instead of satisfying anyone.
+        ///
+        /// <para>
+        /// <b>Why the consumer side matters.</b> This contributor is
+        /// <see cref="SymmetricInvocation"/>, so on an interaction it runs against both parties.
+        /// Without the role check, feeding Bob a musk he is hooked on would report the feeder as
+        /// satisfied too, having eaten nothing. The non-consuming party still runs the ordinary
+        /// craving roll below, which is the point: watching someone else get what you crave is
+        /// exactly when the craving line should fire.
+        /// </para>
+        ///
+        /// <para>
+        /// <paramref name="parentInteractionType"/> is the <b>typed verb</b>, not the processor's
+        /// registered type — <see cref="Involved.SourceDrinkProcessor"/> overrides
+        /// <c>ContributorInteractionType</c> so <c>forcedrink</c> arrives distinct from
+        /// <c>drinkfrom</c>. Their consumer sits on opposite sides.
+        /// </para>
         /// </summary>
-        public static bool IsSatisfiedBy(string parentInteractionType, string parentIdentifier, string viceName)
+        public static bool IsSatisfiedBy(
+            string parentInteractionType, string parentIdentifier, string viceName, bool isInitiator)
         {
             if (string.IsNullOrEmpty(parentIdentifier) || string.IsNullOrEmpty(viceName)) return false;
             if (!string.Equals(parentIdentifier, viceName, StringComparison.OrdinalIgnoreCase)) return false;
 
-            if (string.Equals(parentInteractionType, "feed", StringComparison.OrdinalIgnoreCase)) return true;
+            // One party consumes; the other is present for it.
+            if (string.Equals(parentInteractionType, "feed", StringComparison.OrdinalIgnoreCase))
+            {
+                return !isInitiator;
+            }
+            if (string.Equals(parentInteractionType, DrinkFromType, StringComparison.OrdinalIgnoreCase))
+            {
+                return isInitiator;
+            }
+            if (string.Equals(parentInteractionType, ForceDrinkType, StringComparison.OrdinalIgnoreCase))
+            {
+                return !isInitiator;
+            }
+            if (string.Equals(parentInteractionType, DrinkType, StringComparison.OrdinalIgnoreCase))
+            {
+                return isInitiator;
+            }
+
+            // Applied rather than fed: no single consumer to single out.
             if (string.Equals(parentInteractionType, "odorize", StringComparison.OrdinalIgnoreCase)) return true;
             if (string.Equals(parentInteractionType, DoseProcessor.DoseType, StringComparison.OrdinalIgnoreCase)) return true;
-            if (string.Equals(parentInteractionType, DrinkType, StringComparison.OrdinalIgnoreCase)) return true;
             return false;
         }
 
@@ -137,5 +178,13 @@ namespace FChatDicebot.InteractionProcessors.StatusEffectContributors
         /// satisfaction rule and its trigger can't drift apart.
         /// </summary>
         public const string DrinkType = "drink";
+
+        /// <summary>
+        /// The two source-drink verbs, kept distinct here even though they are one act
+        /// everywhere else: the party who swallows is the initiator on one and the recipient on
+        /// the other, and this is the rule that has to tell them apart.
+        /// </summary>
+        public const string DrinkFromType = "drinkfrom";
+        public const string ForceDrinkType = "forcedrink";
     }
 }

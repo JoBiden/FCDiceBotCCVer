@@ -26,7 +26,7 @@ namespace FChatDicebot.BotCommands
             ShortDescription = "Milk a substance from another resident.";
             LongDescription = "Milk a specified substance from another resident, gaining 1 to 3 bottles. The bottles might be pure or corrupted based on who was milked. You can only milk a specified resident once per day.";
             Usage = "!milk [noparse][user]NameInUserTag[/user][/noparse] {substance}";
-            RelatedCommands = new string[] { "bottles", "sell", "drink", "feed", "golden", "consent", "dossier" };
+            RelatedCommands = new string[] { "bottles", "sell", "drink", "drinkfrom", "feed", "golden", "consent", "dossier" };
             CooldownDuration = "1 day, per-direction";
             CooldownAppliesTo = "initiator (per recipient)";
             IdentifierCategory = "substance";
@@ -71,10 +71,14 @@ namespace FChatDicebot.BotCommands
                     bot.SendPrivateMessage(ChateauInteractionHandler.typeNotFoundText(identifierType), characterName);
                     return;
                 }
-                if (MilkProcessor.HasActiveDirectionLock(initiatorProfile, characterName))
+                // Resolve which verb holds the lock rather than assuming milk: the same
+                // direction can have been spent by a source drink instead.
+                var selfLock = InteractionProcessors.SourceDrawLock.ActiveLock(initiatorProfile, characterName);
+                if (selfLock != null)
                 {
                     bot.SendPrivateMessage(
-                        MilkProcessor.DirectionLockMessage(initiatorProfile.displayName, isSelf: true),
+                        InteractionProcessors.SourceDrawLock.LockMessage(
+                            selfLock.Value, initiatorProfile.displayName, isSelf: true),
                         characterName);
                     return;
                 }

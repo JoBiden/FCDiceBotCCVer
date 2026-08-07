@@ -69,6 +69,11 @@ namespace FChatDicebot.InteractionProcessors
             var climaxfor = new ClimaxforProcessor();
             RegisterProcessor(climaxfor);
             RegisterProcessor(ClimaxforProcessor.ClimaxType, climaxfor);
+            // SourceDrinkProcessor backs both !drinkfrom and !forcedrink — same instance under
+            // two type keys; the typed verb decides which side drinks.
+            var sourceDrink = new SourceDrinkProcessor();
+            RegisterProcessor(sourceDrink);
+            RegisterProcessor(SourceDrinkProcessor.ForceDrinkType, sourceDrink);
 
             //consequence interactions
             RegisterProcessor(new MonsterizeProcessor());

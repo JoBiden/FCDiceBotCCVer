@@ -79,6 +79,8 @@ All casual interactions are group-capable (name several residents) and share a 3
 | `!dressup` (`!dress`) | `!dressup [user]Name[/user] {attire}` | Dress another resident, or yourself, in specific attire |
 | `!golden` | `!golden [user]Name[/user] {bodypart}` | Give another resident a golden shower |
 | `!milk` | `!milk [user]Name[/user] {substance}` | Milk a substance from another resident (produces numbered bottles; per-recipient daily cooldown) |
+| `!drinkfrom` | `!drinkfrom [user]Name[/user] {substance}` | Drink a substance straight from another resident — stronger than a bottled drink, but produces no bottle. Shares `!milk`'s per-source daily cooldown |
+| `!forcedrink` | `!forcedrink [user]Name[/user] {substance}` | Offer a drink straight from yourself; the other resident consents and is the one who drinks |
 | `!climax` | `!climax [user]Name[/user]` | Bring another resident, or yourself, to orgasm |
 | `!climaxfor` | `!climaxfor [user]Name[/user]` | Bring yourself to orgasm, solo or for another resident |
 | `!pay` | see below | Transfer currency or bottles |
@@ -172,6 +174,8 @@ Bottles come from `!milk`. Every bottle carries a permanent number, the resident
 | `!bottles` (`!collection`) | `!bottles` / `!bottles {substance}` / `!bottles {substance} [user]Name[/user]` | Look over the bottles you're holding (private reply) |
 | `!drink` | `!drink` / `!drink {substance}` / `!drink #{number}` | Drink one bottle (channel-only). Drinking empties the bottle but keeps its number as a record. Corrupt/pure bottles shift you (up to 3/day); an addicting substance quiets the craving |
 
+`!drinkfrom` / `!forcedrink` (Involved Interactions, above) skip the bottle entirely: stronger effects, drawn from the same daily corruption budget as `!drink`, but nothing lands in the collection and there is no number to keep.
+
 ## Profile, Titles & Personalization
 
 | Command | Usage | What it does |
@@ -190,7 +194,7 @@ Pin one of your own eicons to an interaction, or to one of your bodyparts.
 **Usage:** `!seteicon {interaction} [eicon]YourEicon[/eicon]` or `!seteicon {bodypart} [eicon]YourEicon[/eicon]`
 Leave the eicon off to clear it (`!seteicon ass`), or send `!seteicon` alone to list everything you've set.
 
-**Interaction eicons** show on that interaction's completion message. Mutual interactions (`!kiss`, `!cuddle`, `!handhold`, `!bond`) and group interactions show every participant's; `!climax`/`!climaxfor` show the one climaxing; `!pet` shows the one being petted; everything else shows the initiator's.
+**Interaction eicons** show on that interaction's completion message. Mutual interactions (`!kiss`, `!cuddle`, `!handhold`, `!bond`) and group interactions show every participant's; `!climax`/`!climaxfor` show the one climaxing; `!drinkfrom`/`!forcedrink` show the one drinking; `!pet` shows the one being petted; everything else shows the initiator's. Each directional pair shares one stored icon — set it once with either name.
 
 **Bodypart eicons** show whenever an interaction involves that part of your body. Any identifier in the `bodypart` category works — `!category bodypart` lists them.
 

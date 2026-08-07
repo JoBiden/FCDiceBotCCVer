@@ -52,10 +52,33 @@ Stored JSON-encoded inside `Profile.lists["vices"]` (mirrors the [`ScentLayer`](
 
 `DoseStatusContributor` runs on every consent-driven completion. For each `ViceInstance` on the profile being passed (initiator OR recipient — see "Symmetric cravings" below):
 
-1. **Satisfaction check first.** If the parent interaction satisfies this specific vice, emit a satisfaction fragment and skip the craving roll. Satisfaction matches:
-   - `parentInteractionType == "feed"` AND `parentIdentifier == vice` (case-insensitive).
-   - `parentInteractionType == "odorize"` AND `parentIdentifier == vice` (case-insensitive).
-   - `parentInteractionType == "dose"` AND `parentIdentifier == vice` (case-insensitive) — the act of escalating also satisfies the moment.
+1. **Satisfaction check first.** If the parent interaction delivers this specific vice *to this
+   party*, emit a satisfaction fragment and skip the craving roll. `DoseStatusContributor.IsSatisfiedBy`
+   is authoritative; all matches additionally require `parentIdentifier == vice` (case-insensitive).
+
+   | Parent | Satisfied party |
+   |---|---|
+   | `!feed` | the fed party (recipient) only |
+   | `!drinkfrom` | the initiator, who asked to drink |
+   | `!forcedrink` | the recipient, who was offered the drink |
+   | `!drink` | the drinker (a self-command, so it arrives as the initiator) |
+   | `!odorize`, `!dose` | either party |
+
+   **As-shipped change, 2026-08-07.** Satisfaction used to fire for whichever party was
+   addicted, regardless of who consumed — so feeding Bob a musk he was hooked on reported the
+   *feeder* as satisfied too, having eaten nothing. The verbs that put a substance in one
+   specific mouth (`feed`, and the source-drink pair added by
+   [Drink-From-Source](Drink-From-Source.md)) now satisfy only the consumer. `odorize` and
+   `dose` are unchanged: they apply the substance to the air and the body rather than feeding it
+   to one mouth, so there is no single consumer to single out.
+
+   The non-consuming party falls through to the craving roll below, which is the point —
+   watching someone else get what you crave is exactly when a craving line should fire.
+
+   Because the consumer sits on opposite sides of `!drinkfrom` and `!forcedrink`, the contributor
+   has to see the *typed verb* rather than the single interaction type that pair reports
+   everywhere else. `InteractionProcessorBase.ContributorInteractionType` is the seam — see
+   [Status-Effect-Hook](Infrastructure/Status-Effect-Hook.md).
 
    Satisfaction fragment template (first draft, wording subject to review):
    > `"…the craving for {vice} momentarily quieted."`
@@ -189,9 +212,10 @@ The `RandomCurse` branch logs a "couldn't apply RandomCurse — Curse-and-Cleans
   - Persistence round-trip through `ViceInstance.LoadAll` / `SaveAll`.
 - `DoseStatusContributorTests.cs`:
   - Craving probability scales linearly with `AddictionLevel` (statistical test across many trials).
-  - `!feed` of matching substance → satisfaction fragment, no craving roll, no `AddictionLevel` change.
-  - `!odorize` of matching scent → satisfaction.
-  - `!dose` of same vice (parentIdentifier matches) → satisfaction.
+  - `!feed` of matching substance → satisfaction fragment for the **fed party only**, no craving roll, no `AddictionLevel` change; the feeder falls through to the craving roll.
+  - `!drinkfrom` satisfies the initiator, `!forcedrink` the recipient — the two directions of one act, resolved by the typed verb.
+  - `!odorize` of matching scent → satisfaction, either party.
+  - `!dose` of same vice (parentIdentifier matches) → satisfaction, either party.
   - `!dose` of *different* vice → other vices still craving-roll.
   - Climaxfor / climax interactions never trigger satisfaction (they dose instead).
   - Contributor is called once per side; `isInitiator` is honored.

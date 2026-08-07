@@ -36,6 +36,8 @@ namespace FChatDicebot.Tests.Unit
         [InlineData("climax")]
         [InlineData("corrupt")]
         [InlineData("lap")]
+        [InlineData("drinkfrom")]
+        [InlineData("forcedrink")]
         // Explicit, because Usage documents "{name}" or nothing at all
         [InlineData("consent")]
         [InlineData("no")]

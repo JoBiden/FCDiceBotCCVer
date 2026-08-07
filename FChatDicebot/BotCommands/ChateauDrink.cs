@@ -41,7 +41,7 @@ namespace FChatDicebot.BotCommands
             ShortDescription = "Drink down one of the bottles you're holding.";
             LongDescription = "Uncork and drink a bottle from your collection, keeping the empty. Whatever was inside affects you: a corrupt or pure bottle shifts you the same way, up to 3 bottles per day, and a substance you're addicted to will quiet the craving. There's always a small chance you find yourself wanting more. Name a bottle by its number, or leave it off to drink your newest.";
             Usage = "!drink\nor\n!drink {substance}\nor\n!drink #{number}";
-            RelatedCommands = new string[] { "bottles", "milk", "sell", "dose", "detox" };
+            RelatedCommands = new string[] { "bottles", "milk", "sell", "dose", "detox", "drinkfrom", "forcedrink" };
             CooldownDuration = null;
             CooldownAppliesTo = null;
             IdentifierCategory = "substance";
@@ -198,21 +198,58 @@ namespace FChatDicebot.BotCommands
         }
 
         /// <summary>
-        /// Move the drinker's corruption by the bottle's tag, within the day's budget. The budget
-        /// lives under its own key so it never draws from the per-pair <c>!corrupt</c> quota, and
-        /// it is what bounds the drift now that bottles can be pooled through <c>!pay</c>.
+        /// Move the drinker's corruption by the bottle's tag, within the day's budget.
         /// </summary>
         private static void ApplyCorruption(Profile profile, MilkBottle bottle, DrinkResult result)
         {
-            int shift = ShiftForTag(bottle.corruptionTag);
-            if (shift == 0) return;
+            var outcome = ApplyDrinkCorruption(
+                profile, bottle.corruptionTag, ChateauCurrency.DrinkCorruptionShiftPerBottle);
+            result.CorruptionApplied = outcome.Applied;
+            result.BudgetSpent = outcome.BudgetSpent;
+        }
+
+        /// <summary>What one drink did to the drinker's corruption.</summary>
+        public struct CorruptionDrinkOutcome
+        {
+            /// <summary>Signed shift actually applied; 0 when untagged or over budget.</summary>
+            public int Applied;
+            /// <summary>True when the drink was tagged but the day's budget was already spent.</summary>
+            public bool BudgetSpent;
+        }
+
+        /// <summary>
+        /// Move <paramref name="profile"/>'s corruption by <paramref name="magnitude"/> in the
+        /// direction <paramref name="corruptionTag"/> names, spending from the day's drink budget.
+        /// The budget lives under its own key so it never draws from the per-pair <c>!corrupt</c>
+        /// quota, and it is what bounds the drift now that bottles can be pooled through
+        /// <c>!pay</c>.
+        ///
+        /// Shared by the bottled path (<c>!drink</c>, magnitude 1) and the source path
+        /// (<c>!drinkfrom</c> / <c>!forcedrink</c>, magnitude 2) so there is exactly one
+        /// implementation of what a drink does to you and the two can't drift when either is
+        /// tuned. Mutates the profile in place; the caller persists.
+        ///
+        /// The budget gate is "any budget left", not "enough budget left": a drink that starts
+        /// inside the limit lands whole even when its magnitude carries the day's total past it.
+        /// A resident's ceiling is therefore <c>limit - 1 + magnitude</c> (4, at the shipped
+        /// numbers) rather than the limit itself — deliberate, so a stronger drink never lands
+        /// as a partial, arbitrary-looking dud. The gate still stops the next one dead.
+        /// </summary>
+        public static CorruptionDrinkOutcome ApplyDrinkCorruption(
+            Profile profile, string corruptionTag, int magnitude)
+        {
+            var outcome = new CorruptionDrinkOutcome();
+            if (profile == null) return outcome;
+
+            int shift = ShiftForTag(corruptionTag, magnitude);
+            if (shift == 0) return outcome;
 
             DateTime utcDay = DateTime.UtcNow.Date;
             int used = GetUsedDrinkShift(profile, utcDay);
             if (used >= ChateauCurrency.DrinkCorruptionDailyLimit)
             {
-                result.BudgetSpent = true;
-                return;
+                outcome.BudgetSpent = true;
+                return outcome;
             }
 
             int current = CorruptionProcessor.ReadCorruption(profile);
@@ -222,7 +259,8 @@ namespace FChatDicebot.BotCommands
             }
             profile.characteristics[CorruptionProcessor.CorruptionCharacteristicKey] = (current + shift).ToString();
             RecordUsedDrinkShift(profile, utcDay, used + Math.Abs(shift));
-            result.CorruptionApplied = shift;
+            outcome.Applied = shift;
+            return outcome;
         }
 
         /// <summary>
@@ -231,13 +269,22 @@ namespace FChatDicebot.BotCommands
         /// </summary>
         public static int ShiftForTag(string corruptionTag)
         {
+            return ShiftForTag(corruptionTag, ChateauCurrency.DrinkCorruptionShiftPerBottle);
+        }
+
+        /// <summary>
+        /// <see cref="ShiftForTag(string)"/> at an arbitrary magnitude — the source-drink path
+        /// moves further per drink than a bottle does.
+        /// </summary>
+        public static int ShiftForTag(string corruptionTag, int magnitude)
+        {
             if (string.Equals(corruptionTag, ChateauCurrency.CorruptTag, StringComparison.OrdinalIgnoreCase))
             {
-                return -ChateauCurrency.DrinkCorruptionShiftPerBottle;
+                return -magnitude;
             }
             if (string.Equals(corruptionTag, ChateauCurrency.PurifiedTag, StringComparison.OrdinalIgnoreCase))
             {
-                return ChateauCurrency.DrinkCorruptionShiftPerBottle;
+                return magnitude;
             }
             return 0;
         }
@@ -275,27 +322,62 @@ namespace FChatDicebot.BotCommands
         }
 
         /// <summary>
-        /// Roll to deepen an addiction the drinker already carries for this substance. Returns
-        /// the resulting addiction level, or 0 when nothing intensified.
-        ///
-        /// Note this deliberately fires even when the same drink satisfied the craving: the
-        /// bottle quiets the want now and tightens the hook at the same time, which is the whole
-        /// dynamic the vice system is modelling. Restricting it to unsatisfied drinks would make
-        /// the roll unreachable, since only an existing vice can intensify and an existing vice
-        /// is exactly what satisfaction requires.
+        /// Roll to deepen an addiction the bottle's drinker already carries. Returns the
+        /// resulting addiction level, or 0 when nothing intensified. See
+        /// <see cref="ApplyDrinkAddictionRoll"/> for the rules.
         /// </summary>
         private static int ApplyAddictionRoll(Profile profile, MilkBottle bottle, Random rng, DrinkResult result)
         {
-            if (string.IsNullOrEmpty(bottle.substance)) return 0;
-            if (rng.NextDouble() >= ChateauCurrency.DrinkAddictionChance) return 0;
+            var outcome = ApplyDrinkAddictionRoll(
+                profile, bottle.substance, ChateauCurrency.DrinkAddictionChance, rng);
+            result.AddictionIntensified = outcome.Intensified;
+            return outcome.AddictionLevel;
+        }
 
-            var intensified = DoseProcessor.IntensifyExistingVices(profile, new[] { bottle.substance });
-            if (intensified.Count == 0) return 0;
+        /// <summary>What one drink did to the drinker's addictions.</summary>
+        public struct AddictionDrinkOutcome
+        {
+            /// <summary>True when the drink deepened a vice the drinker already carried.</summary>
+            public bool Intensified;
+            /// <summary>The resulting addiction level, or 0 when nothing intensified.</summary>
+            public int AddictionLevel;
+        }
 
-            result.AddictionIntensified = true;
+        /// <summary>
+        /// Roll at <paramref name="chance"/> to deepen an addiction the drinker already carries
+        /// for <paramref name="substance"/>. Shared by the bottled and source paths at their own
+        /// odds, so the intensify-only rule has one implementation.
+        ///
+        /// Intensify-only is load-bearing, not incidental:
+        /// <see cref="DoseProcessor.IntensifyExistingVices"/> only deepens a vice already
+        /// present, so no amount of drinking can hook a clean resident. Creating an addiction
+        /// stays <c>!dose</c>'s job, behind its own consent framing.
+        ///
+        /// This deliberately fires even when the same drink satisfied the craving: the drink
+        /// quiets the want now and tightens the hook at the same time, which is the dynamic the
+        /// vice system is modelling. Restricting it to unsatisfied drinks would make the roll
+        /// unreachable, since only an existing vice can intensify and an existing vice is
+        /// exactly what satisfaction requires.
+        ///
+        /// Mutates the profile in place; the caller persists.
+        /// </summary>
+        public static AddictionDrinkOutcome ApplyDrinkAddictionRoll(
+            Profile profile, string substance, double chance, Random rng)
+        {
+            var outcome = new AddictionDrinkOutcome();
+            if (profile == null || string.IsNullOrEmpty(substance)) return outcome;
+
+            rng = rng ?? new Random();
+            if (rng.NextDouble() >= chance) return outcome;
+
+            var intensified = DoseProcessor.IntensifyExistingVices(profile, new[] { substance });
+            if (intensified.Count == 0) return outcome;
+
+            outcome.Intensified = true;
             var vice = ViceInstance.LoadAll(profile)
-                .FirstOrDefault(v => string.Equals(v.Vice, bottle.substance, StringComparison.OrdinalIgnoreCase));
-            return vice?.AddictionLevel ?? 0;
+                .FirstOrDefault(v => string.Equals(v.Vice, substance, StringComparison.OrdinalIgnoreCase));
+            outcome.AddictionLevel = vice?.AddictionLevel ?? 0;
+            return outcome;
         }
 
         // -------------------------------------------------------------------

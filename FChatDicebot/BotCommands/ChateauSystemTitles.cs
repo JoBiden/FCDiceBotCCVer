@@ -208,6 +208,20 @@ namespace FChatDicebot
                 ("milktake", 10, "Giga Milk"),
                 ("milktake", 25, "Cow"),
 
+                // Drinking from the source - giving (the drinker, who performs the act:
+                // !drinkfrom as initiator or !forcedrink as recipient)
+                ("drinkfromgive", 1, "Straight From The Tap"),
+                ("drinkfromgive", 5, "Slurp"),
+                ("drinkfromgive", 10, "Prefers It Fresh"),
+                ("drinkfromgive", 25, "Never Needed A Bottle"),
+
+                // Drinking from the source - taking (the source, who is drunk from:
+                // !drinkfrom as recipient or !forcedrink as initiator)
+                ("drinkfromtake", 1, "On Tap"),
+                ("drinkfromtake", 5, "Free Flowing"),
+                ("drinkfromtake", 10, "House Specialty"),
+                ("drinkfromtake", 25, "The Fountain"),
+
                 // Payment Give - giving
                 ("paymentGivegive", 1, "Not Broke"),
                 ("paymentGivegive", 5, "Frequent Buyer"),

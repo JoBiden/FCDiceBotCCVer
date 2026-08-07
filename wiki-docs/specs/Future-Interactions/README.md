@@ -17,7 +17,6 @@ Specs are removed from this folder once they ship — the as-implemented docs li
 | Spec | Adds |
 |------|------|
 | [Group-Interactions-And-Pending-Lifecycle](Group-Interactions-And-Pending-Lifecycle.md) | Multi-person casual interactions (hybrid group model), `!withdraw`/`!refuse` pending-lifecycle commands, and three new casuals (lapsit lap-stack, boobhat, lick). |
-| [Drink-From-Source](Drink-From-Source.md) | `!drinkfrom` / `!forcedrink` — consume another resident's fluid directly, skipping the `!milk` bottle step. Stronger than a bottled drink, shares milk's per-direction daily lock and `!drink`'s daily corruption budget, and leaves no keepsake. Adds no infrastructure. |
 
 ### Planned infrastructure
 
