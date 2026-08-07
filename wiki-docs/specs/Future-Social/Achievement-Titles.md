@@ -194,6 +194,28 @@ Arcs to support (mechanics fixed, text TBD):
 3. **Pledge turnaround** — pledged → abandoned → later *fulfilled* the same interaction type. (May be readable straight from the `Pledge` collection's status history without a breadcrumb — investigate at build.)
 4. **Rags to riches** — currency hit 0 after being positive, then later wealthy.
 
+### Axis 8 — Collection · `CheckCollectionTitles(profile)` · zero new data
+
+**Intent, recorded 2026-08-07. Mechanics sketched, nothing specced or approved — the title text below is placeholder, not draft wording.**
+
+[Collectibles](../Infrastructure/Collectibles.md) shipped a general model for individually-identified, user-keyed items: bottles and panties today, more types later. It is the obvious next achievement axis and none of the seven above covers it, because a collection has shapes a count doesn't:
+
+| Shape | Reads | Why it isn't Axis 4b |
+|---|---|---|
+| **Breadth** — pairs/bottles from N distinct residents | `collectibles` grouped by `subjectName` | 4b is complete-the-set against a fixed catalog; residents are an open set |
+| **Depth** — N items from one resident | same, max per group | a per-partner shape, closer to Axis 5 than to variety |
+| **Cross-type** — hold at least one of every collectible type | `collectibles` grouped by runtime type | this *is* a 4b-style set clear, and the catalog is the `Collectible` subclasses |
+| **Provenance** — hold a low serial, or an item whose serial predates yours | `serial` vs. the shared counter | genuinely new: nothing else in the system has an age-ordered identity |
+| **Curation** — hold an item that has changed hands | needs new data (see below) | — |
+
+Notes for whoever builds it:
+
+- **Everything except Curation is zero new data.** `Profile.collectibles` already carries the subject, the type and the serial, so these are check methods over what is already stored — the same property that made Axis 1–4 cheap.
+- **The serial shapes are the interesting ones** and are unique to this axis. A low serial is "demonstrably old" by construction (`Bottle-Consumption-And-Transfer` §31), and the shared counter means a single ordering spans every type.
+- **Curation needs a field.** Transfer through `!pay` currently moves an item without recording that it moved, so "held by someone else first" isn't derivable. A hop count or a previous-holder stamp on `Collectible` would do it — cheap to add *before* more item types exist, expensive after, which is the same timing argument the `createdBy` decision turned on.
+- **The privacy rule applies.** Another resident's collection is counts-only, so any title text must not name whose items someone holds.
+- **Empties count as held.** A drunk bottle keeps its serial and stays in the collection deliberately; a collection title that ignored empties would contradict that.
+
 ---
 
 ## Phasing
@@ -203,6 +225,7 @@ Arcs to support (mechanics fixed, text TBD):
 | **1** | 1 (combo: switch + category-clear), 2 (meta + Completionist), 3 (state + "How did we get here?"), 4a (distinct verbs), 4b Polymath+Menagerie, **5a It's Complicated** | Zero new persisted fields. New check methods reading current profile + the recipient-check audit + the `SystemTitleCatalog` / status catalog (needed by Completionist and "How did we get here?"). |
 | **2** | 6a/6b (day streak + comeback), 7 (arcs via breadcrumbs) | A few small fields written at event time (`lastActiveDay`, `activeStreak`, breadcrumb characteristics). |
 | **3** | 4b Walking Ecosystem, 5b/5c (per-partner depth), 6c (burst) | Interaction-log scans per check and/or new lifetime-set lists. Do these once the cheaper tiers prove popular. |
+| **unscheduled** | 8 (collection) | Zero new data for everything except the Curation shape. Recorded as intent 2026-08-07 when [Collectibles](../Infrastructure/Collectibles.md) shipped; not specced. |
 
 Phase 1 is the bulk of the value and reuses everything already stored — recommended starting point.
 
@@ -233,5 +256,6 @@ Phase 1 is the bulk of the value and reuses everything already stored — recomm
 
 1. **Arc (axis 7) wording** — deferred to implementation by owner; mechanics fixed, text TBD.
 2. **Give-vs-take side** for the monster-category collection titles (Ditto / For All Monster Kind) — pin at build.
+3. **Axis 8 (collection) is intent only** — shapes sketched, nothing chosen, no wording. Needs its own design pass. The one decision worth taking early is whether `Collectible` gets a previous-holder or hop-count field, since retrofitting it after more item types exist is the expensive version.
 
 > **Resolved:** Rule-of-Three collision (daily-climax → "C U M"; entitlegive-3 → "A, B, C"; curse-concurrent keeps "Rule of Three"). Jack-of-All-Trades collision (4b skill-collection named "Many Talents"; existing `employtake`-10 unchanged). Optional 3d "Unrecognizable" — dropped. **All Phase-1 wording is now locked.**
