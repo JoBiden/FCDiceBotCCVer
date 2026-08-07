@@ -28,21 +28,30 @@ namespace FChatDicebot.Database
         void SetTimer(string userName, string timerLabel, CoolDown timer);
 
         /// <summary>
-        /// Replace a profile's milkInventory, re-fetching the document immediately before
+        /// Replace a profile's collectibles, re-fetching the document immediately before
         /// writing (same narrow-window pattern as <see cref="SetTimer"/>) rather than reusing a
         /// profile snapshot the caller loaded earlier in its own command flow. Keeps !sell/!milk
         /// from reverting any currency/count/timer change that landed concurrently since the
         /// caller's own GetProfile.
         /// </summary>
-        void SetMilkInventory(string userName, List<MilkBottle> inventory);
+        void SetCollectibles(string userName, List<Collectible> collectibles);
 
         /// <summary>
-        /// Atomically reserve a block of <paramref name="count"/> consecutive bottle serial
+        /// Atomically reserve a block of <paramref name="count"/> consecutive collectible serial
         /// numbers and return the first one. A milking that produces three bottles makes one
-        /// call and takes the returned value, +1, +2. Serials are globally unique and never
-        /// reused, so two simultaneous milkings can never collide on a number.
+        /// call and takes the returned value, +1, +2. Serials are globally unique across every
+        /// collectible type and never reused, so two simultaneous acquisitions can never collide
+        /// on a number.
         /// </summary>
-        int ClaimBottleSerials(int count);
+        int ClaimCollectibleSerials(int count);
+
+        /// <summary>
+        /// How many profiles still carry the pre-collectibles <c>milkInventory</c> field. Zero on
+        /// a migrated (or fresh) database. Exists only for the startup guard in
+        /// <see cref="CollectiblesMigrationCheck"/> — an unmigrated profile loads silently with an
+        /// empty collection rather than failing, so something has to go looking.
+        /// </summary>
+        int CountLegacyMilkInventoryProfiles();
 
         void ChangeCurrency(string userName, string currencyLabel, int changeAmount);
 

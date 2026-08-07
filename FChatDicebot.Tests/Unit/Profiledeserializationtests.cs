@@ -92,7 +92,7 @@ namespace FChatDicebot.Tests.Unit
         public void GetProfile_MinimalLegacyDocument_MissingNewerFields_DoesNotThrow()
         {
             // Simulates a document written before several newer fields (escrow,
-            // dailyMagnitudes, milkInventory, trainings, dailyClimaxCounts,
+            // dailyMagnitudes, collectibles, trainings, dailyClimaxCounts,
             // employeeEarnings) existed on Profile at all.
             InsertRawProfileDocument(new BsonDocument
             {
@@ -106,7 +106,7 @@ namespace FChatDicebot.Tests.Unit
             Assert.Null(exception);
             Assert.NotNull(profile);
             Assert.NotNull(profile.counts);
-            Assert.NotNull(profile.milkInventory);
+            Assert.NotNull(profile.collectibles);
             Assert.NotNull(profile.trainings);
             Assert.NotNull(profile.employeeEarnings);
         }

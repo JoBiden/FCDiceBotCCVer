@@ -93,7 +93,7 @@ namespace FChatDicebot.Database
             if (profile.titles == null) profile.titles = new List<Title>();
             if (profile.pregnancies == null) profile.pregnancies = new List<Pregnancy>();
             if (profile.dailyMagnitudes == null) profile.dailyMagnitudes = new Dictionary<string, int>();
-            if (profile.milkInventory == null) profile.milkInventory = new List<MilkBottle>();
+            if (profile.collectibles == null) profile.collectibles = new List<Collectible>();
             if (profile.trainings == null) profile.trainings = new Dictionary<string, int>();
             if (profile.dailyClimaxCounts == null) profile.dailyClimaxCounts = new Dictionary<string, int>();
             if (profile.employeeEarnings == null) profile.employeeEarnings = new Dictionary<string, Dictionary<string, int>>();
@@ -320,7 +320,7 @@ namespace FChatDicebot.Database
             collection.ReplaceOne(filter, document);
         }
 
-        public void SetMilkInventory(string userName, List<MilkBottle> inventory)
+        public void SetCollectibles(string userName, List<Collectible> collectibles)
         {
             var collection = Database.GetCollection<Profile>("RegisteredProfiles");
             var filter = Builders<Profile>.Filter.Eq("userName", userName);
@@ -328,7 +328,7 @@ namespace FChatDicebot.Database
 
             if (document == null) return;
 
-            document.milkInventory = inventory;
+            document.collectibles = collectibles;
             collection.ReplaceOne(filter, document);
         }
 
@@ -338,11 +338,11 @@ namespace FChatDicebot.Database
         /// what makes a 3-bottle milking cheap and keeps the claimed serials contiguous. IsUpsert
         /// seeds the counter on first use, so no migration step is needed to create it.
         /// </summary>
-        public int ClaimBottleSerials(int count)
+        public int ClaimCollectibleSerials(int count)
         {
             if (count <= 0) return 0;
             var collection = Database.GetCollection<BsonDocument>("Counters");
-            var filter = Builders<BsonDocument>.Filter.Eq("_id", BottleSerialCounterId);
+            var filter = Builders<BsonDocument>.Filter.Eq("_id", CollectibleSerialCounterId);
             var update = Builders<BsonDocument>.Update.Inc("value", count);
             var options = new FindOneAndUpdateOptions<BsonDocument>
             {
@@ -355,8 +355,26 @@ namespace FChatDicebot.Database
             return lastClaimed - count + 1;
         }
 
-        /// <summary>Counter document key backing <see cref="ClaimBottleSerials"/>.</summary>
-        public const string BottleSerialCounterId = "bottleSerial";
+        /// <summary>
+        /// Counter document key backing <see cref="ClaimCollectibleSerials"/>.
+        ///
+        /// <b>The stored key deliberately disagrees with the C# name.</b> It reads "bottleSerial"
+        /// because bottles were the only collectible when the counter was created, and it stays
+        /// that way permanently. Renaming the document is not a tidy-up: a rename applied to the
+        /// code but missed in the data restarts the counter at 1 and collides serials with every
+        /// bottle in existence — a permanent, unfixable data injury traded for a nicer string.
+        /// </summary>
+        public const string CollectibleSerialCounterId = "bottleSerial";
+
+        public int CountLegacyMilkInventoryProfiles()
+        {
+            // Deliberately a BsonDocument query rather than a typed one: the whole point is to
+            // find a field the Profile class no longer has, which a typed filter cannot name.
+            var collection = Database.GetCollection<BsonDocument>("RegisteredProfiles");
+            var filter = Builders<BsonDocument>.Filter.Exists(
+                CollectiblesMigrationCheck.LegacyInventoryField);
+            return (int)collection.CountDocuments(filter);
+        }
 
         public void ChangeCurrency(string userName, string currencyLabel, int changeAmount)
         {

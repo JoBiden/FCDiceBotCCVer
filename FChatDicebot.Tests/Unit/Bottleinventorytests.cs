@@ -153,7 +153,7 @@ namespace FChatDicebot.Tests.Unit
         [Fact]
         public void FormatSerials_CapsWithMoreTail()
         {
-            string text = BottleInventory.FormatSerials(new[] { 1, 2, 3, 4, 5 }, cap: 3);
+            string text = CollectionInventory.FormatSerials(new[] { 1, 2, 3, 4, 5 }, cap: 3);
 
             Assert.Equal("#1, #2, #3, and 2 more", text);
         }
@@ -161,14 +161,14 @@ namespace FChatDicebot.Tests.Unit
         [Fact]
         public void FormatSerials_UnderCapHasNoTail()
         {
-            Assert.Equal("#1, #2", BottleInventory.FormatSerials(new[] { 1, 2 }, cap: 8));
+            Assert.Equal("#1, #2", CollectionInventory.FormatSerials(new[] { 1, 2 }, cap: 8));
         }
 
         [Fact]
         public void FormatSerials_UnnumberedRendersAsQuestionMark()
         {
             // A pre-backfill bottle shouldn't claim to be "#0".
-            Assert.Equal("#?", BottleInventory.FormatSerials(new[] { 0 }, cap: 8));
+            Assert.Equal("#?", CollectionInventory.FormatSerials(new[] { 0 }, cap: 8));
         }
 
         [Fact]
@@ -200,16 +200,16 @@ namespace FChatDicebot.Tests.Unit
             {
                 serial = serial,
                 substance = substance,
-                sourceName = source,
+                subjectName = source,
                 quantity = 1,
                 corruptionTag = tag,
-                milkedAt = DateTime.UtcNow.Date.AddHours(hour),
+                acquiredAt = DateTime.UtcNow.Date.AddHours(hour),
             };
         }
 
         internal static MilkBottle Emptied(MilkBottle bottle)
         {
-            bottle.emptiedAt = bottle.milkedAt.AddMinutes(30);
+            bottle.emptiedAt = bottle.acquiredAt.AddMinutes(30);
             return bottle;
         }
     }

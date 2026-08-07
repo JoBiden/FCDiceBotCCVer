@@ -51,7 +51,7 @@ namespace FChatDicebot.Tests.Unit
             var result = ChateauDrink.Execute(_database, "Alice", null, 0, NeverRolls());
 
             Assert.NotNull(result.Bottle);
-            var stored = Assert.Single(_database.GetProfile("Alice").milkInventory);
+            var stored = Assert.Single(_database.GetProfile("Alice").Bottles());
             Assert.Equal(42, stored.serial);
             Assert.True(stored.IsEmpty);
         }
@@ -117,7 +117,7 @@ namespace FChatDicebot.Tests.Unit
 
             Assert.Null(result.Bottle);
             Assert.Contains("#99", result.PrivateMessage);
-            Assert.False(_database.GetProfile("Alice").milkInventory[0].IsEmpty);
+            Assert.False(_database.GetProfile("Alice").Bottles()[0].IsEmpty);
         }
 
         [Fact]
@@ -155,7 +155,7 @@ namespace FChatDicebot.Tests.Unit
             var result = ChateauDrink.Execute(_database, "Alice", "milk", 0, NeverRolls());
 
             Assert.Null(result.Bottle);
-            Assert.False(_database.GetProfile("Alice").milkInventory[0].IsEmpty);
+            Assert.False(_database.GetProfile("Alice").Bottles()[0].IsEmpty);
         }
 
         // -------------------------------------------------------------------

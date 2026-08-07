@@ -154,9 +154,9 @@ namespace FChatDicebot.BotCommands
         /// </summary>
         public static string BuildCollectionLine(Profile profile, bool ownAccount)
         {
-            if (profile == null || profile.milkInventory == null) return string.Empty;
-            int full = profile.milkInventory.Count(b => b != null && !b.IsEmpty);
-            int empty = profile.milkInventory.Count(b => b != null && b.IsEmpty);
+            if (profile == null || profile.collectibles == null) return string.Empty;
+            int full = CollectionInventory.OfType<MilkBottle>(profile).Count(b => !b.IsEmpty);
+            int empty = CollectionInventory.OfType<MilkBottle>(profile).Count(b => b.IsEmpty);
             if (full == 0 && empty == 0) return string.Empty;
 
             var pieces = new List<string>();

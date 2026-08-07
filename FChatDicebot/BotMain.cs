@@ -172,6 +172,11 @@ namespace FChatDicebot
             // loader silently skip those commands for the bot's whole lifetime.
             MonDB.Initialize("mongodb://localhost:27017", "ChateauDb");
 
+            // Before anything can write a profile: an unmigrated database loads every bottle
+            // collection as empty rather than throwing, and the first write would make that
+            // permanent. See CollectiblesMigrationCheck.
+            CollectiblesMigrationCheck.AssertMigrated(MonDB.GetDatabase());
+
             BotCommandController = new BotCommandController(this);
 
             BackupAllData();

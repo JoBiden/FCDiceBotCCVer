@@ -11,7 +11,7 @@ namespace FChatDicebot.BotCommands
     /// per day, regardless of substance — milking someone doesn't stop them milking you
     /// back today. The Chateau provides the empties; no inventory precondition.
     ///
-    /// Self-target is a shortcut: bypasses the consent flow and the milkInventory entry,
+    /// Self-target is a shortcut: bypasses the consent flow and the collectible entry,
     /// instantly crediting the initiator with 1 copper + 1 bottle-currency (the same
     /// effective payout as milking and then immediately !selling one bottle of a
     /// common-tier substance). Still consumes the daily self-direction lock.
@@ -63,7 +63,7 @@ namespace FChatDicebot.BotCommands
             // ----- Self-milk shortcut path --------------------------------------
             // Bypass the consent flow entirely: the Chateau buys the bottle straight off
             // the producer for 1 copper + 1 bottle-currency, then locks the pair (self)
-            // for the day. No milkInventory entry, no PendingCommand.
+            // for the day. No bottle in the collection, no PendingCommand.
             if (isSelf)
             {
                 if (substance == null)

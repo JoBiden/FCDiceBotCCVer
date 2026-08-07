@@ -33,29 +33,29 @@ namespace FChatDicebot.Tests.Unit
         }
 
         [Fact]
-        public void ClaimBottleSerials_ReturnsFirstOfBlock()
+        public void ClaimCollectibleSerials_ReturnsFirstOfBlock()
         {
-            int first = _database.ClaimBottleSerials(3);
+            int first = _database.ClaimCollectibleSerials(3);
 
             // The block is [first, first+2]; the next claim must start past it.
-            int next = _database.ClaimBottleSerials(1);
+            int next = _database.ClaimCollectibleSerials(1);
             Assert.Equal(first + 3, next);
         }
 
         [Fact]
-        public void ClaimBottleSerials_StartsAtOneOnFreshDatabase()
+        public void ClaimCollectibleSerials_StartsAtOneOnFreshDatabase()
         {
-            Assert.Equal(1, _database.ClaimBottleSerials(1));
+            Assert.Equal(1, _database.ClaimCollectibleSerials(1));
         }
 
         [Fact]
-        public void ClaimBottleSerials_NeverRepeatsAcrossManyClaims()
+        public void ClaimCollectibleSerials_NeverRepeatsAcrossManyClaims()
         {
             var seen = new HashSet<int>();
             for (int i = 0; i < 50; i++)
             {
                 int count = (i % 3) + 1;
-                int first = _database.ClaimBottleSerials(count);
+                int first = _database.ClaimCollectibleSerials(count);
                 for (int offset = 0; offset < count; offset++)
                 {
                     Assert.True(seen.Add(first + offset), "serial " + (first + offset) + " was issued twice");
@@ -64,11 +64,11 @@ namespace FChatDicebot.Tests.Unit
         }
 
         [Fact]
-        public void ClaimBottleSerials_NonPositiveCountIsNoOp()
+        public void ClaimCollectibleSerials_NonPositiveCountIsNoOp()
         {
-            int before = _database.ClaimBottleSerials(1);
-            Assert.Equal(0, _database.ClaimBottleSerials(0));
-            Assert.Equal(before + 1, _database.ClaimBottleSerials(1));
+            int before = _database.ClaimCollectibleSerials(1);
+            Assert.Equal(0, _database.ClaimCollectibleSerials(0));
+            Assert.Equal(before + 1, _database.ClaimCollectibleSerials(1));
         }
 
         [Fact]
@@ -81,10 +81,10 @@ namespace FChatDicebot.Tests.Unit
             ChateauSell.SellBottles(profile, null, null, 1);
 
             // The bottle went to the Chateau, so its number leaves the collection entirely.
-            Assert.Empty(profile.milkInventory);
+            Assert.Empty(profile.collectibles);
             // And the counter keeps climbing rather than handing #1 back out.
-            _database.ClaimBottleSerials(1);
-            Assert.True(_database.ClaimBottleSerials(1) > 1);
+            _database.ClaimCollectibleSerials(1);
+            Assert.True(_database.ClaimCollectibleSerials(1) > 1);
         }
 
         [Fact]
@@ -96,9 +96,9 @@ namespace FChatDicebot.Tests.Unit
 
             bottle.emptiedAt = DateTime.UtcNow;
 
-            Assert.Single(profile.milkInventory);
-            Assert.Equal(7, profile.milkInventory[0].serial);
-            Assert.True(profile.milkInventory[0].IsEmpty);
+            Assert.Single(profile.collectibles);
+            Assert.Equal(7, profile.Bottles()[0].serial);
+            Assert.True(profile.Bottles()[0].IsEmpty);
         }
 
         [Fact]
@@ -109,10 +109,10 @@ namespace FChatDicebot.Tests.Unit
 
             var alice = _database.GetProfile("Alice");
             var bottle = BottleInventoryTests.NewBottle(0, "cum", "Carol", hour: 1);
-            bottle.serial = _database.ClaimBottleSerials(1);
+            bottle.serial = _database.ClaimCollectibleSerials(1);
             bottle.corruptionTag = ChateauCurrency.CorruptTag;
-            alice.milkInventory.Add(bottle);
-            _database.SetMilkInventory("Alice", alice.milkInventory);
+            alice.collectibles.Add(bottle);
+            _database.SetCollectibles("Alice", alice.collectibles);
 
             var promises = new List<KeyValuePair<int, bool>>
             {
@@ -121,11 +121,11 @@ namespace FChatDicebot.Tests.Unit
             bool moved = BottlePayment.TryTransfer(_database, "Alice", "Bob", promises, out string failure);
 
             Assert.True(moved, failure);
-            var bobBottle = Assert.Single(_database.GetProfile("Bob").milkInventory);
+            var bobBottle = Assert.Single(_database.GetProfile("Bob").Bottles());
             Assert.Equal(bottle.serial, bobBottle.serial);
-            Assert.Equal("Carol", bobBottle.sourceName);
+            Assert.Equal("Carol", bobBottle.subjectName);
             Assert.Equal(ChateauCurrency.CorruptTag, bobBottle.corruptionTag);
-            Assert.Empty(_database.GetProfile("Alice").milkInventory);
+            Assert.Empty(_database.GetProfile("Alice").collectibles);
         }
     }
 }

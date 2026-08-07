@@ -4,6 +4,12 @@ Infrastructure for [`!milk`](../Milk.md) and `!sell`: a per-profile milk invento
 
 **Status:** Implemented (milk inventory + bottle currency + `!sell` shipped). Denomination conversion between copper/silver/gold was explicitly deferred — see [Deferred](#deferred) below.
 
+> **As shipped since [Collectibles](Collectibles.md):** the store described below is now
+> `Profile.collectibles`, a polymorphic `List<Collectible>`, and `MilkBottle` is one subclass of it.
+> `sourceName` / `milkedAt` are `subjectName` / `acquiredAt` on the base class, `SetMilkInventory` is
+> `SetCollectibles`, and `ClaimBottleSerials` is `ClaimCollectibleSerials` (the stored counter `_id`
+> is still `bottleSerial`, deliberately). Behavior is unchanged; the field names below are historical.
+
 > **Note:** This document is named `Currency-and-Milk-Inventory.md` for historical reasons (it was originally a broader currency-overhaul spec). The actual scope landed is the milk-inventory and bottle-currency infrastructure described here. The denomination-conversion ambitions of the original spec are intentionally unshipped.
 
 ## Profile additions

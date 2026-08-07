@@ -212,7 +212,9 @@ namespace FChatDicebot
             foreach (var promise in promises)
             {
                 MilkBottle bottle = BottleInventory.FindBySerial(payer, promise.Key);
-                if (bottle == null || bottle.IsEmpty != promise.Value)
+                // IsTransferable is the type's own answer to "can this change hands", so a
+                // keepsake type refuses here without this method knowing what it is.
+                if (bottle == null || !bottle.IsTransferable || bottle.IsEmpty != promise.Value)
                 {
                     failureMessage = GoneMessage(database, payerUserName);
                     return false;
@@ -220,18 +222,18 @@ namespace FChatDicebot
                 moving.Add(bottle);
             }
 
-            if (payee.milkInventory == null) payee.milkInventory = new List<MilkBottle>();
+            if (payee.collectibles == null) payee.collectibles = new List<Collectible>();
             foreach (var bottle in moving)
             {
-                payer.milkInventory.Remove(bottle);
+                payer.collectibles.Remove(bottle);
                 // Serial, donor, timestamp, tag and empty-state all travel untouched. Provenance
                 // surviving the handoff is the point: a bottle from a corrupt donor still corrupts
                 // whoever drinks it three owners later, and still answers to the same number.
-                payee.milkInventory.Add(bottle);
+                payee.collectibles.Add(bottle);
             }
 
-            database.SetMilkInventory(payerUserName, payer.milkInventory);
-            database.SetMilkInventory(payeeUserName, payee.milkInventory);
+            database.SetCollectibles(payerUserName, payer.collectibles);
+            database.SetCollectibles(payeeUserName, payee.collectibles);
             return true;
         }
 

@@ -3,6 +3,13 @@
 Closes the loop on the milk-bottle economy. Today `!milk` fills `Profile.milkInventory` and `!sell` is the only thing that ever reads it — residents cannot see what they own and cannot do anything with it but cash it out. This spec adds serial numbers, persistent empties, a view surface, a consumption path with real mechanical effects, and player-to-player transfer.
 
 **Status:** Implemented (2026-07-29).
+
+> **As shipped since [Collectibles](Infrastructure/Collectibles.md):** bottles live in
+> `Profile.collectibles` alongside other collectible types and draw from one shared serial space, so
+> a serial identifies an *item* rather than a bottle. `BottleInventory` keeps the substance/donor
+> filtering and grouping; the type-agnostic selection moved to `CollectionInventory`. `!sell` now
+> reads `MilkBottle.IsSellable` and `!pay` reads `IsTransferable` rather than each caller
+> re-deriving the empty-bottle rule, and the privacy rule below is inherited by every type.
 **Investment level:** `!bottles` is a private self-command. `!drink` is a channel self-command (no consent flow). Bottle transfer rides the existing Involved-tier `!pay` consent flow.
 **Depends on:** [Currency-and-Milk-Inventory](Infrastructure/Currency-and-Milk-Inventory.md) (`MilkBottle`, `milkInventory`, `ChateauCurrency`), [Dose-and-Detox](Dose-and-Detox.md) (`ViceInstance`, `DoseStatusContributor`, `DoseProcessor.IntensifyExistingVices`), [Corrupt-and-Purify](Corrupt-and-Purify.md) (`CorruptionProcessor.ReadCorruption`, daily-quota pattern), [Status-Effect-Hook](Infrastructure/Status-Effect-Hook.md).
 
