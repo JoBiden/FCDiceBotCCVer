@@ -81,10 +81,10 @@ All casual interactions are group-capable (name several residents) and share a 3
 | `!milk` | `!milk [user]Name[/user] {substance}` | Milk a substance from another resident (produces numbered bottles; per-recipient daily cooldown) |
 | `!drinkfrom` | `!drinkfrom [user]Name[/user] {substance}` | Drink a substance straight from another resident — stronger than a bottled drink, but produces no bottle. Shares `!milk`'s per-source daily cooldown |
 | `!forcedrink` | `!forcedrink [user]Name[/user] {substance}` | Offer a drink straight from yourself; the other resident consents and is the one who drinks |
-| `!climax` | `!climax [user]Name[/user]` | Bring another resident, or yourself, to orgasm |
+| `!climax` (`!cum`) | `!climax [user]Name[/user]` | Bring another resident, or yourself, to orgasm |
 | `!panties` | `!panties [user]Name[/user]` | Ask another resident for a pair of their panties. Joins your collection with its own number and their name; per-direction daily lock |
 | `!givepanties` | `!givepanties [user]Name[/user]` | Offer a pair of your own panties; the other resident consents and is the one who keeps them |
-| `!climaxfor` | `!climaxfor [user]Name[/user]` | Bring yourself to orgasm, solo or for another resident |
+| `!climaxfor` (`!cumfor`) | `!climaxfor [user]Name[/user]` | Bring yourself to orgasm, solo or for another resident |
 | `!pay` | see below | Transfer currency or bottles |
 
 ### !pay
