@@ -20,7 +20,7 @@ namespace FChatDicebot.BotCommands
         public ChateauClimax()
         {
             Name = "climax";
-            Aliases = new string[] { };
+            Aliases = new string[] { "cum" };
             Category = "Involved Interaction";
             ShortDescription = "Bring another resident, or yourself, to orgasm.";
             LongDescription = "Bring another resident, or yourself, to orgasm. Specify who you'd like to "

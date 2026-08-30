@@ -18,7 +18,7 @@ namespace FChatDicebot.BotCommands
         public ChateauClimaxfor()
         {
             Name = "climaxfor";
-            Aliases = new string[] { };
+            Aliases = new string[] { "cumfor" };
             Category = "Involved Interaction";
             ShortDescription = "Bring yourself to orgasm, solo or for another resident.";
             LongDescription = "Bring yourself to orgasm. Specify who you'd like to cum for (with !consent), "
