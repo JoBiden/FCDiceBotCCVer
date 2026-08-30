@@ -1,6 +1,6 @@
 # Random Events — ambient channel events + `!random`
 
-**Status:** ✅ SHIPPED 2026-06-29, wording pass + design tweak 2026-07-01 (owner review). Per-event `announceText` / `resultText` and reward magnitudes are authored data in the seeded `RandomEvents` collection; a single starter event ("Cutie says {word}") has been authored — see *Seed data* below.
+**Status:** ✅ SHIPPED 2026-06-29, wording pass + design tweak 2026-07-01 (owner review), **winner conditions + `invert` reward 2026-08-30** (see *Winner conditions* below). Per-event `announceText` / `resultText` and reward magnitudes are authored data in the seeded `RandomEvents` collection; a single starter event ("Cutie says {word}") has been authored — see *Seed data* below.
 **Feature-Requests source:** "Random events, to encourage spontaneous chat activity. Responding to a random event would always start !random but might also require an additional argument, to slow down campers/snipers" (B12).
 
 > **Note on paths:** this spec was written before the latest Dice Bot integration flattened `FChatDicebot/FChatDicebot/…` to `FChatDicebot/…`. The links below predate that move; the as-built files are: model in [Model/ChateauDB.cs](../../FChatDicebot/Model/ChateauDB.cs), engine in [BotCommands/Support/RandomEventEngine.cs](../../FChatDicebot/BotCommands/Support/RandomEventEngine.cs), command in [BotCommands/ChateauRandom.cs](../../FChatDicebot/BotCommands/ChateauRandom.cs), scheduler in [BotMain.cs](../../FChatDicebot/BotMain.cs) (`HandleRandomEventsTick`), DB in [Database/Chateaudatabase.cs](../../FChatDicebot/Database/Chateaudatabase.cs), tests in `FChatDicebot.Tests/Unit/Randomeventenginetests.cs`. Discord is intentionally excluded — the tick is wired into `RunLoopFList` only (the deployment is F-Chat / Chateau-only).
@@ -44,12 +44,13 @@ public class EventOutcome
 {
     public int weight { get; set; }       // weighted pick among the event's outcomes
     public string resultText { get; set; } // announced when this outcome is granted; may use {winners}
+    public List<EventCondition> conditions { get; set; }                      // gates this outcome per winner
     public List<EventReward> rewards { get; set; } = new List<EventReward>(); // applied to winner(s)
 }
 
 public class EventReward
 {
-    public string type { get; set; } // "currency" | "title" | "training" | "corruption" | "purity" | "curse" | "none"
+    public string type { get; set; } // "currency" | "title" | "training" | "corruption" | "purity" | "invert" | "curse" | "none"
     public string key { get; set; }  // currency name / title id / training skill / curse id (unused for corruption/purity/none)
     public int min { get; set; }     // magnitude/amount low  (currency, training, corruption, purity)
     public int max { get; set; }     // magnitude/amount high
@@ -86,6 +87,7 @@ Each `EventReward.type` maps to an **existing** grant mechanism — reuse, don't
 | `training` | `profile.trainings[key]` += `roll(min,max)`, clamped 0–100 ([TrainProcessor](../../FChatDicebot/InteractionProcessors)). |
 | `corruption` | apply magnitude `roll(min,max)` via the existing [CorruptionProcessor / CorruptionCommandSupport](../../FChatDicebot/InteractionProcessors/Commitment/CorruptionCommandSupport.cs) path. |
 | `purity` | the purify/cleanse side of the corruption axis (reduce corruption) — reuse the same support. |
+| `invert` | mirror the whole signed corruption axis (`value → -value`). Added 2026-08-30; see *Winner conditions* below. |
 | `curse` | add curse `key` via [CurseInstance / CurseProcessor](../../FChatDicebot/Model/CurseInstance.cs). |
 | `none` | flavor-only; no profile write. |
 
@@ -200,6 +202,80 @@ All framework strings live as `const`s on `RandomEventEngine` (search `// Framew
 ## Seed data
 
 One starter event, **"Cutie says {word}"**, has been authored (owner inserted the document directly into the `RandomEvents` collection; it isn't tracked in this repo since events are pure Mongo data, not code). It's a `keyword`/`allInWindow` event: every resident who repeats Cutie's randomly-chosen word back within the window is granted the `Cutie` title, using the `{winners}` placeholder to greet everyone who caught it in one line. Authoring more events is tracked as a to-do (see `wiki-docs/Feature-Requests.md`) — write additional `RandomEvent` documents in the same shape; the scheduler picks among all of them by `weight` automatically, no code change needed.
+
+## Winner conditions and the `invert` reward (shipped 2026-08-30)
+
+Owner-specced 2026-08-30 in response to "a random event with a reward that inverts the corruption/purity of the winner — and while we're at it, make the system sensitive to variables of the winner."
+
+### `invert`
+
+A reward type that mirrors the winner's whole signed corruption value: `value → -value`. `key`, `min` and `max` are unused — it is **always the full flip** (owner's call), which is why it dwarfs the `DailyMagnitudeLimit` quota that gates the player-driven `!corrupt` / `!purify`. Like the other system-granted rewards it bypasses the consent flow; the player opted in by responding.
+
+Degenerate cases fall out of the existing machinery rather than needing special handling: a winner sitting at exactly 0 has nothing to mirror, so the reward returns an empty fragment and that winner simply gets no line — the outcome's `{winners}` header still covers them. `int.MinValue` is refused rather than overflowing `Math.Abs`.
+
+**`invert` is the first *self-verbed* reward** (`RandomEventEngine.IsSelfVerbedReward`). Every other reward is a noun phrase the engine hangs off its shared verb — "Alice receives 5 rosequartz and the title ·Lucky·!" — but an inversion is not *received*, it happens to what the winner already had. So its fragment is a whole predicate and it is rendered on its own line:
+
+```
+[user]Alice[/user] now has [b]27 purity[/b], inverted from [b]27 corruption[/b]!
+```
+
+The `{has|have}` alternation is resolved by the same `ResolveCountAgreement` that handles authored `resultText`, against that line's winner count — so winners who happened to hold the same magnitude group onto one line and read "now have". Winners with different magnitudes produce different predicates and therefore don't group, each getting their own truthful line. An outcome that mixes a received reward with an inversion emits both line shapes rather than joining them (which would put two verbs in one clause).
+
+Reward-line grouping keys on the noun fragments **and** the predicates together, so the two shapes can never cross-merge.
+
+### `EventCondition` — one idea, no operator vocabulary
+
+`BotCommands/Support/EventConditionSupport.cs` is authoritative. **Every stat projects a winner's profile down to a single integer, and a condition is an inclusive range on that integer** (`min` / `max`, each independently nullable = unbounded). There is no `atLeast` / `atMost` / `has` / `lacks` vocabulary to learn.
+
+> **Why not the duty `Conditional`?** That shape packs its kind into a three-letter prefix (`curgold`, `trndeepthroat`) and only ever compares "at least". Corruption is stored **signed** — negative is corrupt, positive is pure — so expressing "the corrupted" requires an upper bound on a negative number, which the duty conditional cannot say at all. The two systems are deliberately separate; converging them is a possible follow-up, not part of this change.
+
+Corruption therefore reads naturally in all three directions:
+
+| Intent | Condition |
+|---|---|
+| the corrupted | `{stat: "corruption", max: -10}` |
+| the pure | `{stat: "corruption", min: 10}` |
+| the untouched middle | `{stat: "corruption", min: -9, max: 9}` |
+
+**Stat vocabulary** (`EventConditionSupport.Stats` is the source of truth): `corruption`, `currency`, `training`, `job`, `count`, `title`, `curse`, `parasite`, `vice`, `pregnancy`, `collectible`.
+
+**Key semantics are per stat, and consistently shaped:**
+- The **dictionary-backed** stats (`currency` / `training` / `job` / `count`) **require** a key — there is no meaningful total across all of them. A key that isn't held projects to 0, so "the broke" is authorable as `max: 0`.
+- The **list-backed** stats (`title` / `curse` / `parasite` / `vice` / `pregnancy` / `collectible`) take an **optional** key: blank counts how many they hold at all, a named key narrows to that one. A "titles held" count therefore needs no separate stat — it is `{stat: "title"}` with no key.
+- `corruption` ignores the key entirely.
+- `vice` is the one asymmetry: a **named** vice projects its `AddictionLevel` (1–10, 0 when absent) rather than a plain 0/1, because that is the number an author actually wants to gate on. `min: 1` still reads as "has this vice".
+- `pregnancy` counts **active** pregnancies only — `!birth` removes them from the list.
+
+**Failure direction is deliberate.** An unknown stat, or a blank key where one is required, makes the condition **fail** rather than pass. A typo kills the branch it was written on and the winner falls through to a catch-all; the alternative would silently hand out the wrong branch.
+
+### What conditions do to resolution
+
+Authoring **any** condition on **any** outcome switches that event from one shared outcome roll to a **per-winner** roll. `RandomEventEngine.ResolveLocked` is authoritative:
+
+- **No conditions anywhere** — one outcome is rolled and shared by every winner, exactly as before this change. Every event authored before conditions existed keeps its original behavior; a stored document with no `conditions` key deserializes to `null`, which is unconditional.
+- **Any condition present** — each winner's outcome is rolled among the outcomes *that winner* qualifies for. Winners are then grouped by the outcome they landed on (by reference, so two structurally identical outcomes stay distinct blocks), and each group gets its **own header block** — `{singular|plural}` count agreement resolves against **that block's** winner count, not the event total, and `{winners}` substitutes only that block's names. Reward-line grouping is scoped inside the block, so winners under different headers can never be merged onto one sentence.
+
+Since `firstValid` / `nth` / `random` resolve to exactly one winner by construction, only `allInWindow` can actually produce a multi-block announcement.
+
+**Conditions filter the table; they do not replace the weighted roll.** A winner who qualifies for both a gated outcome and an unconditional catch-all can land on either — which is what lets an author mix "a rare thing that can happen to anyone" with state-specific branches. **To branch deterministically, put a condition on every outcome so they partition the range** (`≤ -10` / `-9…9` / `≥ 10`). The builder surfaces this as a warning.
+
+Conditions are evaluated against the winner's state **before** this event grants anything, which is precisely what lets the invert outcome gate on the very stat it is about to flip.
+
+**A winner who qualifies for nothing is omitted from the announcement.** If *no* winner lands on any outcome, the event closes with the existing `NoWinnerMessage` and logs why (operator-facing only) — posting nothing after residents responded reads as the bot having broken. Authors are expected to keep a catch-all or a total partition; the builder warns when neither is present.
+
+### Authoring
+
+The builder (`scripts/random-event-builder`) gained a conditions editor per outcome, `invert` in the reward dropdown, gate-aware resolve captions, and warnings for the failure modes above. Its `ConditionStats` / `ConditionStatsNeedingKey` / `RewardTypes` arrays in `server.cs` mirror the engine and must be re-synced if the vocabulary grows.
+
+No migration: `conditions` is `[BsonIgnoreIfNull]`, the builder omits it entirely for an unconditional outcome, and an omitted bound stays omitted rather than being stored as 0.
+
+### Files
+
+- `FChatDicebot/BotCommands/Support/EventConditionSupport.cs` (new) — stat projection + range test.
+- `FChatDicebot/Model/ChateauDB.cs` — `EventCondition`; `EventOutcome.conditions`.
+- `FChatDicebot/BotCommands/Support/RandomEventEngine.cs` — `invert` branch in `ApplyEventReward`, `SelectOutcomeFor`, per-winner grouping in `ResolveLocked`.
+- `FChatDicebot.Tests/Unit/Eventconditionsupporttests.cs` (new), additions to `Randomeventenginetests.cs`.
+- `scripts/random-event-builder/server.cs` + `ui.html` + `README.md`.
 
 ## Assumptions
 

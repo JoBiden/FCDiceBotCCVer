@@ -265,12 +265,16 @@
 
 // ============================ state ============================
 
-var catalogs = { currencies: [], trainings: [], curses: [], keywordPool: [], rewardTypes: [] };
+var catalogs = { currencies: [], trainings: [], curses: [], keywordPool: [], rewardTypes: [],
+                 conditionStats: [], conditionStatsNeedingKey: [] };
 var events = [];
 var current = null;        // working copy being edited
 var originalLabel = null;  // label the doc had when loaded (null = brand new)
 
 var SAMPLE_WINNERS = ['Riven Ashvale', 'Mira Solenne', 'Kess Whitlock'];
+// Stand-in corruption magnitude for the invert reward preview - the live event mirrors
+// whatever the winner actually holds.
+var SAMPLE_CORRUPTION = 27;
 var BOT_NAME = 'Chateau Contract';
 
 // ============================ boot ============================
@@ -343,7 +347,7 @@ function newEvent() {
     label: '', categories: [], weight: 10, announceText: '',
     responseType: 'keyword', responseWindowSeconds: 60,
     winnerRule: 'allInWindow', winnerN: 0,
-    outcomes: [{ weight: 1, resultText: '', rewards: [] }]
+    outcomes: [{ weight: 1, resultText: '', rewards: [], conditions: [] }]
   };
   originalLabel = null;
   loadForm();
@@ -424,7 +428,7 @@ function insertAtCursor(id, text) {
 // ============================ outcomes ============================
 
 function addOutcome() {
-  current.outcomes.push({ weight: 1, resultText: '', rewards: [] });
+  current.outcomes.push({ weight: 1, resultText: '', rewards: [], conditions: [] });
   renderOutcomes(); refresh();
 }
 
@@ -465,6 +469,30 @@ function renderOutcomes() {
     rt.appendChild(ta);
     card.appendChild(rt);
 
+    // ---- winner conditions ----
+    var condWrap = document.createElement('div');
+    condWrap.style.marginTop = '10px';
+    condWrap.style.paddingTop = '10px';
+    condWrap.style.borderTop = '1px dashed var(--line)';
+    var condLabel = document.createElement('div');
+    condLabel.className = 'field';
+    condLabel.innerHTML = '<label>Only for winners where\u2026 '
+      + '<span class="muted">(each condition is an inclusive range; leave a bound blank for unbounded. '
+      + 'Corruption is signed: negative is corrupt, positive is pure.)</span></label>';
+    condWrap.appendChild(condLabel);
+    (o.conditions || []).forEach(function (c, ci) {
+      condWrap.appendChild(conditionRow(o, c, ci));
+    });
+    var addC = document.createElement('button');
+    addC.className = 'small'; addC.textContent = '+ Add condition';
+    addC.onclick = function () {
+      if (!o.conditions) o.conditions = [];
+      o.conditions.push({ stat: 'corruption', key: '', min: null, max: -10 });
+      renderOutcomes(); refresh();
+    };
+    condWrap.appendChild(addC);
+    card.appendChild(condWrap);
+
     var rewardsHost = document.createElement('div');
     rewardsHost.style.marginTop = '10px';
     (o.rewards || []).forEach(function (r, ri) {
@@ -485,6 +513,85 @@ function renderOutcomes() {
   });
 }
 
+function conditionRow(outcome, c, ci) {
+  var row = document.createElement('div');
+  row.className = 'reward';
+
+  var kind = document.createElement('div');
+  kind.className = 'field kind';
+  kind.innerHTML = '<label>Stat</label>';
+  var sel = document.createElement('select');
+  (catalogs.conditionStats || ['corruption']).forEach(function (t) {
+    var op = document.createElement('option');
+    op.value = t; op.textContent = t;
+    if (c.stat === t) op.selected = true;
+    sel.appendChild(op);
+  });
+  sel.onchange = function () { c.stat = sel.value; renderOutcomes(); refresh(); };
+  kind.appendChild(sel);
+  row.appendChild(kind);
+
+  // corruption ignores the key entirely; the dictionary stats require one; the list stats take
+  // an optional one (blank = "how many do they hold at all").
+  if (c.stat !== 'corruption') {
+    var needsKey = (catalogs.conditionStatsNeedingKey || []).indexOf(c.stat) >= 0;
+    var keyField = document.createElement('div');
+    keyField.className = 'field';
+    keyField.innerHTML = '<label>' + c.stat + ' key' + (needsKey ? '' : ' <span class="muted">(blank = count them all)</span>') + '</label>';
+    var keyInput = document.createElement('input');
+    keyInput.value = c.key || '';
+    keyInput.placeholder = needsKey ? 'required' : 'optional';
+    keyInput.oninput = function () { c.key = keyInput.value; refresh(); };
+    keyField.appendChild(keyInput);
+    row.appendChild(keyField);
+  }
+
+  ['min', 'max'].forEach(function (bound) {
+    var f = document.createElement('div');
+    f.className = 'field num';
+    f.innerHTML = '<label>' + bound + '</label>';
+    var inp = document.createElement('input');
+    inp.type = 'number';
+    inp.placeholder = bound === 'min' ? '\u2212\u221e' : '+\u221e';
+    inp.value = (c[bound] === null || c[bound] === undefined) ? '' : c[bound];
+    inp.oninput = function () {
+      // Blank means unbounded on that side, which is NOT the same as zero.
+      c[bound] = inp.value === '' ? null : (parseInt(inp.value, 10) || 0);
+      refresh();
+    };
+    f.appendChild(inp);
+    row.appendChild(f);
+  });
+
+  var rm = document.createElement('button');
+  rm.className = 'small danger'; rm.textContent = '\u00d7'; rm.title = 'Remove condition';
+  rm.onclick = function () { outcome.conditions.splice(ci, 1); renderOutcomes(); refresh(); };
+  row.appendChild(rm);
+
+  return row;
+}
+
+// Human-readable gate, used in the resolve preview captions.
+function conditionSummary(c) {
+  var subject = c.stat === 'corruption' ? 'corruption'
+    : (c.key ? c.stat + ' ' + c.key : c.stat + ' count');
+  var hasMin = c.min !== null && c.min !== undefined;
+  var hasMax = c.max !== null && c.max !== undefined;
+  if (hasMin && hasMax) return c.min === c.max ? subject + ' = ' + c.min : subject + ' ' + c.min + '\u2026' + c.max;
+  if (hasMin) return subject + ' \u2265 ' + c.min;
+  if (hasMax) return subject + ' \u2264 ' + c.max;
+  return subject + ' (no bounds \u2014 gates nothing)';
+}
+
+function outcomeGate(o) {
+  var cs = o.conditions || [];
+  return cs.length ? cs.map(conditionSummary).join(' and ') : null;
+}
+
+function eventHasConditions(doc) {
+  return doc.outcomes.some(function (o) { return (o.conditions || []).length > 0; });
+}
+
 function rewardRow(outcome, r, ri) {
   var row = document.createElement('div');
   row.className = 'reward';
@@ -493,7 +600,7 @@ function rewardRow(outcome, r, ri) {
   kind.className = 'field kind';
   kind.innerHTML = '<label>Reward</label>';
   var sel = document.createElement('select');
-  ['currency', 'title', 'training', 'corruption', 'purity', 'curse', 'none'].forEach(function (t) {
+  ['currency', 'title', 'training', 'corruption', 'purity', 'invert', 'curse', 'none'].forEach(function (t) {
     var op = document.createElement('option');
     op.value = t; op.textContent = t;
     if (r.type === t) op.selected = true;
@@ -636,8 +743,18 @@ function rewardFragment(r) {
     case 'corruption': return '[b]' + range + '[/b] corruption';
     case 'purity': return '[b]' + range + '[/b] purity';
     case 'curse': return 'the [b]' + r.key + '[/b] curse';
-    default: return null; // "none": flavor only
+    default: return null; // "none": flavor only; "invert" is a predicate, see rewardPredicate
   }
+}
+
+// Mirrors RandomEventEngine.IsSelfVerbedReward. An inversion is not something a winner
+// "receives" - it happens to what they already had - so it carries its own verb and gets its own
+// line instead of joining the "receives" list. The real numbers mirror whatever the winner
+// actually holds; SAMPLE_CORRUPTION stands in so the preview shows the true sentence shape.
+function rewardPredicate(r) {
+  if (r.type !== 'invert') return null;
+  return 'now {has|have} [b]' + SAMPLE_CORRUPTION + ' purity[/b], inverted from [b]'
+    + SAMPLE_CORRUPTION + ' corruption[/b]';
 }
 
 function renderPreview(doc) {
@@ -677,7 +794,15 @@ function renderPreview(doc) {
     var cap = document.createElement('div');
     cap.className = 'previewCaption';
     var pct = totalW > 0 ? Math.round(100 * Math.max(0, o.weight) / totalW) : Math.round(100 / doc.outcomes.length);
-    cap.textContent = 'On resolve — outcome ' + (i + 1) + ' (' + pct + '% chance)';
+    var gate = outcomeGate(o);
+    if (eventHasConditions(doc)) {
+      // With conditions in play the outcome is rolled PER WINNER among the ones that winner
+      // qualifies for, so a single flat percentage across the whole table would be a lie.
+      cap.textContent = 'On resolve — outcome ' + (i + 1) + ' · weight ' + Math.max(0, o.weight)
+        + ' · ' + (gate ? 'only winners where ' + gate : 'any winner (catch-all)');
+    } else {
+      cap.textContent = 'On resolve — outcome ' + (i + 1) + ' (' + pct + '% chance)';
+    }
     host.appendChild(cap);
 
     previewCounts.forEach(function (variant) {
@@ -692,6 +817,10 @@ function renderPreview(doc) {
         var verb = variant.winners.length > 1 ? ' receive ' : ' receives ';
         lines.push(joinWithAnd(tags) + verb + joinWithAnd(fragments) + '!');
       }
+      // Self-verbed rewards each get their own line, with {has|have} agreeing with the count.
+      (o.rewards || []).map(rewardPredicate).filter(Boolean).forEach(function (pred) {
+        lines.push(joinWithAnd(tags) + ' ' + resolveCountAgreement(pred, variant.winners.length) + '!');
+      });
 
       if (variant.label) {
         var sub = document.createElement('div');
@@ -751,6 +880,31 @@ function renderWarnings(doc) {
   });
   if (doc.responseType !== 'none' && doc.winnerRule === 'firstValid' && doc.responseWindowSeconds > 120)
     w.push('firstValid resolves on the first correct answer — a long window mostly just delays the no-winner message.');
+
+  // ---- conditions ----
+  doc.outcomes.forEach(function (o, i) {
+    (o.conditions || []).forEach(function (c, ci) {
+      var where = 'Outcome ' + (i + 1) + ' condition ' + (ci + 1) + ': ';
+      var hasMin = c.min !== null && c.min !== undefined;
+      var hasMax = c.max !== null && c.max !== undefined;
+      if (!hasMin && !hasMax)
+        w.push(where + 'no min and no max — it matches everyone and gates nothing.');
+      if (hasMin && hasMax && c.min > c.max)
+        w.push(where + 'min (' + c.min + ') is above max (' + c.max + '), so it can never match. Bounds are inclusive.');
+      if ((catalogs.conditionStatsNeedingKey || []).indexOf(c.stat) >= 0 && !c.key)
+        w.push(where + 'a key is required for ' + c.stat + ' (there is no meaningful total across all keys).');
+    });
+  });
+  if (eventHasConditions(doc)) {
+    w.push('This event uses conditions, so the outcome is rolled PER WINNER among the outcomes that winner qualifies for — winners can end up in different blocks, each with its own result text.');
+    var unconditional = doc.outcomes.filter(function (o) { return (o.conditions || []).length === 0; });
+    if (unconditional.length === 0)
+      w.push('No outcome is unconditional. A winner who matches none of the conditions is dropped from the announcement entirely — make sure the conditions cover every state, or add a catch-all outcome.');
+    else
+      w.push('Conditions filter the table; they do not replace the weighted roll. A winner who qualifies for a gated outcome can still roll the unconditional one — to branch deterministically, put a condition on every outcome so they partition the range (e.g. corruption ≤ −10 / −9…9 / ≥ 10).');
+  }
+  if (doc.outcomes.some(function (o) { return (o.rewards || []).some(function (r) { return r.type === 'invert'; }); }))
+    w.push('An "invert" reward mirrors the winner\'s whole signed corruption value and gets its own line (it is not "received" alongside the other rewards) — the preview uses ' + SAMPLE_CORRUPTION + ' as a stand-in. A winner sitting at exactly 0 has nothing to mirror and gets no line at all.');
   var ul = document.getElementById('warnings');
   ul.innerHTML = '';
   w.forEach(function (msg) {

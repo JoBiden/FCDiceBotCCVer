@@ -369,9 +369,39 @@ namespace FChatDicebot.Model
         public List<EventOutcome> outcomes { get; set; } = new List<EventOutcome>(); // weighted roll on resolve
     }
 
+    /// <summary>
+    /// One gate on an <see cref="EventOutcome"/>, tested against a winner's profile at resolve
+    /// time. Every supported stat projects the winner down to a single integer, and the condition
+    /// is an inclusive range on that integer — so there is no operator vocabulary to learn and
+    /// signed stats (corruption runs negative-for-corrupt through positive-for-pure) are
+    /// expressible in both directions. A null bound is unbounded on that side.
+    ///
+    /// Deliberately NOT the duty <see cref="Conditional"/>: that one packs its kind into a
+    /// three-letter prefix and only ever compares "at least", which cannot express the negative
+    /// half of the corruption axis. See <c>BotCommands.Support.EventConditionSupport</c> for the
+    /// stat vocabulary and the projection each one performs.
+    /// </summary>
+    public class EventCondition
+    {
+        public string stat { get; set; }  // see EventConditionSupport.Stats
+        public string key { get; set; }   // which currency/training/title/…; meaning is per-stat
+        [BsonIgnoreIfNull]
+        public int? min { get; set; }     // inclusive lower bound; null = unbounded
+        [BsonIgnoreIfNull]
+        public int? max { get; set; }     // inclusive upper bound; null = unbounded
+    }
+
     public class EventOutcome
     {
         public int weight { get; set; }        // weighted pick among the event's outcomes
+        // Gates this outcome to winners whose profile satisfies every listed condition. Null or
+        // empty (the default, and every pre-existing document) means "eligible to everyone".
+        //
+        // The presence of conditions on ANY outcome of an event switches that event from one
+        // shared outcome roll to a per-winner roll — see RandomEventEngine.ResolveLocked. An
+        // event with no conditions anywhere keeps the original single-roll behavior exactly.
+        [BsonIgnoreIfNull]
+        public List<EventCondition> conditions { get; set; }
         // Announced when this outcome is granted. May include a {winners} placeholder (e.g.
         // "{winners} are now glowing purple.") substituted with every winner's [user] tag —
         // lets a multi-winner outcome (allInWindow/etc.) carry its own combined flavor instead
@@ -382,8 +412,8 @@ namespace FChatDicebot.Model
 
     public class EventReward
     {
-        public string type { get; set; } // "currency" | "title" | "training" | "corruption" | "purity" | "curse" | "none"
-        public string key { get; set; }  // currency name / title text / training skill / curse id (unused for corruption/purity/none)
+        public string type { get; set; } // "currency" | "title" | "training" | "corruption" | "purity" | "invert" | "curse" | "none"
+        public string key { get; set; }  // currency name / title text / training skill / curse id (unused for corruption/purity/invert/none)
         public int min { get; set; }     // magnitude/amount low  (currency, training, corruption, purity)
         public int max { get; set; }     // magnitude/amount high
     }
