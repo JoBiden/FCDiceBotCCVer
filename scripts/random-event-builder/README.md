@@ -57,11 +57,67 @@ as its own app. Re-run the copy above after changing the tool in the repo.
 | responseType | `none` (any `!random` counts), `keyword` (must repeat a random word from the engine's pool), `challenge` (must solve a generated sum) |
 | responseWindowSeconds | How long `!random` responses are accepted (0 = engine default, 60s) |
 | winnerRule | `firstValid`, `allInWindow`, `nth` (with `winnerN`), `random` |
-| outcomes | One is rolled by weight when the event resolves. `resultText` may use `{winners}`; rewards apply per winner |
+| outcomes | Rolled by weight when the event resolves. `resultText` may use `{winners}`; rewards apply per winner. Add **conditions** to make an outcome apply only to certain winners — see below |
 
-Reward types: `currency`, `title`, `training`, `corruption`, `purity`, `curse`
-(must be one of the engine's cataloged curses), `none` (pure flavor). Amounts are
-rolled between `min` and `max` per winner.
+Reward types: `currency`, `title`, `training`, `corruption`, `purity`, `invert`,
+`curse` (must be one of the engine's cataloged curses), `none` (pure flavor).
+Amounts are rolled between `min` and `max` per winner.
+
+`invert` mirrors the winner's whole signed corruption value (`value → -value`) — it
+takes no key and no amount, and it is always the full flip. Unlike every other reward
+it is not something the winner *receives*, so it gets its own line rather than joining
+the "receives" list:
+
+```
+Alice now has 27 purity, inverted from 27 corruption!
+```
+
+A winner sitting at exactly 0 has nothing to mirror and gets no line at all. The
+preview uses a stand-in magnitude; the live event uses whatever the winner holds.
+
+## Winner conditions
+
+Each outcome can carry conditions that gate it to certain winners. Every stat
+projects the winner's profile down to one integer, and a condition is an **inclusive
+range** on it — `min` and `max` are each optional, and blank means unbounded on that
+side (which is *not* the same as 0).
+
+Corruption is stored **signed**: negative is corrupt, positive is pure. So:
+
+| Intent | stat | key | min | max |
+| --- | --- | --- | --- | --- |
+| the corrupted | corruption | — | | -10 |
+| the pure | corruption | — | 10 | |
+| the untouched middle | corruption | — | -9 | 9 |
+| holds 100+ rosequartz | currency | rosequartz | 100 | |
+| has the Cutie title | title | Cutie | 1 | |
+| holds no curses | curse | *(blank)* | | 0 |
+| deeply hooked on a vice | vice | lustessence | 5 | |
+| currently pregnant | pregnancy | *(blank)* | 1 | |
+
+Stats: `corruption`, `currency`, `training`, `job`, `count`, `title`, `curse`,
+`parasite`, `vice`, `pregnancy`, `collectible`. The dictionary-backed ones
+(`currency` / `training` / `job` / `count`) **require** a key. The list-backed ones
+take an optional key — blank counts everything they hold, a named key narrows to
+that one. A named `vice` projects its addiction level (1–10) rather than 0/1.
+
+Two things worth knowing before you author one:
+
+- **Conditions switch the event to a per-winner outcome roll.** With no conditions
+  anywhere, one outcome is rolled and shared by everyone (the original behaviour).
+  Add one condition and each winner rolls their own outcome among the ones they
+  qualify for, then winners are grouped by the outcome they landed on — each group
+  gets its own result-text block, with `{singular|plural}` agreeing with that
+  block's count.
+- **Conditions filter the table; they don't replace the roll.** A winner who
+  qualifies for a gated outcome can still roll an unconditional one. To branch
+  deterministically, put a condition on *every* outcome so they partition the range
+  (≤ -10 / -9…9 / ≥ 10). A winner who qualifies for nothing is dropped from the
+  announcement — keep a catch-all or cover every state.
+
+The stat list mirrors `EventConditionSupport.Stats` in the bot code; the reward-type
+and curse lists mirror the engine likewise. If either grows, update the arrays at the
+top of `server.cs`.
 
 The curse dropdown mirrors `CurseProcessor.CatalogMap` in code (the engine silently
 grants nothing for unknown curse keys) — if new curses are added there, update the
