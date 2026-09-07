@@ -43,13 +43,11 @@ namespace FChatDicebot.InteractionProcessors.Consequence
                 return ValidationResult.Failure(ChateauInteractionHandler.typeNotFoundText("scent"));
             }
 
-            Identifier scentIdentifier = Database.GetIdentifier(identifier);
+            // Scoped to the scent category rather than fetched by name and category-checked
+            // afterwards: identifier names are unique only within a category, so a name-only
+            // fetch can return a same-named identifier of some other kind and fail this gate.
+            Identifier scentIdentifier = Database.GetIdentifier(identifier, ScentCategory);
             if (scentIdentifier == null)
-            {
-                return ValidationResult.Failure(ChateauInteractionHandler.notFoundText(identifier));
-            }
-            if (scentIdentifier.categories == null
-                || !scentIdentifier.categories.Contains(ScentCategory, StringComparer.OrdinalIgnoreCase))
             {
                 return ValidationResult.Failure(ChateauInteractionHandler.typeNotFoundText(ScentCategory));
             }
@@ -134,7 +132,7 @@ namespace FChatDicebot.InteractionProcessors.Consequence
 
         public override string GetCompletionMessage(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
-            string phrase = ScentText.ScentPhrase(Database.GetIdentifier(identifier), identifier, initiatorProfile.displayName);
+            string phrase = ScentText.ScentPhrase(Database.GetIdentifier(identifier, ScentCategory), identifier, initiatorProfile.displayName);
             return initiatorProfile.displayName + " has saturated " + recipientProfile.displayName + " with " + phrase + "! "
                 + "The scent will linger on them through several interactions before it fades. "
                 + recipientProfile.displayName + " may !wash once per day to scrub off a single layer.";
@@ -152,7 +150,7 @@ namespace FChatDicebot.InteractionProcessors.Consequence
 
         protected override string BuildConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
-            string phrase = ScentText.ScentPhrase(Database.GetIdentifier(identifier), identifier, initiatorProfile.displayName);
+            string phrase = ScentText.ScentPhrase(Database.GetIdentifier(identifier, ScentCategory), identifier, initiatorProfile.displayName);
             string seriousness = ConsentWarningText.Block(
                 ConsentWarningText.FrequencyPerAxis(initiatorProfile.displayName, "saturate you with a given scent", Cooldown.PeriodDays),
                 "The scent will linger on you through several interactions before it fades. "

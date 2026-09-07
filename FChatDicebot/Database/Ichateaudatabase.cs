@@ -121,7 +121,25 @@ namespace FChatDicebot.Database
         List<Command> GetAllCommands();
 
         // Identifier Operations
+        /// <summary>
+        /// Look an identifier up by name alone. Identifier names are only unique WITHIN a
+        /// category — "bimbo" is both an attire and a curse — so when two documents share a
+        /// name this returns whichever one Mongo finds first. Use it only where the caller
+        /// genuinely has no category in mind (<c>!whatis</c>, the eicon setters, the
+        /// <c>Utils.*ToText</c> display fallbacks); anything that means "the X named N" must
+        /// use the category-scoped overload instead.
+        /// </summary>
         Identifier GetIdentifier(string type);
+        /// <summary>
+        /// Look an identifier up by name within a single category, and return null when no
+        /// identifier of that name carries that category. This is the correct lookup for any
+        /// caller that already knows which kind of identifier it wants: it is collision-proof
+        /// (a colliding name in another category can never be returned) and it subsumes the
+        /// "fetch by name, then verify categories.Contains(...)" check that callers used to
+        /// write by hand — a check that silently failed when the name-only fetch returned the
+        /// wrong document.
+        /// </summary>
+        Identifier GetIdentifier(string type, string category);
         List<Identifier> GetIdentifiersByCategory(string category);
         List<Identifier> GetAllIdentifiers();
         /// <summary>

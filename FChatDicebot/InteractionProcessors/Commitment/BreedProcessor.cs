@@ -141,13 +141,12 @@ namespace FChatDicebot.InteractionProcessors.Commitment
             }
             else
             {
-                Identifier monsterIdentifier = Database.GetIdentifier(identifier);
+                // Scoped to the monster category rather than fetched by name and category-
+                // checked afterwards: identifier names are unique only within a category, so a
+                // name-only fetch can return a same-named identifier of some other kind and
+                // fail this gate.
+                Identifier monsterIdentifier = Database.GetIdentifier(identifier, "monster");
                 if (monsterIdentifier == null)
-                {
-                    return ValidationResult.Failure(ChateauInteractionHandler.notFoundText(identifier));
-                }
-                if (monsterIdentifier.categories == null
-                    || !monsterIdentifier.categories.Contains("monster", StringComparer.OrdinalIgnoreCase))
                 {
                     return ValidationResult.Failure(ChateauInteractionHandler.typeNotFoundText("monster"));
                 }
@@ -238,7 +237,13 @@ namespace FChatDicebot.InteractionProcessors.Commitment
             }
             else
             {
-                monsterIdentifier = Database.GetIdentifier(monsterType);
+                // Prefer the monster-category document when one exists, so a name shared with
+                // an identifier of some other kind can't feed the wrong gestation/brood data
+                // in. Falls back to the name-only fetch because the species-trait categories
+                // (snake, slime, beast...) are what drive the defaults, and a monster seeded
+                // with only those still has to resolve.
+                monsterIdentifier = Database.GetIdentifier(monsterType, "monster")
+                    ?? Database.GetIdentifier(monsterType);
             }
 
             ResolveGestationAndBrood(monsterIdentifier, Rng, out int gestationDays, out int broodSize, out bool isRareTwins);

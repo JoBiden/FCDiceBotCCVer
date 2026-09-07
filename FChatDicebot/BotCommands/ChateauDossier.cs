@@ -504,7 +504,7 @@ namespace FChatDicebot.BotCommands
                 // Route through the SSOT scent-phrase helper (same one !odorize itself uses)
                 // instead of rendering the raw scent identifier token (L11) — a "personal"
                 // or "scentof"-category scent renders as "Alice's musk" rather than "Musk".
-                Identifier scentIdentifier = _database.GetIdentifier(s.Scent);
+                Identifier scentIdentifier = _database.GetIdentifier(s.Scent, InteractionProcessors.Consequence.OdorizeProcessor.ScentCategory);
                 string appliedByDisplay = _database.GetDisplayName(s.AppliedBy) ?? s.AppliedBy;
                 string scentPhrase = ScentText.ScentPhrase(scentIdentifier, s.Scent, appliedByDisplay);
 

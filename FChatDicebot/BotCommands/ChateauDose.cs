@@ -57,7 +57,7 @@ namespace FChatDicebot.BotCommands
                 && initiatorProfile.timers[cooldownKey].timerEnd.CompareTo(DateTime.UtcNow) > 0)
             {
                 string remaining = Utils.GetTimeSpanPrint(initiatorProfile.timers[cooldownKey].timerEnd - DateTime.UtcNow);
-                Identifier viceIdentifier = MonDB.GetDatabase().GetIdentifier(vice);
+                Identifier viceIdentifier = MonDB.GetDatabase().GetIdentifier(vice, DoseProcessor.ViceCategory);
                 string vicePhrase = ViceText.ViceName(viceIdentifier, vice, initiatorProfile.displayName);
                 bot.SendPrivateMessage(
                     "You've already dosed " + recipientProfile.displayName + " with " + vicePhrase + " too recently. Please respect that 'Consequence' interactions are meant to be meaningful, and not spammed. You'll be able to dose " + recipientProfile.displayName + " with " + vicePhrase + " again in " + remaining + ".",

@@ -179,11 +179,8 @@ namespace FChatDicebot.InteractionProcessors.Involved
 
             // Same drinkable-category rule as !milk, deliberately identical: the two verbs draw
             // the same fluids out of the same bodies and must not disagree on what counts.
-            Identifier substanceIdentifier = Database.GetIdentifier(identifier);
-            if (substanceIdentifier == null
-                || substanceIdentifier.categories == null
-                || !(substanceIdentifier.categories.Contains("substance", StringComparer.OrdinalIgnoreCase)
-                     || substanceIdentifier.categories.Contains("vice", StringComparer.OrdinalIgnoreCase)))
+            Identifier substanceIdentifier = SubstanceBodyparts.ResolveDrinkable(Database, identifier);
+            if (substanceIdentifier == null)
             {
                 return ValidationResult.Failure(ChateauInteractionHandler.typeNotFoundText("substance"));
             }
@@ -358,7 +355,7 @@ namespace FChatDicebot.InteractionProcessors.Involved
         private string BuildChannelMessage(Outcome outcome)
         {
             string substanceText = Utils.SubstanceToText(
-                outcome.Substance, Database?.GetIdentifier(outcome.Substance));
+                outcome.Substance, SubstanceBodyparts.ResolveDrinkable(Database, outcome.Substance));
 
             string flourish = ClosingFlourishes[Rng.Next(ClosingFlourishes.Length)]
                 .Replace("{source}", outcome.SourceDisplay)
@@ -462,7 +459,7 @@ namespace FChatDicebot.InteractionProcessors.Involved
         {
             string initName = initiatorProfile?.displayName ?? "Someone";
             string recName = recipientProfile?.displayName ?? "you";
-            string substanceText = Utils.SubstanceToText(identifier, Database?.GetIdentifier(identifier));
+            string substanceText = Utils.SubstanceToText(identifier, SubstanceBodyparts.ResolveDrinkable(Database, identifier));
 
             if (IsForceDrink(typeKey))
             {

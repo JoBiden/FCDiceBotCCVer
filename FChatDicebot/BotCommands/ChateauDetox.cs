@@ -111,7 +111,7 @@ namespace FChatDicebot.BotCommands
                 }
                 if (target == null)
                 {
-                    Identifier missIdent = database.GetIdentifier(specifiedVice);
+                    Identifier missIdent = database.GetIdentifier(specifiedVice, DoseProcessor.ViceCategory);
                     string missPhrase = ViceText.ViceName(missIdent, specifiedVice, caller.displayName);
                     result.PrivateMessage = "You aren't currently addicted to " + missPhrase
                         + ", but you are addicted to " + DescribeCarriedVices(database, vices)
@@ -133,7 +133,7 @@ namespace FChatDicebot.BotCommands
             }
 
             string viceName = target.Vice;
-            Identifier viceIdentifier = database.GetIdentifier(viceName);
+            Identifier viceIdentifier = database.GetIdentifier(viceName, DoseProcessor.ViceCategory);
             string vicePhrase = ViceText.ViceName(viceIdentifier, viceName, target.DosedBy);
             vices.Remove(target);
             ViceInstance.SaveAll(caller, vices);
@@ -163,7 +163,7 @@ namespace FChatDicebot.BotCommands
             var parts = new List<string>();
             foreach (var v in vices)
             {
-                Identifier id = database?.GetIdentifier(v.Vice);
+                Identifier id = database?.GetIdentifier(v.Vice, DoseProcessor.ViceCategory);
                 string phrase = ViceText.ViceName(id, v.Vice, v.DosedBy);
                 parts.Add(phrase + " (" + v.AddictionLevel + "/" + DoseProcessor.MaxAddictionLevel + ")");
             }
