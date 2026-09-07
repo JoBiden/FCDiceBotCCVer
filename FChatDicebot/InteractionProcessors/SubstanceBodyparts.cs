@@ -21,6 +21,32 @@ namespace FChatDicebot.InteractionProcessors
     public static class SubstanceBodyparts
     {
         /// <summary>
+        /// The categories an identifier must carry to count as drawable fluid. Both draw verbs
+        /// consult this same list so they can't disagree about what is drinkable.
+        /// </summary>
+        public static readonly string[] DrinkableCategories = { "substance", "vice" };
+
+        /// <summary>
+        /// Resolve a substance name to its identifier, accepting only the drinkable categories
+        /// and returning null for anything else (or for a name that doesn't exist).
+        ///
+        /// Category-scoped on purpose: identifier names are unique only within a category, so
+        /// fetching by name alone and checking <c>categories</c> afterwards can pick up a
+        /// same-named identifier of an unrelated kind and reject a perfectly valid substance.
+        /// </summary>
+        public static Identifier ResolveDrinkable(IChateauDatabase database, string substance)
+        {
+            if (database == null || string.IsNullOrEmpty(substance)) return null;
+
+            foreach (string category in DrinkableCategories)
+            {
+                Identifier found = database.GetIdentifier(substance, category);
+                if (found != null) return found;
+            }
+            return null;
+        }
+
+        /// <summary>
         /// The parts that produce <paramref name="substance"/>, or null when the substance
         /// isn't mapped — an unmapped substance is ungated rather than blocked, so adding a new
         /// identifier never accidentally makes it undrawable.

@@ -243,7 +243,7 @@ straight into it.
 
 | Field | Notes |
 |---|---|
-| `type` | The token residents type. Lowercase; unique. |
+| `type` | The token residents type. Lowercase, and unique **within a category** — not globally. The catalog carries an attire `bimbo` and a curse `bimbo`. |
 | `description` | Prose shown by `!whatis`. |
 | `categories` | Every category this identifier belongs to. One identifier can be in several. |
 | `displayText` | Optional flavor-text override consumed by the `Utils.*ToText` helpers. Unset = render the raw `type`. |
@@ -255,6 +255,13 @@ straight into it.
 **Categories** include `bodypart`, `break`, `substance`, `attire`, `species`/`monster`, `object`, `plant`, `scent`, `vice`, `parasite`, `curse`, `training`, `location`, `job`, `bond` — `!category {name}` lists a category live, which is more reliable than any list written here.
 
 Identifiers are curated directly in Mongo — `SetIdentifierEicon` is the one in-chat write path, for the cosmetic `eicon` field only.
+
+**Looking one up.** Because names are only unique within a category, `IChateauDatabase` offers two lookups and the choice between them matters:
+
+- `GetIdentifier(type, category)` — use this whenever the caller knows what kind of identifier it wants ("the curse named `bimbo`"). It filters on both fields, returns null when no identifier of that name carries that category, and so replaces the older "fetch by name, then check `categories.Contains(...)`" idiom. That idiom was a live bug: the name-only fetch returned whichever document Mongo found first, so `!curse … bimbo` quoted the attire description in its consent prompt and then failed its own category gate at `!consent`.
+- `GetIdentifier(type)` — name only, and genuinely ambiguous when a name collides. Reserved for callers with no category in mind: `!whatis`, the eicon setters, and the `Utils.*ToText` display fallbacks (via `MonDB.tryGetIdentifier`).
+
+`SubstanceBodyparts.ResolveDrinkable` wraps the scoped lookup for the one rule that spans two categories — `!milk` and `!drinkfrom` both accept `substance` or `vice` — so the two verbs can't drift apart on what counts as drinkable.
 
 #### Other collections
 
@@ -282,7 +289,7 @@ On startup the bot copies the data files to `C:\BotData\DiceBot\ImmediateBackup`
 
 `MonDB.Initialize(connectionString, databaseName)` constructs the singleton `ChateauDatabase`; `MonDB.GetDatabase()` returns it — and **throws** if `Initialize` hasn't run yet. That guard is deliberate: it used to silently default to the production database, which is exactly the accident it now prevents. Never work around it; initialize explicitly (tests do this through `TestDatabaseFixture`).
 
-The rest of `MonDB` is thin lowercase delegation (`getProfile`, `setProfile(userName, profile)`, `incrementCount`, `changeCurrency`, `addPendingCommand`, `getPending`, `removePendingInteraction`, `getIdentifier`, …) kept for the many legacy call sites. `tryGetIdentifier` is the one special case: a non-throwing lookup so the `Utils.*ToText` display helpers can consult `Identifier.displayText` without requiring a live database.
+The rest of `MonDB` is thin lowercase delegation (`getProfile`, `setProfile(userName, profile)`, `incrementCount`, `changeCurrency`, `addPendingCommand`, `getPending`, `removePendingInteraction`, `getIdentifier`, …) kept for the many legacy call sites. `tryGetIdentifier` is the one special case: a non-throwing lookup so the `Utils.*ToText` display helpers can consult `Identifier.displayText` without requiring a live database. `getIdentifier` has both the name-only and the category-scoped shape, mirroring `IChateauDatabase` — see the Identifiers section above for which to use.
 
 New code — processors especially — should take an `IChateauDatabase` (constructor injection) and use it directly; that's what makes it testable against `ChateauDb_Test`.
 

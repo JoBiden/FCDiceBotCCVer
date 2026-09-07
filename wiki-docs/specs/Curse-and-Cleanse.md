@@ -89,7 +89,7 @@ Stored at `recipient.lists["curses"]`.
 ## `!curse` validation
 
 - Recipient registered.
-- `curseName` resolves in the `Curses` catalog.
+- `curseName` resolves in the `Curses` catalog — via the category-scoped `GetIdentifier(type, "curse")`, not a name-only fetch. See the collision note under "Differences from the original spec".
 - Recipient does not already have this curse active. (Multiple distinct curses allowed; same curse twice rejected.)
 
 ## `!curse` processor logic (`CurseProcessor`)
@@ -173,6 +173,7 @@ The original design landed in its broad strokes (buckets, per-curse `CleanseCost
   - *Disablers:* `meekness`, `chastity`, `cooties`, `costume`, `poverty`, `laziness`, `hunger`, `greed`, `antisocial`.
   - *Modifiers:* `mooing`, `tsundere`, `blushing`, `horny`, `bimbo`, `vibrating`.
 - **`!curse` skips the status-effect block check for itself.** Being already-cursed shouldn't prevent a *new* curse — `ValidateInteraction` bypasses the base-class block-check for the parent `!curse` to avoid disabler curses (or modifier flavor noise) interfering with the consent-warning route.
+- **Curse names are only unique within the `curse` category.** The catalog carries an attire `bimbo` alongside the curse `bimbo`, and identifier lookup was name-only, so every `!curse … bimbo` resolved to the *attire* document: the consent prompt quoted the attire description, and the recipient's `!consent` then failed the curse category gate with "requires an identifier of type curse". Fixed by scoping the lookup — `CurseProcessor` reads `Database.GetIdentifier(identifier, CurseCategory)` in both `ValidateInteraction` and `BuildConsentWarning`. Adding a curse whose name is already taken in another category is therefore fine; adding a second identifier in the *same* category is not. Regression coverage: `FChatDicebot.Tests/Unit/Identifiercategorylookuptests.cs`.
 - **Cooldown is per-(initiator, recipient, curseName) on the initiator's timers.** Spec said "7-day cooldown" without specifying axis. As-shipped: a caster can spread different curses to different victims freely but can't re-apply the same `(target, curse)` tuple for a week — matches `InfestProcessor` / `OdorizeProcessor` / `DoseProcessor`.
 
 ## Files (as-shipped)
@@ -186,6 +187,7 @@ The original design landed in its broad strokes (buckets, per-curse `CleanseCost
 - [`FChatDicebot.Tests/Unit/Curseprocessortests.cs`](../../FChatDicebot.Tests/Unit/Curseprocessortests.cs)
 - [`FChatDicebot.Tests/Unit/Cursestatuscontributortests.cs`](../../FChatDicebot.Tests/Unit/Cursestatuscontributortests.cs)
 - [`FChatDicebot.Tests/Unit/Chateaucleansetests.cs`](../../FChatDicebot.Tests/Unit/Chateaucleansetests.cs)
+- [`FChatDicebot.Tests/Unit/Identifiercategorylookuptests.cs`](../../FChatDicebot.Tests/Unit/Identifiercategorylookuptests.cs) — the `bimbo` name-collision regression.
 
 **Modify:**
 - [`FChatDicebot/InteractionProcessors/InteractionProcessorRegistry.cs`](../../FChatDicebot/InteractionProcessors/InteractionProcessorRegistry.cs) — registers `CurseProcessor`.

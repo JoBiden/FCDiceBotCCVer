@@ -143,7 +143,7 @@ namespace FChatDicebot.BotCommands
             database.SetProfile(characterName, caller);
 
             int remainingLayers = target.Layers > 0 ? target.Layers : 0;
-            Identifier scentIdentifier = database.GetIdentifier(scentName);
+            Identifier scentIdentifier = database.GetIdentifier(scentName, OdorizeProcessor.ScentCategory);
             string scentPhrase = ScentText.ScentPhrase(scentIdentifier, scentName, target.AppliedBy);
             string remainingPhrase;
             if (remainingLayers == 0)
@@ -171,7 +171,7 @@ namespace FChatDicebot.BotCommands
             var parts = new List<string>();
             foreach (var layer in layers)
             {
-                Identifier ident = database.GetIdentifier(layer.Scent);
+                Identifier ident = database.GetIdentifier(layer.Scent, OdorizeProcessor.ScentCategory);
                 string phrase = ScentText.ScentPhrase(ident, layer.Scent, layer.AppliedBy);
                 string layerWord = layer.Layers == 1 ? "1 layer" : layer.Layers + " layers";
                 parts.Add(phrase + " (" + layerWord + ")");

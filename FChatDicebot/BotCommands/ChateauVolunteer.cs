@@ -204,7 +204,8 @@ namespace FChatDicebot.BotCommands
                             case "mon": //monster/species trait or category
                                 if (userProfile.characteristics.ContainsKey("monster"))
                                 {
-                                    if (MonDB.getIdentifier(userProfile.characteristics["monster"]).categories.Contains<string>(conditionalKey))
+                                    Identifier monsterIdentifier = MonDB.getIdentifier(userProfile.characteristics["monster"], "monster");
+                                    if (monsterIdentifier?.categories != null && monsterIdentifier.categories.Contains<string>(conditionalKey))
                                     {
                                         validResults.Add(keyvaluepair.Value);
                                     }

@@ -52,7 +52,7 @@ namespace FChatDicebot.BotCommands
                 return;
             }
 
-            Identifier scentIdentifier = MonDB.GetDatabase().GetIdentifier(scent);
+            Identifier scentIdentifier = MonDB.GetDatabase().GetIdentifier(scent, OdorizeProcessor.ScentCategory);
             string scentPhrase = ScentText.ScentPhrase(scentIdentifier, scent, initiatorProfile.displayName);
 
             string cooldownKey = OdorizeProcessor.CooldownTimerKey(scent, recipient);

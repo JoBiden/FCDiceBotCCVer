@@ -771,6 +771,27 @@ namespace FChatDicebot.Database
             return null;
         }
 
+        /// <summary>
+        /// Name + category lookup. Identifier names are unique only within a category, so this
+        /// is the collision-proof way to ask for "the curse named bimbo" rather than "whatever
+        /// document happens to be named bimbo". Category matching is case-sensitive, matching
+        /// <see cref="GetIdentifiersByCategory"/> and the all-lowercase catalog convention.
+        /// </summary>
+        public Identifier GetIdentifier(string type, string category)
+        {
+            var collection = Database.GetCollection<BsonDocument>("Identifiers");
+            var filter = Builders<BsonDocument>.Filter.And(
+                Builders<BsonDocument>.Filter.Eq("type", type),
+                Builders<BsonDocument>.Filter.AnyEq("categories", category));
+            var document = collection.Find(filter).FirstOrDefault();
+
+            if (document != null)
+            {
+                return BsonSerializer.Deserialize<Identifier>(document);
+            }
+            return null;
+        }
+
         public List<Identifier> GetIdentifiersByCategory(string category)
         {
             var collection = Database.GetCollection<BsonDocument>("Identifiers");

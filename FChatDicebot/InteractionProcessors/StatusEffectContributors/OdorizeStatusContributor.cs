@@ -80,7 +80,7 @@ namespace FChatDicebot.InteractionProcessors.StatusEffectContributors
                     continue;
                 }
 
-                Identifier scentIdentifier = _database?.GetIdentifier(layer.Scent);
+                Identifier scentIdentifier = _database?.GetIdentifier(layer.Scent, Consequence.OdorizeProcessor.ScentCategory);
                 string fragment = DescribeLayer(layer.Layers, scentIdentifier, layer.Scent, layer.AppliedBy, subjectName);
 
                 if (callSite == StatusEffectCallSite.Consent)

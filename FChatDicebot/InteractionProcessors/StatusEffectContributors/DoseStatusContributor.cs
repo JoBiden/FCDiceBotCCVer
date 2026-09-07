@@ -102,7 +102,7 @@ namespace FChatDicebot.InteractionProcessors.StatusEffectContributors
 
         private string RenderVicePhrase(ViceInstance vice)
         {
-            Identifier identifier = _database?.GetIdentifier(vice.Vice);
+            Identifier identifier = _database?.GetIdentifier(vice.Vice, Consequence.DoseProcessor.ViceCategory);
             return ViceText.ViceName(identifier, vice.Vice, vice.DosedBy);
         }
 

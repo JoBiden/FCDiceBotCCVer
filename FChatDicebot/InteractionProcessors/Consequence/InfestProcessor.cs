@@ -110,13 +110,11 @@ namespace FChatDicebot.InteractionProcessors.Consequence
                 return ValidationResult.Failure(ChateauInteractionHandler.typeNotFoundText(ParasiteCategory));
             }
 
-            Identifier parasiteIdentifier = Database.GetIdentifier(identifier);
+            // Scoped to the parasite category rather than fetched by name and category-checked
+            // afterwards: identifier names are unique only within a category, so a name-only
+            // fetch can return a same-named identifier of some other kind and fail this gate.
+            Identifier parasiteIdentifier = Database.GetIdentifier(identifier, ParasiteCategory);
             if (parasiteIdentifier == null)
-            {
-                return ValidationResult.Failure(ChateauInteractionHandler.notFoundText(identifier));
-            }
-            if (parasiteIdentifier.categories == null
-                || !parasiteIdentifier.categories.Contains(ParasiteCategory, StringComparer.OrdinalIgnoreCase))
             {
                 return ValidationResult.Failure(ChateauInteractionHandler.typeNotFoundText(ParasiteCategory));
             }

@@ -174,6 +174,17 @@ namespace FChatDicebot
         }
 
         /// <summary>
+        /// Category-scoped identifier lookup — see
+        /// <see cref="Database.IChateauDatabase.GetIdentifier(string, string)"/>. Prefer this
+        /// over the name-only overload wherever the caller knows which kind of identifier it
+        /// means, so a name shared across two categories can't resolve to the wrong one.
+        /// </summary>
+        internal static Identifier getIdentifier(string identifier, string category)
+        {
+            return GetDatabase().GetIdentifier(identifier, category);
+        }
+
+        /// <summary>
         /// Set (or clear) an identifier's bot-wide decorative eicon. Returns false when no
         /// identifier of that type exists. Used by the admin-only <c>!setidentifiereicon</c>.
         /// </summary>
