@@ -50,11 +50,12 @@ namespace FChatDicebot
             if (full.Count == 0 && empties.Count == 0) return result;
 
             int totalValue = 0;
+            var donorEicons = CollectionInventory.NewEiconCache();
             foreach (var group in BottleInventory.Group(full))
             {
                 int pricePer = ChateauCurrency.GetSellPricePerBottle(group.Substance, group.CorruptionTag);
                 totalValue += pricePer * group.Count;
-                result.Rows.Add(BuildGroupLine(database, group, pricePer));
+                result.Rows.Add(BuildGroupLine(database, group, pricePer, donorEicons));
             }
 
             if (empties.Count > 0)
@@ -109,11 +110,13 @@ namespace FChatDicebot
             if (bottles.Count == 0) return string.Empty;
 
             var pieces = new List<string>();
+            var donorEicons = CollectionInventory.NewEiconCache();
             foreach (var group in BottleInventory.Group(bottles))
             {
                 string piece = CountWord(group.Count) + " of the "
                     + Utils.SubstanceToText(group.Substance)
-                    + " from " + CollectionInventory.SubjectText(database, group.SourceName);
+                    + " from " + CollectionInventory.SubjectTextWithEicon(
+                        database, group.SourceName, MilkBottle.EiconVerb, donorEicons);
 
                 if (group.CorruptionTag == ChateauCurrency.CorruptTag) piece += " ([b]corrupt[/b])";
                 else if (group.CorruptionTag == ChateauCurrency.PurifiedTag) piece += " ([b]pure[/b])";
@@ -139,12 +142,15 @@ namespace FChatDicebot
             return described;
         }
 
-        private static string BuildGroupLine(IChateauDatabase database, BottleInventory.BottleGroup group, int pricePer)
+        private static string BuildGroupLine(IChateauDatabase database, BottleInventory.BottleGroup group,
+            int pricePer, Dictionary<string, string> donorEicons)
         {
             // Substance is the row's label, so it takes [u] like every other labelled row;
-            // corrupt/pure stay bold because they're a state flag, not a heading.
+            // corrupt/pure stay bold because they're a state flag, not a heading. The donor's own
+            // milk icon follows their name: the bottle is theirs, and that is the icon they chose
+            // for it.
             string line = ReadoutText.Label(ReadoutText.CapitalizePastTags(Utils.SubstanceToText(group.Substance))) + " from "
-                + CollectionInventory.SubjectText(database, group.SourceName);
+                + CollectionInventory.SubjectTextWithEicon(database, group.SourceName, MilkBottle.EiconVerb, donorEicons);
 
             if (group.CorruptionTag == ChateauCurrency.CorruptTag)
             {

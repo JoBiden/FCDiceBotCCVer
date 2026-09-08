@@ -61,14 +61,15 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
             Assert.Equal(string.Empty, InteractionEiconSupport.GetInteractionEicon(p, "spank"));
         }
 
+        // Aliases aren't in this map at all — they fold onto the command's name a layer up,
+        // in ChateauSeteicon.TryResolveTypedToken, which is where those cases are tested.
         [Theory]
-        [InlineData("hug", new[] { "cuddle" })]
-        [InlineData("dress", new[] { "dressup" })]
-        [InlineData("hire", new[] { "employ" })]
         [InlineData("purify", new[] { "purify" })]
         [InlineData("sit", new[] { "sit" })]
         [InlineData("pet", new[] { "pet" })]
         [InlineData("pay", new[] { "paymentGive", "paymentReceive" })]
+        [InlineData("panties", new[] { "panties" })]
+        [InlineData("givepanties", new[] { "panties" })]
         public void TryResolveTokenToVerbKeys_MapsTokens(string token, string[] expected)
         {
             Assert.True(InteractionEiconSupport.TryResolveTokenToVerbKeys(token, out var keys));
@@ -120,6 +121,33 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
             Assert.Equal(new[] { "climax" }, keys);
         }
 
+        // ---- panties / givepanties share one stored slot ----
+
+        [Fact]
+        public void PantiesAndGivepanties_ShareOneStoredSlot()
+        {
+            var p = new ProfileBuilder().Build();
+
+            // One pair, one icon: whichever direction the resident set it from, both verbs
+            // read the same slot (whose icon it is, is a separate question — see EiconOwner).
+            InteractionEiconSupport.SetInteractionEicon(p, "givepanties", "[eicon]lace[/eicon]");
+            Assert.Equal("[eicon]lace[/eicon]", InteractionEiconSupport.GetInteractionEicon(p, "panties"));
+            Assert.Equal("[eicon]lace[/eicon]", InteractionEiconSupport.GetInteractionEicon(p, "givepanties"));
+
+            InteractionEiconSupport.ClearInteractionEicon(p, "panties");
+            Assert.Equal(string.Empty, InteractionEiconSupport.GetInteractionEicon(p, "givepanties"));
+        }
+
+        // The completion suffix reads the eicon off the raw verb on Interaction.type, so a
+        // !givepanties completion has to land on the slot !seteicon panties writes.
+        [Fact]
+        public void GivepantiesCompletionRead_FindsTheIconSetOnPanties()
+        {
+            var p = new ProfileBuilder().WithCharacteristic("eicon_panties", "[eicon]lace[/eicon]").Build();
+            Assert.Equal("[eicon]lace[/eicon]",
+                InteractionEiconSupport.GetInteractionEicon(p, PantiesProcessor.GivePantiesType));
+        }
+
         // ---- Directionality of the completion suffix ----
 
         [Fact]
@@ -133,6 +161,63 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
 
             Assert.Contains("[eicon]ihand[/eicon]", suffix);
             Assert.DoesNotContain("[eicon]rbutt[/eicon]", suffix);
+        }
+
+        // ---- collection-style interactions: the icon belongs to the source ----
+
+        [Fact]
+        public void CollectionStyleInteractions_DeclareTheirEiconOnTheSource()
+        {
+            // The rule for anything that mints a Collectible: the item carries the source's
+            // name for life, so it carries their icon too. A new collectible interaction
+            // declares this the same way.
+            Assert.Equal(InteractionEiconOwner.Counterpart, new MilkProcessor(_database).EiconOwner);
+            Assert.Equal(InteractionEiconOwner.Counterpart, new PantiesProcessor(_database).EiconOwner);
+
+            // Everything else keeps decorating whoever performs it.
+            Assert.Equal(InteractionEiconOwner.Actor, new SpankProcessor(_database).EiconOwner);
+        }
+
+        [Fact]
+        public void CompletionSuffix_Panties_ShowsTheSourcesEicon_BothDirections()
+        {
+            var alice = new ProfileBuilder().WithUserName("Alice").WithDisplayName("Alice")
+                .WithCharacteristic("eicon_panties", "[eicon]alace[/eicon]").Build();
+            var bob = new ProfileBuilder().WithUserName("Bob").WithDisplayName("Bob")
+                .WithCharacteristic("eicon_panties", "[eicon]bsilk[/eicon]").Build();
+            var processor = new PantiesProcessor(_database);
+
+            // !panties — Alice asks, so Alice holds; the pair is Bob's and so is the icon.
+            string asked = processor.GetCompletionMessageWithStatusEffects(alice, bob,
+                PantiesProcessor.ComposeIdentifier(PantiesProcessor.PantiesType, 7),
+                PantiesProcessor.PantiesType);
+            Assert.Contains("[eicon]bsilk[/eicon]", asked);
+            Assert.DoesNotContain("[eicon]alace[/eicon]", asked);
+
+            // !givepanties — Alice offers, so Bob holds; the pair is Alice's, and the icon
+            // follows the pair rather than the pocket it ends up in.
+            string given = processor.GetCompletionMessageWithStatusEffects(alice, bob,
+                PantiesProcessor.ComposeIdentifier(PantiesProcessor.GivePantiesType, 8),
+                PantiesProcessor.GivePantiesType);
+            Assert.Contains("[eicon]alace[/eicon]", given);
+            Assert.DoesNotContain("[eicon]bsilk[/eicon]", given);
+        }
+
+        [Fact]
+        public void CompletionSuffix_Milk_ShowsTheMilkedResidentsEicon_NotTheMilkers()
+        {
+            var alice = new ProfileBuilder().WithUserName("Alice").WithDisplayName("Alice")
+                .WithCharacteristic("eicon_milk", "[eicon]amilker[/eicon]").Build();
+            var bob = new ProfileBuilder().WithUserName("Bob").WithDisplayName("Bob")
+                .WithCharacteristic("eicon_milk", "[eicon]bmilk[/eicon]").Build();
+            var processor = new MilkProcessor(_database);
+
+            // Alice milks Bob: the bottles are Bob's milk, stamped with his name, so his icon
+            // is the one that shows on them.
+            string message = processor.GetCompletionMessageWithStatusEffects(alice, bob, "cum|2", "milk");
+
+            Assert.Contains("[eicon]bmilk[/eicon]", message);
+            Assert.DoesNotContain("[eicon]amilker[/eicon]", message);
         }
 
         [Fact]

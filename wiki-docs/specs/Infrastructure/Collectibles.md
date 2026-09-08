@@ -107,6 +107,23 @@ resolved through `GetDisplayName` before reaching any player-facing string — e
 submission asks for, and it is already solved including the rename trap; the base class inherits the
 solution and the invariant.
 
+### The source's name carries their icon
+
+Because `subjectName` is whose the item is, it is also whose *eicon* the item shows. Every
+collection-style interaction declares `EiconOwner = InteractionEiconOwner.Counterpart`, so the
+completion message renders the source's `!seteicon milk` / `!seteicon panties` icon rather than the
+holder's: a resident decides what their own milk or panties look like, once, and it travels with
+every bottle and pair they part with.
+
+Which slot to read is the *type's* business, so it sits on the base as `EiconVerbKey` beside
+`TypeLabel` — `MilkBottle` answers `milk`, `Panties` answers `panties`. Both `!collection` sections
+and both parcel descriptions use it to put the source's icon beside their name; a new type's
+section gets the same for free, and the abstract member is what stops a type shipping as a row
+nobody can decorate. `CollectionSectionTests` fails on a type whose declared slot no `!seteicon`
+token resolves to. A new collectible declares this
+and `EiconOwner = InteractionEiconOwner.Counterpart` on its processor. See
+[Custom-Interaction-Eicons](../Custom-Interaction-Eicons.md).
+
 ### Where a second name would go
 
 A `createdBy` field on `Collectible`, nullable, alongside `subjectName`: `subjectName` is who the

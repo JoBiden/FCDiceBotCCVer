@@ -18,9 +18,11 @@ The same command also pins an eicon to one of the resident's **bodyparts**, whic
 !seteicon                                          → DM a list of everything you've set
 ```
 
-`{interaction}` accepts every interaction command name across the Casual, Involved, Commitment, and Consequence categories, plus their aliases (`hug`, `dress`, `hire`). `{bodypart}` accepts any identifier in the `bodypart` category. Anything else — system, recovery, or dicebot commands — returns a "not an interaction or bodypart you can pin an eicon to" reply.
+`{interaction}` accepts the interaction command names listed in `InteractionEiconSupport.TokenToVerbKeys`, plus any alias of one. `{bodypart}` accepts any identifier in the `bodypart` category. Anything else — system, recovery, or dicebot commands — returns a "not an interaction or bodypart you can pin an eicon to" reply.
 
-**Token resolution order** in `ChateauSeteicon.Run`: interaction names and aliases first, then `MonDB.getIdentifier(token)` with a `bodypart` category check. There's no overlap between the two sets today; the precedence rule is the guard if one ever appears.
+**Aliases are not listed anywhere in this feature.** `ChateauSeteicon.TryResolveTypedToken` hands the token to `BotCommandController.FindCommandByName`, which already folds every alias onto the command that declared it, and looks *that* name up in the map — so `Aliases` on the command class stays the only place an alias is written down, and a new one works here the moment it is added. The resolved name is also what the confirmation says back (`!seteicon hug` replies about cuddling).
+
+**Token resolution order** in `ChateauSeteicon.Run`: interaction names and aliases first, then `MonDB.getIdentifier(token)` with a `bodypart` category check — on the token *as typed*, since only the interaction side canonicalizes. There's no overlap between the two sets today; the precedence rule is the guard if one ever appears.
 
 ## Storage model
 
@@ -29,10 +31,43 @@ Eicons live on `Profile.characteristics`, keyed by the interaction **verb actual
 | Pair (one processor) | Distinct eicon keys |
 |----------------------|---------------------|
 | `!corrupt` / `!purify` | `corrupt` vs `purify` (follows the *effective* direction, so `!corrupt -3` shows the purify eicon) |
-| `!climax` / `!climaxfor` | `climax` vs `climaxfor` |
 | `!lap` / `!sit` | `lap` vs `sit` |
 
-Aliases fold onto their canonical verb (`hug`→`cuddle`, `dress`→`dressup`, `hire`→`employ`). `!pay` writes **both** payment directions (`paymentGive` + `paymentReceive`) so it shows whether the resident is paying or billing.
+**Directional pairs are the exception** — one act typed from either end, where the icon belongs to whoever it happened to rather than to whoever typed it. Both verbs fold onto one stored slot in `NormalizeVerbKey`, so setting it once covers both directions and the completion read (which sees the raw typed verb) lands on the slot `!seteicon` wrote:
+
+| Pair | Stored slot | Whose icon shows |
+|------|-------------|------------------|
+| `!climax` / `!climaxfor` | `climax` | the one climaxing |
+| `!drinkfrom` / `!forcedrink` | `drinkfrom` | the one drinking |
+| `!panties` / `!givepanties` | `panties` | whoever the pair came from (see below) |
+
+`!pay` is the other odd one: it writes **both** payment directions (`paymentGive` + `paymentReceive`) so it shows whether the resident is paying or billing.
+
+## Whose icon shows
+
+The party an icon renders on is declared, not overridden: `InteractionProcessorBase.EiconOwner` returns an `InteractionEiconOwner`, resolved against the processor's `RoleSpec` so it follows the typed verb.
+
+| Value | Renders on | Who declares it |
+|-------|-----------|-----------------|
+| `Actor` (default) | whoever performs the act | everything else |
+| `Counterpart` | the other party | `!milk`, `!panties`/`!givepanties`, `!pet` |
+
+**Collection-style interactions put the icon on the source.** Anything that mints a `Collectible` records whose it was in `subjectName` and keeps that for the life of the item, so the icon belongs there too: a resident sets `!seteicon milk` or `!seteicon panties` to decide what *their own* milk or panties look like, and that is what everyone sees on the bottle or the pair once it has changed hands — not the icon of whoever pocketed it. A new collectible interaction declares `Counterpart` and needs nothing else.
+
+**Where a collection icon renders.** Everywhere the item's source is named, all reading the same slot off the source's profile:
+
+| Surface | Reads |
+|---------|-------|
+| the completion message | `!milk` / `!panties` / `!givepanties`, when the item is made |
+| `!collection` rows | bottles: `Cum from Bobby [eicon] • #11, #12 • 5 chips each`; panties: `[u]Bobby[/u] [eicon] • #43` |
+| the `!drink` line | `… drinks down the tasty cum from Bobby [eicon].` |
+| the `!pay` parcel description | `two of the cum from Bobby [eicon] ([b]corrupt[/b])` — so a recipient sees whose it is before consenting |
+
+The last three go through `CollectionInventory.SubjectTextWithEicon` (and `SubjectEicon`, for the panties rows, whose name is already wrapped in a `ReadoutText.Label` an icon has no business inside). That is the single place that knows a subject's name is followed by their icon; which *slot* to read comes from the type, as `Collectible.EiconVerbKey`, so a section never hardcodes a verb.
+
+Both take an optional per-render cache: the sections and `!pay` pass one, so a parcel or a collection naming the same resident across several rows costs one profile read; `!drink` passes null for its single bottle. A subject with no icon set leaves every one of these byte-for-byte as it was.
+
+`!pet` predates the declaration and uses it for the other reason: residents keep a "being petted" icon rather than a "petting someone" one. Its group path still overrides `GetGroupEiconSuffix`, because the group rule is about which consenters render, not about direction.
 
 `mark` is special: it keeps its historical `characteristics["mark"]` slot (read by the dossier and `MarkProcessor`'s own reveal), so it is **excluded from the generic suffix** (`InteractionEiconSupport.IsSelfRendered`) to avoid a double icon.
 
@@ -170,9 +205,11 @@ Bodypart / identifier eicons additionally modified:
 
 ## Tests
 
-`Interactioneicontests.cs` covers: storage round-trip; mark's legacy slot; clear; token/alias/`pay` resolution and rejection of unsupported tokens; `IsSelfRendered`; directional (initiator-only) vs symmetric (both) suffix; no de-duplication; mark excluded from the suffix; the lap-stack per-position totem rule for both `!lap` and `!sit` (top → bottom, newline-separated) and its unset-slot character-icon fallback; the 1:1 completion actually appending both symmetric eicons; and the birth special-case.
+`Interactioneicontests.cs` covers: storage round-trip; mark's legacy slot; clear; command-name and `pay` resolution and rejection of unsupported tokens; each directional pair sharing one slot, including the completion-side read of the folded verb; `IsSelfRendered`; directional (initiator-only) vs symmetric (both) suffix; no de-duplication; mark excluded from the suffix; the lap-stack per-position totem rule for both `!lap` and `!sit` (top → bottom, newline-separated) and its unset-slot character-icon fallback; the 1:1 completion actually appending both symmetric eicons; and the birth special-case.
 
-`Bodyparteicontests.cs` covers: bodypart storage round-trip / case-insensitivity / clear / null-safety; the key prefix never colliding with any canonical interaction key; bodypart token resolution (found, non-bodypart identifier, unknown, interaction-wins precedence); every row of the whose-part table on the 1:1 path; the graceful misses (`!break mind`, unset part); mark keeping its interaction eicon suppressed while the part eicon appends; ordering (bodypart after interaction); the group path (per-consenter, no de-dup; initiator-owned once; lapsit unchanged); the `qcass` migration in both directions; both `!seteicon` list sections; the `!whatis` title-line and personal-eicon lines; and `SetIdentifierEicon` set / clear / unknown plus the admin gate. It also pins the set-confirmation wording, including `!pet`'s reversed phrasing.
+`Bodyparteicontests.cs` covers: bodypart storage round-trip / case-insensitivity / clear / null-safety; the key prefix never colliding with any canonical interaction key; bodypart token resolution (found, non-bodypart identifier, unknown, interaction-wins precedence); every row of the whose-part table on the 1:1 path; the graceful misses (`!break mind`, unset part); mark keeping its interaction eicon suppressed while the part eicon appends; ordering (bodypart after interaction); the group path (per-consenter, no de-dup; initiator-owned once; lapsit unchanged); the `qcass` migration in both directions; both `!seteicon` list sections; the `!whatis` title-line and personal-eicon lines; and `SetIdentifierEicon` set / clear / unknown plus the admin gate. It also pins the set-confirmation wording, including the phrasings that don't follow "whenever you {token} someone" — `!pet` and the three directional pairs.
+
+`Commandaliastests.cs` pins the alias seam from the other side: every alias of every interaction command resolving through `TryResolveTypedToken` to its command's name and verb keys, and non-interactions (`!bank`, bodyparts, unknown tokens) still being rejected.
 
 ## Decisions
 

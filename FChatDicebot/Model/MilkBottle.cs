@@ -29,6 +29,13 @@ namespace FChatDicebot.Model
         [BsonIgnore]
         public override string TypeLabel => "bottle";
 
+        /// <summary>The <c>!seteicon milk</c> slot, as a constant a listing can reach without an item in hand.</summary>
+        public const string EiconVerb = "milk";
+
+        /// <inheritdoc/>
+        [BsonIgnore]
+        public override string EiconVerbKey => EiconVerb;
+
         /// <summary>
         /// An empty is never sellable — the Chateau buys what's in the bottle, not the glass.
         /// This was enforced by each caller before bottles became collectibles; it is the

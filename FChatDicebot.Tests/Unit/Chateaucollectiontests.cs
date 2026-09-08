@@ -386,8 +386,92 @@ namespace FChatDicebot.Tests.Unit
         }
 
         // -------------------------------------------------------------------
+        // Source eicons — the icon on an item belongs to whoever it came from
+        // -------------------------------------------------------------------
+
+        [Fact]
+        public void BuildCollectionText_BottleRow_CarriesTheDonorsOwnMilkEicon()
+        {
+            SaveWithEicon("Bob", "Bobby", "eicon_milk", "[eicon]bmilk[/eicon]");
+
+            var profile = new ProfileBuilder().WithMilkBottle(Bottle(11, "cum", "Bob", hour: 1)).Build();
+
+            Assert.Contains("Bobby [eicon]bmilk[/eicon]", Build(profile));
+        }
+
+        [Fact]
+        public void BuildCollectionText_PantiesRow_CarriesTheSubjectsOwnPantiesEicon()
+        {
+            SaveWithEicon("Bob", "Bobby", "eicon_panties", "[eicon]bsilk[/eicon]");
+
+            var profile = new ProfileBuilder().WithCollectible(Pair(43, "Bob", hour: 1)).Build();
+
+            string text = Build(profile);
+
+            // Outside the label: the underline is the name's, not the icon's.
+            Assert.Contains(ReadoutText.Label("Bobby") + " [eicon]bsilk[/eicon]", text);
+        }
+
+        [Fact]
+        public void BuildCollectionText_EachTypeReadsItsOwnSlot()
+        {
+            // One person, two icons, one for each thing of theirs you can be holding.
+            new ProfileBuilder().WithUserName("Bob").WithDisplayName("Bobby")
+                .WithCharacteristic("eicon_milk", "[eicon]bmilk[/eicon]")
+                .WithCharacteristic("eicon_panties", "[eicon]bsilk[/eicon]")
+                .BuildAndSave(_database);
+
+            var profile = new ProfileBuilder()
+                .WithMilkBottle(Bottle(11, "cum", "Bob", hour: 2))
+                .WithCollectible(Pair(43, "Bob", hour: 1))
+                .Build();
+
+            string text = Build(profile);
+
+            Assert.Contains("[eicon]bmilk[/eicon]", text);
+            Assert.Contains("[eicon]bsilk[/eicon]", text);
+        }
+
+        [Fact]
+        public void BuildCollectionText_SubjectWithNoEicon_RowsAreUnchanged()
+        {
+            // Bob is saved without one by the constructor.
+            var profile = new ProfileBuilder()
+                .WithMilkBottle(Bottle(11, "cum", "Bob", hour: 2))
+                .WithCollectible(Pair(43, "Bob", hour: 1))
+                .Build();
+
+            Assert.DoesNotContain("[eicon]", Build(profile));
+        }
+
+        [Fact]
+        public void BuildCollectionText_UsesTheSubjectsEicon_NotTheHoldersOwn()
+        {
+            // The holder's own icons are what people see on *their* milk and panties. They have
+            // no business decorating a row of someone else's.
+            SaveWithEicon("Bob", "Bobby", "eicon_milk", "[eicon]bmilk[/eicon]");
+
+            var profile = new ProfileBuilder().WithUserName("Alice").WithDisplayName("Alice")
+                .WithCharacteristic("eicon_milk", "[eicon]amilk[/eicon]")
+                .WithMilkBottle(Bottle(11, "cum", "Bob", hour: 1))
+                .Build();
+
+            string text = Build(profile);
+
+            Assert.Contains("[eicon]bmilk[/eicon]", text);
+            Assert.DoesNotContain("[eicon]amilk[/eicon]", text);
+        }
+
+        // -------------------------------------------------------------------
         // Helpers
         // -------------------------------------------------------------------
+
+        private void SaveWithEicon(string userName, string displayName, string key, string eicon)
+        {
+            new ProfileBuilder().WithUserName(userName).WithDisplayName(displayName)
+                .WithCharacteristic(key, eicon).BuildAndSave(_database);
+        }
+
 
         private string Build(Profile profile, CollectionFilter filter = null)
         {

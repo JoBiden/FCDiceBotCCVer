@@ -464,13 +464,26 @@ namespace FChatDicebot.Tests.Unit.InteractionProcessors
             Assert.DoesNotContain("bodypart eicons", message);
         }
 
+        // Run folds aliases onto the command name before confirming, so this only ever sees
+        // canonical tokens ("hug" arrives as "cuddle").
         [Theory]
         [InlineData("kiss", "whenever you kiss someone")]
-        [InlineData("hug", "whenever you hug someone")]
+        [InlineData("cuddle", "whenever you cuddle someone")]
         // !pet's eicon belongs to the one being petted, so the confirmation has to be
         // phrased from that side rather than the petter's.
         [InlineData("pet", "whenever someone pets you")]
         [InlineData("PET", "whenever someone pets you")]
+        // Directional pairs: one slot, one act, so both verbs describe the person it
+        // happened to rather than the one who typed the command.
+        [InlineData("climax", "whenever you climax")]
+        [InlineData("climaxfor", "whenever you climax")]
+        [InlineData("drinkfrom", "whenever you drink from someone")]
+        [InlineData("forcedrink", "whenever you drink from someone")]
+        // Collection interactions read from the source's side: the icon is on the item, so
+        // it's about someone else ending up with your things.
+        [InlineData("milk", "whenever someone ends up with a bottle of your milk")]
+        [InlineData("panties", "whenever someone ends up with a pair of your panties")]
+        [InlineData("givepanties", "whenever someone ends up with a pair of your panties")]
         public void SetConfirmation_IsPhrasedFromTheSideWhoseEiconShows(string token, string expected)
         {
             Assert.Equal(expected, ChateauSeteicon.SetConfirmationClause(token));

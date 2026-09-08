@@ -35,6 +35,13 @@ namespace FChatDicebot.InteractionProcessors.Involved
         // (The typed identifier here is the substance, not a part, hence the fixed rule.)
         public override BodypartEiconRule BodypartEiconRule => BodypartEiconRule.Part("breast", BodypartEiconOwner.Recipient);
 
+        /// <summary>
+        /// The bottles are the milked resident's — their name is frozen onto every one — so the
+        /// <c>!seteicon milk</c> icon that shows is theirs, not the milker's. A resident decides
+        /// what their own milk looks like, wherever the bottle ends up.
+        /// </summary>
+        public override InteractionEiconOwner EiconOwner => InteractionEiconOwner.Counterpart;
+
         // Single mutable RNG used for the 1–3 bottle roll. Tests can swap this for a
         // seeded Random to make quantity outcomes deterministic. Not thread-safe; the
         // bot processes one interaction at a time.

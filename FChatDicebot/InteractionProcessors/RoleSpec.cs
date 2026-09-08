@@ -103,6 +103,20 @@ namespace FChatDicebot.InteractionProcessors
             return IsInverted(typedVerb) ? recipientProfile : initiatorProfile;
         }
 
+        /// <summary>
+        /// Profile-shaped <see cref="ResolveCounterpart"/>, the mirror of
+        /// <see cref="ResolveActorProfile"/>. Used for the eicons that belong to the party an
+        /// interaction happens <i>to</i> rather than the one performing it — see
+        /// <see cref="InteractionEiconOwner.Counterpart"/>. On a half-loaded pair it yields
+        /// whichever profile there is, for the same reason its mirror falls back: guessing a
+        /// direction from an incomplete pair is worse than decorating the one we have.
+        /// </summary>
+        public Model.Profile ResolveCounterpartProfile(string typedVerb, Model.Profile initiatorProfile, Model.Profile recipientProfile)
+        {
+            if (initiatorProfile == null || recipientProfile == null) return recipientProfile ?? initiatorProfile;
+            return IsInverted(typedVerb) ? initiatorProfile : recipientProfile;
+        }
+
         /// <summary>Both type keys this spec covers, for registry wiring and sanity checks.</summary>
         public IEnumerable<string> Verbs
         {

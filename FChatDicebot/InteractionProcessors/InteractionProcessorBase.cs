@@ -216,16 +216,29 @@ namespace FChatDicebot.InteractionProcessors
         public virtual bool EiconAppliesToBothParties => false;
 
         /// <summary>
-        /// The party whose custom interaction eicon leads the 1:1 completion suffix — the one
-        /// who "performs" the interaction. Resolved through <see cref="Roles"/>, so the ordinary
-        /// <see cref="RoleSpec.Fixed"/> case yields the initiator and a two-verb processor
-        /// yields whichever side the typed verb makes the actor (e.g. climax, where the
-        /// climaxer is the recipient on <c>!climax</c>) with no override needed. Mirrors
+        /// Which side of the act this interaction's eicon belongs to. The default,
+        /// <see cref="InteractionEiconOwner.Actor"/>, decorates whoever performs it; the
+        /// collection-style interactions declare <see cref="InteractionEiconOwner.Counterpart"/>
+        /// so the icon on a minted item is the icon of whoever it came from. Declaring it
+        /// beats overriding <see cref="GetEiconSubject"/>: the direction stays one word next to
+        /// the processor's other role wiring, and it can't drift from <see cref="Roles"/>.
+        /// </summary>
+        public virtual InteractionEiconOwner EiconOwner => InteractionEiconOwner.Actor;
+
+        /// <summary>
+        /// The party whose custom interaction eicon leads the 1:1 completion suffix. Resolved
+        /// through <see cref="Roles"/> and <see cref="EiconOwner"/> together, so the ordinary
+        /// <see cref="RoleSpec.Fixed"/> case yields the initiator, a two-verb processor yields
+        /// whichever side the typed verb makes the actor (e.g. climax, where the climaxer is
+        /// the recipient on <c>!climax</c>), and a <see cref="InteractionEiconOwner.Counterpart"/>
+        /// processor yields the other one of those — all with no override needed. Mirrors
         /// <see cref="GetStatusEffectSubject"/>, which redirects status fragments the same way.
         /// </summary>
         protected virtual Profile GetEiconSubject(string interactionVerb, Profile initiatorProfile, Profile recipientProfile)
         {
-            return Roles.ResolveActorProfile(interactionVerb, initiatorProfile, recipientProfile);
+            return EiconOwner == InteractionEiconOwner.Counterpart
+                ? Roles.ResolveCounterpartProfile(interactionVerb, initiatorProfile, recipientProfile)
+                : Roles.ResolveActorProfile(interactionVerb, initiatorProfile, recipientProfile);
         }
 
         /// <summary>

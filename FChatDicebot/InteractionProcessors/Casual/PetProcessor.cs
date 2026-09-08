@@ -14,7 +14,7 @@ namespace FChatDicebot.InteractionProcessors.Casual
     /// Its custom <c>!seteicon pet</c> icon is the <b>recipient's</b> (unlike most directional
     /// casuals, which show the initiator's): residents typically keep a "my character being
     /// petted" eicon, so the natural icon to surface is the pet's, not the petter's. See
-    /// <see cref="GetEiconSubject"/> and <see cref="GetGroupEiconSuffix"/>.
+    /// <see cref="EiconOwner"/> and <see cref="GetGroupEiconSuffix"/>.
     /// </summary>
     public class PetProcessor : InteractionProcessorBase
     {
@@ -105,15 +105,12 @@ namespace FChatDicebot.InteractionProcessors.Casual
         /// The custom <c>!seteicon pet</c> icon belongs to the one being petted — the recipient —
         /// since residents keep a "being petted" eicon rather than a "petting someone" one.
         /// </summary>
-        protected override Profile GetEiconSubject(string interactionVerb, Profile initiatorProfile, Profile recipientProfile)
-        {
-            return recipientProfile ?? initiatorProfile;
-        }
+        public override InteractionEiconOwner EiconOwner => InteractionEiconOwner.Counterpart;
 
         /// <summary>
         /// Group custom-eicon flourish: each petted recipient's own <c>pet</c> eicon (in consent
-        /// order), not the initiator's. Mirrors the 1:1 <see cref="GetEiconSubject"/> redirect so
-        /// a group pet surfaces every "being petted" icon rather than the petter's.
+        /// order), not the initiator's. Mirrors the 1:1 <see cref="EiconOwner"/> redirect so a
+        /// group pet surfaces every "being petted" icon rather than the petter's.
         /// </summary>
         public override string GetGroupEiconSuffix(string interactionVerb, Profile initiatorProfile, IReadOnlyList<Profile> consentersInOrder, string identifier)
         {

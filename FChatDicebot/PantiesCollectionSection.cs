@@ -47,10 +47,17 @@ namespace FChatDicebot
             var pairs = CollectionInventory.Select<Panties>(profile, filter.Subject);
             if (pairs.Count == 0) return result;
 
+            var subjectEicons = CollectionInventory.NewEiconCache();
             foreach (var group in CollectionInventory.GroupBySubject(pairs))
             {
+                // Whose pair it is, then the icon they chose for their own panties. Outside the
+                // label rather than inside it: an eicon has no business under the underline.
+                string eicon = CollectionInventory.SubjectEicon(
+                    database, group.SubjectName, Panties.EiconVerb, subjectEicons);
+
                 result.Rows.Add(
                     ReadoutText.Label(CollectionInventory.SubjectText(database, group.SubjectName))
+                    + (string.IsNullOrEmpty(eicon) ? string.Empty : " " + eicon)
                     + ReadoutText.InlineSeparator
                     + CollectionInventory.FormatSerials(group.Serials, ChateauCurrency.SerialDisplayCap));
             }
@@ -89,10 +96,12 @@ namespace FChatDicebot
             if (pairs.Count == 0) return string.Empty;
 
             var pieces = new List<string>();
+            var subjectEicons = CollectionInventory.NewEiconCache();
             foreach (var group in CollectionInventory.GroupBySubject(pairs))
             {
                 pieces.Add(CountWord(group.Count) + " originally from "
-                    + CollectionInventory.SubjectText(database, group.SubjectName));
+                    + CollectionInventory.SubjectTextWithEicon(
+                        database, group.SubjectName, Panties.EiconVerb, subjectEicons));
             }
 
             string pairWord = pairs.Count == 1 ? "pair of panties" : "pairs of panties";

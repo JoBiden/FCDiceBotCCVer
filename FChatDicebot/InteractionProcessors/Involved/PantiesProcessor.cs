@@ -21,9 +21,9 @@ namespace FChatDicebot.InteractionProcessors.Involved
     ///
     /// <para>
     /// The <b>holder</b> is the acting party for <see cref="RoleSpec"/> purposes — theirs is the
-    /// collection that changes and the eicon that shows. The <b>subject</b> (the counterpart) is
-    /// whose panties they were, and is what gets frozen onto
-    /// <see cref="Collectible.subjectName"/>.
+    /// collection that changes. The <b>subject</b> (the counterpart) is whose panties they were:
+    /// their name is frozen onto <see cref="Collectible.subjectName"/>, and theirs is the eicon
+    /// that shows, because the icon belongs to the pair rather than to whoever pocketed it.
     /// </para>
     ///
     /// <para>
@@ -56,6 +56,14 @@ namespace FChatDicebot.InteractionProcessors.Involved
         /// <see cref="InteractionProcessorBase.GetEiconSubject"/>, which does see the typed verb.
         /// </summary>
         public override BodypartEiconRule BodypartEiconRule => null;
+
+        /// <summary>
+        /// The pair is the subject's, whichever direction it was typed from — their name is
+        /// frozen onto it — so the <c>!seteicon panties</c> icon that shows is theirs rather
+        /// than the holder's. A resident decides what their own panties look like, and that is
+        /// what everyone sees when a pair of them changes hands.
+        /// </summary>
+        public override InteractionEiconOwner EiconOwner => InteractionEiconOwner.Counterpart;
 
         /// <summary>
         /// Timer key prefix for the once-per-day per-direction lock. Stamped on the
