@@ -21,7 +21,7 @@ namespace FChatDicebot.BotCommands
             Aliases = new string[] { };
             Category = "General";
             ShortDescription = "Set your personal eicon for an interaction or a bodypart";
-            LongDescription = "Set a special eicon to show for your interactions of the specified type. Once set, whenever you perform that interaction onlookers will see your eicon alongside the result. For mutual interactions (!kiss, !cuddle, !handhold and !bond) and group interactions, all participants' eicons will show. For !climax and !climaxfor, the eicon for the one climaxing will show. For !pet, the eicon for the one being petted will show (set your own 'being petted' eicon). For all other interactions, the initiator's eicon will show.\n\n"
+            LongDescription = "Set a special eicon to show for your interactions of the specified type. Once set, whenever you perform that interaction onlookers will see your eicon alongside the result. For mutual interactions (!kiss, !cuddle, !handhold and !bond) and group interactions, all participants' eicons will show. For !climax and !climaxfor, the eicon for the one climaxing will show. For !drinkfrom and !forcedrink, the eicon for the one drinking will show. For the collection interactions (!milk, !panties and !givepanties), the eicon belongs to whoever the item came from, so yours says what your own milk or panties look like once someone else is holding them. For !pet, the eicon for the one being petted will show (set your own 'being petted' eicon). For all other interactions, the initiator's eicon will show.\n\n"
                 + "You can also pin an eicon to one of your own bodyparts, and it will show whenever an interaction involves that part. Use !category bodypart to see the parts you can pick from. Your part shows when someone !marks, !goldens or !breaks it, when they !spank you (your ass), !feeds you (your mouth), or !milks you (your breast); your own part shows when you !consume with it, !lick someone (your tongue) or offer a !boobhat (your breast); and both partners' hands show on a !handhold.\n\n"
                 + "Set one with !seteicon {interaction} [noparse][eicon]YourEicon[/eicon][/noparse] or !seteicon {bodypart} [noparse][eicon]YourEicon[/eicon][/noparse]. Leave the eicon off to clear it. Message !seteicon on its own to see everything you've set.";
             Usage = "!seteicon {interaction} [noparse][eicon]YourEicon[/eicon][/noparse]\nor\n!seteicon {bodypart} [noparse][eicon]YourEicon[/eicon][/noparse]\nor\n!seteicon {interaction}   (to clear it)\nor\n!seteicon   (to list what you've set)";
@@ -56,8 +56,11 @@ namespace FChatDicebot.BotCommands
 
             // Resolution order: interaction names (and their aliases) win, then bodypart
             // identifiers. There's no overlap today; the precedence rule is the guard if one
-            // ever appears.
-            bool isInteraction = InteractionEiconSupport.TryResolveTokenToVerbKeys(token, out string[] verbKeys);
+            // ever appears. Note the bodypart lookup keeps the token as typed — only the
+            // interaction side folds aliases onto a canonical name.
+            bool isInteraction = TryResolveTypedToken(
+                commandController, token, out string canonicalToken, out string[] verbKeys);
+            if (isInteraction) token = canonicalToken;
             string bodypart = isInteraction ? null : ResolveBodypart(token);
 
             if (!isInteraction && bodypart == null)
@@ -125,20 +128,77 @@ namespace FChatDicebot.BotCommands
         }
 
         /// <summary>
+        /// Resolve a token a resident typed — an interaction command name, or any alias of one —
+        /// to the verb key(s) its eicon is stored under, plus the canonical name to say it back
+        /// with (<c>hug</c> resolves to <c>cuddle</c>).
+        ///
+        /// <para>
+        /// Aliases are written down in exactly one place, <see cref="ChatBotCommand.Aliases"/>:
+        /// this asks <see cref="BotCommandController.FindCommandByName"/>, which already folds
+        /// every alias onto the command that declared it, and looks that command's name up in
+        /// the eicon map. So <c>!seteicon</c> answers to a new alias the moment it is added to
+        /// the array, with no second table to keep in step — the failure mode where <c>!cum</c>
+        /// dispatched fine but <c>!seteicon cum</c> didn't recognise it can't recur.
+        /// </para>
+        ///
+        /// <para>
+        /// The fallback to the raw token matters when no command owns it: the map is the gate
+        /// for what counts as an interaction, so a token it doesn't hold is rejected here and
+        /// tried as a bodypart by the caller.
+        /// </para>
+        /// </summary>
+        internal static bool TryResolveTypedToken(BotCommandController commandController, string token,
+            out string canonicalToken, out string[] verbKeys)
+        {
+            string typed = string.IsNullOrEmpty(token) ? string.Empty : token.Trim();
+            ChatBotCommand command = commandController == null ? null : commandController.FindCommandByName(typed);
+
+            string candidate = command != null && !string.IsNullOrEmpty(command.Name)
+                ? command.Name
+                : typed.ToLowerInvariant();
+
+            if (InteractionEiconSupport.TryResolveTokenToVerbKeys(candidate, out verbKeys))
+            {
+                canonicalToken = candidate;
+                return true;
+            }
+
+            canonicalToken = null;
+            verbKeys = null;
+            return false;
+        }
+
+        /// <summary>
         /// The "whenever ..." clause of the set confirmation, phrased from the side whose eicon
         /// actually shows. Almost every interaction surfaces the initiator's, which reads as
-        /// "whenever you {token} someone" — <c>!pet</c> is the exception: its icon belongs to
-        /// the one being petted, so telling them "whenever you pet someone" describes the wrong
-        /// direction. Any future interaction that redirects <c>GetEiconSubject</c> to the
-        /// recipient needs an entry here too.
+        /// "whenever you {token} someone" — the entries below are the ones that don't. Each
+        /// mirrors the processor's <c>EiconOwner</c>: <c>!pet</c>'s icon belongs to the one
+        /// being petted; the collection interactions' belong to whoever the milk or panties
+        /// came from, so they're phrased around someone else ending up with your things; and a
+        /// directional pair's belongs to whoever the act happened to, so both of its verbs
+        /// describe that one person. Any interaction whose eicon isn't the initiator's needs an
+        /// entry here too.
         /// </summary>
+        private static readonly Dictionary<string, string> ConfirmationClauses =
+            new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            { "pet", "whenever someone pets you" },
+            { "climax", "whenever you climax" },
+            { "climaxfor", "whenever you climax" },
+            { "drinkfrom", "whenever you drink from someone" },
+            { "forcedrink", "whenever you drink from someone" },
+            { "milk", "whenever someone ends up with a bottle of your milk" },
+            { "panties", "whenever someone ends up with a pair of your panties" },
+            { "givepanties", "whenever someone ends up with a pair of your panties" },
+        };
+
+        /// <summary>See <see cref="ConfirmationClauses"/>.</summary>
         internal static string SetConfirmationClause(string token)
         {
-            if (string.Equals(token, "pet", StringComparison.OrdinalIgnoreCase))
-            {
-                return "whenever someone pets you";
-            }
-            return "whenever you " + token + " someone";
+            string clause;
+            return ConfirmationClauses.TryGetValue(token ?? string.Empty, out clause)
+                ? clause
+                : "whenever you " + token + " someone";
         }
 
         /// <summary>

@@ -58,6 +58,17 @@ namespace FChatDicebot.Model
         public abstract string TypeLabel { get; }
 
         /// <summary>
+        /// The interaction verb whose <c>!seteicon</c> slot decorates this item, read off the
+        /// profile named by <see cref="subjectName"/>. The icon belongs to the source, not the
+        /// holder — a resident decides what their own milk or panties look like — so a listing
+        /// resolves it through the item's source rather than the resident reading the list.
+        /// Every type answers this, which is what keeps a new collectible from shipping as a
+        /// row nobody can decorate.
+        /// </summary>
+        [BsonIgnore]
+        public abstract string EiconVerbKey { get; }
+
+        /// <summary>
         /// Whether the Chateau will buy this item. Types that are keepsakes rather than
         /// commodities override this to false, and <c>!sell</c> reads it rather than
         /// re-deriving the rule per caller.

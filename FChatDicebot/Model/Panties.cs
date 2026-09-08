@@ -20,6 +20,13 @@ namespace FChatDicebot.Model
         [BsonIgnore]
         public override string TypeLabel => "pair of panties";
 
+        /// <summary>The <c>!seteicon panties</c> slot, which both panties verbs fold onto.</summary>
+        public const string EiconVerb = "panties";
+
+        /// <inheritdoc/>
+        [BsonIgnore]
+        public override string EiconVerbKey => EiconVerb;
+
         /// <summary>
         /// The Chateau doesn't deal in these. They change hands between residents or not at all,
         /// which is what makes holding someone's pair mean something.

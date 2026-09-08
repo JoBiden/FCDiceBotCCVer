@@ -148,6 +148,62 @@ namespace FChatDicebot
         }
 
         /// <summary>
+        /// <see cref="SubjectText"/> followed by the subject's own eicon for the interaction that
+        /// produced this kind of item — their <c>!seteicon milk</c> for a bottle, their
+        /// <c>!seteicon panties</c> for a pair. Falls back to the bare name when they haven't set
+        /// one, so nothing gains a stray space.
+        ///
+        /// <para>
+        /// The icon is read off the <b>subject's</b> profile, never the holder's: a collectible's
+        /// icon belongs to whoever it came from (see
+        /// <see cref="InteractionProcessors.InteractionEiconOwner.Counterpart"/>), which is why a
+        /// listing can't resolve it from the profile it is already rendering. Pass the type's own
+        /// key — <c>MilkBottle.EiconVerb</c>, <c>Panties.EiconVerb</c>.
+        /// </para>
+        ///
+        /// <para>
+        /// <paramref name="eiconCache"/> is per-render and may be null for a single-subject
+        /// caller. A section passes one so a collection naming the same donor across several rows
+        /// costs one profile read rather than one per row.
+        /// </para>
+        /// </summary>
+        public static string SubjectTextWithEicon(IChateauDatabase database, string subjectName,
+            string eiconVerbKey, Dictionary<string, string> eiconCache)
+        {
+            string subject = SubjectText(database, subjectName);
+            string eicon = SubjectEicon(database, subjectName, eiconVerbKey, eiconCache);
+            return string.IsNullOrEmpty(eicon) ? subject : subject + " " + eicon;
+        }
+
+        /// <summary>
+        /// Just the icon, for rows that decorate a name already wrapped in its own formatting —
+        /// the panties rows put the subject in a <c>ReadoutText.Label</c>, and an eicon has no
+        /// business inside the underline. Empty when unset. See <see cref="SubjectTextWithEicon"/>.
+        /// </summary>
+        public static string SubjectEicon(IChateauDatabase database, string subjectName,
+            string eiconVerbKey, Dictionary<string, string> eiconCache)
+        {
+            if (database == null || string.IsNullOrEmpty(subjectName) || string.IsNullOrEmpty(eiconVerbKey))
+            {
+                return string.Empty;
+            }
+
+            string cached;
+            if (eiconCache != null && eiconCache.TryGetValue(subjectName, out cached)) return cached;
+
+            string eicon = InteractionProcessors.InteractionEiconSupport.GetInteractionEicon(
+                database.GetProfile(subjectName), eiconVerbKey);
+            if (eiconCache != null) eiconCache[subjectName] = eicon;
+            return eicon;
+        }
+
+        /// <summary>A per-render cache for <see cref="SubjectEicon"/>, keyed on subject userName.</summary>
+        public static Dictionary<string, string> NewEiconCache()
+        {
+            return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
         /// Render a run of serials as "#12, #40, #41", capped at
         /// <paramref name="cap"/> with an "and N more" tail so one prolific donor can't push the
         /// rest of the collection out of the message. Serial 0 (pre-backfill) renders as "#?"

@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.Serialization;
 using Xunit;
 
 namespace FChatDicebot.Tests.Unit
@@ -54,6 +55,24 @@ namespace FChatDicebot.Tests.Unit
 
             Assert.True(stale.Count == 0,
                 "Sections whose ItemType isn't a concrete Collectible: " + string.Join(", ", stale));
+        }
+
+        [Fact]
+        public void EveryCollectibleType_DeclaresASlotSeteiconAccepts()
+        {
+            // A type's EiconVerbKey is the slot its source sets to decide what the item looks
+            // like. Declaring one !seteicon doesn't answer to would leave every listing reading
+            // a slot nobody can write — which is exactly how !seteicon panties shipped broken.
+            var unsettable = CollectibleTypes()
+                .Select(t => new { Type = t, Key = ((Collectible)FormatterServices.GetUninitializedObject(t)).EiconVerbKey })
+                .Where(x => string.IsNullOrEmpty(x.Key)
+                    || !FChatDicebot.InteractionProcessors.InteractionEiconSupport.TryResolveTokenToVerbKeys(x.Key, out _))
+                .Select(x => x.Type.Name + " -> '" + x.Key + "'")
+                .ToList();
+
+            Assert.True(unsettable.Count == 0,
+                "Collectible types whose EiconVerbKey no !seteicon token resolves to: "
+                + string.Join(", ", unsettable));
         }
 
         [Fact]

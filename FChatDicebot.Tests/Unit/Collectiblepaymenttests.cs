@@ -397,6 +397,36 @@ namespace FChatDicebot.Tests.Unit
         }
 
         [Fact]
+        public void Describe_CarriesTheSourcesOwnEicon_ForEitherType()
+        {
+            // The parcel is Carol's milk and Carol's panties, so the consent prompt shows the
+            // icons Carol chose for them: the recipient sees whose they are before agreeing.
+            new ProfileBuilder().WithUserName("Carol").WithDisplayName("Carol")
+                .WithCharacteristic("eicon_milk", "[eicon]cmilk[/eicon]")
+                .WithCharacteristic("eicon_panties", "[eicon]csilk[/eicon]")
+                .BuildAndSave(_database);
+
+            string bottles = CollectiblePayment.Describe(
+                _database, Bottles, Items(Bottle(1, "cum", "Carol", hour: 1)));
+            string pairs = CollectiblePayment.Describe(
+                _database, PantiesSection, Items(Pair(43, "Carol", hour: 1)));
+
+            Assert.Contains("Carol [eicon]cmilk[/eicon]", bottles);
+            Assert.Contains("Carol [eicon]csilk[/eicon]", pairs);
+
+            // The shape DescribesCollectibles keys on has to survive an icon landing mid-string.
+            Assert.True(CollectiblePayment.DescribesCollectibles(bottles));
+            Assert.True(CollectiblePayment.DescribesCollectibles(pairs));
+        }
+
+        [Fact]
+        public void Describe_SourceWithNoEicon_IsUnchanged()
+        {
+            Assert.DoesNotContain("[eicon]", CollectiblePayment.Describe(
+                _database, Bottles, Items(Bottle(1, "cum", "Carol", hour: 1))));
+        }
+
+        [Fact]
         public void DescribesCollectibles_DistinguishesParcelsFromCurrencyAmounts()
         {
             Assert.True(CollectiblePayment.DescribesCollectibles(

@@ -319,6 +319,31 @@ namespace FChatDicebot.Tests.Unit
         // Helpers
         // -------------------------------------------------------------------
 
+        [Fact]
+        public void Execute_ChannelMessage_NamesTheDonorWithTheirOwnMilkEicon()
+        {
+            SeedDrinker("Alice", Bottle(42, "cum", "Bob", hour: 1));
+            // After SeedDrinker, which saves a plain Bob of its own.
+            new ProfileBuilder().WithUserName("Bob").WithDisplayName("Bob")
+                .WithCharacteristic("eicon_milk", "[eicon]bmilk[/eicon]").BuildAndSave(_database);
+
+            var result = ChateauDrink.Execute(_database, "Alice", null, 0, NeverRolls());
+
+            // What's being drunk is Bob's milk, so the line carries the icon Bob picked for it.
+            Assert.Contains("Bob [eicon]bmilk[/eicon]", result.ChannelMessage);
+        }
+
+        [Fact]
+        public void Execute_ChannelMessage_DonorWithNoEicon_IsUnchanged()
+        {
+            SeedDrinker("Alice", Bottle(42, "cum", "Bob", hour: 1));
+
+            var result = ChateauDrink.Execute(_database, "Alice", null, 0, NeverRolls());
+
+            Assert.Contains("from Bob.", result.ChannelMessage);
+            Assert.DoesNotContain("[eicon]", result.ChannelMessage);
+        }
+
         private Profile SeedDrinker(string userName, params MilkBottle[] bottles)
         {
             var builder = new ProfileBuilder().WithUserName(userName).WithDisplayName(userName);

@@ -254,27 +254,57 @@ namespace FChatDicebot.Tests.Unit
         [Fact]
         public void InteractionAliases_AreAlsoRecognisedBySeteicon()
         {
-            // The eicon map keys on the typed token, and its extra folds (climaxfor -> climax,
-            // pay -> both payment directions) mean it can't just be generated from Aliases. So
-            // it's a second place to touch: adding an alias to an interaction command without
-            // adding it here leaves "!seteicon hug" refusing a verb "!hug" accepts.
+            // !seteicon reaches the eicon map through the alias index rather than listing
+            // aliases itself, so every alias of an interaction is accepted by construction.
+            // This walks the live command set anyway: it's the guard that the seam still
+            // resolves, which is what "!cum dispatches but !seteicon cum doesn't" looked like.
             var missing = new List<string>();
 
             foreach (ChatBotCommand cmd in _controller.BotCommands)
             {
                 if (string.IsNullOrEmpty(cmd.Name)) continue;
-                if (!InteractionEiconSupport.TryResolveTokenToVerbKeys(cmd.Name, out string[] _)) continue;
+                if (!InteractionEiconSupport.TryResolveTokenToVerbKeys(cmd.Name, out string[] commandKeys)) continue;
 
                 foreach (string alias in cmd.Aliases ?? new string[0])
                 {
-                    if (!InteractionEiconSupport.TryResolveTokenToVerbKeys(alias, out string[] _))
+                    if (!ChateauSeteicon.TryResolveTypedToken(_controller, alias, out string canonical, out string[] keys)
+                        || canonical != cmd.Name
+                        || !keys.SequenceEqual(commandKeys))
+                    {
                         missing.Add("!" + alias + " (alias of the interaction !" + cmd.Name + ")");
+                    }
                 }
             }
 
             Assert.True(missing.Count == 0,
-                "Interaction aliases missing from InteractionEiconSupport.TokenToVerbKeys: "
+                "Interaction aliases !seteicon fails to resolve to their command: "
                 + string.Join("; ", missing));
+        }
+
+        [Theory]
+        [InlineData("hug", "cuddle")]
+        [InlineData("cum", "climax")]
+        [InlineData("cumfor", "climaxfor")]
+        [InlineData("hire", "employ")]
+        [InlineData("kiss", "kiss")]
+        public void Seteicon_FoldsATypedTokenOntoItsCommandName(string typed, string expected)
+        {
+            Assert.True(ChateauSeteicon.TryResolveTypedToken(_controller, typed, out string canonical, out _));
+
+            // The canonical name is what the confirmation says back, so !seteicon hug replies
+            // about cuddling rather than echoing a name the rest of the feature doesn't use.
+            Assert.Equal(expected, canonical);
+        }
+
+        [Theory]
+        [InlineData("bank")]      // a real command, but not an interaction
+        [InlineData("money")]     // ...nor is one of its aliases
+        [InlineData("ass")]       // a bodypart: rejected here, resolved by the caller instead
+        [InlineData("notacommand")]
+        [InlineData("")]
+        public void Seteicon_RejectsTokensThatArentInteractions(string typed)
+        {
+            Assert.False(ChateauSeteicon.TryResolveTypedToken(_controller, typed, out _, out _));
         }
     }
 }

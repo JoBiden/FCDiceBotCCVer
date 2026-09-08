@@ -103,7 +103,7 @@ The base-class fields on `ChatBotCommand` drive `!help` and dispatch — see `Bo
 
 | Field | Notes |
 |-------|-------|
-| `Aliases` | Single source of truth for aliases — they **route**, not just display. One array entry per alias; never a delegating class. A name already used by another command's `Name` is ignored. |
+| `Aliases` | Single source of truth for aliases — they **route**, not just display. One array entry per alias; never a delegating class. A name already used by another command's `Name` is ignored. Everything downstream reads through it, `!seteicon` included — an alias needs no second registration anywhere. |
 | `Category` | Places the command in the no-arg `!help` listing as well as labelling its `!help {command}` readout. The recognised values are the cases of `ChateauHelp.SectionFor`; leave it unset only for a command that shouldn't be listed at all. |
 | `Usage` | Also drives bare-name targeting: a `[user]` slot in `Usage` makes the command accept a bare name. Set `AcceptsRecipient` explicitly only where `Usage` can't express it. |
 | `CooldownDuration` / `CooldownAppliesTo` | For interactions, derive these from the processor's `CooldownSpec` (`FormatDuration()` / `FormatAppliesTo()`) — never hand-write strings that can drift. |
@@ -162,7 +162,7 @@ Things a real processor may also need (all defined on `InteractionProcessorBase`
 - **`ValidateInteraction`** when an identifier or precondition must be checked before the consent prompt goes out.
 - **`GetInteractionVerb(VerbTense)`** when the verb isn't a regular `-ed`/`-s` form (pattern: `BullyProcessor`).
 - **Status effects**: compose with `ComposeConsentWarning(baseWarning, effects.ConsentWarnings)` so the decline reminder stays attached to the question.
-- **Eicons**: `EiconAppliesToBothParties`, `BodypartEiconRule`.
+- **Eicons**: `EiconAppliesToBothParties`, `BodypartEiconRule`, and `EiconOwner` — set it to `InteractionEiconOwner.Counterpart` when the icon belongs to the party the act happens *to* rather than the performer. Anything that mints a `Collectible` wants it: the item carries the source's name for life, so it carries their icon too.
 
 ### Step 2: Register it
 
