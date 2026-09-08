@@ -149,7 +149,7 @@ namespace FChatDicebot.BotCommands
         }
 
         /// <summary>
-        /// One-line summary of the resident's bottle collection, pointing at !bottles for the
+        /// One-line summary of the resident's bottle collection, pointing at !collection for the
         /// detail. Empty string when they hold nothing, so an untouched collection adds no noise.
         /// </summary>
         public static string BuildCollectionLine(Profile profile, bool ownAccount)
@@ -167,7 +167,7 @@ namespace FChatDicebot.BotCommands
             // Bottles sit outside the vault, so they get their own section rather than trailing
             // the currency line as loose prose.
             return ReadoutText.Section("Held personally", ReadoutDomain.Economy) + " " + held
-                + (ownAccount ? "\n" + ReadoutText.Footer("Use !bottles to look them over, or !sell to trade them in.") : "");
+                + (ownAccount ? "\n" + ReadoutText.Footer("Use !collection to look them over, or !sell to trade them in.") : "");
         }
     }
 }

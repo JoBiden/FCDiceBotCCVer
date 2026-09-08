@@ -8,10 +8,10 @@ namespace FChatDicebot
     /// <summary>
     /// Bottle-specific selection and grouping over a Profile's collection.
     ///
-    /// <c>!sell</c>, <c>!drink</c>, <c>!bottles</c>, and bottle transfer through <c>!pay</c> all
+    /// <c>!sell</c>, <c>!drink</c>, <c>!collection</c>, and bottle transfer through <c>!pay</c> all
     /// need identical answers to "which bottles does this filter mean, and in what order", so
     /// the rules live here once. The ordering contract is <b>newest first</b>: what the top of
-    /// <c>!bottles</c> shows is what an unfiltered <c>!sell</c> or <c>!drink</c> acts on next.
+    /// <c>!collection</c> shows is what an unfiltered <c>!sell</c> or <c>!drink</c> acts on next.
     ///
     /// Empties are excluded from every implicit selection. They are still in the collection and
     /// still carry their serial, but they cannot be sold, cannot be drunk again, and only move
@@ -66,7 +66,7 @@ namespace FChatDicebot
         }
 
         /// <summary>True when the resident holds no bottles at all, full or empty. Other kinds
-        /// of collectible don't count — this is what <c>!bottles</c> and <c>!drink</c> ask.</summary>
+        /// of collectible don't count — this is what <c>!collection</c> and <c>!drink</c> ask.</summary>
         public static bool IsCollectionEmpty(Profile profile)
         {
             return CollectionInventory.HasNone<MilkBottle>(profile);

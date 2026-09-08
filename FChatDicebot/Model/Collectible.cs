@@ -67,7 +67,8 @@ namespace FChatDicebot.Model
 
         /// <summary>
         /// Whether this item can change hands through <c>!pay</c>. Read by
-        /// <see cref="BottlePayment"/> so a type that should never move says so once, on itself.
+        /// <see cref="CollectiblePayment"/> so a type that should never move says so once, on
+        /// itself — at selection time and again at consent time.
         /// </summary>
         [BsonIgnore]
         public virtual bool IsTransferable => true;

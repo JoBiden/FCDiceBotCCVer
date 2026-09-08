@@ -732,6 +732,9 @@ namespace FChatDicebot
                     argumentTerms.AddRange(interactionTypes.Where(a => !string.IsNullOrEmpty(a)));
             }
 
+            if (c.ArgumentKeywords != null)
+                argumentTerms.AddRange(c.ArgumentKeywords.Where(a => !string.IsNullOrEmpty(a)));
+
             return argumentTerms;
         }
 

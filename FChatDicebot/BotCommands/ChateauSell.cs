@@ -33,7 +33,7 @@ namespace FChatDicebot.BotCommands
             ShortDescription = "Sell bottled substances, obtained when you !milk others.";
             LongDescription = "Sell bottled fluid from your personal collection to the Chateau. Pricing depends on the substance's rarity and whether it is corrupt or pure. The Chateau keeps the bottle, so its number leaves your collection for good, and one empty bottle is returned per bottle sold. With no arguments, sells your most recent bottle. With an amount, sells that many bottles in reverse of the order acquired, optionally filtered by substance and/or original source. Bottles you've already drunk stay with you and can't be sold.";
             Usage = "!sell\nor\n!sell {amount}\nor\n!sell {amount} {substance}\nor\n!sell {amount} {substance} [noparse][user]NameInUserTag[/user][/noparse]";
-            RelatedCommands = new string[] { "milk", "bottles", "drink", "bank" };
+            RelatedCommands = new string[] { "milk", "collection", "drink", "bank" };
             CooldownDuration = null;
             CooldownAppliesTo = null;
             IdentifierCategory = "substance";
@@ -87,7 +87,7 @@ namespace FChatDicebot.BotCommands
             if (sellResult.BottlesSold == 0)
             {
                 bot.SendPrivateMessage(
-                    "No bottles in your collection matched that filter. Use !bottles to review what you've got bottled up.",
+                    "No bottles in your collection matched that filter. Use !collection to review what you've got bottled up.",
                     characterName);
                 return;
             }
@@ -154,7 +154,7 @@ namespace FChatDicebot.BotCommands
             }
 
             // Newest first, full bottles only — an empty has nothing the Chateau would pay for,
-            // and it's the resident's keepsake now. Shared with !drink/!bottles/!pay so the
+            // and it's the resident's keepsake now. Shared with !drink/!collection/!pay so the
             // four commands can never disagree about what a filter means.
             var ordered = BottleInventory.SelectFull(profile, substanceFilter, sourceFilter);
 
@@ -241,7 +241,7 @@ namespace FChatDicebot.BotCommands
                     + string.Join(", ", pieces) + ")";
             }
 
-            string serials = CollectionInventory.FormatSerials(result.SoldSerials, ChateauCurrency.BottleSerialDisplayCap);
+            string serials = CollectionInventory.FormatSerials(result.SoldSerials, ChateauCurrency.SerialDisplayCap);
             string serialText = string.IsNullOrEmpty(serials) ? string.Empty : " (" + serials + ")";
 
             return sellerDisplayName + " sold " + lineSummary + serialText + " for [b]" + result.PayoutCopper

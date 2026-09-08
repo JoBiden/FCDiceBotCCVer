@@ -192,6 +192,13 @@ TARGET: types "!consent" (or !no to decline; initiator can !oops to withdraw)
 ### Adding a New Interaction
 See the walkthrough in the [Development Guide](Development-Guide.md): processor class + command class + a `RegisterProcessor` line in `InteractionProcessorRegistry.Initialize()` + tests.
 
+### Adding a New Collectible Type
+1. A `Model/` class inheriting `Collectible` (`TypeLabel`, and `IsSellable` / `IsTransferable` if the defaults are wrong)
+2. Add it to the `[BsonKnownTypes]` list on `Collectible` so it round-trips
+3. An acquisition path — usually a processor and its verb(s); that is where the per-type effort actually is
+4. A `CollectionSection` subclass, plus one line in `CollectionSections`. It owns both how the type renders in `!collection` and how it moves through `!pay` (keywords, what an amount means, the consent-prompt parcel, the completion noun and flavor). Without it the type is held but invisible and unpayable, and `CollectionSectionTests` fails
+5. Tests
+
 ### Adding a New Game
 1. Implement `IGame` (`FChatDicebot/DiceFunctions/Base/IGame.cs`)
 2. Register it where `DiceBot` builds its game list

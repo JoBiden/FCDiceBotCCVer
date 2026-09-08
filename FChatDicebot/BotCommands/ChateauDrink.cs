@@ -41,7 +41,7 @@ namespace FChatDicebot.BotCommands
             ShortDescription = "Drink down one of the bottles you're holding.";
             LongDescription = "Uncork and drink a bottle from your collection, keeping the empty. Whatever was inside affects you: a corrupt or pure bottle shifts you the same way, up to 3 bottles per day, and a substance you're addicted to will quiet the craving. There's always a small chance you find yourself wanting more. Name a bottle by its number, or leave it off to drink your newest.";
             Usage = "!drink\nor\n!drink {substance}\nor\n!drink #{number}";
-            RelatedCommands = new string[] { "bottles", "milk", "sell", "dose", "detox", "drinkfrom", "forcedrink" };
+            RelatedCommands = new string[] { "collection", "milk", "sell", "dose", "detox", "drinkfrom", "forcedrink" };
             CooldownDuration = null;
             CooldownAppliesTo = null;
             IdentifierCategory = "substance";
@@ -163,13 +163,13 @@ namespace FChatDicebot.BotCommands
                 if (named == null)
                 {
                     result.PrivateMessage = "Bottle [b]#" + serial + "[/b] isn't in your collection."
-                        + " Perhaps you sold it off... use !bottles to check your numbers.";
+                        + " Perhaps you sold it off... use !collection to check your numbers.";
                     return null;
                 }
                 if (named.IsEmpty)
                 {
                     result.PrivateMessage = "Bottle [b]#" + serial + "[/b] is already empty!"
-                        + " Use !bottles to see which of yours still have something in them.";
+                        + " Use !collection to see which of yours still have something in them.";
                     return null;
                 }
                 return named;
@@ -182,12 +182,12 @@ namespace FChatDicebot.BotCommands
             // so the remedy we point at is the useful one.
             if (BottleInventory.IsCollectionEmpty(profile))
             {
-                result.PrivateMessage = ChateauBottles.EmptyCollectionText;
+                result.PrivateMessage = BottleCollectionSection.NoBottlesText;
             }
             else if (!string.IsNullOrEmpty(substanceFilter))
             {
                 result.PrivateMessage = "We don't see any of that in your collection."
-                    + " Use !bottles to check what you're actually holding.";
+                    + " Use !collection to check what you're actually holding.";
             }
             else
             {
@@ -407,7 +407,7 @@ namespace FChatDicebot.BotCommands
 
             string serialText = bottle.serial > 0 ? " [b]#" + bottle.serial + "[/b]" : string.Empty;
             parts.Add(drinkerName + " uncorks bottle" + serialText + " and drinks down the tasty "
-                + substanceText + " from " + ChateauBottles.DonorText(database, bottle.subjectName) + ".");
+                + substanceText + " from " + CollectionInventory.SubjectText(database, bottle.subjectName) + ".");
 
             parts.Add(ClosingFlourishes[rng.Next(ClosingFlourishes.Length)].Replace("{substance}", substanceText));
 

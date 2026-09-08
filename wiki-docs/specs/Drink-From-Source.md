@@ -217,7 +217,8 @@ delegates.
 ### No keepsake
 
 No `MilkBottle` is created, **no serial is claimed** (`ClaimBottleSerials` is not called), nothing
-lands in `!bottles`, and there is nothing to `!sell`. The bottle path gives you a permanent
+lands in `!collection` (`!bottles` at the time; renamed when the listing became cross-type), and
+there is nothing to `!sell`. The bottle path gives you a permanent
 numbered empty; the source path gives you a stronger hit and no proof it happened.
 
 The spec argued this had to be spelled out in the help text or residents would read the missing

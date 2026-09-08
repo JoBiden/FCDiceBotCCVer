@@ -84,7 +84,7 @@ The `!help` tier line deliberately keeps green → yellow → orange → red bec
 
 ### 7b. The readout grammar
 
-Every informative readout (`!dossier`, `!bank`, `!statistics`, `!bottles`, `!titles`, `!pledges`, `!business`, `!help`, the drill-downs) builds its output from `Model/ReadoutText.cs`. Don't hand-assemble these tags — the helpers exist because five commands had drifted into five different conventions for the same data shape.
+Every informative readout (`!dossier`, `!bank`, `!statistics`, `!collection`, `!titles`, `!pledges`, `!business`, `!help`, the drill-downs) builds its output from `Model/ReadoutText.cs`. Don't hand-assemble these tags — the helpers exist because five commands had drifted into five different conventions for the same data shape.
 
 | Element | Helper | Form |
 |---------|--------|------|

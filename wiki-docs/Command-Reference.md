@@ -85,20 +85,27 @@ All casual interactions are group-capable (name several residents) and share a 3
 | `!panties` | `!panties [user]Name[/user]` | Ask another resident for a pair of their panties. Joins your collection with its own number and their name; per-direction daily lock |
 | `!givepanties` | `!givepanties [user]Name[/user]` | Offer a pair of your own panties; the other resident consents and is the one who keeps them |
 | `!climaxfor` | `!climaxfor [user]Name[/user]` | Bring yourself to orgasm, solo or for another resident |
-| `!pay` | see below | Transfer currency or bottles |
+| `!pay` | see below | Transfer currency, or items from your collection |
 
 ### !pay
 
-Transfer currency, or pass along bottles from your collection. A negative amount bills the other resident instead.
+Transfer currency, or pass along items from your collection. A negative amount bills the other resident instead.
 
-**Usage:** `!pay [user]Name[/user] {amount} {currency}` or `!pay [user]Name[/user] {amount} bottles {substance}` or `!pay [user]Name[/user] bottles #12 #13`
+**Usage:** `!pay [user]Name[/user] {amount} {currency}` or `!pay [user]Name[/user] {amount} bottles {substance}` or `!pay [user]Name[/user] bottles #12 #13` or `!pay [user]Name[/user] panties #43`
 
-Bottles keep their number, their donor and their corrupt/pure tag when they change hands. Naming bottles by number is the only way to pass along an empty; an amount always means full bottles.
+Naming the kind of item (`bottles`, `panties`) is what tells `!pay` this isn't a currency. One kind per payment: naming numbers of two different kinds is refused, with a message pointing at the right word.
+
+Items keep their number and the resident they came from when they change hands — a bottle keeps its corrupt/pure tag too. Naming a bottle by number is the only way to pass along an empty; an amount always means full bottles.
 
 ```
 !pay [user]Bob[/user] bottles #142 #143
 → Alice is going to pass Bob 2 bottles: two of the milk from Carol (corrupt)! Do you !consent to receiving them? (or !no)
+
+!pay [user]Bob[/user] panties #43
+→ Alice is going to pass Bob 1 pair of panties: one originally from Carol! Do you !consent to receiving them? (or !no)
 ```
+
+The consent prompt is built by the kind of item, not by `!pay` — `CollectionSection.DescribeParcel` is authoritative for what a recipient is told before agreeing.
 
 ## Commitment Interactions
 
@@ -167,18 +174,22 @@ Self-targeted reversals, each with its own cost or time gate.
 | `!business` | `!business` | See what your employees have earned you (25% MANOR kickback from their `!work`) |
 | `!sell` | `!sell {amount} {substance}` | Sell full bottles to the Chateau (the bottle number leaves your collection) |
 
-### Bottle Collection
+### The Collection
 
-Bottles come from `!milk`. Every bottle carries a permanent number, the resident it came from, and a corrupt/pure tag if the donor was far enough one way or the other.
+A collection holds every individually-numbered thing a resident owns. Bottles come from `!milk`; panties come from `!panties` / `!givepanties`. Every item carries a permanent number and the resident it came from, and bottles additionally carry a corrupt/pure tag if the donor was far enough one way or the other. Numbers are drawn from one shared counter across all types, so item #1 is the oldest thing anyone holds rather than the oldest bottle.
 
 | Command | Usage | What it does |
 |---------|-------|--------------|
-| `!bottles` (`!collection`) | `!bottles` / `!bottles {substance}` / `!bottles {substance} [user]Name[/user]` | Look over the bottles you're holding (private reply) |
+| `!collection` (`!bottles`) | `!collection` / `!collection {kind}` / `!collection {substance}` / `!collection {substance} [user]Name[/user]` | Look over everything you're holding, one section per kind of item (private reply) |
 | `!drink` | `!drink` / `!drink {substance}` / `!drink #{number}` | Drink one bottle (channel-only). Drinking empties the bottle but keeps its number as a record. Corrupt/pure bottles shift you (up to 3/day); an addicting substance quiets the craving |
+
+`{kind}` is a type of item — `bottles` or `panties` — and narrows the readout to that section. `{substance}` is a bottle question, so it narrows to bottles by consequence. A `[user]` tag narrows every section to the items that came from that resident.
 
 `!drinkfrom` / `!forcedrink` (Involved Interactions, above) skip the bottle entirely: stronger effects, drawn from the same daily corruption budget as `!drink`, but nothing lands in the collection and there is no number to keep.
 
-Bottles are not the only thing a collection holds. `!panties` / `!givepanties` mint a keepsake into the same numbered space — same serials, same `!pay` transfer, same dossier privacy rule — but the Chateau never buys them back, so `!sell` will not take them.
+`!sell` takes bottles only — panties are keepsakes and the Chateau will not buy them back. `!pay` moves either: name the kind of item and the numbers.
+
+Each kind of item renders itself: the sections are `CollectionSection` subclasses listed in `CollectionSections`, and a `Collectible` subclass with no section fails a test rather than shipping invisible.
 
 ## Profile, Titles & Personalization
 
@@ -316,8 +327,8 @@ Many commands answer to a second name. Either name does exactly the same thing; 
 | Full Command | Aliases |
 |-------------|---------|
 | `!bank` | `!balance`, `!money` |
-| `!bottles` | `!collection` |
 | `!category` | `!list`, `!identifiers` |
+| `!collection` | `!bottles` |
 | `!consent` | `!c`, `!accept` |
 | `!cuddle` | `!hug` |
 | `!dossier` | `!profile`, `!bio` |

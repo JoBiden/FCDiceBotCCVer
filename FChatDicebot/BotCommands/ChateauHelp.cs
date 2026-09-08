@@ -35,9 +35,10 @@ namespace FChatDicebot.BotCommands
         ///
         /// A command goes unlisted when it has no <c>Category</c> (the legacy dicebot commands
         /// that were never migrated, which the closing line of the listing already accounts
-        /// for), when it's admin-only (the admin block is written by hand and only shown to
-        /// admins), or when it sets <see cref="ChatBotCommand.HideFromHelpListing"/>. An
-        /// unrecognized <c>Category</c> also lands nowhere, which a test catches.
+        /// for), when it's admin-only (those have their own block, printed only to admins — see
+        /// <see cref="RestrictedListedNames"/>), or when it sets
+        /// <see cref="ChatBotCommand.HideFromHelpListing"/>. An unrecognized <c>Category</c> also
+        /// lands nowhere, which a test catches.
         /// </summary>
         public static HelpSection? SectionFor(ChatBotCommand cmd)
         {
@@ -61,7 +62,7 @@ namespace FChatDicebot.BotCommands
 
                 // Everything else is an ordinary command, split between the two untitled blocks
                 // by the only thing that separates them: whether it can be used outside a
-                // channel. That's why !drink sits with !consent rather than with !bottles.
+                // channel. That's why !drink sits with !consent rather than with !collection.
                 case "general":
                 case "information":
                 case "personalization":
@@ -95,6 +96,72 @@ namespace FChatDicebot.BotCommands
             return Enum.GetValues(typeof(HelpSection))
                 .Cast<HelpSection>()
                 .SelectMany(s => ListedNames(commandController, s));
+        }
+
+        /// <summary>
+        /// The restricted blocks: commands only an admin (or a channel op) can run, printed
+        /// below the general listing and only to someone who can run them.
+        ///
+        /// These are kept out of <see cref="SectionFor"/> rather than folded into it because
+        /// they are not part of the listing everyone sees — <see cref="AllListedCommands"/> is
+        /// "what a resident is shown", and an admin verb appearing there would be a leak, not a
+        /// completeness win.
+        /// </summary>
+        public enum RestrictedBlock
+        {
+            /// <summary>Bot-wide admin verbs.</summary>
+            BotAdmin,
+            /// <summary>Verbs a channel operator can run.</summary>
+            ChannelAdmin
+        }
+
+        /// <summary>
+        /// The commands one restricted block prints. Derived from the permission flags the
+        /// dispatcher already enforces, for the same reason the rest of the listing is derived
+        /// from <c>Category</c>: this block used to be two hand-written lines, and it had already
+        /// gone stale — <c>!setidentifiereicon</c> shipped and was never added to it, so the one
+        /// place an admin would look to discover it didn't mention it.
+        ///
+        /// <see cref="ChatBotCommand.HideFromHelpListing"/> opts out here too, and a command with
+        /// no <c>Category</c> stays out exactly as it does above: that's what keeps the legacy
+        /// dicebot admin verbs (<c>!addchipscode</c>, <c>!testops</c> and the rest) from landing
+        /// in a Chateau readout they were never part of.
+        /// </summary>
+        public static List<string> RestrictedListedNames(BotCommandController commandController, RestrictedBlock block)
+        {
+            return commandController.BotCommands
+                .Where(c => !string.IsNullOrEmpty(c.Name) && !string.IsNullOrEmpty(c.Category))
+                .Where(c => !c.HideFromHelpListing)
+                .Where(c => block == RestrictedBlock.BotAdmin
+                    ? c.RequireBotAdmin
+                    : c.RequireChannelAdmin && !c.RequireBotAdmin)
+                .Select(c => c.Name)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+        }
+
+        /// <summary>
+        /// One restricted block, header and all. Entries carry their
+        /// <see cref="ChatBotCommand.ShortDescription"/> because an admin verb's name rarely says
+        /// what it does; <c>!help {command}</c> still has the usage. An empty block still prints,
+        /// so "none yet" is a fact about the bot rather than a line someone forgot to remove.
+        /// </summary>
+        private static string RestrictedBlockText(
+            BotCommandController commandController, RestrictedBlock block, string header)
+        {
+            List<string> rows = RestrictedListedNames(commandController, block)
+                .OrderBy(n => n, StringComparer.OrdinalIgnoreCase)
+                .Select(n =>
+                {
+                    ChatBotCommand cmd = commandController.FindCommandByName(n);
+                    string description = cmd != null ? cmd.ShortDescription : null;
+                    return ListEntry(commandController, n)
+                        + (string.IsNullOrEmpty(description) ? "" : " - " + description);
+                })
+                .ToList();
+
+            return "\n[b]" + header + "[/b]\n"
+                + (rows.Count == 0 ? "None yet :)" : string.Join("\n", rows)) + "\n";
         }
 
         public ChateauHelp()
@@ -148,7 +215,10 @@ namespace FChatDicebot.BotCommands
             List<string> commitmentCommands = ListEntries(commandController, HelpSection.Commitment);
             List<string> consequenceCommands = ListEntries(commandController, HelpSection.Consequence);
             List<string> dicebotCommands = ListEntries(commandController, HelpSection.Dicebot);
-            string messageText = "These are all of the commands native to the [user]Chateau Contract[/user] bot, as of [b]August 2nd 2026.[/b] For detailed description of their use, please see the [user]Chateau Contract[/user] profile or use !help [command] Commands in subtext are alternate names of the same command - all documentation will be for the first listed names.\n\n" +
+            // No "as of {date}" any more. This listing is read off the loaded command table, so
+            // it is current by construction — a hand-kept date could only ever be wrong, and a
+            // stale one invites a resident to assume the list is stale too.
+            string messageText = "These are all of the commands native to the [user]Chateau Contract[/user] bot. For detailed description of their use, please see the [user]Chateau Contract[/user] profile or use !help [command] Commands in subtext are alternate names of the same command - all documentation will be for the first listed names.\n\n" +
                     "[u]Does not require channel[/u]\n" +
                     Utils.sortedListDisplayText(generalCommands) + "\n" +
                     "[color=blue]Recovery Commands:[/color] " + Utils.sortedListDisplayText(recoveryCommands) + "\n\n" +
@@ -160,16 +230,14 @@ namespace FChatDicebot.BotCommands
                     "[color=red]Consequence Interactions:[/color] " + Utils.sortedListDisplayText(consequenceCommands) + "\n" +
                     "[color=cyan]Dice Bot Commands:[/color] " + Utils.sortedListDisplayText(dicebotCommands) + "\n" +
 
-                    "\n[b]Channel Op only Commands:[/b]\n" +
-                    "None yet :)\n" +
+                    RestrictedBlockText(commandController, RestrictedBlock.ChannelAdmin, "Channel Op only Commands:") +
 
                     "\nAny dicebot commands not listed here have yet to be fully migrated, or were intentionally cut. They might work, but use at your own risk!\n";
 
             if(Utils.IsCharacterAdmin(bot.AccountSettings.AdminCharacters, command.characterName))
             {
-                messageText += "\n[b]Admin only Commands [/b](no channel req)\n" +
-                    "!namechange [noparse][user]old profile in user tag[/user][/noparse] \"new profile in quotes\" - updates the database to reflect a user who has changed their Flist username. CaSe SeNsItIvE \n" +
-                    "!feedbacklist [count] - view recent !feedback / !suggestion submissions (newest first) \n";
+                messageText += RestrictedBlockText(
+                    commandController, RestrictedBlock.BotAdmin, "Admin only Commands (no channel req):");
             }
 
             if (commandController.MessageCameFromChannel(address))

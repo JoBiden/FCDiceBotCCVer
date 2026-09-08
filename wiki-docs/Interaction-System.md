@@ -30,7 +30,7 @@ Interactions are organized into investment levels. The level names the *weight* 
 **Location:** `InteractionProcessors/Involved/` — feed, dressup, golden, milk, drinkfrom/forcedrink, climax/climaxfor, panties/givepanties, payment (`!pay` give/receive)
 
 - More roleplay investment; several take an identifier (substance to feed, attire to wear)
-- Milk produces serial-numbered bottles (`!bottles`, `!drink`, `!sell`, transfer via `!pay`); the source-drink verbs deliberately produce nothing, trading the keepsake for double-strength effects
+- Milk produces serial-numbered bottles (`!collection`, `!drink`, `!sell`, transfer via `!pay`); the source-drink verbs deliberately produce nothing, trading the keepsake for double-strength effects
 - The **draw lock** is per-direction and spans both verbs: the taker is stamped with a key scoped to the source, so drawing from Alice doesn't block drawing from Bob, and being drawn from doesn't block drawing back. `SourceDrawLock` owns the keys and the refusal wording — each verb has its own key and every caller checks all of them, so a refusal names the verb that actually spent the day
 
 ### 3. Commitment Interactions

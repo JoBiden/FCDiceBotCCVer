@@ -72,6 +72,15 @@ namespace FChatDicebot.BotCommands.Base
         public bool TakesInteractionType;
 
         /// <summary>
+        /// Literal words this command accepts as arguments that are neither Identifiers nor
+        /// interaction types — <c>!collection panties</c> naming a kind of collectible is the
+        /// case this exists for. Same purpose as <see cref="TakesInteractionType"/>: without it,
+        /// bare-name resolution can't account for the word and reports a resident it doesn't
+        /// recognize instead of running the command.
+        /// </summary>
+        public string[] ArgumentKeywords = new string[0];
+
+        /// <summary>
         /// Whether <paramref name="name"/> is one of this command's aliases. Case-insensitive,
         /// because a resident types whatever case they like and the dispatcher lowercases.
         /// </summary>

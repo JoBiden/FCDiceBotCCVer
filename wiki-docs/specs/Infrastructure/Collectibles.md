@@ -95,6 +95,10 @@ but nothing in this phase calls it: `!bottles` renders through the group collaps
 one-liners, and the panties listing does the same. An abstract method every subclass must implement
 and nothing invokes is dead weight. It arrives when a cross-type `!collection` view needs it.
 
+> **As shipped:** the cross-type view arrived and still didn't want it — for the reason stated here.
+> Description is per-*section*, not per-item; see
+> [The cross-type listing, as shipped](#the-cross-type-listing-as-shipped).
+
 ### Frozen names, resolved late
 
 `subjectName` stores the `userName` at acquisition time and **does not follow renames**. It must be
@@ -222,10 +226,10 @@ The bottle commands are the reference implementations of the four shapes a colle
 
 | Shape | Bottle version | Generalized |
 |---|---|---|
-| List | `!bottles` | stays bottle-specific; `!panties` listing is its own view |
+| List | `!bottles` | **superseded** — now `!collection`, cross-type. See [The cross-type listing, as shipped](#the-cross-type-listing-as-shipped) |
 | Consume | `!drink` | stays bottle-specific — consumption is per-type by nature |
 | Sell | `!sell` | reads `IsSellable`; pricing stays per-type |
-| Transfer | `!pay` | reads `IsTransferable`; `BottlePayment` generalizes |
+| Transfer | `!pay` | reads `IsTransferable`; `CollectiblePayment` generalizes — **shipped bottle-only, fixed 2026-08-07**, see [below](#pay-was-bottle-only-and-is-not-any-more) |
 
 ### CollectionInventory is a split, not a rename
 
@@ -250,6 +254,93 @@ sits beside the bottle layer rather than inside a fake-general one.
 renders identically. A cross-type `!collection` command is still deferred — with two types whose
 display shapes differ, it needs its own design pass, and `!bottles` plus the panties view cover
 what residents can actually do today.
+
+### The cross-type listing, as shipped
+
+**Superseded 2026-08-07.** The deferral above rested on a premise that turned out to be false:
+there was no panties view. `!panties` and `!givepanties` are acquisition verbs, and nothing in the
+bot ever listed a pair. Panties shipped held, numbered and invisible — the only place a resident
+could see one was the serial in a completion message that had already scrolled away. "`!bottles`
+plus the panties view" covered what residents could do only because the second half didn't exist.
+
+So the listing became cross-type: `!collection`, with `!bottles` kept as an alias because residents
+learned it.
+
+**Each type renders its own section.** The reason this spec gave for having no `DescribeFor` on the
+base still stands and is what decided the shape: a per-item description would print one line per
+bottle, and bottles are only legible because separate milkings of the same kind collapse into one
+row. The unit of description is a **section**, not an item.
+
+| File | What |
+|---|---|
+| `CollectionSection.cs` | abstract `CollectionSection` + `CollectionFilter` + `CollectionSectionResult` |
+| `CollectionSections.cs` | the print-order list; one line per type |
+| `BottleCollectionSection.cs` | substance/donor/tag grouping, sell price, the empties row |
+| `PantiesCollectionSection.cs` | grouped by whose they were; nothing else to say |
+| `BotCommands/ChateauCollection.cs` | assembles the sections that had something to report |
+
+`CollectionSections` is a plain static array rather than a registry with an `Initialize` call. The
+interaction and status-effect registries need one because their contents depend on a live database;
+sections don't, and an initialize step is one more thing to get wrong in the way `MonDB.Initialize`
+already is.
+
+**A type with no section fails a test.** `CollectionSectionTests` walks every concrete
+`Collectible` subclass in the assembly and requires one — the same guarantee the `!help` listing
+gets from `ChatBotCommand.Category`, and aimed at the same failure: adding a type and surfacing it
+were two steps, and nothing failed when the second was skipped.
+
+**Filters.** `!collection {kind}` narrows to one section (`bottles`, `panties`); `{substance}` is a
+bottle question, so `PantiesCollectionSection` reports nothing for one and the readout narrows to
+bottles by consequence rather than by a rule the command owns. A `[user]` tag narrows every
+section. The type words are declared through the new `ChatBotCommand.ArgumentKeywords`, without
+which bare-name resolution reads "panties" as a resident it can't place and refuses to run at all —
+the same job `TakesInteractionType` does for `!pledge`.
+
+**Assumption 5 below is therefore withdrawn.** Two types was enough to design against, because the
+second one had nowhere to be seen.
+
+### `!pay` was bottle-only, and is not any more
+
+**Fixed 2026-08-07, in the same pass.** `Panties` shipped with `IsTransferable => true`, both
+verbs' help text told residents to hand a pair on with `!pay`, and the Tests section below claimed
+"`IsTransferable` is honored by `!pay`, with panties transferring". The flag really was read — at
+what is now `CollectiblePayment.TryTransfer` — but nothing could reach it: `BottlePayment` selected
+`MilkBottle` throughout, `Select` resolved serials via `BottleInventory.FindBySerial` (null for a
+non-bottle), and the keyword check only matched the literal word "bottle(s)". A pair got *"Bottle
+#43 isn't in your collection"* for something the resident was holding, and no test covered it.
+
+`BottlePayment` is now **`CollectiblePayment`** and has no opinion about what it moves. The
+type-shaped parts moved onto `CollectionSection`, beside the display half that was already there:
+
+| Member | What the type decides |
+|---|---|
+| `Keywords` | the words `!pay` and `!collection` accept ("bottles"/"bottle", "panties") |
+| `TransferCandidates` | which items an unfiltered `{amount} {kind}` means — bottles withhold empties, panties have no equivalent condition |
+| `DescribeParcel` | what the consent prompt tells the recipient |
+| `TransferNoun` / `TransferGiveFlavor` / `TransferTakeFlavor` | the completion message's noun and closing line, per direction. Bottles override only the give flavor and inherit the take one ("Is that a vintage?" is a joke about the bottle, not about who ended up with it); panties read differently each way, so they declare both |
+| `TransferGoneReason` | how an item plausibly left during the consent gap ("sold or enjoyed" is wrong for something nobody can buy or drink) |
+
+**One kind per payment.** The parcel's type is stored in the interaction's `identifier`, which
+holds one string, and the completion message names the goods from it. A request naming serials of
+two kinds is refused with a message pointing at the right keyword rather than silently splitting.
+
+**The stored token is `FilterToken`, and is not renameable.** Payments completed before panties
+existed carry `"bottles"`; `CollectiblePayment.IsCollectiblePayment` resolves it through
+`CollectionSections.ByKeyword`, so their completion messages still render. This is the same
+constraint the `bottleSerial` counter document carries, for the same reason.
+
+**Naming a number of the wrong kind now says so.** `#43 is a pair of panties, not one of your
+bottles. Use !pay with panties instead.` — reading `Collectible.TypeLabel`, which existed for
+exactly this and had no caller.
+
+**"Nothing in your collection is numbered #99" does not name a type, and shouldn't.** Serials are
+globally exclusive (see [One shared serial space](#one-shared-serial-space)): one counter, claimed
+by every acquisition path, so bottle #12 and panties #12 cannot both exist. A number is either
+yours or nobody's, and the refusal for a number you don't hold is the same sentence whatever kind
+you were asking about. The type-specific message is the *other* case — a number you do hold, under
+the wrong keyword — which is the one above.
+
+`PantiesCollectionSection`'s footer points at `!pay` again, because it is now true.
 
 ### Privacy
 
@@ -287,7 +378,9 @@ not here — the role plumbing gives the vocabulary, and the answer is a wording
 - Minted into the holder's `collectibles` with `subjectName` = the donor's frozen `userName` and a
   serial from the shared counter.
 - `IsSellable => false`, `IsTransferable => true` — giftable with `!pay`, never bought by the
-  Chateau. `!sell` needs a clear refusal rather than a silent skip.
+  Chateau. `!sell` needs a clear refusal rather than a silent skip. (The `!pay` half did not
+  actually work until 2026-08-07 — see
+  [`!pay` was bottle-only](#pay-was-bottle-only-and-is-not-any-more).)
 - Cooldown-gated per direction, following the `!milk` precedent. No currency cost and no consumable:
   residents are assumed to have more panties.
 - Give/take counts from the subject's perspective, matching the project-wide convention
@@ -338,6 +431,14 @@ types are the owner's creative territory and can be added indefinitely afterward
 | `scripts/rollback-collectibles.js` | the inverse |
 | `FChatDicebot.Tests/Unit/Collectiblemodeltests.cs` | see Tests |
 | `FChatDicebot.Tests/Unit/Pantiesprocessortests.cs` | see Tests |
+| `CollectionSection.cs` | the per-type display contract, added for the cross-type listing |
+| `CollectionSections.cs` | the print-order list; one line per type |
+| `BottleCollectionSection.cs`, `PantiesCollectionSection.cs` | the two sections: display and transfer |
+| `CollectiblePayment.cs` | `BottlePayment.cs` renamed and generalized off `MilkBottle` |
+| `BotCommands/ChateauCollection.cs` | `!collection`, replacing `ChateauBottles.cs` |
+| `FChatDicebot.Tests/Unit/Collectionsectiontests.cs` | every `Collectible` subclass has a section |
+| `FChatDicebot.Tests/Unit/Chateaucollectiontests.cs` | the readout, renamed from `Chateaubottlestests.cs` |
+| `FChatDicebot.Tests/Unit/Collectiblepaymenttests.cs` | transfer, renamed from `Bottlepaymenttests.cs` plus the panties coverage that was missing |
 
 ### Modified
 
@@ -347,10 +448,16 @@ types are the owner's creative territory and can be added indefinitely afterward
 | `Model/ChateauDB.cs` | `milkInventory` → `collectibles`, retyped |
 | `Database/Ichateaudatabase.cs`, `Chateaudatabase.cs` | `SetCollectibles`, `ClaimCollectibleSerials` |
 | `BottleInventory.cs` | bottle-specific helpers only; shared ones move to `CollectionInventory` |
-| `BottlePayment.cs` | reads `IsTransferable` |
+| `BottlePayment.cs` | reads `IsTransferable`; renamed `CollectiblePayment.cs` and generalized off `MilkBottle` (2026-08-07) |
 | `BotCommands/ChateauBottles.cs`, `ChateauDrink.cs`, `ChateauSell.cs`, `ChateauBank.cs`, `ChateauDossier.cs` | field rename; `!sell` reads `IsSellable` |
 | `InteractionProcessors/Involved/MilkProcessor.cs` | writes `collectibles` |
 | `InteractionProcessors/InteractionProcessorRegistry.cs` | register `PantiesProcessor` |
+| `BotCommands/Base/ChatBotCommand.cs` | `ArgumentKeywords`, so a bare type word isn't read as a name |
+| `BotCommandController.cs` | `GetNonNameArgumentTerms` reads `ArgumentKeywords` |
+| `CollectionInventory.cs` | `Select<T>`, `GroupBySubject`, `SubjectText` for the cross-type view |
+| `ChateauCurrency.cs` | `BottleSerialDisplayCap` → `SerialDisplayCap` (the serial space is shared) |
+| `BotCommands/ChateauPay.cs` | routes on the typed kind; declares the keywords |
+| `InteractionProcessors/Involved/PaymentProcessorBase.cs`, `PaymentGiveProcessor.cs`, `PaymentReceiveProcessor.cs` | branch on the stored type token; noun and flavor come from the section |
 | `wiki-docs/Database-and-Persistence.md`, `Command-Reference.md`, `Bottle-Consumption-And-Transfer.md` | as-shipped notes |
 
 `FChatDicebot.csproj` globs `**\*.cs`, so new files need no csproj edit.
@@ -391,6 +498,11 @@ tests pin the contract the scripts have to satisfy; running them is still an ope
 - `IsSellable` is honored by `!sell` — an empty bottle is still unsellable via the override rather
   than the caller's check, and panties are refused with a message rather than silently skipped.
 - `IsTransferable` is honored by `!pay`, with panties transferring and the flag actually consulted.
+  **This was written and not built** — see
+  [`!pay` was bottle-only](#pay-was-bottle-only-and-is-not-any-more). The coverage exists now, in
+  `Collectiblepaymenttests.cs`: a named panties serial resolves, a panties parcel transfers with
+  its serial and subject intact, a serial of the wrong kind is refused by name, and a mixed parcel
+  is refused rather than split.
 - `subjectName` is resolved through `GetDisplayName` at display time, so a renamed donor shows
   their current name — for both types.
 - Privacy: another resident's collection renders counts without subject names, panties included.
@@ -474,6 +586,8 @@ belongs above; collected here so the divergence is findable.
 3. **`quantity` stays on `MilkBottle`** as the legacy field it already is; it does not go on the
    base class, since no future type should have one.
 4. **The migration runs with the bot stopped**, once, with a tested rollback script alongside it.
-5. **A cross-type `!collection` command stays deferred** — two types is not yet enough to design it
-   against.
+5. ~~**A cross-type `!collection` command stays deferred** — two types is not yet enough to design
+   it against.~~ **Withdrawn 2026-08-07** — see
+   [The cross-type listing, as shipped](#the-cross-type-listing-as-shipped). The deferral assumed a
+   panties view existed to cover the gap; none did.
 6. **Panties have no acquisition cost** beyond the cooldown, and no consumable backing them.
