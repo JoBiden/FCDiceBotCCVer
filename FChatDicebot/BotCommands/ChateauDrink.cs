@@ -126,7 +126,7 @@ namespace FChatDicebot.BotCommands
             bottle.emptiedAt = DateTime.UtcNow;
             result.Bottle = bottle;
 
-            string substanceText = Utils.SubstanceToText(bottle.substance, database.GetIdentifier(bottle.substance));
+            string substanceText = Utils.SubstanceToText(bottle.substance, SubstanceBodyparts.ResolveDrinkable(database, bottle.substance));
             string drinkerName = string.IsNullOrEmpty(profile.displayName) ? profile.userName : profile.displayName;
 
             ApplyCorruption(profile, bottle, result);

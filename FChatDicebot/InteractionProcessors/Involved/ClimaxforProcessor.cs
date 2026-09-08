@@ -373,7 +373,7 @@ namespace FChatDicebot.InteractionProcessors.Involved
             foreach (var name in intensified)
             {
                 ViceInstance vi = vices.Find(v => string.Equals(v.Vice, name, StringComparison.OrdinalIgnoreCase));
-                Identifier id = Database?.GetIdentifier(name);
+                Identifier id = Database?.GetIdentifier(name, DoseProcessor.ViceCategory);
                 string phrase = ViceText.ViceName(id, name, vi?.DosedBy);
                 rendered.Add(phrase);
             }

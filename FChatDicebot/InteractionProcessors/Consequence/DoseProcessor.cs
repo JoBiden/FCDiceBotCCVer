@@ -55,13 +55,11 @@ namespace FChatDicebot.InteractionProcessors.Consequence
                 return ValidationResult.Failure(ChateauInteractionHandler.typeNotFoundText(ViceCategory));
             }
 
-            Identifier viceIdentifier = Database.GetIdentifier(identifier);
+            // Scoped to the vice category rather than fetched by name and category-checked
+            // afterwards: identifier names are unique only within a category, so a name-only
+            // fetch can return a same-named identifier of some other kind and fail this gate.
+            Identifier viceIdentifier = Database.GetIdentifier(identifier, ViceCategory);
             if (viceIdentifier == null)
-            {
-                return ValidationResult.Failure(ChateauInteractionHandler.notFoundText(identifier));
-            }
-            if (viceIdentifier.categories == null
-                || !viceIdentifier.categories.Contains(ViceCategory, StringComparer.OrdinalIgnoreCase))
             {
                 return ValidationResult.Failure(ChateauInteractionHandler.typeNotFoundText(ViceCategory));
             }
@@ -199,7 +197,7 @@ namespace FChatDicebot.InteractionProcessors.Consequence
         public override string GetCompletionMessage(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
             int level = ReadAddictionLevel(recipientProfile, identifier);
-            string vicePhrase = ViceText.ViceName(Database?.GetIdentifier(identifier), identifier, initiatorProfile?.displayName);
+            string vicePhrase = ViceText.ViceName(Database?.GetIdentifier(identifier, ViceCategory), identifier, initiatorProfile?.displayName);
             return initiatorProfile.displayName + " has dosed " + recipientProfile.displayName
                 + " with " + vicePhrase + ". [sub](addiction "
                 + level + "/" + MaxAddictionLevel + ")[/sub]";
@@ -217,7 +215,7 @@ namespace FChatDicebot.InteractionProcessors.Consequence
 
         protected override string BuildConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
-            string vicePhrase = ViceText.ViceName(Database?.GetIdentifier(identifier), identifier, initiatorProfile?.displayName);
+            string vicePhrase = ViceText.ViceName(Database?.GetIdentifier(identifier, ViceCategory), identifier, initiatorProfile?.displayName);
             string seriousness = ConsentWarningText.Block(
                 ConsentWarningText.FrequencyPerAxis(initiatorProfile.displayName, "dose you with a given vice", Cooldown.PeriodDays),
                 "Addictive cravings can show up in any interaction until you !detox at a hefty cost. "

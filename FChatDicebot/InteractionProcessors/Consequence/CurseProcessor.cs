@@ -268,13 +268,12 @@ namespace FChatDicebot.InteractionProcessors.Consequence
                 return ValidationResult.Failure(ChateauInteractionHandler.typeNotFoundText(CurseCategory));
             }
 
-            Identifier curseIdentifier = Database.GetIdentifier(identifier);
+            // Scoped to the curse category, not fetched by name and category-checked
+            // afterwards: "bimbo" is both an attire and a curse, and a name-only fetch
+            // returns whichever document Mongo finds first — which made every !curse bimbo
+            // fail its own category gate at consent time.
+            Identifier curseIdentifier = Database.GetIdentifier(identifier, CurseCategory);
             if (curseIdentifier == null)
-            {
-                return ValidationResult.Failure(ChateauInteractionHandler.notFoundText(identifier));
-            }
-            if (curseIdentifier.categories == null
-                || !curseIdentifier.categories.Contains(CurseCategory, StringComparer.OrdinalIgnoreCase))
             {
                 return ValidationResult.Failure(ChateauInteractionHandler.typeNotFoundText(CurseCategory));
             }
@@ -445,7 +444,7 @@ namespace FChatDicebot.InteractionProcessors.Consequence
             // bucket vocabulary leaks out to players; the disabler/modifier distinction is
             // an implementation detail.
             string effectDescription = "an unknown effect.";
-            Identifier curseIdentifier = Database?.GetIdentifier(identifier);
+            Identifier curseIdentifier = Database?.GetIdentifier(identifier, CurseCategory);
             if (curseIdentifier != null && !string.IsNullOrEmpty(curseIdentifier.description))
             {
                 effectDescription = curseIdentifier.description;

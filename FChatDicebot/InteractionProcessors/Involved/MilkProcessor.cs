@@ -123,11 +123,8 @@ namespace FChatDicebot.InteractionProcessors.Involved
                 return ValidationResult.Failure(ChateauInteractionHandler.typeNotFoundText("substance"));
             }
 
-            Identifier substanceIdentifier = Database.GetIdentifier(substance);
-            if (substanceIdentifier == null
-                || substanceIdentifier.categories == null
-                || !(substanceIdentifier.categories.Contains("substance", StringComparer.OrdinalIgnoreCase)
-                     || substanceIdentifier.categories.Contains("vice", StringComparer.OrdinalIgnoreCase)))
+            Identifier substanceIdentifier = SubstanceBodyparts.ResolveDrinkable(Database, substance);
+            if (substanceIdentifier == null)
             {
                 return ValidationResult.Failure(ChateauInteractionHandler.typeNotFoundText("substance"));
             }

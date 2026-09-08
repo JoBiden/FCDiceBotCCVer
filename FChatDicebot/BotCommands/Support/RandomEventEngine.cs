@@ -1,4 +1,4 @@
-using FChatDicebot.InteractionProcessors.Commitment;
+﻿using FChatDicebot.InteractionProcessors.Commitment;
 using FChatDicebot.InteractionProcessors.Consequence;
 using FChatDicebot.Model;
 using System;
@@ -267,12 +267,23 @@ namespace FChatDicebot.BotCommands.Support
         // map, grants the rolled outcome's rewards to each winner, and returns the public
         // announcement. The next fire was already scheduled when this event fired.
         //
-        // Multi-winner support: the outcome's own resultText is expected to carry whatever
-        // flavor applies to every winner together (via the {winners} placeholder — e.g. "{winners}
-        // are now glowing purple."), rather than the engine bolting on a generic "joins in" line.
+        // Multi-winner support: an outcome's own resultText is expected to carry whatever flavor
+        // applies to the winners it covers (via the {winners} placeholder - e.g. "{winners} are
+        // now glowing purple."), rather than the engine bolting on a generic "joins in" line.
         // Reward grants are still per-winner (magnitudes are re-rolled per person), but winners
         // who end up with identical reward fragments are combined onto one line so identical
         // grants read as one clean sentence instead of a repeated line per person.
+        //
+        // Outcome scope depends on whether the event authors any winner conditions:
+        //   - no conditions anywhere -> ONE outcome is rolled and shared by every winner. This is
+        //     the original behavior, preserved exactly for every event authored before conditions
+        //     existed.
+        //   - any condition present  -> the outcome is rolled PER WINNER among the outcomes that
+        //     winner qualifies for, so the corrupted and the pure can be told apart. Winners are
+        //     then grouped by the outcome they landed on, and each group gets its own header
+        //     block (count agreement resolved against that group's size) followed by its own
+        //     reward lines. A winner who qualifies for nothing is omitted from the announcement;
+        //     authors are expected to keep one unconditional outcome as the catch-all.
         private string ResolveLocked(string key, ActiveRandomEvent ae, List<string> winnersOverride)
         {
             ae.Resolved = true;
@@ -282,20 +293,36 @@ namespace FChatDicebot.BotCommands.Support
             if (winners == null || winners.Count == 0)
                 return NoWinnerMessage(ae);
 
-            EventOutcome outcome = SelectOutcome(ae.Event, _rng);
+            bool perWinnerOutcome = EventConditionSupport.HasAnyConditions(ae.Event);
+            EventOutcome sharedOutcome = perWinnerOutcome ? null : SelectOutcome(ae.Event, _rng);
 
             // Apply rewards per winner (each profile saved at most once) and collect their
             // fragments. Currency grants don't touch the loaded profile at all: they're
             // collected here and applied through the atomic _changeCurrency delegate AFTER
             // the whole-profile save, so the ReplaceOne can neither revert a concurrent
-            // balance change nor overwrite our own credit — and a pure-currency outcome
+            // balance change nor overwrite our own credit - and a pure-currency outcome
             // (the common case) skips the whole-profile write entirely (B12-2).
             var fragmentsByWinner = new Dictionary<string, List<string>>();
+            // Self-verbed rewards (currently just "invert") carry their own verb, so they can't
+            // join the "receives" line and are rendered one per line instead.
+            var predicatesByWinner = new Dictionary<string, List<string>>();
+            // Keyed by outcome REFERENCE, so two structurally identical authored outcomes stay
+            // distinct blocks rather than silently merging. Order preserves first-seen winner order.
+            var outcomeOrder = new List<EventOutcome>();
+            var winnersByOutcome = new Dictionary<EventOutcome, List<string>>();
+
             foreach (string winner in winners)
             {
                 Profile p = _getProfile != null ? _getProfile(winner) : null;
+                // Conditions are evaluated against the winner's state BEFORE this event grants
+                // anything, so an outcome can gate on a stat it is itself about to move.
+                EventOutcome outcome = perWinnerOutcome ? SelectOutcomeFor(ae.Event, p, _rng) : sharedOutcome;
+                if (outcome == null)
+                    continue;
+
                 var fragments = new List<string>();
-                if (p != null && outcome != null && outcome.rewards != null)
+                var predicates = new List<string>();
+                if (p != null && outcome.rewards != null)
                 {
                     var currencyGrants = new List<KeyValuePair<string, int>>();
                     Action<string, int> creditCurrency = _changeCurrency == null
@@ -309,10 +336,13 @@ namespace FChatDicebot.BotCommands.Support
                         string frag = ApplyEventReward(p, reward, _rng, creditCurrency);
                         if (string.IsNullOrEmpty(frag))
                             continue;
-                        fragments.Add(frag);
+                        if (IsSelfVerbedReward(reward.type))
+                            predicates.Add(frag);
+                        else
+                            fragments.Add(frag);
                         // A fragment that didn't add a deferred currency grant means the
                         // reward wrote to the profile document itself (title/training/
-                        // corruption/purity/curse — or currency in degraded mode).
+                        // corruption/purity/invert/curse - or currency in degraded mode).
                         if (currencyGrants.Count == grantsBefore)
                             profileDirty = true;
                     }
@@ -322,41 +352,90 @@ namespace FChatDicebot.BotCommands.Support
                     foreach (var grant in currencyGrants)
                         _changeCurrency(winner, grant.Key, grant.Value);
                 }
+
                 fragmentsByWinner[winner] = fragments;
+                predicatesByWinner[winner] = predicates;
+                if (!winnersByOutcome.ContainsKey(outcome))
+                {
+                    winnersByOutcome[outcome] = new List<string>();
+                    outcomeOrder.Add(outcome);
+                }
+                winnersByOutcome[outcome].Add(winner);
+            }
+
+            // Nobody landed on an outcome at all - either the event authors none, or its
+            // conditions excluded every winner. Announcing nothing after people responded reads
+            // as the bot having broken, so close it out with the existing no-winner line.
+            if (outcomeOrder.Count == 0)
+            {
+                Log("[random-events] " + ae.Channel + ": event " + (ae.Event.label ?? "(unlabeled)")
+                    + " resolved with " + winners.Count + " winner(s) but no outcome applied to any of them"
+                    + (perWinnerOutcome
+                        ? " (every outcome was gated out by its conditions; author an unconditional catch-all outcome)"
+                        : " (the event has no outcomes authored)")
+                    + ".");
+                return NoWinnerMessage(ae);
             }
 
             StringBuilder sb = new StringBuilder();
-            // Count agreement resolves BEFORE the names go in: winner tags are spliced in as
-            // [user]Name[/user], and doing the alternation first means the resolver never has to
-            // reason about what a name might contain.
-            string header = outcome != null
-                ? SubstituteWinners(ResolveCountAgreement(outcome.resultText, winners.Count), winners)
-                : null;
-            if (!string.IsNullOrEmpty(header))
-                sb.Append(header);
-
-            // Group winners with identical reward fragments (in first-seen order) into one line
-            // each. A winner with no reward at all gets no line — the header already covers the
-            // flavor for everyone via {winners}.
-            var groups = new List<WinnerGroup>();
-            foreach (string winner in winners)
+            foreach (EventOutcome outcome in outcomeOrder)
             {
-                List<string> fragments = fragmentsByWinner[winner];
-                if (fragments.Count == 0) continue;
+                List<string> groupWinners = winnersByOutcome[outcome];
 
-                WinnerGroup existing = groups.FirstOrDefault(g => g.Fragments.SequenceEqual(fragments));
-                if (existing != null)
-                    existing.Names.Add(winner);
-                else
-                    groups.Add(new WinnerGroup { Fragments = fragments, Names = new List<string> { winner } });
-            }
+                // Count agreement resolves BEFORE the names go in: winner tags are spliced in as
+                // [user]Name[/user], and doing the alternation first means the resolver never has
+                // to reason about what a name might contain. It agrees with THIS block's winner
+                // count, not the event's total, so a per-winner split still reads grammatically.
+                string header = SubstituteWinners(
+                    ResolveCountAgreement(outcome.resultText, groupWinners.Count), groupWinners);
+                if (!string.IsNullOrEmpty(header))
+                {
+                    if (sb.Length > 0) sb.Append("\n");
+                    sb.Append(header);
+                }
 
-            foreach (WinnerGroup group in groups)
-            {
-                List<string> tags = group.Names.Select(n => "[user]" + n + "[/user]").ToList();
-                string verb = tags.Count > 1 ? " receive " : " receives ";
-                if (sb.Length > 0) sb.Append("\n");
-                sb.Append(JoinWithAnd(tags) + verb + JoinWithAnd(group.Fragments) + "!");
+                // Group winners with identical reward fragments (in first-seen order) into one
+                // line each. A winner with no reward at all gets no line - the header already
+                // covers the flavor for everyone via {winners}. Grouping is scoped to this
+                // outcome block so winners under different headers never merge onto one line.
+                var groups = new List<WinnerGroup>();
+                foreach (string winner in groupWinners)
+                {
+                    List<string> fragments = fragmentsByWinner[winner];
+                    List<string> predicates = predicatesByWinner[winner];
+                    if (fragments.Count == 0 && predicates.Count == 0) continue;
+
+                    WinnerGroup existing = groups.FirstOrDefault(g =>
+                        g.Fragments.SequenceEqual(fragments) && g.Predicates.SequenceEqual(predicates));
+                    if (existing != null)
+                        existing.Names.Add(winner);
+                    else
+                        groups.Add(new WinnerGroup
+                        {
+                            Fragments = fragments,
+                            Predicates = predicates,
+                            Names = new List<string> { winner },
+                        });
+                }
+
+                foreach (WinnerGroup group in groups)
+                {
+                    List<string> tags = group.Names.Select(n => "[user]" + n + "[/user]").ToList();
+                    if (group.Fragments.Count > 0)
+                    {
+                        string verb = tags.Count > 1 ? " receive " : " receives ";
+                        if (sb.Length > 0) sb.Append("\n");
+                        sb.Append(JoinWithAnd(tags) + verb + JoinWithAnd(group.Fragments) + "!");
+                    }
+                    // Self-verbed rewards each get their own line - they already read as a
+                    // complete sentence about the winner, so joining them with "and" onto the
+                    // receives line would produce two verbs in one clause.
+                    foreach (string predicate in group.Predicates)
+                    {
+                        if (sb.Length > 0) sb.Append("\n");
+                        sb.Append(JoinWithAnd(tags) + " " + ResolveCountAgreement(predicate, tags.Count) + "!");
+                    }
+                }
             }
 
             return sb.ToString();
@@ -364,7 +443,8 @@ namespace FChatDicebot.BotCommands.Support
 
         private class WinnerGroup
         {
-            public List<string> Fragments;
+            public List<string> Fragments;   // noun phrases, joined onto one "receives" line
+            public List<string> Predicates;  // self-verbed, one line each
             public List<string> Names;
         }
 
@@ -484,19 +564,39 @@ namespace FChatDicebot.BotCommands.Support
         /// <summary>Weighted pick over an event's outcomes; null if it has none.</summary>
         public static EventOutcome SelectOutcome(RandomEvent ev, Random rng)
         {
-            if (ev == null || ev.outcomes == null || ev.outcomes.Count == 0) return null;
-            if (ev.outcomes.Count == 1) return ev.outcomes[0];
+            if (ev == null) return null;
+            return SelectFromOutcomes(ev.outcomes, rng);
+        }
 
-            int total = ev.outcomes.Sum(o => Math.Max(0, o.weight));
-            if (total <= 0) return ev.outcomes[rng.Next(ev.outcomes.Count)];
+        /// <summary>
+        /// Weighted pick over the outcomes this particular winner is eligible for. An event with
+        /// no authored conditions short-circuits to the plain whole-list pick, so the conditional
+        /// path costs nothing for the events that don't use it. Null when the winner qualifies for
+        /// nothing (the caller omits them from the announcement).
+        /// </summary>
+        public static EventOutcome SelectOutcomeFor(RandomEvent ev, Profile profile, Random rng)
+        {
+            if (ev == null || ev.outcomes == null || ev.outcomes.Count == 0) return null;
+            if (!EventConditionSupport.HasAnyConditions(ev)) return SelectFromOutcomes(ev.outcomes, rng);
+            return SelectFromOutcomes(EventConditionSupport.EligibleOutcomes(ev, profile), rng);
+        }
+
+        /// <summary>Shared weighted roll used by both selection entry points.</summary>
+        private static EventOutcome SelectFromOutcomes(List<EventOutcome> outcomes, Random rng)
+        {
+            if (outcomes == null || outcomes.Count == 0) return null;
+            if (outcomes.Count == 1) return outcomes[0];
+
+            int total = outcomes.Sum(o => Math.Max(0, o.weight));
+            if (total <= 0) return outcomes[rng.Next(outcomes.Count)];
 
             int pick = rng.Next(0, total);
-            foreach (EventOutcome o in ev.outcomes)
+            foreach (EventOutcome o in outcomes)
             {
                 pick -= Math.Max(0, o.weight);
                 if (pick < 0) return o;
             }
-            return ev.outcomes[ev.outcomes.Count - 1];
+            return outcomes[outcomes.Count - 1];
         }
 
         /// <summary>
@@ -599,6 +699,29 @@ namespace FChatDicebot.BotCommands.Support
                     WriteCorruption(profile, CorruptionProcessor.ReadCorruption(profile) + amount);
                     return "[b]" + amount + "[/b] purity";
 
+                case "invert":
+                    // Mirror the whole signed axis: a deeply corrupted resident comes out equally
+                    // pure and vice versa. min/max/key are unused - this is always the full flip,
+                    // which is what makes it legible as a rare event payoff (and why it dwarfs the
+                    // per-day magnitude quota that gates player-driven !corrupt / !purify).
+                    {
+                        int before = CorruptionProcessor.ReadCorruption(profile);
+                        // Nothing to mirror at dead neutral: no write, no fragment, so the winner
+                        // simply gets no reward line and the outcome text still covers them.
+                        if (before == 0) return "";
+                        // Only reachable from a hand-edited characteristic; Math.Abs would throw.
+                        if (before == int.MinValue) return "";
+                        WriteCorruption(profile, -before);
+                        int magnitude = Math.Abs(before);
+                        string had = before < 0 ? "corruption" : "purity";
+                        string now = before < 0 ? "purity" : "corruption";
+                        // A whole predicate rather than a noun phrase - see IsSelfVerbedReward.
+                        // The {has|have} alternation is resolved against the line's winner count
+                        // by the same ResolveCountAgreement that handles authored resultText.
+                        return "now {has|have} [b]" + magnitude + " " + now + "[/b], inverted from [b]"
+                            + magnitude + " " + had + "[/b]";
+                    }
+
                 case "curse":
                     if (string.IsNullOrEmpty(reward.key) || !CurseProcessor.CatalogMap.ContainsKey(reward.key)) return "";
                     List<CurseInstance> curses = CurseInstance.LoadAll(profile);
@@ -610,6 +733,21 @@ namespace FChatDicebot.BotCommands.Support
                 default: // "none" and anything unrecognized: flavor only, no write.
                     return "";
             }
+        }
+
+        /// <summary>
+        /// Whether this reward type's fragment is a whole predicate ("now {has|have} X, inverted
+        /// from Y") instead of a noun phrase the engine can hang off its shared "receives" verb.
+        ///
+        /// Every other reward is something a winner *receives*, so they compose onto one line:
+        /// "Alice receives 5 rosequartz and the title Lucky!". An inversion is not received - it
+        /// happens to what the winner already had - so it carries its own verb and gets its own
+        /// line. Keeping the distinction here (rather than sniffing the fragment text) means the
+        /// two line shapes stay explicit and a future self-verbed reward is one entry away.
+        /// </summary>
+        public static bool IsSelfVerbedReward(string type)
+        {
+            return string.Equals((type ?? "").Trim(), "invert", StringComparison.OrdinalIgnoreCase);
         }
 
         public bool IsValidArg(ActiveRandomEvent ae, string arg)

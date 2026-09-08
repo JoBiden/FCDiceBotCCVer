@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -35,7 +35,20 @@ class RandomEventBuilderServer
 
     static readonly string[] ResponseTypes = new string[] { "none", "keyword", "challenge" };
     static readonly string[] WinnerRules = new string[] { "firstValid", "allInWindow", "nth", "random" };
-    static readonly string[] RewardTypes = new string[] { "currency", "title", "training", "corruption", "purity", "curse", "none" };
+    static readonly string[] RewardTypes = new string[] { "currency", "title", "training", "corruption", "purity", "invert", "curse", "none" };
+
+    // Mirrors EventConditionSupport.Stats - the stat vocabulary an outcome condition can gate on.
+    // Every one of these projects a winner's profile to a single integer; the condition is an
+    // inclusive range on it. Re-sync if stats are added there.
+    static readonly string[] ConditionStats = new string[]
+    {
+        "corruption", "currency", "training", "job", "count",
+        "title", "curse", "parasite", "vice", "pregnancy", "collectible",
+    };
+
+    // Mirrors EventConditionSupport.RequiresKey - the dictionary-backed stats have no meaningful
+    // "total across all keys", so a blank key there is an authoring error rather than a wildcard.
+    static readonly string[] ConditionStatsNeedingKey = new string[] { "currency", "training", "job", "count" };
 
     static IMongoDatabase _db;
     static string _uiPath;
@@ -138,6 +151,8 @@ class RandomEventBuilderServer
                 { "responseTypes", new BsonArray(ResponseTypes) },
                 { "winnerRules", new BsonArray(WinnerRules) },
                 { "rewardTypes", new BsonArray(RewardTypes) },
+                { "conditionStats", new BsonArray(ConditionStats) },
+                { "conditionStatsNeedingKey", new BsonArray(ConditionStatsNeedingKey) },
             };
             Write(ctx, 200, "application/json", ToStrictJson(catalogs));
             return;
@@ -248,6 +263,62 @@ class RandomEventBuilderServer
             if (outcomeWeight < 0) { error = "Outcome " + outcomeIndex + ": weight cannot be negative."; return null; }
 
             string resultText = Trimmed(o, "resultText");
+
+            // Winner conditions. Authoring ANY of them on ANY outcome switches the event from one
+            // shared outcome roll to a per-winner roll among the outcomes that winner qualifies
+            // for - see RandomEventEngine.ResolveLocked.
+            BsonArray conditions = new BsonArray();
+            BsonValue rawConditions;
+            if (o.TryGetValue("conditions", out rawConditions) && rawConditions.IsBsonArray)
+            {
+                int conditionIndex = 0;
+                foreach (BsonValue rawCondition in rawConditions.AsBsonArray)
+                {
+                    conditionIndex++;
+                    string cwhere = "Outcome " + outcomeIndex + " condition " + conditionIndex;
+                    if (!rawCondition.IsBsonDocument) { error = cwhere + " is not an object."; return null; }
+                    BsonDocument c = rawCondition.AsBsonDocument;
+
+                    string stat = OrDefault(Trimmed(c, "stat"), "");
+                    if (!ContainsIgnoreCase(ConditionStats, stat))
+                    {
+                        error = cwhere + ": stat must be one of: " + string.Join(", ", ConditionStats);
+                        return null;
+                    }
+                    stat = Canonical(ConditionStats, stat);
+
+                    string ckey = OrDefault(Trimmed(c, "key"), "");
+                    if (ContainsIgnoreCase(ConditionStatsNeedingKey, stat) && ckey.Length == 0)
+                    {
+                        error = cwhere + ": a key is required for " + stat + " conditions (there is no meaningful total across all keys).";
+                        return null;
+                    }
+
+                    bool hasMin = HasNumber(c, "min");
+                    bool hasMax = HasNumber(c, "max");
+                    if (!hasMin && !hasMax)
+                    {
+                        error = cwhere + ": a condition needs at least a min or a max - with neither it matches everyone and gates nothing.";
+                        return null;
+                    }
+
+                    int cmin = Int(c, "min", 0);
+                    int cmax = Int(c, "max", 0);
+                    // Rewards swap an inverted range; a condition must NOT - an inverted range
+                    // matches nobody, which would silently kill the branch it was written on.
+                    if (hasMin && hasMax && cmin > cmax)
+                    {
+                        error = cwhere + ": min (" + cmin + ") is above max (" + cmax + "), so this condition can never match. Bounds are inclusive.";
+                        return null;
+                    }
+
+                    BsonDocument condition = new BsonDocument { { "stat", stat }, { "key", ckey } };
+                    if (hasMin) condition.Add("min", cmin);
+                    if (hasMax) condition.Add("max", cmax);
+                    conditions.Add(condition);
+                }
+            }
+
             BsonArray rewards = new BsonArray();
             BsonValue rawRewards;
             if (o.TryGetValue("rewards", out rawRewards) && rawRewards.IsBsonArray)
@@ -276,6 +347,9 @@ class RandomEventBuilderServer
                         error = where + ": \"" + key + "\" is not in the engine's curse catalog (valid: " + string.Join(", ", CurseKeys) + ").";
                         return null;
                     }
+                    // "invert" is deliberately absent from both needsKey and needsAmount: it always
+                    // mirrors the winner's whole signed corruption value, so there is nothing to
+                    // roll and nothing to name.
                     bool needsAmount = type == "currency" || type == "training" || type == "corruption" || type == "purity";
                     if (needsAmount && max <= 0)
                     {
@@ -299,12 +373,16 @@ class RandomEventBuilderServer
                 return null;
             }
 
-            outcomes.Add(new BsonDocument
+            BsonDocument outcomeDoc = new BsonDocument
             {
                 { "weight", outcomeWeight },
                 { "resultText", resultText ?? "" },
                 { "rewards", rewards },
-            });
+            };
+            // Omitted entirely when unconditional, so an event that uses no conditions round-trips
+            // to exactly the document shape it had before conditions existed.
+            if (conditions.Count > 0) outcomeDoc.Add("conditions", conditions);
+            outcomes.Add(outcomeDoc);
         }
 
         return new BsonDocument
@@ -388,6 +466,21 @@ class RandomEventBuilderServer
             if (int.TryParse(v.AsString, out parsed)) return parsed;
         }
         return fallback;
+    }
+
+    // A condition bound is optional (null/absent = unbounded on that side), so presence has to be
+    // distinguishable from a zero the author actually typed.
+    static bool HasNumber(BsonDocument d, string field)
+    {
+        BsonValue v;
+        if (!d.TryGetValue(field, out v) || v.IsBsonNull) return false;
+        if (v.IsInt32 || v.IsInt64 || v.IsDouble) return true;
+        if (v.IsString)
+        {
+            int parsed;
+            return int.TryParse(v.AsString, out parsed);
+        }
+        return false;
     }
 
     static bool ContainsIgnoreCase(string[] values, string candidate)

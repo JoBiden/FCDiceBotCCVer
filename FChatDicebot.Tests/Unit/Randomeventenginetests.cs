@@ -1,4 +1,4 @@
-using FChatDicebot.BotCommands.Support;
+﻿using FChatDicebot.BotCommands.Support;
 using FChatDicebot.InteractionProcessors.Commitment;
 using FChatDicebot.Model;
 using System;
@@ -388,6 +388,77 @@ namespace FChatDicebot.Tests.Unit
             Assert.Equal("2", p.characteristics[CorruptionProcessor.CorruptionCharacteristicKey]); // -5 + 7
         }
 
+        // ------------------------------------------------------------------
+        // "invert": mirror the whole signed corruption axis. Always the full flip - min/max/key
+        // are unused - which is why it dwarfs the per-day magnitude quota that gates the
+        // player-driven !corrupt / !purify.
+        // ------------------------------------------------------------------
+
+        [Theory]
+        [InlineData(-27, 27)]
+        [InlineData(27, -27)]
+        [InlineData(-1, 1)]
+        [InlineData(250, -250)]
+        public void Reward_Invert_MirrorsTheSignedAxis(int before, int after)
+        {
+            var p = new Profile { userName = "Alice" };
+            p.characteristics[CorruptionProcessor.CorruptionCharacteristicKey] = before.ToString();
+
+            RandomEventEngine.ApplyEventReward(p, Reward("invert", null, 0, 0), new Random(1));
+
+            Assert.Equal(after.ToString(), p.characteristics[CorruptionProcessor.CorruptionCharacteristicKey]);
+        }
+
+        // Unlike every other reward, invert's fragment is a whole PREDICATE carrying its own
+        // verb - an inversion is not something you "receive", it happens to what you already had.
+        [Fact]
+        public void Reward_Invert_FragmentIsASelfVerbedPredicateNamingBothSidesOfTheFlip()
+        {
+            var corrupted = new Profile { userName = "Alice" };
+            corrupted.characteristics[CorruptionProcessor.CorruptionCharacteristicKey] = "-27";
+            Assert.Equal("now {has|have} [b]27 purity[/b], inverted from [b]27 corruption[/b]",
+                RandomEventEngine.ApplyEventReward(corrupted, Reward("invert", null, 0, 0), new Random(1)));
+
+            var pure = new Profile { userName = "Bob" };
+            pure.characteristics[CorruptionProcessor.CorruptionCharacteristicKey] = "27";
+            Assert.Equal("now {has|have} [b]27 corruption[/b], inverted from [b]27 purity[/b]",
+                RandomEventEngine.ApplyEventReward(pure, Reward("invert", null, 0, 0), new Random(1)));
+        }
+
+        [Fact]
+        public void Reward_Invert_IsTheOnlySelfVerbedRewardType()
+        {
+            Assert.True(RandomEventEngine.IsSelfVerbedReward("invert"));
+            Assert.True(RandomEventEngine.IsSelfVerbedReward("  Invert "));
+            foreach (string other in new[] { "currency", "title", "training", "corruption", "purity", "curse", "none", null })
+                Assert.False(RandomEventEngine.IsSelfVerbedReward(other));
+        }
+
+        // Dead neutral has nothing to mirror: no write and no fragment, which drops the winner
+        // out of the reward lines entirely and leaves the outcome text to cover them.
+        [Fact]
+        public void Reward_Invert_AtZero_IsANoOpWithNoFragment()
+        {
+            var p = new Profile { userName = "Alice" };
+            Assert.Equal("", RandomEventEngine.ApplyEventReward(p, Reward("invert", null, 0, 0), new Random(1)));
+            Assert.False(p.characteristics.ContainsKey(CorruptionProcessor.CorruptionCharacteristicKey));
+
+            var explicitZero = new Profile { userName = "Bob" };
+            explicitZero.characteristics[CorruptionProcessor.CorruptionCharacteristicKey] = "0";
+            Assert.Equal("", RandomEventEngine.ApplyEventReward(explicitZero, Reward("invert", null, 0, 0), new Random(1)));
+            Assert.Equal("0", explicitZero.characteristics[CorruptionProcessor.CorruptionCharacteristicKey]);
+        }
+
+        // Only reachable from a hand-edited characteristic, but Math.Abs would throw on it.
+        [Fact]
+        public void Reward_Invert_IntMinValue_IsRefusedRatherThanThrowing()
+        {
+            var p = new Profile { userName = "Alice" };
+            p.characteristics[CorruptionProcessor.CorruptionCharacteristicKey] = int.MinValue.ToString();
+            Assert.Equal("", RandomEventEngine.ApplyEventReward(p, Reward("invert", null, 0, 0), new Random(1)));
+            Assert.Equal(int.MinValue.ToString(), p.characteristics[CorruptionProcessor.CorruptionCharacteristicKey]);
+        }
+
         [Fact]
         public void Reward_Curse_AddsKnownCurseOnce_RejectsUnknown()
         {
@@ -748,6 +819,420 @@ namespace FChatDicebot.Tests.Unit
             var output = engine.Tick(Channel, t0.AddSeconds(31), () => new List<RandomEvent>());
             Assert.Single(output);
             Assert.False(engine.HasActiveEvent(Channel));
+        }
+
+        // ==================== Winner-conditional outcomes (per-winner roll) ====================
+        //
+        // An event that authors ANY outcome condition switches from one shared outcome roll to a
+        // per-winner roll among the outcomes that winner qualifies for. Winners are then grouped
+        // by the outcome they landed on, and each group gets its own header block.
+
+        private static EventCondition Cond(string stat, string key = null, int? min = null, int? max = null)
+        {
+            return new EventCondition { stat = stat, key = key, min = min, max = max };
+        }
+
+        private static EventOutcome Outcome(string resultText, List<EventCondition> conditions, params EventReward[] rewards)
+        {
+            return new EventOutcome
+            {
+                weight = 1,
+                resultText = resultText,
+                conditions = conditions,
+                rewards = rewards.ToList(),
+            };
+        }
+
+        private static RandomEvent AllInWindowEvent(params EventOutcome[] outcomes)
+        {
+            return new RandomEvent
+            {
+                label = "mirror",
+                weight = 1,
+                announceText = "The mirror turns.",
+                responseType = RandomEventEngine.ResponseTypeNone,
+                responseWindowSeconds = 60,
+                winnerRule = RandomEventEngine.WinnerRuleAllInWindow,
+                outcomes = outcomes.ToList(),
+            };
+        }
+
+        private Profile AddProfileWithCorruption(string userName, int corruption)
+        {
+            Profile p = AddProfile(userName);
+            p.characteristics[CorruptionProcessor.CorruptionCharacteristicKey] = corruption.ToString();
+            return p;
+        }
+
+        // The whole point of the feature: one event, three states, three different announcements.
+        [Fact]
+        public void Conditional_SplitsWinnersIntoOneBlockPerOutcomeTheyQualifyFor()
+        {
+            var engine = NewEngine();
+            AddProfileWithCorruption("Alice", -30);  // corrupted
+            AddProfileWithCorruption("Bob", 40);     // pure
+            AddProfileWithCorruption("Cass", 0);     // neutral
+
+            DateTime t0 = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            var ev = AllInWindowEvent(
+                Outcome("{winners} {sees|see} the mirror turn.",
+                    new List<EventCondition> { Cond("corruption", max: -10) },
+                    Reward("invert", null, 0, 0)),
+                Outcome("{winners} {is|are} pulled into the dark.",
+                    new List<EventCondition> { Cond("corruption", min: 10) },
+                    Reward("invert", null, 0, 0)),
+                Outcome("{winners} {finds|find} the glass blank.",
+                    new List<EventCondition> { Cond("corruption", min: -9, max: 9) },
+                    Reward("currency", "rosequartz", 5, 5)));
+
+            engine.ForceOpen(Channel, ev, t0);
+            engine.HandleRandom(Channel, "Alice", "", t0);
+            engine.HandleRandom(Channel, "Bob", "", t0);
+            engine.HandleRandom(Channel, "Cass", "", t0);
+
+            var output = engine.Tick(Channel, t0.AddSeconds(61), () => new List<RandomEvent>());
+
+            Assert.Single(output);
+            string expected = string.Join("\n", new[]
+            {
+                "[user]Alice[/user] sees the mirror turn.",
+                "[user]Alice[/user] now has [b]30 purity[/b], inverted from [b]30 corruption[/b]!",
+                "[user]Bob[/user] is pulled into the dark.",
+                "[user]Bob[/user] now has [b]40 corruption[/b], inverted from [b]40 purity[/b]!",
+                "[user]Cass[/user] finds the glass blank.",
+                "[user]Cass[/user] receives [b]5 rosequartz[/b]!",
+            });
+            Assert.Equal(expected, output[0]);
+
+            // And the grants actually landed, mirrored.
+            Assert.Equal("30", _profiles["Alice"].characteristics[CorruptionProcessor.CorruptionCharacteristicKey]);
+            Assert.Equal("-40", _profiles["Bob"].characteristics[CorruptionProcessor.CorruptionCharacteristicKey]);
+            Assert.Equal(5, _profiles["Cass"].currencies["rosequartz"]);
+        }
+
+        // Count agreement has to resolve against the BLOCK size, not the event total - otherwise a
+        // 3-winner event with one corrupted winner would read "Alice see the mirror turn".
+        [Fact]
+        public void Conditional_CountAgreementFollowsTheBlockNotTheEventTotal()
+        {
+            var engine = NewEngine();
+            AddProfileWithCorruption("Alice", -30);
+            AddProfileWithCorruption("Bob", -30);
+            AddProfileWithCorruption("Cass", 0);
+
+            DateTime t0 = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            var ev = AllInWindowEvent(
+                Outcome("{winners} {sees|see} the mirror turn.",
+                    new List<EventCondition> { Cond("corruption", max: -10) }),
+                Outcome("{winners} {finds|find} the glass blank.",
+                    new List<EventCondition> { Cond("corruption", min: -9, max: 9) }));
+
+            engine.ForceOpen(Channel, ev, t0);
+            engine.HandleRandom(Channel, "Alice", "", t0);
+            engine.HandleRandom(Channel, "Bob", "", t0);
+            engine.HandleRandom(Channel, "Cass", "", t0);
+
+            var output = engine.Tick(Channel, t0.AddSeconds(61), () => new List<RandomEvent>());
+
+            Assert.Single(output);
+            Assert.Equal(
+                "[user]Alice[/user] and [user]Bob[/user] see the mirror turn.\n"
+                + "[user]Cass[/user] finds the glass blank.",
+                output[0]);
+        }
+
+        // Identical grants still collapse onto one line - but only within their own block, so
+        // winners under different headers can never be merged into the same sentence.
+        [Fact]
+        public void Conditional_RewardLineGroupingIsScopedToItsOwnBlock()
+        {
+            var engine = NewEngine();
+            AddProfileWithCorruption("Alice", -30);
+            AddProfileWithCorruption("Bob", -30);
+            AddProfileWithCorruption("Cass", 0);
+            AddProfileWithCorruption("Dee", 0);
+
+            DateTime t0 = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            var ev = AllInWindowEvent(
+                Outcome("The corrupted are called.",
+                    new List<EventCondition> { Cond("corruption", max: -10) },
+                    Reward("currency", "rosequartz", 3, 3)),
+                Outcome("The rest look on.",
+                    new List<EventCondition> { Cond("corruption", min: -9, max: 9) },
+                    Reward("currency", "rosequartz", 3, 3)));
+
+            engine.ForceOpen(Channel, ev, t0);
+            foreach (string name in new[] { "Alice", "Bob", "Cass", "Dee" })
+                engine.HandleRandom(Channel, name, "", t0);
+
+            var output = engine.Tick(Channel, t0.AddSeconds(61), () => new List<RandomEvent>());
+
+            Assert.Single(output);
+            Assert.Equal(
+                "The corrupted are called.\n"
+                + "[user]Alice[/user] and [user]Bob[/user] receive [b]3 rosequartz[/b]!\n"
+                + "The rest look on.\n"
+                + "[user]Cass[/user] and [user]Dee[/user] receive [b]3 rosequartz[/b]!",
+                output[0]);
+        }
+
+        // A winner who qualifies for no outcome is dropped from the announcement rather than
+        // showing up under someone else's header. Authors are told to keep a catch-all.
+        [Fact]
+        public void Conditional_WinnerWhoQualifiesForNothingIsOmitted()
+        {
+            var engine = NewEngine();
+            AddProfileWithCorruption("Alice", -30);
+            AddProfileWithCorruption("Cass", 0);
+
+            DateTime t0 = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            var ev = AllInWindowEvent(
+                Outcome("{winners} {sees|see} the mirror turn.",
+                    new List<EventCondition> { Cond("corruption", max: -10) }));
+
+            engine.ForceOpen(Channel, ev, t0);
+            engine.HandleRandom(Channel, "Alice", "", t0);
+            engine.HandleRandom(Channel, "Cass", "", t0);
+
+            var output = engine.Tick(Channel, t0.AddSeconds(61), () => new List<RandomEvent>());
+
+            Assert.Single(output);
+            Assert.Equal("[user]Alice[/user] sees the mirror turn.", output[0]);
+            Assert.DoesNotContain("Cass", output[0]);
+        }
+
+        // Silence after people responded reads as the bot having broken, so a fully gated-out
+        // resolution closes with the existing no-winner line and logs why.
+        [Fact]
+        public void Conditional_AllWinnersGatedOut_ClosesWithNoWinnerLineAndLogs()
+        {
+            var logged = new List<string>();
+            var engine = NewEngine(log: logged.Add);
+            AddProfileWithCorruption("Cass", 0);
+
+            DateTime t0 = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            var ev = AllInWindowEvent(
+                Outcome("Only the corrupted are called.",
+                    new List<EventCondition> { Cond("corruption", max: -10) }));
+
+            engine.ForceOpen(Channel, ev, t0);
+            engine.HandleRandom(Channel, "Cass", "", t0);
+
+            var output = engine.Tick(Channel, t0.AddSeconds(61), () => new List<RandomEvent>());
+
+            Assert.Single(output);
+            Assert.Equal(RandomEventEngine.NoWinnerMessage(new ActiveRandomEvent { Event = ev }), output[0]);
+            Assert.Contains(logged, m => m.Contains("no outcome applied"));
+            Assert.False(engine.HasActiveEvent(Channel));
+        }
+
+        // Conditions FILTER the outcome table; they do not replace the weighted roll. A winner who
+        // qualifies for both a gated outcome and an unconditional catch-all can land on either -
+        // which is what lets an author mix "rare thing that can happen to anyone" with
+        // state-specific branches. Deterministic branching is authored by gating EVERY outcome so
+        // the conditions partition the space (see the tests above, where the catch-all is itself
+        // pinned to the neutral band).
+        [Fact]
+        public void Conditional_UnconditionalOutcomeStaysInTheRollForAQualifyingWinner()
+        {
+            var seen = new HashSet<string>();
+            for (int seed = 1; seed <= 40 && seen.Count < 2; seed++)
+            {
+                var run = new RandomEventEngineTests();
+                var engine = run.NewEngine(seed);
+                run.AddProfileWithCorruption("Alice", -30);
+
+                DateTime t0 = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+                var ev = AllInWindowEvent(
+                    Outcome("Gated.", new List<EventCondition> { Cond("corruption", max: -10) }),
+                    Outcome("Catch-all.", null));
+
+                engine.ForceOpen(Channel, ev, t0);
+                engine.HandleRandom(Channel, "Alice", "", t0);
+                seen.Add(engine.Tick(Channel, t0.AddSeconds(61), () => new List<RandomEvent>())[0]);
+            }
+
+            Assert.Equal(new HashSet<string> { "Gated.", "Catch-all." }, seen);
+        }
+
+        // The compatibility guarantee: with no conditions anywhere, every winner still shares ONE
+        // rolled outcome. Two heavily-weighted mutually-exclusive outcomes would split under a
+        // per-winner roll; here all four winners must land in the same block.
+        [Fact]
+        public void NoConditions_StillRollsASingleSharedOutcomeForEveryWinner()
+        {
+            var engine = NewEngine();
+            foreach (string name in new[] { "Alice", "Bob", "Cass", "Dee" })
+                AddProfile(name);
+
+            DateTime t0 = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            var ev = AllInWindowEvent(
+                Outcome("Heads.", null),
+                Outcome("Tails.", null));
+
+            engine.ForceOpen(Channel, ev, t0);
+            foreach (string name in new[] { "Alice", "Bob", "Cass", "Dee" })
+                engine.HandleRandom(Channel, name, "", t0);
+
+            var output = engine.Tick(Channel, t0.AddSeconds(61), () => new List<RandomEvent>());
+
+            Assert.Single(output);
+            // Exactly one header, so exactly one outcome was rolled for the whole event.
+            Assert.True(output[0] == "Heads." || output[0] == "Tails.", "unexpected resolution: " + output[0]);
+        }
+
+        // Conditions read the winner's state BEFORE this event grants anything - which is what
+        // lets the invert outcome gate on the very stat it is about to flip.
+        [Fact]
+        public void Conditional_EvaluatesStateBeforeThisEventGrantsAnything()
+        {
+            var engine = NewEngine();
+            AddProfileWithCorruption("Alice", -30);
+
+            DateTime t0 = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            var ev = AllInWindowEvent(
+                Outcome("{winners} {is|are} mirrored.",
+                    new List<EventCondition> { Cond("corruption", max: -10) },
+                    Reward("invert", null, 0, 0)),
+                Outcome("Nothing happens.",
+                    new List<EventCondition> { Cond("corruption", min: -9) }));
+
+            engine.ForceOpen(Channel, ev, t0);
+            engine.HandleRandom(Channel, "Alice", "", t0);
+            var output = engine.Tick(Channel, t0.AddSeconds(61), () => new List<RandomEvent>());
+
+            Assert.Contains("mirrored", output[0]);
+            // Post-flip she is +30, which would no longer satisfy the gate she came in through.
+            Assert.Equal("30", _profiles["Alice"].characteristics[CorruptionProcessor.CorruptionCharacteristicKey]);
+        }
+
+        // Two winners who happened to hold the same magnitude group onto one line, and the
+        // predicate's {has|have} has to follow the GROUP size, not stay stuck on the singular.
+        [Fact]
+        public void Invert_GroupedWinners_AgreeInThePlural()
+        {
+            var engine = NewEngine();
+            AddProfileWithCorruption("Alice", -30);
+            AddProfileWithCorruption("Bob", -30);
+
+            DateTime t0 = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            var ev = AllInWindowEvent(Outcome("The mirror turns.", null, Reward("invert", null, 0, 0)));
+
+            engine.ForceOpen(Channel, ev, t0);
+            engine.HandleRandom(Channel, "Alice", "", t0);
+            engine.HandleRandom(Channel, "Bob", "", t0);
+
+            var output = engine.Tick(Channel, t0.AddSeconds(61), () => new List<RandomEvent>());
+
+            Assert.Equal(
+                "The mirror turns.\n"
+                + "[user]Alice[/user] and [user]Bob[/user] now have [b]30 purity[/b], inverted from [b]30 corruption[/b]!",
+                output[0]);
+        }
+
+        // Winners whose corruption differs end up with different predicates, so they do NOT group
+        // - each gets their own truthful line.
+        [Fact]
+        public void Invert_WinnersWithDifferentMagnitudes_GetSeparateLines()
+        {
+            var engine = NewEngine();
+            AddProfileWithCorruption("Alice", -30);
+            AddProfileWithCorruption("Bob", 12);
+
+            DateTime t0 = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            var ev = AllInWindowEvent(Outcome("The mirror turns.", null, Reward("invert", null, 0, 0)));
+
+            engine.ForceOpen(Channel, ev, t0);
+            engine.HandleRandom(Channel, "Alice", "", t0);
+            engine.HandleRandom(Channel, "Bob", "", t0);
+
+            var output = engine.Tick(Channel, t0.AddSeconds(61), () => new List<RandomEvent>());
+
+            Assert.Equal(
+                "The mirror turns.\n"
+                + "[user]Alice[/user] now has [b]30 purity[/b], inverted from [b]30 corruption[/b]!\n"
+                + "[user]Bob[/user] now has [b]12 corruption[/b], inverted from [b]12 purity[/b]!",
+                output[0]);
+        }
+
+        // An outcome mixing a received reward with an inversion keeps them on separate lines -
+        // joining them would put two verbs in one clause ("receives 5 rosequartz and now has...").
+        [Fact]
+        public void Invert_AlongsideAReceivedReward_KeepsTheTwoLineShapesApart()
+        {
+            var engine = NewEngine();
+            AddProfileWithCorruption("Alice", -30);
+
+            DateTime t0 = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            var ev = AllInWindowEvent(Outcome("The mirror turns.", null,
+                Reward("currency", "rosequartz", 5, 5),
+                Reward("invert", null, 0, 0)));
+
+            engine.ForceOpen(Channel, ev, t0);
+            engine.HandleRandom(Channel, "Alice", "", t0);
+
+            var output = engine.Tick(Channel, t0.AddSeconds(61), () => new List<RandomEvent>());
+
+            Assert.Equal(
+                "The mirror turns.\n"
+                + "[user]Alice[/user] receives [b]5 rosequartz[/b]!\n"
+                + "[user]Alice[/user] now has [b]30 purity[/b], inverted from [b]30 corruption[/b]!",
+                output[0]);
+        }
+
+        // A winner at dead neutral has nothing to mirror, so they contribute no line at all and
+        // the outcome's own text is left to cover them.
+        [Fact]
+        public void Invert_AtZero_ProducesNoLineForThatWinner()
+        {
+            var engine = NewEngine();
+            AddProfileWithCorruption("Alice", -30);
+            AddProfileWithCorruption("Cass", 0);
+
+            DateTime t0 = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            var ev = AllInWindowEvent(Outcome("{winners} {steps|step} up to the mirror.", null,
+                Reward("invert", null, 0, 0)));
+
+            engine.ForceOpen(Channel, ev, t0);
+            engine.HandleRandom(Channel, "Alice", "", t0);
+            engine.HandleRandom(Channel, "Cass", "", t0);
+
+            var output = engine.Tick(Channel, t0.AddSeconds(61), () => new List<RandomEvent>());
+
+            Assert.Equal(
+                "[user]Alice[/user] and [user]Cass[/user] step up to the mirror.\n"
+                + "[user]Alice[/user] now has [b]30 purity[/b], inverted from [b]30 corruption[/b]!",
+                output[0]);
+            Assert.Equal("0", _profiles["Cass"].characteristics[CorruptionProcessor.CorruptionCharacteristicKey]);
+        }
+
+        [Fact]
+        public void Conditional_SingleWinnerRules_PickTheBranchThatWinnerQualifiesFor()
+        {
+            var engine = NewEngine();
+            AddProfileWithCorruption("Alice", 55);
+
+            DateTime t0 = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            var ev = new RandomEvent
+            {
+                label = "mirror", weight = 1, announceText = "The mirror turns.",
+                responseType = RandomEventEngine.ResponseTypeNone, responseWindowSeconds = 60,
+                winnerRule = RandomEventEngine.WinnerRuleFirstValid,
+                outcomes = new List<EventOutcome>
+                {
+                    Outcome("The dark takes {winners}.", new List<EventCondition> { Cond("corruption", min: 10) },
+                        Reward("invert", null, 0, 0)),
+                    Outcome("Nothing stirs.", new List<EventCondition> { Cond("corruption", max: 9) }),
+                }
+            };
+
+            engine.ForceOpen(Channel, ev, t0);
+            var result = engine.HandleRandom(Channel, "Alice", "", t0);
+
+            Assert.Equal(
+                "The dark takes [user]Alice[/user].\n"
+                + "[user]Alice[/user] now has [b]55 corruption[/b], inverted from [b]55 purity[/b]!",
+                result.ChannelAnnouncement);
         }
     }
 }
