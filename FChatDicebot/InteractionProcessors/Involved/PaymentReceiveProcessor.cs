@@ -38,9 +38,11 @@ namespace FChatDicebot.InteractionProcessors.Involved
 
         public override string GetCompletionMessage(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
-            if (BottlePayment.IsBottlePayment(identifier))
+            // See PaymentGiveProcessor: the type owns the noun and the closing flavor.
+            CollectionSection section = CollectionSections.ByKeyword(identifier);
+            if (section != null)
             {
-                return $"{initiatorProfile.displayName} accepts the bottles from {recipientProfile.displayName}. Is that a vintage?";
+                return $"{initiatorProfile.displayName} accepts the {section.TransferNoun} from {recipientProfile.displayName}. {section.TransferTakeFlavor}";
             }
             return $"{recipientProfile.displayName} pays {identifier} to {initiatorProfile.displayName}. Transaction complete!";
         }
@@ -48,9 +50,9 @@ namespace FChatDicebot.InteractionProcessors.Involved
         protected override string BuildConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
             // identifier is "{amount} {currency}" (e.g. "100 gold") for a currency payment, or the
-            // rendered bottle summary from BottlePayment.Describe for a bottle transfer — see
-            // ChateauPay.Run / ChateauPay.RunBottlePayment.
-            if (BottlePayment.DescribesBottles(identifier))
+            // rendered parcel summary from CollectionSection.DescribeParcel for a goods transfer —
+            // see ChateauPay.Run / ChateauPay.RunCollectiblePayment.
+            if (CollectiblePayment.DescribesCollectibles(identifier))
             {
                 return $"{initiatorProfile.displayName} is asking {recipientProfile.displayName} for {identifier}! Do you !consent to handing them over?";
             }

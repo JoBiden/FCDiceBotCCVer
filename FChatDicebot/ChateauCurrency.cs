@@ -87,8 +87,12 @@ namespace FChatDicebot
         /// </summary>
         public const double SourceDrinkAddictionChance = 0.20;
 
-        /// <summary>Serial numbers listed per group in <c>!bottles</c> before the "and N more" tail.</summary>
-        public const int BottleSerialDisplayCap = 8;
+        /// <summary>
+        /// Serial numbers listed per group in <c>!collection</c> before the "and N more" tail.
+        /// Applies to every collectible type, not just bottles — the serial space is shared, so
+        /// the display cap is too.
+        /// </summary>
+        public const int SerialDisplayCap = 8;
 
         // -----------------------------------------------------------------------
         // Corruption tag thresholds (applied at milking time)

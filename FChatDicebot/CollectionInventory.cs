@@ -1,4 +1,6 @@
+using FChatDicebot.Database;
 using FChatDicebot.Model;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -39,7 +41,7 @@ namespace FChatDicebot
         /// <summary>
         /// True when the resident holds none of this type. Deliberately per-type: once there is
         /// more than one kind of collectible, "holds no bottles" and "holds nothing at all" are
-        /// different questions, and <c>!bottles</c> wants the first one.
+        /// different questions, and <c>!collection</c> wants the first one.
         /// </summary>
         public static bool HasNone<T>(Profile profile) where T : Collectible
         {
@@ -62,6 +64,87 @@ namespace FChatDicebot
         public static bool IsEmpty(Profile profile)
         {
             return profile?.collectibles == null || profile.collectibles.Count == 0;
+        }
+
+        /// <summary>
+        /// One type's items, optionally narrowed to a single subject, newest first. The ordering
+        /// is the collection-wide contract <see cref="BottleInventory.SelectFull"/> already
+        /// follows, stated once here so a type that needs no filtering of its own inherits it
+        /// rather than re-deriving it.
+        /// </summary>
+        public static List<T> Select<T>(Profile profile, string subjectFilter) where T : Collectible
+        {
+            return OfType<T>(profile)
+                .Where(c => c != null && MatchesSubject(c, subjectFilter))
+                .OrderByDescending(c => c.acquiredAt)
+                .ThenByDescending(c => c.serial)
+                .ToList();
+        }
+
+        /// <summary>
+        /// Whether an item came from this subject. A null or empty filter means "any", which is
+        /// what lets every caller pass its optional filter straight through.
+        /// </summary>
+        public static bool MatchesSubject(Collectible item, string subjectFilter)
+        {
+            if (item == null) return false;
+            if (string.IsNullOrEmpty(subjectFilter)) return true;
+            return string.Equals(item.subjectName, subjectFilter, StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
+        /// One display row's worth of items: everything sharing a subject, with their serials in
+        /// the order they arrived. The counterpart of <see cref="BottleInventory.BottleGroup"/>
+        /// for types that have nothing to group on but whose they are.
+        /// </summary>
+        public class SubjectGroup
+        {
+            public string SubjectName;
+            public List<int> Serials = new List<int>();
+            public int Count => Serials.Count;
+        }
+
+        /// <summary>
+        /// Collapse an already-ordered list into one group per subject, preserving the order the
+        /// items arrived in (so a newest-first input yields newest-first groups).
+        /// </summary>
+        public static List<SubjectGroup> GroupBySubject(IEnumerable<Collectible> items)
+        {
+            var groups = new List<SubjectGroup>();
+            var index = new Dictionary<string, SubjectGroup>(StringComparer.Ordinal);
+            if (items == null) return groups;
+
+            foreach (var item in items)
+            {
+                if (item == null) continue;
+                string key = item.subjectName ?? "";
+                if (!index.TryGetValue(key, out var group))
+                {
+                    group = new SubjectGroup { SubjectName = item.subjectName };
+                    index[key] = group;
+                    groups.Add(group);
+                }
+                group.Serials.Add(item.serial);
+            }
+            return groups;
+        }
+
+        /// <summary>
+        /// Resolve a stored <see cref="Collectible.subjectName"/> for display.
+        ///
+        /// <para>
+        /// <c>subjectName</c> is a frozen userName and does not follow renames, so it must never
+        /// reach a resident unresolved. Falls back to the stored name only if that person has
+        /// vanished from the roster entirely. This is the one display helper that is genuinely
+        /// shared by every type, which is why it lives here rather than on the bottle view that
+        /// used to own it.
+        /// </para>
+        /// </summary>
+        public static string SubjectText(IChateauDatabase database, string subjectName)
+        {
+            if (string.IsNullOrEmpty(subjectName)) return "an unknown donor";
+            string displayName = database?.GetDisplayName(subjectName);
+            return string.IsNullOrEmpty(displayName) ? subjectName : displayName;
         }
 
         /// <summary>

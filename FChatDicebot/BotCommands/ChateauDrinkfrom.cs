@@ -22,7 +22,7 @@ namespace FChatDicebot.BotCommands
             ShortDescription = "Drink a substance straight from another resident.";
             LongDescription = "Drink a substance directly out of another resident. It hits harder than a bottled drink of the same thing, carrying extra corruption or purity, and a higher chance of deepening an addiction you already carry. Drinking from someone this way uses up your one draw from them for the day, the same as milking them would.";
             Usage = "!drinkfrom [noparse][user]NameInUserTag[/user][/noparse] {substance}";
-            RelatedCommands = new string[] { "forcedrink", "drink", "milk", "bottles", "dose", "detox", "consent" };
+            RelatedCommands = new string[] { "forcedrink", "drink", "milk", "collection", "dose", "detox", "consent" };
             CooldownDuration = "1 day, per-direction";
             CooldownAppliesTo = "drinker (per source)";
             IdentifierCategory = "substance";

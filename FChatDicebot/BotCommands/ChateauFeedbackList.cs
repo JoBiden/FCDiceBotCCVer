@@ -23,7 +23,10 @@ namespace FChatDicebot.BotCommands
         {
             Name = "feedbacklist";
             Aliases = new string[] { };
-            Category = "General";
+            // "Admin", not "General": RequireBotAdmin already keeps it out of the listing
+            // everyone sees, but the Category is what says which listing it belongs to, and this
+            // one belongs with !namechange rather than with !bank.
+            Category = "Admin";
             ShortDescription = "Staff: view recent feedback submissions";
             LongDescription = "Staff only. View the most recent feedback submissions (from !feedback / !suggestion), newest first. Optionally pass a count, e.g. !feedbacklist 25. The result is sent to you in a private message.";
             Usage = "!feedbacklist\nor\n!feedbacklist [count]";

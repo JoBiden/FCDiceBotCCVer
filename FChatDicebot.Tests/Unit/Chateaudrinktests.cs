@@ -143,7 +143,7 @@ namespace FChatDicebot.Tests.Unit
             var result = ChateauDrink.Execute(_database, "Alice", null, 0, NeverRolls());
 
             Assert.Null(result.Bottle);
-            Assert.Equal(ChateauBottles.EmptyCollectionText, result.PrivateMessage);
+            Assert.Equal(BottleCollectionSection.NoBottlesText, result.PrivateMessage);
             Assert.Empty(result.ChannelMessage);
         }
 

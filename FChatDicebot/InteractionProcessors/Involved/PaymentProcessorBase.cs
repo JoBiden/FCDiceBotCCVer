@@ -65,15 +65,20 @@ namespace FChatDicebot.InteractionProcessors.Involved
             string payer = IsGive ? initiator : recipient;
             string payee = IsGive ? recipient : initiator;
 
-            // Bottles aren't a currency bucket, so they move as objects rather than through the
-            // atomic $inc below. What they get instead is exactness: the promised serials are
+            // Collectibles aren't a currency bucket, so they move as objects rather than through
+            // the atomic $inc below. What they get instead is exactness: the promised serials are
             // re-checked against the payer's collection, in the state the recipient agreed to.
-            if (BottlePayment.IsBottlePayment(command.pendingInteraction))
+            //
+            // The identifier holds the type token ("bottles", "panties"), which is also what
+            // names the section that owns the refusal wording. Payments completed before panties
+            // existed carry "bottles" and resolve the same way.
+            CollectionSection section = CollectionSections.ByKeyword(currency);
+            if (section != null)
             {
-                var promises = BottlePayment.ReadPromises(command.pendingInteraction);
-                if (!BottlePayment.TryTransfer(Database, payer, payee, promises, out string bottleFailure))
+                var promises = CollectiblePayment.ReadPromises(command.pendingInteraction);
+                if (!CollectiblePayment.TryTransfer(Database, section, payer, payee, promises, out string goodsFailure))
                 {
-                    _lastInitiatorPrivateMessage = bottleFailure;
+                    _lastInitiatorPrivateMessage = goodsFailure;
                     Database.DeletePendingCommand(command.Id);
                     return "NoInteraction";
                 }

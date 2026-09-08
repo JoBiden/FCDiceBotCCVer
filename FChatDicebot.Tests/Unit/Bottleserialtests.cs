@@ -118,7 +118,8 @@ namespace FChatDicebot.Tests.Unit
             {
                 new KeyValuePair<int, bool>(bottle.serial, false),
             };
-            bool moved = BottlePayment.TryTransfer(_database, "Alice", "Bob", promises, out string failure);
+            bool moved = CollectiblePayment.TryTransfer(
+                _database, new BottleCollectionSection(), "Alice", "Bob", promises, out string failure);
 
             Assert.True(moved, failure);
             var bobBottle = Assert.Single(_database.GetProfile("Bob").Bottles());

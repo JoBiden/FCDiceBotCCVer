@@ -87,7 +87,9 @@ Conventions:
 
 #### Collectibles
 
-`Profile.collectibles` holds individually-identified items — the user-keyed counterpart to the fungible `currencies` dict. `Model/Collectible.cs` is the base (serial, `subjectName`, `acquiredAt`, `IsSellable`, `IsTransferable`); `Model/MilkBottle.cs` is the first type. Serials are drawn from one counter shared by every type, so serial #1 is the oldest *item* in the Chateau rather than the oldest bottle.
+`Profile.collectibles` holds individually-identified items — the user-keyed counterpart to the fungible `currencies` dict. `Model/Collectible.cs` is the base (serial, `subjectName`, `acquiredAt`, `IsSellable`, `IsTransferable`); `Model/MilkBottle.cs` is the first type and `Model/Panties.cs` the second. Serials are drawn from one counter shared by every type, so serial #1 is the oldest *item* in the Chateau rather than the oldest bottle.
+
+Reading: `CollectionInventory` holds the type-agnostic selection (`OfType<T>`, `FindBySerial`, subject filtering and grouping, serial formatting); `BottleInventory` holds what only bottles have (substance, corruption tag, the full/empty split). Display splits the same way — `CollectionSections` lists one `CollectionSection` per type, and `!collection` prints the sections that had something to report.
 
 Two things about this field are unlike the rest of `Profile`, and both are load-bearing:
 

@@ -25,7 +25,7 @@ namespace FChatDicebot.BotCommands
             ShortDescription = "Offer another resident a drink straight from you.";
             LongDescription = "Offer a substance straight out of your own body for another resident to drink. They still have to !consent. It hits them harder than a bottled drink of the same thing, carrying extra corruption or purity, and a higher chance of deepening an addiction they already carry. Feeding another in this way uses up their one draw from you for the day, the same as being milked would.";
             Usage = "!forcedrink [noparse][user]NameInUserTag[/user][/noparse] {substance}";
-            RelatedCommands = new string[] { "drinkfrom", "drink", "milk", "bottles", "dose", "detox", "consent" };
+            RelatedCommands = new string[] { "drinkfrom", "drink", "milk", "collection", "dose", "detox", "consent" };
             CooldownDuration = "1 day, per-direction";
             CooldownAppliesTo = "drinker (per source)";
             IdentifierCategory = "substance";

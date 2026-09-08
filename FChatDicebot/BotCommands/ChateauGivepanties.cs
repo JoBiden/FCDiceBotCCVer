@@ -26,7 +26,7 @@ namespace FChatDicebot.BotCommands
                 + "can receive a pair from you once per Chateau day. Use !panties to ask someone for a pair "
                 + "of theirs instead.";
             Usage = "!givepanties [noparse][user]NameInUserTag[/user][/noparse]";
-            RelatedCommands = new string[] { "panties", "consent", "bottles", "pay" };
+            RelatedCommands = new string[] { "panties", "consent", "collection", "pay" };
             CooldownDuration = "1 day, per-direction";
             CooldownAppliesTo = "receiver (per giver)";
             IdentifierCategory = null;

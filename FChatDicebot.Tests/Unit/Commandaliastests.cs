@@ -107,9 +107,9 @@ namespace FChatDicebot.Tests.Unit
         [InlineData("cancel", "oops")]
         [InlineData("gc", "gamecommand")]
         [InlineData("g", "gamecommand")]
-        // Declared in an Aliases array but never given a class, so it was dead until the array
-        // started routing.
-        [InlineData("collection", "bottles")]
+        // The pair swapped round when the listing became cross-type: !collection is the command
+        // and !bottles is the name residents already knew it by.
+        [InlineData("bottles", "collection")]
         public void Alias_DispatchesToItsCanonicalCommand(string alias, string canonicalName)
         {
             ChatBotCommand resolved = _controller.FindCommandByName(alias);
@@ -162,6 +162,9 @@ namespace FChatDicebot.Tests.Unit
         [InlineData("roll", ChateauHelp.HelpSection.Dicebot)]
         // The two untitled blocks split on RequireChannel, not on Category: !bank and !drink are
         // both "General", and only one of them can be used outside a channel.
+        [InlineData("collection", ChateauHelp.HelpSection.General)]
+        [InlineData("panties", ChateauHelp.HelpSection.Involved)]
+        [InlineData("givepanties", ChateauHelp.HelpSection.Involved)]
         [InlineData("bank", ChateauHelp.HelpSection.General)]
         [InlineData("statistics", ChateauHelp.HelpSection.General)]
         [InlineData("drink", ChateauHelp.HelpSection.Room)]
@@ -178,12 +181,65 @@ namespace FChatDicebot.Tests.Unit
                 StringComparer.OrdinalIgnoreCase);
 
             // !setmark is superseded by !seteicon mark, the admin verbs are shown in their own
-            // hand-written block, and the unmigrated dicebot commands carry no Category at all.
+            // block and only to admins, and the unmigrated dicebot commands carry no Category.
             Assert.DoesNotContain("setmark", listed);
             Assert.DoesNotContain("namechange", listed);
             Assert.DoesNotContain("feedbacklist", listed);
             Assert.DoesNotContain("setidentifiereicon", listed);
             Assert.DoesNotContain("addchips", listed);
+        }
+
+        [Fact]
+        public void EveryChateauAdminCommand_IsInTheAdminBlock()
+        {
+            // The admin block was the one part of the listing left hand-written after the rest
+            // was derived, and it had already gone stale: !setidentifiereicon shipped and was
+            // never added, so the place an admin looks to find it didn't mention it.
+            var listed = new HashSet<string>(
+                ChateauHelp.RestrictedListedNames(_controller, ChateauHelp.RestrictedBlock.BotAdmin),
+                StringComparer.OrdinalIgnoreCase);
+
+            var missing = _controller.BotCommands
+                .Where(c => !string.IsNullOrEmpty(c.Name) && !string.IsNullOrEmpty(c.Category))
+                .Where(c => c.RequireBotAdmin && !c.HideFromHelpListing)
+                .Select(c => c.Name)
+                .Where(n => !listed.Contains(n))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            Assert.True(missing.Count == 0,
+                "Admin commands missing from the !help admin block: " + string.Join(", ", missing));
+            Assert.Contains("namechange", listed, StringComparer.OrdinalIgnoreCase);
+            Assert.Contains("feedbacklist", listed, StringComparer.OrdinalIgnoreCase);
+            Assert.Contains("setidentifiereicon", listed, StringComparer.OrdinalIgnoreCase);
+        }
+
+        [Fact]
+        public void LegacyDicebotAdminCommands_StayOutOfTheAdminBlock()
+        {
+            // Those carry no Category, which is what keeps them out of the Chateau readout —
+            // the same rule that governs the general listing, applied to the admin one.
+            var listed = new HashSet<string>(
+                ChateauHelp.RestrictedListedNames(_controller, ChateauHelp.RestrictedBlock.BotAdmin),
+                StringComparer.OrdinalIgnoreCase);
+
+            Assert.DoesNotContain("addchipscode", listed);
+            Assert.DoesNotContain("testops", listed);
+        }
+
+        [Fact]
+        public void NoCommandAppearsInBothTheGeneralListingAndTheAdminBlock()
+        {
+            var listed = new HashSet<string>(ChateauHelp.AllListedCommands(_controller),
+                StringComparer.OrdinalIgnoreCase);
+
+            var leaked = ChateauHelp
+                .RestrictedListedNames(_controller, ChateauHelp.RestrictedBlock.BotAdmin)
+                .Where(n => listed.Contains(n))
+                .ToList();
+
+            Assert.True(leaked.Count == 0,
+                "Admin commands shown to everyone: " + string.Join(", ", leaked));
         }
 
         [Theory]

@@ -95,6 +95,16 @@ namespace FChatDicebot.Tests.Builders
             return this;
         }
 
+        /// <summary>
+        /// Any collectible, for the cross-type cases. <see cref="WithMilkBottle"/> stays because
+        /// most of the suite is bottle-shaped and reads better naming the type.
+        /// </summary>
+        public ProfileBuilder WithCollectible(Collectible item)
+        {
+            _profile.collectibles.Add(item);
+            return this;
+        }
+
         public ProfileBuilder WithTrainingLevel(string trainingId, int level)
         {
             _profile.trainings[trainingId] = level;

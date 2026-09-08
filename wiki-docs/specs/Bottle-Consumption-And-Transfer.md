@@ -1,4 +1,4 @@
-# Bottle Consumption & Transfer — `!bottles`, `!drink`, `!pay … bottles`
+# Bottle Consumption & Transfer — `!collection`, `!drink`, `!pay … bottles`
 
 Closes the loop on the milk-bottle economy. Today `!milk` fills `Profile.milkInventory` and `!sell` is the only thing that ever reads it — residents cannot see what they own and cannot do anything with it but cash it out. This spec adds serial numbers, persistent empties, a view surface, a consumption path with real mechanical effects, and player-to-player transfer.
 
@@ -10,7 +10,24 @@ Closes the loop on the milk-bottle economy. Today `!milk` fills `Profile.milkInv
 > filtering and grouping; the type-agnostic selection moved to `CollectionInventory`. `!sell` now
 > reads `MilkBottle.IsSellable` and `!pay` reads `IsTransferable` rather than each caller
 > re-deriving the empty-bottle rule, and the privacy rule below is inherited by every type.
-**Investment level:** `!bottles` is a private self-command. `!drink` is a channel self-command (no consent flow). Bottle transfer rides the existing Involved-tier `!pay` consent flow.
+>
+> **`!bottles` is now `!collection`** (2026-08-07), with `!bottles` kept as an alias. Everything
+> §2 specifies about the bottle rows still holds — they render identically — but they are one
+> section of a cross-type readout rather than the whole of it, the empties line is a row under
+> the bottles rather than a section of its own, and the readout opens with a holdings line
+> covering every type. `BottleCollectionSection` owns the bottle half; see
+> [Collectibles](Infrastructure/Collectibles.md#the-cross-type-listing-as-shipped). Every "use
+> `!bottles`" pointer quoted in §11 now says `!collection`.
+>
+> **`BottlePayment` is now `CollectiblePayment`** (2026-08-07) and moves any collectible, not just
+> bottles — `!pay … panties #43` works, which it never did despite being documented from the day
+> panties shipped. Everything §4 specifies about bottle transfer is unchanged: the promise
+> encoding, the consent-gap recheck and the refusal wording are all byte-identical for bottles.
+> What moved is the per-type half (which items an amount means, how the parcel reads, the
+> completion noun and flavor), onto `CollectionSection`. See
+> [`!pay` was bottle-only](Infrastructure/Collectibles.md#pay-was-bottle-only-and-is-not-any-more).
+
+**Investment level:** `!collection` is a private self-command. `!drink` is a channel self-command (no consent flow). Bottle transfer rides the existing Involved-tier `!pay` consent flow.
 **Depends on:** [Currency-and-Milk-Inventory](Infrastructure/Currency-and-Milk-Inventory.md) (`MilkBottle`, `milkInventory`, `ChateauCurrency`), [Dose-and-Detox](Dose-and-Detox.md) (`ViceInstance`, `DoseStatusContributor`, `DoseProcessor.IntensifyExistingVices`), [Corrupt-and-Purify](Corrupt-and-Purify.md) (`CorruptionProcessor.ReadCorruption`, daily-quota pattern), [Status-Effect-Hook](Infrastructure/Status-Effect-Hook.md).
 
 > **This is a deliberate extension, not a correction.** [Currency-and-Milk-Inventory.md](Infrastructure/Currency-and-Milk-Inventory.md) originally stated that bottles cannot be transferred between residents and that the `bottle` side-currency is a pure tally. Both were accurate as-shipped decisions; this feature supersedes them by owner direction (2026-07-29), and that doc now carries a pointer here.
@@ -449,14 +466,14 @@ Full suite: 1766 passing.
 **New:**
 - `FChatDicebot/BottleInventory.cs` — shared selection, grouping and serial formatting.
 - `FChatDicebot/BottlePayment.cs` — transfer parsing, selection, the promise encoding, and transfer wording.
-- `FChatDicebot/BotCommands/ChateauBottles.cs`
+- `FChatDicebot/BotCommands/ChateauBottles.cs` (now `ChateauCollection.cs`)
 - `FChatDicebot/BotCommands/ChateauDrink.cs` (thin command over a pure `Execute`)
 - `FChatDicebot/InteractionProcessors/SelfCommandStatusEffects.cs` — the public hook a consentless command uses to run the contributors.
 - `scripts/backfill-bottle-serials.js` (mongosh migration)
 - `FChatDicebot.Tests/Unit/Bottleinventorytests.cs`
 - `FChatDicebot.Tests/Unit/Bottlepaymenttests.cs`
 - `FChatDicebot.Tests/Unit/Bottleserialtests.cs`
-- `FChatDicebot.Tests/Unit/Chateaubottlestests.cs`
+- `FChatDicebot.Tests/Unit/Chateaubottlestests.cs` (now `Chateaucollectiontests.cs`)
 - `FChatDicebot.Tests/Unit/Chateaudrinktests.cs`
 
 **Modified:**

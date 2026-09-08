@@ -38,9 +38,13 @@ namespace FChatDicebot.InteractionProcessors.Involved
 
         public override string GetCompletionMessage(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
-            if (BottlePayment.IsBottlePayment(identifier))
+            // The identifier is a collectible type token ("bottles", "panties") for a goods
+            // transfer; the type owns both the noun and the closing flavor, so "Is that a
+            // vintage?" stays a joke about bottles.
+            CollectionSection section = CollectionSections.ByKeyword(identifier);
+            if (section != null)
             {
-                return $"{initiatorProfile.displayName} hands the bottles over to {recipientProfile.displayName}. Is that a vintage?";
+                return $"{initiatorProfile.displayName} hands the {section.TransferNoun} over to {recipientProfile.displayName}. {section.TransferGiveFlavor}";
             }
             return $"{initiatorProfile.displayName} hands over some {identifier} to {recipientProfile.displayName}. Transaction complete!";
         }
@@ -48,9 +52,9 @@ namespace FChatDicebot.InteractionProcessors.Involved
         protected override string BuildConsentWarning(Profile initiatorProfile, Profile recipientProfile, string identifier)
         {
             // identifier is "{amount} {currency}" (e.g. "100 gold") for a currency payment, or the
-            // rendered bottle summary from BottlePayment.Describe for a bottle transfer — see
-            // ChateauPay.Run / ChateauPay.RunBottlePayment.
-            if (BottlePayment.DescribesBottles(identifier))
+            // rendered parcel summary from CollectionSection.DescribeParcel for a goods transfer —
+            // see ChateauPay.Run / ChateauPay.RunCollectiblePayment.
+            if (CollectiblePayment.DescribesCollectibles(identifier))
             {
                 return $"{initiatorProfile.displayName} is going to pass {recipientProfile.displayName} {identifier}! Do you !consent to receiving them?";
             }
